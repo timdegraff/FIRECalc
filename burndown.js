@@ -150,6 +150,17 @@ export const burndown = {
                 const active = dwzBtn.classList.contains('active');
                 const lblSub = document.getElementById('dwz-sub');
                 if (lblSub) lblSub.textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
+                
+                // If DWZ is enabled, we need to force manual budget mode to show the result
+                if (active) {
+                    const syncToggle = document.getElementById('toggle-budget-sync');
+                    if (syncToggle && syncToggle.checked) {
+                        syncToggle.checked = false;
+                        const manualContainer = document.getElementById('manual-budget-container');
+                        if (manualContainer) manualContainer.classList.remove('hidden');
+                    }
+                }
+                
                 burndown.run();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
@@ -276,19 +287,25 @@ export const burndown = {
         let results = [];
         const config = burndown.scrape();
 
-        if (config.dieWithZero && !config.useSync) {
-            let low = 0, high = 1000000, bestBudget = low, iterations = 0;
-            while (low <= high && iterations < 15) {
-                const mid = (low + high) / 2;
+        // High-precision binary search for Die With Zero
+        if (config.dieWithZero) {
+            let low = 0, high = 2000000, bestBudget = low;
+            for (let i = 0; i < 25; i++) {
+                let mid = (low + high) / 2;
                 const simResults = burndown.simulateProjection(data, mid);
                 const finalYear = simResults[simResults.length - 1];
-                if (finalYear.netWorth < 0) high = mid - 1000;
-                else { bestBudget = mid; low = mid + 1000; }
-                iterations++;
+                if (finalYear.netWorth < 0) {
+                    high = mid;
+                } else {
+                    bestBudget = mid;
+                    low = mid;
+                }
             }
             results = burndown.simulateProjection(data, bestBudget);
             const manualInp = document.getElementById('input-manual-budget');
-            if (manualInp && document.activeElement !== manualInp) manualInp.value = math.toCurrency(bestBudget);
+            if (manualInp && document.activeElement !== manualInp) {
+                manualInp.value = math.toCurrency(bestBudget);
+            }
         } else {
             results = burndown.simulateProjection(data);
         }
@@ -339,14 +356,22 @@ export const burndown = {
             const totalMort = amort(simRE, 'mortgage'), totalOL = amort(simOA, 'loan'), totalDebt = amort(simDebts, 'balance');
 
             let baseBudget = 0;
-            if (stateConfig.useSync) {
+            // Use override budget if provided (for DWZ search)
+            if (overrideManualBudget !== null) {
+                baseBudget = overrideManualBudget * infFac;
+            } else if (stateConfig.useSync) {
                 (budget.expenses || []).forEach(exp => { if (isRet && exp.removedInRetirement) return; const amt = math.fromCurrency(exp.annual); baseBudget += exp.isFixed ? amt : amt * infFac; });
-            } else { baseBudget = (overrideManualBudget || stateConfig.manualBudget || 100000) * infFac; }
+            } else { 
+                baseBudget = (stateConfig.manualBudget || 100000) * infFac; 
+            }
+
             let targetBudget = baseBudget;
             if (isRet) targetBudget *= (age < 65 ? (assumptions.slowGoFactor || 1.1) : (age < 80 ? (assumptions.midGoFactor || 1.0) : (assumptions.noGoFactor || 0.85)));
 
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const currentNW = (bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0) + (currentREVal - totalMort)) - bal['heloc'] - totalOL - totalDebt;
+            
+            // Override budget if in Perpetual mode
             if (stateConfig.strategy === 'perpetual') targetBudget = currentNW * Math.max(0, stockGrowth - inflationRate);
 
             let ordInc = 0, ltcgInc = 0, netAvail = 0, pretaxDed = 0;

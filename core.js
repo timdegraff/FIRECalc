@@ -120,10 +120,8 @@ function syncAllInputs(id, val) {
             if (el.id === 'input-top-retire-age') {
                 lbl = document.getElementById('label-top-retire-age');
             } else {
-                // Try siblings first (used in the flex wrappers for assumption sliders)
                 lbl = el.parentElement.querySelector('span:not(.label-std)');
                 if (!lbl) {
-                    // Fallback to standard previous element logic
                     lbl = el.previousElementSibling?.querySelector('span');
                 }
             }
@@ -210,10 +208,12 @@ function attachDynamicRowListeners() {
     });
     document.body.addEventListener('change', (e) => {
         const target = e.target;
-        if (target.dataset.id === 'type') {
+        if (target.dataset.id === 'type' && target.tagName === 'SELECT') {
             if (target.closest('#investment-rows')) updateCostBasisVisibility(target.closest('tr'));
-            // Explicitly set background and color logic via className and inline style to ensure no white background
-            target.className = `input-base w-full font-bold text-white ${templates.helpers.getTypeClass(target.value)}`;
+            
+            // Re-apply classes and style to prevent "white on white" issues
+            const typeClass = templates.helpers.getTypeClass(target.value);
+            target.className = `input-base w-full font-bold text-white ${typeClass}`;
             target.style.backgroundColor = '#0f172a';
         }
         if (target.dataset.id === 'contribOnBonus' || target.dataset.id === 'matchOnBonus') {
