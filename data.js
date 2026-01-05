@@ -9,19 +9,19 @@ let db;
 let user;
 let autoSaveTimeout = null;
 
-export async function initializeData(authUser) {
-    db = getFirestore();
-    user = authUser;
-    return loadData();
-}
-
-// Define the debounced save function globally to satisfy core.js
+// Ensure this is attached to window immediately when the module is imported
 window.debouncedAutoSave = () => {
     if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
     autoSaveTimeout = setTimeout(() => {
         autoSave();
     }, 1000);
 };
+
+export async function initializeData(authUser) {
+    db = getFirestore();
+    user = authUser;
+    return loadData();
+}
 
 async function loadData() {
     const docRef = doc(db, "users", user.uid);
@@ -121,7 +121,10 @@ function scrapeDataFromUI() {
     if (filingStatusEl) data.assumptions.filingStatus = filingStatusEl.value;
 
     document.querySelectorAll('#assumptions-container [data-id], #burndown-live-sliders [data-id]').forEach(i => {
-        if (i.tagName !== 'SELECT') data.assumptions[i.dataset.id] = parseFloat(i.value) || 0;
+        if (i.tagName !== 'SELECT') {
+            const val = parseFloat(i.value);
+            data.assumptions[i.dataset.id] = isNaN(val) ? 0 : val;
+        }
     });
 
     document.querySelectorAll('#investment-rows tr').forEach(r => data.investments.push(scrapeRow(r)));
@@ -158,7 +161,7 @@ function scrapeRow(row, rowType = null) {
             d[k] = val;
         }
         else if (i.tagName === 'SELECT') d[k] = i.value;
-        else if (i.type === 'number') d[k] = parseFloat(i.value) || 0;
+        else if (i.type === 'number' || i.type === 'range') d[k] = parseFloat(i.value) || 0;
         else d[k] = i.value;
     });
     return d;

@@ -155,22 +155,15 @@ export const engine = {
         return Math.min(taxableAmount, ssAmount * 0.85);
     },
 
-    /**
-     * Calculates tax with separation for Ordinary Income vs LTCG
-     */
     calculateTax: (ordinaryIncome, ltcgIncome, status = 'Single', state = 'Michigan', inflationFactor = 1) => {
         const stdDedMap = { 'Single': 15000, 'Married Filing Jointly': 30000, 'Head of Household': 22500 };
         const stdDed = (stdDedMap[status] || 15000) * inflationFactor;
 
-        // 1. Ordinary Income Tax
         let taxableOrdinary = Math.max(0, ordinaryIncome - stdDed);
-        // If Ordinary didn't use up StdDed, remainder reduces LTCG
         let ltcgDeductionRemainder = Math.max(0, stdDed - ordinaryIncome);
         let taxableLtcg = Math.max(0, ltcgIncome - ltcgDeductionRemainder);
 
         let tax = 0;
-        
-        // 2026 Ordinary Brackets
         const brackets = {
             'Single': [[11600, 0.10], [47150, 0.12], [100525, 0.22], [191950, 0.24]],
             'Married Filing Jointly': [[23200, 0.10], [94300, 0.12], [201050, 0.22], [383900, 0.24]],
@@ -191,26 +184,15 @@ export const engine = {
         }
         if (remainingOrdinary > 0) tax += remainingOrdinary * 0.32;
 
-        // 2. LTCG Tax (Stacked on top of Ordinary)
-        // 0% Bracket limits (approx 2026)
         const ltcgZeroLimitMap = { 'Single': 47000, 'Married Filing Jointly': 94000, 'Head of Household': 63000 };
         const ltcgZeroLimit = (ltcgZeroLimitMap[status] || 47000) * inflationFactor;
-        
-        // Income that fills the buckets before LTCG
-        const incomeStack = taxableOrdinary; 
-        
-        // Amount of LTCG that falls into 0% bucket
-        const zeroBucketSpace = Math.max(0, ltcgZeroLimit - incomeStack);
+        const zeroBucketSpace = Math.max(0, ltcgZeroLimit - taxableOrdinary);
         const ltcgInZero = Math.min(taxableLtcg, zeroBucketSpace);
         const ltcgInFifteen = taxableLtcg - ltcgInZero;
-        
-        // We assume 15% for the rest (High earners hit 20% but ignoring for lean FIRE)
         tax += (ltcgInFifteen * 0.15);
 
-        // 3. State Tax
         const stateData = stateTaxRates[state] || { rate: 0, taxesSS: false };
-        let stateTaxable = ordinaryIncome + ltcgIncome; // Most states tax Cap Gains as income
-        // (Note: This simple model doesn't handle specific state deductions perfectly, but applies flat rate)
+        let stateTaxable = ordinaryIncome + ltcgIncome;
         tax += (stateTaxable * stateData.rate);
 
         return tax;
@@ -220,8 +202,8 @@ export const engine = {
         const monthlyGross = income / 12;
         const baseFpl = 16060 + (hhSize - 1) * 5650;
         const snapFpl = baseFpl * inflationFactor;
-        const snapGrossLimit = snapFpl * 2.0; 
-        if (monthlyGross > (snapGrossLimit / 12)) return 0;
+        const snapGrossLimit = (snapFpl * 2.0) / 12; 
+        if (monthlyGross > snapGrossLimit) return 0;
         const stdDed = (hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) * inflationFactor;
         const adjIncome = Math.max(0, monthlyGross - stdDed);
         const suaAmt = (hasSUA ? 680 : 0) * inflationFactor; 
@@ -264,22 +246,16 @@ export const engine = {
             if (x.incomeExpensesMonthly) annualDirectExpenses *= 12;
             const bonus = base * (parseFloat(x.bonusPct) / 100 || 0);
             
-            // Logic: Base Contribution
             const contribRate = parseFloat(x.contribution) / 100 || 0;
             let personal401k = base * contribRate;
-            
-            // Logic: Bonus Contribution
-            if (x.contribOnBonus) {
-                personal401k += (bonus * contribRate);
-            }
+            if (x.contribOnBonus) personal401k += (bonus * contribRate);
             
             total401kContribution += personal401k;
             totalGrossIncome += (base + bonus) - annualDirectExpenses; 
         });
 
-        // Enforce IRS Limit
         const age = data.assumptions?.currentAge || 40;
-        const irsLimit = age >= 50 ? 31000 : 23500; // 2026 Est: 23.5k + 7.5k catchup
+        const irsLimit = age >= 50 ? 31000 : 23500; 
         const capped401k = Math.min(total401kContribution, irsLimit);
 
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;

@@ -38,11 +38,14 @@
 
     <div id="app-container" class="hidden flex h-screen overflow-hidden">
         <aside class="sidebar w-64 flex flex-col flex-shrink-0 bg-slate-800 border-r border-slate-700">
-            <div class="p-6">
+            <div class="p-6 pb-2">
                 <h1 class="text-2xl font-black text-white tracking-tighter">FIRECalc</h1>
                 <p class="label-std text-slate-500">Retirement Planner</p>
+                <a href="https://buymeacoffee.com/timdeg" target="_blank" rel="noreferrer" class="inline-flex items-center mt-2 px-2 py-1 bg-slate-900 border border-slate-700 hover:border-amber-500/50 hover:bg-slate-800 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all">
+                    Donate: <i class="fas fa-coffee ml-1.5 text-amber-500"></i>
+                </a>
             </div>
-            <nav class="flex-grow p-4 space-y-2 overflow-y-auto" id="main-nav">
+            <nav class="flex-grow p-4 pt-2 space-y-2 overflow-y-auto" id="main-nav">
                 <button data-tab="assets-debts" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-wallet w-6 text-orange-400"></i><span>Assets & Debts</span></button>
                 <button data-tab="income" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-money-bill-wave w-6 text-teal-400"></i><span>Income</span></button>
                 <button data-tab="budget" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-chart-pie w-6 text-pink-500"></i><span>Budget</span></button>

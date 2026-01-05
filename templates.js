@@ -126,7 +126,7 @@ export const templates = {
                             <label class="label-std text-slate-500">401k %</label>
                             <input data-id="contribution" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                             <!-- Warning Icon -->
-                            <div data-id="capWarning" class="hidden absolute -top-2 -right-2 text-yellow-500 text-xs animate-pulse cursor-help" title="Contribution exceeds 2026 IRS Limit">
+                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds Annual IRS Contribution Limit">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
                         </div>
@@ -140,7 +140,6 @@ export const templates = {
                         </div>
                     </div>
                     
-                    <!-- Advanced 401k Toggles -->
                     <div class="flex items-center gap-4 pt-1 border-t border-slate-700/30">
                          <label class="flex items-center gap-2 cursor-pointer">
                             <input data-id="contribOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
