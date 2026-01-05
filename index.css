@@ -44,7 +44,7 @@ body {
 }
 .input-base:focus { border-bottom-color: var(--accent-blue); background: rgba(255, 255, 255, 0.02); }
 
-/* Prevent browser default white backgrounds on selects */
+/* Prevent browser default white backgrounds and text on selects */
 select.input-base {
     background-color: #0f172a !important;
     color-scheme: dark;
@@ -54,13 +54,14 @@ select.input-base {
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 0.5rem center;
-    background-size: 1em;
+    background-size: 0.8em;
     padding-right: 2rem;
+    border-radius: 4px;
 }
 
 select.input-base option {
     background-color: #1e293b !important;
-    color: #fff !important;
+    color: #fff !important; /* Force options to be white on dark bg */
 }
 
 .input-range, .benefit-slider { 

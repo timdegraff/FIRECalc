@@ -54,10 +54,22 @@ export const stateTaxRates = {
 export const math = {
     toCurrency: (value, isCompact = false) => {
         if (isNaN(value) || value === null) return '$0';
+        const absVal = Math.abs(value);
+        
+        // Logic for FIRECalc presentation:
+        // 1. If compact mode (Tables/Charts) and >= $1M, allow 1 decimal for precision (e.g., $1.2M).
+        // 2. If compact mode and < $1M, force 0 decimals to just show the 'K' (e.g., $234K instead of $234.1K).
+        // 3. If standard mode (Inputs/Summaries), always round to whole dollars (no decimals).
+        let maxFrac = 0;
+        if (isCompact && absVal >= 1000000) {
+            maxFrac = 1;
+        }
+
         return new Intl.NumberFormat('en-US', { 
             style: 'currency', currency: 'USD',
             notation: isCompact ? 'compact' : 'standard',
-            minimumFractionDigits: 0, maximumFractionDigits: isCompact ? 1 : 0
+            minimumFractionDigits: 0, 
+            maximumFractionDigits: maxFrac
         }).format(value);
     },
     fromCurrency: (value) => {

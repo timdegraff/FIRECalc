@@ -56,12 +56,13 @@ export const benefits = {
                                 <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Medicaid</div>
                                 <div id="health-sub-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">100% Full Coverage</div>
                             </div>
+                            <!-- DYNAMIC HEALTH BAR -->
                             <div class="relative h-2 bg-slate-950 rounded-full border border-slate-700 overflow-hidden flex mt-6 mb-4">
-                                <div class="w-[30%] bg-emerald-500/80 h-full"></div>
-                                <div class="w-[5%] bg-emerald-400/60 h-full"></div>
-                                <div class="w-[20%] bg-blue-500/60 h-full"></div>
-                                <div class="w-[30%] bg-amber-500/60 h-full"></div>
-                                <div id="health-marker" class="absolute top-0 w-1 h-full bg-white shadow-[0_0_8px_white] transition-all"></div>
+                                <div id="seg-medicaid" class="bg-emerald-500/80 h-full border-r border-slate-900/50"></div>
+                                <div id="seg-hmp" class="bg-emerald-400/60 h-full border-r border-slate-900/50"></div>
+                                <div id="seg-silver" class="bg-blue-500/60 h-full border-r border-slate-900/50"></div>
+                                <div id="seg-gold" class="bg-amber-500/60 h-full border-r border-slate-900/50"></div>
+                                <div id="health-marker" class="absolute top-0 w-1.5 h-full bg-white shadow-[0_0_10px_white] transition-all z-10 rounded-full"></div>
                             </div>
                             <table class="w-full text-[10px] border-t border-slate-700/50 pt-3">
                                 <tbody>
@@ -133,9 +134,37 @@ export const benefits = {
         c.querySelector('[data-label="unifiedIncome"]').textContent = math.toCurrency(data.unifiedIncome);
         c.querySelector('[data-label="shelterCosts"]').textContent = math.toCurrency(data.shelterCosts);
 
-        const fpl2026 = 16060 + (data.hhSize - 1) * 5650, ratio = data.unifiedIncome / fpl2026;
+        const fpl2026 = 16060 + (data.hhSize - 1) * 5650;
+        const ratio = data.unifiedIncome / fpl2026;
+        const sliderMax = 150000;
+
+        // Plan Thresholds (Ratio based)
+        const medRatio = data.isPregnant ? 1.95 : 1.38;
+        const hmpRatio = 1.60;
+        const silverRatio = 2.50;
+        const goldRatio = 4.00;
+
+        // Dollar Thresholds
+        const medLimit = medRatio * fpl2026;
+        const hmpLimit = hmpRatio * fpl2026;
+        const silverLimit = silverRatio * fpl2026;
+        const goldLimit = goldRatio * fpl2026;
+
+        // Dynamic Bar Segment Widths
+        const setWidth = (id, start, end) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const width = Math.max(0, (Math.min(sliderMax, end) - start) / sliderMax * 100);
+            el.style.width = `${width}%`;
+        };
+
+        setWidth('seg-medicaid', 0, medLimit);
+        setWidth('seg-hmp', medLimit, hmpLimit);
+        setWidth('seg-silver', hmpLimit, silverLimit);
+        setWidth('seg-gold', silverLimit, goldLimit);
+
         const marker = document.getElementById('health-marker');
-        if (marker) marker.style.left = `${Math.min(100, (data.unifiedIncome / 150000) * 100)}%`;
+        if (marker) marker.style.left = `${Math.min(99, (data.unifiedIncome / sliderMax) * 100)}%`;
 
         const setHealth = (main, sub, prem, ded, colorClass, borderColor) => {
             document.getElementById('health-main-display').textContent = main;
@@ -148,11 +177,10 @@ export const benefits = {
             document.getElementById('health-cost-badge').className = `px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center ${prem === "$0" ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`;
         };
 
-        const medicaidLimit = data.isPregnant ? 1.95 : 1.38;
-        if (ratio <= medicaidLimit) setHealth("Medicaid", data.isPregnant ? "Pregnancy Coverage" : "100% Full Coverage", "$0", "$0", "text-emerald-400", "border-emerald-500/50");
-        else if (ratio <= 1.60) setHealth("HMP+", "Small Copayments", "$20", "Low", "text-emerald-300", "border-emerald-500/30");
-        else if (ratio <= 2.50) setHealth("Silver CSR", "Subsidized Deductible", "$60", "$800", "text-blue-400", "border-blue-500/30");
-        else if (ratio <= 4.00) setHealth("Gold Plan", "Market Rate", "$250", "$1500", "text-amber-400", "border-amber-500/30");
+        if (ratio <= medRatio) setHealth("Medicaid", data.isPregnant ? "Pregnancy Coverage" : "100% Full Coverage", "$0", "$0", "text-emerald-400", "border-emerald-500/50");
+        else if (ratio <= hmpRatio) setHealth("HMP+", "Small Copayments", "$20", "Low", "text-emerald-300", "border-emerald-500/30");
+        else if (ratio <= silverRatio) setHealth("Silver CSR", "Subsidized Deductible", "$60", "$800", "text-blue-400", "border-blue-500/30");
+        else if (ratio <= goldRatio) setHealth("Gold Plan", "Market Rate", "$250", "$1500", "text-amber-400", "border-amber-500/30");
         else setHealth("Standard", "No Subsidies", "$450+", "High", "text-slate-500", "border-slate-700");
 
         const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled);

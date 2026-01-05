@@ -414,7 +414,15 @@ export const burndown = {
             let isMedStrat = stateConfig.strategy === 'medicaid' && age < 65;
             if (isMedStrat && ordInc > medLim()) isMedStrat = false;
 
-            const passes = isMedStrat ? [{ keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi), limitByMagi: true }, { keys: burndown.priorityOrder.filter(k => !burndown.assetMeta[k].isMagi), limitByMagi: false }, { keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi), limitByMagi: false }] : [{ keys: burndown.priorityOrder, limitByMagi: false }];
+            // STRATEGY FIX:
+            // Pass 1: Draw from MAGI-generating assets up to the limit, BUT EXCLUDE 401k if < 59.5 to prevent premature SEPP.
+            // Pass 2: Draw from Tax-Free (Non-MAGI) assets to fill the gap.
+            // Pass 3: Last Resort - Draw from remaining MAGI assets (including 401k via SEPP/Penalty) to cover any final shortfall.
+            const passes = isMedStrat ? [
+                { keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi && (k !== '401k' || age >= 59.5)), limitByMagi: true },
+                { keys: burndown.priorityOrder.filter(k => !burndown.assetMeta[k].isMagi), limitByMagi: false },
+                { keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi), limitByMagi: false }
+            ] : [{ keys: burndown.priorityOrder, limitByMagi: false }];
 
             let ordIter = ordInc, ltcgIter = ltcgInc, drawn = 0;
             for (let loop = 0; loop < 3; loop++) {

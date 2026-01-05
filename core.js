@@ -211,9 +211,9 @@ function attachDynamicRowListeners() {
         if (target.dataset.id === 'type' && target.tagName === 'SELECT') {
             if (target.closest('#investment-rows')) updateCostBasisVisibility(target.closest('tr'));
             
-            // Re-apply classes and style to prevent "white on white" issues
+            // Apply colored text logic without 'text-white' to prevent clash
             const typeClass = templates.helpers.getTypeClass(target.value);
-            target.className = `input-base w-full font-bold text-white ${typeClass}`;
+            target.className = `input-base w-full font-bold ${typeClass}`;
             target.style.backgroundColor = '#0f172a';
         }
         if (target.dataset.id === 'contribOnBonus' || target.dataset.id === 'matchOnBonus') {
@@ -267,7 +267,8 @@ window.addRow = (containerId, type, data = {}) => {
             if (input.type === 'checkbox') input.checked = !!val;
             else if (input.tagName === 'SELECT') { 
                 input.value = val; 
-                input.className = `input-base w-full font-bold text-white ${templates.helpers.getTypeClass(val)}`;
+                const typeClass = templates.helpers.getTypeClass(val);
+                input.className = `input-base w-full font-bold ${typeClass}`;
                 input.style.backgroundColor = '#0f172a';
             }
             else if (input.dataset.type === 'currency') input.value = math.toCurrency(val);
