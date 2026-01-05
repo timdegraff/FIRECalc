@@ -16,9 +16,9 @@ TO DO LIST
 - [ ] Implement "Educational Needs" section in Budget for 529 drawdown tracking.
 
 ================================================================================
-PROJECT OVERVIEW: FINCALC CO-PILOT
+PROJECT OVERVIEW: FIRECALC RETIREMENT PLANNER
 ================================================================================
-FinCalc is a high-fidelity financial architecture tool designed for precision 
+FIRECalc is a high-fidelity financial architecture tool designed for precision 
 planning, specifically optimized for the 2026 Michigan tax/benefit landscape. 
 It differs from generic calculators by focusing on MAGI (Modified Adjusted Gross 
 Income) manipulation to maximize state benefits like Medicaid and SNAP while 
