@@ -65,8 +65,8 @@ export const burndown = {
                         <label class="flex items-center gap-4 px-5 py-3 bg-slate-900/50 rounded-2xl border border-slate-700 cursor-pointer group transition-all hover:bg-slate-900">
                             <input type="checkbox" id="toggle-rule-72t" class="w-5 h-5 accent-blue-500">
                             <div class="flex flex-col">
-                                <span class="label-std text-slate-300 group-hover:text-blue-400 transition-colors">SEPP (72t) Bridge</span>
-                                <span class="text-[8px] text-slate-600 uppercase font-black">Dynamic Trigger</span>
+                                <span class="label-std text-slate-300 group-hover:text-blue-400 transition-colors">Allow 72t Bridge</span>
+                                <span class="text-[8px] text-slate-600 uppercase font-black">Auto-Trigger on Shortfall</span>
                             </div>
                         </label>
 
@@ -374,7 +374,7 @@ export const burndown = {
             const age = assumptions.currentAge + i;
             const currentYearIter = currentYear + i;
             const isRetired = age >= assumptions.retirementAge;
-            const yearResult = { age, year: currentYearIter, draws: {}, rothConversion: 0, penalty: 0, seppAmount: 0, acaPremium: 0 };
+            const yearResult = { age, year: currentYearIter, draws: {}, rothConversion: 0, penalty: 0, seppAmount: 0, acaPremium: 0, snapBenefit: 0 };
             const inflationFactor = Math.pow(1 + inflationRate, i);
             const fpl = baseFpl * inflationFactor;
 
@@ -401,7 +401,6 @@ export const burndown = {
                     else baseBudget += (amount * inflationFactor);
                 });
             } else {
-                // If override is provided (from Solver), use it
                 const startBudget = overrideManualBudget !== null ? overrideManualBudget : (stateConfig.manualBudget || 100000);
                 baseBudget = startBudget * inflationFactor;
             }
@@ -436,15 +435,28 @@ export const burndown = {
                 let grossBase = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1);
                 let directExp = math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1);
                 grossBase *= Math.pow(1 + (inc.increase / 100 || 0), i);
+                
                 const bonus = grossBase * (parseFloat(inc.bonusPct) / 100 || 0);
-                const netSourceIncome = (grossBase + bonus) - directExp;
+                const totalComp = grossBase + bonus;
+                const netSourceIncome = totalComp - directExp;
 
                 if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= currentYearIter) {
                     netIncomeAvailable += netSourceIncome;
                 } else {
                     ordinaryIncomeBase += netSourceIncome;
                     netIncomeAvailable += netSourceIncome;
-                    totalPreTaxDeductions += grossBase * (parseFloat(inc.contribution) / 100 || 0);
+                    
+                    // Enforce IRS 401k Limit in Projection (Inflated)
+                    let rawContrib = grossBase * (parseFloat(inc.contribution) / 100 || 0);
+                    if (inc.contribOnBonus) {
+                        rawContrib += (bonus * (parseFloat(inc.contribution) / 100 || 0));
+                    }
+                    
+                    const baseLimit = 23500 * inflationFactor;
+                    const catchUp = 7500 * inflationFactor;
+                    const limit = age >= 50 ? (baseLimit + catchUp) : baseLimit;
+                    
+                    totalPreTaxDeductions += Math.min(rawContrib, limit);
                 }
             });
 
@@ -454,10 +466,24 @@ export const burndown = {
             ordinaryIncomeBase += ssTaxableFederal;
             netIncomeAvailable += ssGross;
 
-            // 3c. Mandatory Distributions (RMDs & SEPP - if started)
+            // 3c. Benefits (SNAP) - Calculate Annually
+            const snapAnnual = engine.calculateSnapBenefit(
+                ordinaryIncomeBase, // SNAP uses Gross Income roughly
+                benefits.hhSize || 1,
+                benefits.shelterCosts || 700,
+                benefits.hasSUA !== false,
+                benefits.isDisabled !== false,
+                inflationFactor
+            ) * 12;
+            
+            if (snapAnnual > 0) {
+                netIncomeAvailable += snapAnnual;
+                yearResult.snapBenefit = snapAnnual;
+            }
+
+            // 3d. Mandatory Distributions (RMDs & SEPP - if started)
             let mandatoryDist = 0;
             
-            // SEPP (72t) - Mandatory Phase (Once started, it's fixed)
             if (stateConfig.useSEPP && isSeppStarted && age < 60 && bal['401k'] > 0) {
                  const amt = Math.min(bal['401k'], seppFixedAmount);
                  bal['401k'] -= amt;
@@ -467,10 +493,9 @@ export const burndown = {
                  yearResult.seppAmount = amt;
                  yearResult.draws['401k'] = (yearResult.draws['401k'] || 0) + amt;
             } else if (age >= 60) {
-                 isSeppStarted = false; // Turn off at 60
+                 isSeppStarted = false; 
             }
 
-            // RMDs - Precheck Collision with Medicaid
             let rmd = 0;
             if (age >= 75) {
                 rmd = engine.calculateRMD(bal['401k'], age);
@@ -482,7 +507,7 @@ export const burndown = {
                 yearResult.draws['401k'] = (yearResult.draws['401k'] || 0) + rmd;
             }
 
-            // Deduct contributions
+            // Deduct contributions (HSA is separate)
             totalPreTaxDeductions += (budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0);
             ordinaryIncomeBase -= totalPreTaxDeductions;
             netIncomeAvailable -= totalPreTaxDeductions;
@@ -491,10 +516,8 @@ export const burndown = {
             const isPregnant = data.benefits?.isPregnant || false;
             const medicaidCeiling = fpl * (isPregnant ? 1.95 : 1.38);
             
-            // RMD Collision Check: If RMD blows up Medicaid, disable strategy for this year
             let isMedicaidStrategy = stateConfig.strategy === 'medicaid' && age < 65;
             if (isMedicaidStrategy && (ordinaryIncomeBase + ltcgIncomeBase) > medicaidCeiling) {
-                // RMD or Mandatory Income already exceeded limit, fallback to standard/ACA
                 isMedicaidStrategy = false; 
             }
             
@@ -504,14 +527,10 @@ export const burndown = {
             if (isMedicaidStrategy) {
                 const magiSources = priority.filter(k => burndown.assetMeta[k].isMagi);
                 const nonMagiSources = priority.filter(k => !burndown.assetMeta[k].isMagi);
-                // Pass 1: Taxable (Fill Bracket/Standard Deduction) - Skim Basis first
                 passes.push({ keys: magiSources, limitByMagi: true });
-                // Pass 2: Non-Taxable (Fill Budget)
                 passes.push({ keys: nonMagiSources, limitByMagi: false });
-                // Pass 3: Taxable (Overflow)
                 passes.push({ keys: magiSources, limitByMagi: false });
             } else {
-                // Standard: One pass
                 passes.push({ keys: priority, limitByMagi: false });
             }
 
@@ -528,7 +547,6 @@ export const burndown = {
 
                 if (shortfall <= 5) break; 
 
-                // Execute Passes
                 passes.forEach(pass => {
                     if (shortfall <= 0) return;
                     
@@ -537,28 +555,20 @@ export const burndown = {
                          let available = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
                          if (available <= 0) return;
                          
-                         // Check SEPP Constraints for 401k
+                         // Check SEPP Constraints
                          if (pk === '401k' && age < 59.5) {
                              if (isSeppStarted) {
                                  available = 0; // Already took mandatory amount
                              } else if (stateConfig.useSEPP) {
-                                 // PARTITIONED SEPP LOGIC
-                                 // We only enable SEPP if we actually need the money.
-                                 // Calculate EXACTLY how much we need from 401k to fill gap
+                                 // Auto-Trigger Logic
                                  const neededFrom401k = shortfall; 
-                                 
-                                 // Max Allowed Factor (Annuitization approximation)
                                  const maxFactor = engine.calculateMaxSepp(100000, age) / 100000;
-                                 
-                                 // The actual 72t amount must be determined now and fixed
                                  const maxPossibleSepp = bal['401k'] * maxFactor;
                                  const targetSepp = Math.min(neededFrom401k, maxPossibleSepp);
                                  
-                                 // Start SEPP
                                  isSeppStarted = true;
                                  seppFixedAmount = targetSepp;
                                  
-                                 // Execute Draw
                                  bal['401k'] -= targetSepp;
                                  ordinaryIncomeIter += targetSepp;
                                  yearResult.seppAmount = targetSepp;
@@ -569,14 +579,12 @@ export const burndown = {
                                  available = 0; 
                                  return; 
                              } else {
-                                 // No SEPP enabled - cannot touch 401k
                                  available = 0;
                              }
                          }
 
                          if (available <= 0) return;
 
-                         // Calculate Draw Limit based on Pass Rules
                          let drawLimit = available;
                          
                          if (pass.limitByMagi) {
@@ -584,8 +592,6 @@ export const burndown = {
                              const headroom = Math.max(0, medicaidCeiling - currentMagi);
                              
                              if (pk === 'taxable' && isMedicaidStrategy) {
-                                 // BASIS SKIMMING LOGIC
-                                 // Max we can take = All Basis (0 MAGI) + Headroom (100% Gain)
                                  drawLimit = bal['taxableBasis'] + headroom;
                              } else if (burndown.assetMeta[pk].isMagi) {
                                  drawLimit = Math.min(drawLimit, headroom);
@@ -603,16 +609,12 @@ export const burndown = {
                              shortfall -= amountToTake;
 
                              if (pk === 'taxable') {
-                                // Basis Skimming for Medicaid
                                 if (isMedicaidStrategy) {
-                                    // We skim basis first
                                     const basisToUse = Math.min(amountToTake, bal['taxableBasis']);
                                     const gainToUse = amountToTake - basisToUse;
-                                    
                                     bal['taxableBasis'] -= basisToUse;
                                     ltcgIncomeIter += gainToUse; 
                                 } else {
-                                    // Standard Average Cost Basis
                                     const currentBasis = bal['taxableBasis'];
                                     const currentVal = bal['taxable'] + amountToTake;
                                     const gainRatio = currentVal > 0 ? Math.max(0, (currentVal - currentBasis) / currentVal) : 0;
@@ -631,15 +633,11 @@ export const burndown = {
                 });
             }
 
-            // 5. Final Reconcile & Surplus
             let finalTax = engine.calculateTax(ordinaryIncomeIter, ltcgIncomeIter, filingStatus, assumptions.state, inflationFactor);
             
-            // ACA Fallback Cost
             const totalMagi = ordinaryIncomeIter + ltcgIncomeIter;
             let acaCost = 0;
             if (stateConfig.strategy === 'medicaid' && age < 65 && totalMagi > medicaidCeiling) {
-                // Failed Medicaid Cliff -> Must buy Silver Plan
-                // Cap approx 8.5% of income
                 acaCost = totalMagi * 0.085;
                 yearResult.acaPremium = acaCost;
             }
@@ -656,10 +654,8 @@ export const burndown = {
                     bal['taxableBasis'] += surplus;
                 }
             } else if (surplus < 0) {
-                // Deficit due to Taxes or ACA Cost late in calculation
-                // For simplicity in this simulation, we just reduce NW or Heloc
-                if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; // surplus is neg
-                else bal['heloc'] -= surplus; // increase heloc
+                if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; 
+                else bal['heloc'] -= surplus; 
             }
             
             yearResult.balances = { ...bal };
@@ -671,7 +667,6 @@ export const burndown = {
             yearResult.isSilver = (age < 65) && (totalMagi <= fpl * 2.5 && !yearResult.isMedicaid);
             results.push(yearResult);
 
-            // 6. Growth
             bal['taxable'] *= (1 + stockGrowth);
             bal['401k'] *= (1 + stockGrowth);
             bal['hsa'] *= (1 + stockGrowth);
@@ -689,8 +684,11 @@ export const burndown = {
     },
 
     renderTable: (results) => {
+        // Force keys to match the active priority order to visually sort columns left-to-right
         const keys = burndown.priorityOrder;
         const infRate = (window.currentData.assumptions.inflation || 3) / 100;
+        
+        // Dynamic Column Headers
         const headerCells = keys.map(k => `<th class="p-2 text-right text-[9px] min-w-[75px]" style="color: ${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('');
         
         const rows = results.map((r, i) => {
@@ -711,6 +709,7 @@ export const burndown = {
                 </td>`;
             }).join('');
             
+            // Status Badge
             let badge;
             if (r.age >= 65) {
                  badge = `<span class="px-2 py-1 rounded bg-slate-600 text-white text-[9px] font-black uppercase">Medicare</span>`;
@@ -722,11 +721,18 @@ export const burndown = {
                  badge = `<span class="px-2 py-1 rounded bg-slate-700 text-slate-400 text-[9px] font-black">Standard</span>`;
             }
             
+            // Benefits Column (New)
+            const snapAmt = (r.snapBenefit || 0) / inf;
+            const benefitsCell = snapAmt > 0 
+                ? `<span class="text-emerald-400 font-bold">${formatter.formatCurrency(snapAmt, 0)}</span>` 
+                : `<span class="text-slate-700">-</span>`;
+            
             return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px]">
                 <td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td>
                 <td class="p-2 text-right text-slate-400">${formatter.formatCurrency(r.budget / inf, 0)}</td>
                 <td class="p-2 text-right font-black text-white">${formatter.formatCurrency(r.magi / inf, 0)}</td>
                 <td class="p-2 text-center border-x border-slate-800/50">${badge}</td>
+                <td class="p-2 text-right border-r border-slate-800/50">${benefitsCell}</td>
                 ${draws}
                 <td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatter.formatCurrency(r.netWorth / inf, 0)}</td>
             </tr>`;
@@ -739,6 +745,7 @@ export const burndown = {
                     <th class="p-2 text-right">Budget</th>
                     <th class="p-2 text-right">MAGI</th>
                     <th class="p-2 text-center border-x border-slate-800/50">Status</th>
+                    <th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">Benefits</th>
                     ${headerCells}
                     <th class="p-2 text-right border-l border-slate-700">Net Worth</th>
                 </tr>

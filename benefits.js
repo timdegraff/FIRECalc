@@ -50,10 +50,10 @@ export const benefits = {
                                     <input type="checkbox" data-benefit-id="isPregnant" class="w-2.5 h-2.5 accent-pink-500">
                                     <span class="text-[8px] font-bold uppercase text-slate-400">Pregnant?</span>
                                 </label>
-                                <span id="health-cost-badge" class="px-2 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold uppercase tracking-widest">$0 / mo</span>
+                                <span id="health-cost-badge" class="px-2 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center">$0 / mo</span>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col h-full justify-between">
+                        <div class="p-5 flex flex-col h-full justify-between min-h-[220px]">
                             <div class="text-center py-2">
                                 <span class="label-std text-slate-500 block mb-1">Plan Status</span>
                                 <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter transition-all">Standard</div>
@@ -95,7 +95,7 @@ export const benefits = {
                                 </label>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col h-full">
+                        <div class="p-5 flex flex-col h-full min-h-[220px]">
                             <div class="flex-grow flex flex-col items-center justify-center py-2">
                                 <span class="label-std text-slate-500 mb-1">Monthly Benefit</span>
                                 <div id="snap-result-value" class="text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg transition-all">$0</div>
@@ -106,7 +106,7 @@ export const benefits = {
                                     <label class="label-std text-slate-500">Shelter & Utility Cost</label>
                                     <div class="text-xs font-bold text-white mono-numbers" data-label="shelterCosts">$0</div>
                                 </div>
-                                <input type="range" data-benefit-id="shelterCosts" min="0" max="5000" step="50" value="700" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-500 hover:accent-emerald-400 transition-all">
+                                <input type="range" data-benefit-id="shelterCosts" min="0" max="5000" step="50" value="700" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-slate-500 hover:accent-emerald-400 transition-all z-10 relative">
                             </div>
                         </div>
                     </div>
@@ -122,8 +122,10 @@ export const benefits = {
         const container = document.getElementById('benefits-module');
         if (!container) return;
         container.querySelectorAll('input').forEach(input => {
+            // Using oninput for immediate feedback
             input.oninput = () => {
                 if (input.dataset.benefitId === 'hhSize') {
+                    // Sync the two household size inputs if present
                     container.querySelectorAll('[data-benefit-id="hhSize"]').forEach(el => el.value = input.value);
                 }
                 benefits.refresh();
@@ -170,14 +172,13 @@ export const benefits = {
             
             if (prem === "$0") {
                  costBadge.textContent = "FREE";
-                 costBadge.className = "px-2 py-0.5 bg-emerald-500 text-white rounded text-[9px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20";
+                 costBadge.className = "px-2 py-0.5 bg-emerald-500 text-white rounded text-[9px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20 min-w-[60px] text-center";
             } else {
                  costBadge.textContent = `${prem} / mo`;
-                 costBadge.className = "px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] font-bold uppercase tracking-widest";
+                 costBadge.className = "px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center";
             }
         };
 
-        // Medicaid Limit Logic (Pregnant vs Standard)
         const medicaidLimit = data.isPregnant ? 1.95 : 1.38;
 
         if (ratio <= medicaidLimit) {

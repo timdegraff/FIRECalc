@@ -34,7 +34,6 @@ export const templates = {
                 const combinedRate = 0.22 + stateRate;
                 label = Math.round((1 - combinedRate) * 100) + '%';
             } else if (['Taxable', 'Crypto', 'Metals'].includes(type)) {
-                // Assuming LTCG 15% + State
                 const fedRate = (type === 'Metals') ? 0.28 : 0.15;
                 const combinedCapGainsRate = fedRate + stateRate;
                 const gainRatio = v > 0 ? Math.max(0, (v - b) / v) : 0;
@@ -69,7 +68,7 @@ export const templates = {
             <td><input data-id="name" type="text" placeholder="Account" class="input-base w-full font-bold text-white"></td>
             <td>
                 <div class="flex items-center">
-                    <select data-id="type" class="input-base w-full font-bold ${templates.helpers.getTypeClass(type)}">
+                    <select data-id="type" class="input-base w-full font-bold bg-slate-900 ${templates.helpers.getTypeClass(type)}">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
                         <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
@@ -91,8 +90,8 @@ export const templates = {
             <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
         `;
     },
-    // Income row remains mostly the same, ensuring simplified look
-    income: () => `
+    
+    income: (data) => `
         <div class="bg-slate-800 rounded-2xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/40">
                 <div class="flex items-center gap-3">
@@ -121,18 +120,36 @@ export const templates = {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-4 p-4 bg-slate-900/40 rounded-xl border border-slate-700/30">
-                    <div class="space-y-1">
-                        <label class="label-std text-slate-500">401k %</label>
-                        <input data-id="contribution" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                <div class="p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 space-y-3">
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="space-y-1 relative">
+                            <label class="label-std text-slate-500">401k %</label>
+                            <input data-id="contribution" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                            <!-- Warning Icon -->
+                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds IRS Limit">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="label-std text-slate-500">Match %</label>
+                            <input data-id="match" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="label-std text-slate-500">Bonus %</label>
+                            <input data-id="bonusPct" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                        </div>
                     </div>
-                    <div class="space-y-1">
-                        <label class="label-std text-slate-500">Match %</label>
-                        <input data-id="match" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
-                    </div>
-                    <div class="space-y-1">
-                        <label class="label-std text-slate-500">Bonus %</label>
-                        <input data-id="bonusPct" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                    
+                    <!-- Advanced 401k Toggles -->
+                    <div class="flex items-center gap-4 pt-1 border-t border-slate-700/30">
+                         <label class="flex items-center gap-2 cursor-pointer">
+                            <input data-id="contribOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <span class="text-[9px] font-bold text-slate-500 uppercase">Contrib on Bonus</span>
+                         </label>
+                         <label class="flex items-center gap-2 cursor-pointer">
+                            <input data-id="matchOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <span class="text-[9px] font-bold text-slate-500 uppercase">Match on Bonus</span>
+                         </label>
                     </div>
                 </div>
 
@@ -163,7 +180,7 @@ export const templates = {
             <td class="px-6 py-3">
                 <div class="flex items-center gap-3">
                     <div class="w-1.5 h-6 rounded-full ${templates.helpers.getTypeClass(type).replace('text-', 'bg-')}"></div>
-                    <select data-id="type" class="input-base bg-transparent border-none w-full font-black uppercase tracking-widest text-[11px] ${templates.helpers.getTypeClass(type)} cursor-pointer outline-none">
+                    <select data-id="type" class="input-base bg-slate-900 border-none w-full font-black uppercase tracking-widest text-[11px] ${templates.helpers.getTypeClass(type)} cursor-pointer outline-none">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
                         <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
@@ -185,7 +202,7 @@ export const templates = {
         <td class="px-6 py-3 text-center">
             <div class="flex items-center justify-center gap-4">
                 <label class="flex items-center gap-2 cursor-pointer" title="Expense stops when you retire">
-                    <span class="text-[8px] uppercase font-bold text-slate-500">Stop</span>
+                    <span class="text-[8px] uppercase font-bold text-slate-500">Stop in Retire?</span>
                     <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700">
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer" title="Fixed cost (does not inflate)">

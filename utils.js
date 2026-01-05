@@ -263,22 +263,37 @@ export const engine = {
             let annualDirectExpenses = math.fromCurrency(x.incomeExpenses);
             if (x.incomeExpensesMonthly) annualDirectExpenses *= 12;
             const bonus = base * (parseFloat(x.bonusPct) / 100 || 0);
-            const personal401k = base * (parseFloat(x.contribution) / 100 || 0);
+            
+            // Logic: Base Contribution
+            const contribRate = parseFloat(x.contribution) / 100 || 0;
+            let personal401k = base * contribRate;
+            
+            // Logic: Bonus Contribution
+            if (x.contribOnBonus) {
+                personal401k += (bonus * contribRate);
+            }
+            
             total401kContribution += personal401k;
             totalGrossIncome += (base + bonus) - annualDirectExpenses; 
         });
 
+        // Enforce IRS Limit
+        const age = data.assumptions?.currentAge || 40;
+        const irsLimit = age >= 50 ? 31000 : 23500; // 2026 Est: 23.5k + 7.5k catchup
+        const capped401k = Math.min(total401kContribution, irsLimit);
+
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
-        const magiBase = totalGrossIncome - total401kContribution - hsaSavings;
+        const magiBase = totalGrossIncome - capped401k - hsaSavings;
         const manualSavingsSum = budget.savings?.filter(x => !x.isLocked).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
-        const totalAnnualSavings = manualSavingsSum + total401kContribution + hsaSavings; 
+        const totalAnnualSavings = manualSavingsSum + capped401k + hsaSavings; 
         const totalAnnualBudget = budget.expenses?.reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
 
         return {
             netWorth: totalAssets - totalLiabilities,
             totalAssets, totalLiabilities, totalGrossIncome,
             magiBase,
-            total401kContribution, totalAnnualSavings, totalAnnualBudget
+            total401kContribution: capped401k, 
+            totalAnnualSavings, totalAnnualBudget
         };
     }
 };
