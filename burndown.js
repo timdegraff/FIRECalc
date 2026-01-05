@@ -66,7 +66,7 @@ export const burndown = {
                             <input type="checkbox" id="toggle-rule-72t" class="w-5 h-5 accent-blue-500">
                             <div class="flex flex-col">
                                 <span class="label-std text-slate-300 group-hover:text-blue-400 transition-colors">SEPP (72t) Bridge</span>
-                                <span class="text-[8px] text-slate-600 uppercase font-black">Mandatory Early Draw</span>
+                                <span class="text-[8px] text-slate-600 uppercase font-black">Dynamic Trigger</span>
                             </div>
                         </label>
 
@@ -127,8 +127,17 @@ export const burndown = {
             const el = document.getElementById(id);
             if (el) el.onchange = () => {
                 if (id === 'burndown-strategy') {
+                    const strategy = el.value;
                     const swrInd = document.getElementById('swr-indicator');
-                    if (swrInd) swrInd.classList.toggle('hidden', el.value !== 'perpetual');
+                    if (swrInd) swrInd.classList.toggle('hidden', strategy !== 'perpetual');
+
+                    // Auto-Sort Priority based on Strategy
+                    if (strategy === 'medicaid') {
+                        burndown.priorityOrder = ['taxable', 'cash', 'roth-basis', 'hsa', 'heloc', 'roth-earnings', 'crypto', 'metals', '401k'];
+                    } else {
+                        // Standard / Perpetual
+                        burndown.priorityOrder = ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'];
+                    }
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualContainer = document.getElementById('manual-budget-container');
@@ -320,7 +329,8 @@ export const burndown = {
         const results = [];
         const duration = 100 - assumptions.currentAge;
         
-        // SEPP (72t) State - Calculated ONCE at start of retirement, then fixed
+        // SEPP (72t) State
+        // Triggered dynamically based on need
         let seppFixedAmount = 0; 
         let isSeppStarted = false;
 
@@ -406,16 +416,11 @@ export const burndown = {
             ordinaryIncomeBase += ssTaxableFederal;
             netIncomeAvailable += ssGross;
 
-            // 3c. Mandatory Distributions (RMDs & SEPP)
+            // 3c. Mandatory Distributions (RMDs & SEPP - if started)
             let mandatoryDist = 0;
             
-            // SEPP (72t) Logic - Treated as Mandatory Income if enabled
-            // IMPORTANT: seppFixedAmount is calculated ONCE when plan starts, then used annually.
-            if (stateConfig.useSEPP && isRetired && age < 60 && !isSeppStarted && bal['401k'] > 0) {
-                 isSeppStarted = true;
-                 seppFixedAmount = engine.calculateMaxSepp(bal['401k'], age);
-            }
-            if (isSeppStarted && age < 60 && bal['401k'] > 0) {
+            // SEPP (72t) - Mandatory Phase
+            if (stateConfig.useSEPP && isSeppStarted && age < 60 && bal['401k'] > 0) {
                  const amt = Math.min(bal['401k'], seppFixedAmount);
                  bal['401k'] -= amt;
                  ordinaryIncomeBase += amt;
@@ -444,32 +449,24 @@ export const burndown = {
             netIncomeAvailable -= totalPreTaxDeductions;
 
             // 4. Optimization Engine (Medicaid vs Standard)
-            // Medicaid Strategy: Limit MAGI to 138% FPL if possible.
-            // Split Priority Order into passes.
             
             const medicaidCeiling = fpl * (data.isPregnant ? 1.95 : 1.38);
             const isMedicaidStrategy = stateConfig.strategy === 'medicaid' && age < 65;
             
-            // Determine Passes
-            // Pass 1: Fill MAGI to Cap (Taxable sources) - Uses "Free" standard deduction space
-            // Pass 2: Fill remaining Budget with Non-Magi (Cash/Roth/HELOC) - Preserves Medicaid
-            // Pass 3: Emergency fill with remaining Taxable - Breaks Medicaid but pays bills
-            
             const passes = [];
-            const priority = burndown.priorityOrder; // User's custom order
+            const priority = burndown.priorityOrder; // User's custom order (or auto-sorted)
 
             if (isMedicaidStrategy) {
                 const magiSources = priority.filter(k => burndown.assetMeta[k].isMagi);
                 const nonMagiSources = priority.filter(k => !burndown.assetMeta[k].isMagi);
-                
-                // Pass 1: Taxable (Limited by MAGI Cap)
+                // Pass 1: Taxable (Fill Bracket/Standard Deduction)
                 passes.push({ keys: magiSources, limitByMagi: true });
-                // Pass 2: Non-Taxable (Unlimited)
+                // Pass 2: Non-Taxable (Fill Budget)
                 passes.push({ keys: nonMagiSources, limitByMagi: false });
-                // Pass 3: Taxable (Unlimited - Overflow)
+                // Pass 3: Taxable (Overflow)
                 passes.push({ keys: magiSources, limitByMagi: false });
             } else {
-                // Standard Strategy: Just one pass in user order
+                // Standard: One pass
                 passes.push({ keys: priority, limitByMagi: false });
             }
 
@@ -477,14 +474,14 @@ export const burndown = {
             let ltcgIncomeIter = ltcgIncomeBase;
             let assetsDrawnThisYear = 0;
 
-            // Converge Tax Loop (Simulate tax drag to find true net need)
+            // Converge Tax Loop
             for (let taxLoop = 0; taxLoop < 3; taxLoop++) {
                 let iterationTax = engine.calculateTax(ordinaryIncomeIter, ltcgIncomeIter, filingStatus, assumptions.state, inflationFactor);
                 let currentTotalNeed = targetBudget + iterationTax;
                 let cashOnHand = netIncomeAvailable + assetsDrawnThisYear; // Includes mandatory draws
                 let shortfall = currentTotalNeed - cashOnHand;
 
-                if (shortfall <= 5) break; // Converged
+                if (shortfall <= 5) break; 
 
                 // Execute Passes
                 passes.forEach(pass => {
@@ -494,6 +491,41 @@ export const burndown = {
                          if (shortfall <= 0) return;
                          let available = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
                          if (available <= 0) return;
+                         
+                         // Check SEPP Constraints for 401k
+                         if (pk === '401k' && age < 59.5) {
+                             if (isSeppStarted) {
+                                 // Already took mandatory amount, cannot take more this year
+                                 available = 0; 
+                             } else if (stateConfig.useSEPP) {
+                                 // Not started yet, but we have a shortfall and 401k is next in priority.
+                                 // TRIGGER START
+                                 isSeppStarted = true;
+                                 seppFixedAmount = engine.calculateMaxSepp(bal['401k'], age);
+                                 
+                                 // We take the SEPP amount now as a draw
+                                 // Note: Since we are inside the loop, we treat this as the draw for this step.
+                                 // Ideally, we'd restart the year, but taking it here works if we handle tax.
+                                 // Shortfall might be less than SEPP amount, but 72t requires fixed amount.
+                                 // We take the FULL SEPP amount.
+                                 let amountToTake = Math.min(bal['401k'], seppFixedAmount);
+                                 
+                                 bal['401k'] -= amountToTake;
+                                 ordinaryIncomeIter += amountToTake; // Update iter for tax convergence
+                                 yearResult.seppAmount = amountToTake;
+                                 yearResult.draws['401k'] = (yearResult.draws['401k'] || 0) + amountToTake;
+                                 assetsDrawnThisYear += amountToTake;
+                                 shortfall -= amountToTake; // Reduce shortfall (could go negative = surplus)
+                                 
+                                 available = 0; // Consumed for this year
+                                 return; // Continue to next pass/key (we're done with 401k for this year)
+                             } else {
+                                 // No SEPP enabled, assume we can't touch it (or penalty - skipping for now)
+                                 available = 0;
+                             }
+                         }
+
+                         if (available <= 0) return;
 
                          // Calculate Draw Limit based on Pass Rules
                          let drawLimit = available;
@@ -501,25 +533,19 @@ export const burndown = {
                          if (pass.limitByMagi) {
                              const currentMagi = ordinaryIncomeIter + ltcgIncomeIter;
                              const headroom = Math.max(0, medicaidCeiling - currentMagi);
-                             // If this asset adds to MAGI, limit it.
-                             // Note: Brokerage only adds GAINS to MAGI.
                              if (pk === 'taxable') {
-                                 // Complex: Gains ratio
                                  const currentBasis = bal['taxableBasis'];
-                                 const currentVal = bal['taxable']; // approx
+                                 const currentVal = bal['taxable']; 
                                  const gainRatio = currentVal > 0 ? Math.max(0, (currentVal - currentBasis) / currentVal) : 0;
                                  if (gainRatio > 0) {
-                                     // grossDraw * gainRatio <= headroom  => grossDraw <= headroom / gainRatio
                                      const maxGross = headroom / gainRatio;
                                      drawLimit = Math.min(drawLimit, maxGross);
                                  }
                              } else if (burndown.assetMeta[pk].isMagi) {
-                                 // 100% inclusion (401k, Crypto etc)
                                  drawLimit = Math.min(drawLimit, headroom);
                              }
                          }
 
-                         // Take the draw
                          const amountToTake = Math.min(drawLimit, shortfall);
                          
                          if (amountToTake > 0) {
@@ -530,10 +556,9 @@ export const burndown = {
                              assetsDrawnThisYear += amountToTake;
                              shortfall -= amountToTake;
 
-                             // Update MAGI trackers
                              if (pk === 'taxable') {
                                 const currentBasis = bal['taxableBasis'];
-                                const currentVal = bal['taxable'] + amountToTake; // Add back to get ratio
+                                const currentVal = bal['taxable'] + amountToTake;
                                 const gainRatio = currentVal > 0 ? Math.max(0, (currentVal - currentBasis) / currentVal) : 0;
                                 const gainPart = amountToTake * gainRatio;
                                 ltcgIncomeIter += gainPart;
@@ -541,10 +566,8 @@ export const burndown = {
                              } else if (burndown.assetMeta[pk].isTaxable || burndown.assetMeta[pk].isMagi) {
                                 ordinaryIncomeIter += amountToTake;
                              }
-                             // Roth Earnings Penalty (Early)
                              if (pk === 'roth-earnings' && age < 59.5) {
-                                 ordinaryIncomeIter += amountToTake; // Taxable + Penalty
-                                 // (Penalty calc omitted for brevity, assumed covered in tax engine or ignored for simplicty)
+                                 ordinaryIncomeIter += amountToTake; 
                              }
                          }
                     });
@@ -572,7 +595,6 @@ export const burndown = {
             yearResult.magi = totalMagi;
             yearResult.netWorth = currentNW;
             
-            // Status Badges
             yearResult.isMedicaid = (age < 65) && (totalMagi <= medicaidCeiling);
             yearResult.isSilver = (age < 65) && (totalMagi <= fpl * 2.5 && !yearResult.isMedicaid);
             results.push(yearResult);
