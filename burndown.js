@@ -289,15 +289,15 @@ export const burndown = {
         // DIE WITH ZERO SOLVER (Iterative)
         if (config.dieWithZero && !config.useSync) {
             let low = 0;
-            let high = 500000; // Cap solver at 500k to prevent inf loops
+            let high = 500000; 
             let bestBudget = low;
             let iterations = 0;
 
-            // Simple binary search for budget that leaves ~0 at age 100
+            // Search for budget that leaves ~0 at age 100
             while (low <= high && iterations < 12) {
                 const mid = Math.floor((low + high) / 2);
                 const simResults = burndown.simulateProjection(data, mid);
-                const finalYear = simResults[simResults.length - 1];
+                const finalYear = simResults[simResults.length - 1]; // Age 100
                 
                 if (finalYear.netWorth < 0) {
                     high = mid - 1000;
@@ -324,7 +324,6 @@ export const burndown = {
     },
 
     calculate: (data) => {
-        // Wrapper for compatibility, now redirects to simulate
         return burndown.simulateProjection(data);
     },
 
@@ -458,7 +457,7 @@ export const burndown = {
             // 3c. Mandatory Distributions (RMDs & SEPP - if started)
             let mandatoryDist = 0;
             
-            // SEPP (72t) - Mandatory Phase
+            // SEPP (72t) - Mandatory Phase (Once started, it's fixed)
             if (stateConfig.useSEPP && isSeppStarted && age < 60 && bal['401k'] > 0) {
                  const amt = Math.min(bal['401k'], seppFixedAmount);
                  bal['401k'] -= amt;
@@ -489,12 +488,13 @@ export const burndown = {
             netIncomeAvailable -= totalPreTaxDeductions;
 
             // 4. Optimization Engine (Medicaid vs Standard)
-            const medicaidCeiling = fpl * (data.isPregnant ? 1.95 : 1.38);
+            const isPregnant = data.benefits?.isPregnant || false;
+            const medicaidCeiling = fpl * (isPregnant ? 1.95 : 1.38);
             
             // RMD Collision Check: If RMD blows up Medicaid, disable strategy for this year
             let isMedicaidStrategy = stateConfig.strategy === 'medicaid' && age < 65;
             if (isMedicaidStrategy && (ordinaryIncomeBase + ltcgIncomeBase) > medicaidCeiling) {
-                // RMD or Income already exceeded limit, fallback to standard to avoid failure loop
+                // RMD or Mandatory Income already exceeded limit, fallback to standard/ACA
                 isMedicaidStrategy = false; 
             }
             
@@ -545,16 +545,13 @@ export const burndown = {
                                  // PARTITIONED SEPP LOGIC
                                  // We only enable SEPP if we actually need the money.
                                  // Calculate EXACTLY how much we need from 401k to fill gap
-                                 const neededFrom401k = shortfall; // Assuming no other sources after this
+                                 const neededFrom401k = shortfall; 
                                  
                                  // Max Allowed Factor (Annuitization approximation)
                                  const maxFactor = engine.calculateMaxSepp(100000, age) / 100000;
                                  
                                  // The actual 72t amount must be determined now and fixed
-                                 // We want to withdraw 'neededFrom401k'. 
-                                 // Constraint: neededFrom401k <= bal['401k'] * maxFactor
                                  const maxPossibleSepp = bal['401k'] * maxFactor;
-                                 
                                  const targetSepp = Math.min(neededFrom401k, maxPossibleSepp);
                                  
                                  // Start SEPP
@@ -588,14 +585,8 @@ export const burndown = {
                              
                              if (pk === 'taxable' && isMedicaidStrategy) {
                                  // BASIS SKIMMING LOGIC
-                                 // In Medicaid Strat, we assume Specific ID: sell basis (0 gain) first.
-                                 // We can draw up to 'taxableBasis' without ANY impact on MAGI.
-                                 const remainingBasis = bal['taxableBasis'];
-                                 
-                                 // If we have basis, we can draw it freely (limited only by shortfall)
-                                 // If we run out of basis, THEN we hit the headroom limit logic (100% gain)
-                                 
-                                 // Logic handled in Draw Block below
+                                 // Max we can take = All Basis (0 MAGI) + Headroom (100% Gain)
+                                 drawLimit = bal['taxableBasis'] + headroom;
                              } else if (burndown.assetMeta[pk].isMagi) {
                                  drawLimit = Math.min(drawLimit, headroom);
                              }
@@ -614,6 +605,7 @@ export const burndown = {
                              if (pk === 'taxable') {
                                 // Basis Skimming for Medicaid
                                 if (isMedicaidStrategy) {
+                                    // We skim basis first
                                     const basisToUse = Math.min(amountToTake, bal['taxableBasis']);
                                     const gainToUse = amountToTake - basisToUse;
                                     
@@ -645,7 +637,7 @@ export const burndown = {
             // ACA Fallback Cost
             const totalMagi = ordinaryIncomeIter + ltcgIncomeIter;
             let acaCost = 0;
-            if (isMedicaidStrategy && totalMagi > medicaidCeiling) {
+            if (stateConfig.strategy === 'medicaid' && age < 65 && totalMagi > medicaidCeiling) {
                 // Failed Medicaid Cliff -> Must buy Silver Plan
                 // Cap approx 8.5% of income
                 acaCost = totalMagi * 0.085;
