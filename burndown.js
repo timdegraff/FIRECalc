@@ -75,8 +75,8 @@ export const burndown = {
                                 <div class="w-2 h-2 rounded-full bg-slate-700 group-[.active]:bg-rose-500"></div>
                             </div>
                             <div class="flex flex-col">
-                                <span id="dwz-label" class="label-std text-slate-500 group-[.active]:text-rose-400 transition-colors">Generational Wealth</span>
-                                <span id="dwz-sub" class="text-[8px] text-slate-600 uppercase font-black">Hold Assets for Heirs</span>
+                                <span id="dwz-label" class="label-std text-slate-500 group-[.active]:text-rose-400 transition-colors">Die With Zero</span>
+                                <span id="dwz-sub" class="text-[8px] text-slate-600 uppercase font-black">Target $0 at Age 100</span>
                             </div>
                         </button>
                         
@@ -161,8 +161,7 @@ export const burndown = {
             dwzBtn.onclick = () => {
                 dwzBtn.classList.toggle('active');
                 const active = dwzBtn.classList.contains('active');
-                document.getElementById('dwz-label').textContent = active ? 'Die With Zero' : 'Generational Wealth';
-                document.getElementById('dwz-sub').textContent = active ? 'Amortize Assets to 100' : 'Hold Assets for Heirs';
+                document.getElementById('dwz-sub').textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
                 burndown.run();
                 window.debouncedAutoSave();
             };
@@ -221,8 +220,7 @@ export const burndown = {
             if (data.dieWithZero) dwzBtn.classList.add('active');
             else dwzBtn.classList.remove('active');
             const active = dwzBtn.classList.contains('active');
-            document.getElementById('dwz-label').textContent = active ? 'Die With Zero' : 'Generational Wealth';
-            document.getElementById('dwz-sub').textContent = active ? 'Amortize Assets to 100' : 'Hold Assets for Heirs';
+            document.getElementById('dwz-sub').textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
         }
         
         const swrInd = document.getElementById('swr-indicator');
@@ -285,12 +283,52 @@ export const burndown = {
         const swrEl = document.getElementById('swr-value');
         if (swrEl) swrEl.textContent = `${(swrValue * 100).toFixed(1)}%`;
 
-        const results = burndown.calculate(data);
+        let results = [];
+        const config = burndown.scrape();
+
+        // DIE WITH ZERO SOLVER (Iterative)
+        if (config.dieWithZero && !config.useSync) {
+            let low = 0;
+            let high = 500000; // Cap solver at 500k to prevent inf loops
+            let bestBudget = low;
+            let iterations = 0;
+
+            // Simple binary search for budget that leaves ~0 at age 100
+            while (low <= high && iterations < 12) {
+                const mid = Math.floor((low + high) / 2);
+                const simResults = burndown.simulateProjection(data, mid);
+                const finalYear = simResults[simResults.length - 1];
+                
+                if (finalYear.netWorth < 0) {
+                    high = mid - 1000;
+                } else {
+                    bestBudget = mid;
+                    low = mid + 1000;
+                }
+                iterations++;
+            }
+            // Apply solved budget
+            results = burndown.simulateProjection(data, bestBudget);
+            
+            // Update manual input visually to show the solved number
+            const manualInp = document.getElementById('input-manual-budget');
+            if (manualInp && document.activeElement !== manualInp) {
+                manualInp.value = math.toCurrency(bestBudget);
+            }
+        } else {
+            results = burndown.simulateProjection(data);
+        }
+
         const tableContainer = document.getElementById('burndown-table-container');
         if (tableContainer) tableContainer.innerHTML = burndown.renderTable(results);
     },
 
     calculate: (data) => {
+        // Wrapper for compatibility, now redirects to simulate
+        return burndown.simulateProjection(data);
+    },
+
+    simulateProjection: (data, overrideManualBudget = null) => {
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = [], debts = [] } = data;
         const stateConfig = burndown.scrape(); 
         const inflationRate = (assumptions.inflation || 3) / 100;
@@ -330,7 +368,6 @@ export const burndown = {
         const duration = 100 - assumptions.currentAge;
         
         // SEPP (72t) State
-        // Triggered dynamically based on need
         let seppFixedAmount = 0; 
         let isSeppStarted = false;
 
@@ -338,7 +375,7 @@ export const burndown = {
             const age = assumptions.currentAge + i;
             const currentYearIter = currentYear + i;
             const isRetired = age >= assumptions.retirementAge;
-            const yearResult = { age, year: currentYearIter, draws: {}, rothConversion: 0, penalty: 0, seppAmount: 0 };
+            const yearResult = { age, year: currentYearIter, draws: {}, rothConversion: 0, penalty: 0, seppAmount: 0, acaPremium: 0 };
             const inflationFactor = Math.pow(1 + inflationRate, i);
             const fpl = baseFpl * inflationFactor;
 
@@ -365,7 +402,9 @@ export const burndown = {
                     else baseBudget += (amount * inflationFactor);
                 });
             } else {
-                baseBudget = (stateConfig.manualBudget || 100000) * inflationFactor;
+                // If override is provided (from Solver), use it
+                const startBudget = overrideManualBudget !== null ? overrideManualBudget : (stateConfig.manualBudget || 100000);
+                baseBudget = startBudget * inflationFactor;
             }
 
             // Apply Spending Phases
@@ -432,9 +471,10 @@ export const burndown = {
                  isSeppStarted = false; // Turn off at 60
             }
 
-            // RMDs
+            // RMDs - Precheck Collision with Medicaid
+            let rmd = 0;
             if (age >= 75) {
-                const rmd = engine.calculateRMD(bal['401k'], age);
+                rmd = engine.calculateRMD(bal['401k'], age);
                 bal['401k'] -= rmd;
                 ordinaryIncomeBase += rmd;
                 netIncomeAvailable += rmd;
@@ -449,17 +489,22 @@ export const burndown = {
             netIncomeAvailable -= totalPreTaxDeductions;
 
             // 4. Optimization Engine (Medicaid vs Standard)
-            
             const medicaidCeiling = fpl * (data.isPregnant ? 1.95 : 1.38);
-            const isMedicaidStrategy = stateConfig.strategy === 'medicaid' && age < 65;
+            
+            // RMD Collision Check: If RMD blows up Medicaid, disable strategy for this year
+            let isMedicaidStrategy = stateConfig.strategy === 'medicaid' && age < 65;
+            if (isMedicaidStrategy && (ordinaryIncomeBase + ltcgIncomeBase) > medicaidCeiling) {
+                // RMD or Income already exceeded limit, fallback to standard to avoid failure loop
+                isMedicaidStrategy = false; 
+            }
             
             const passes = [];
-            const priority = burndown.priorityOrder; // User's custom order (or auto-sorted)
+            const priority = burndown.priorityOrder; 
 
             if (isMedicaidStrategy) {
                 const magiSources = priority.filter(k => burndown.assetMeta[k].isMagi);
                 const nonMagiSources = priority.filter(k => !burndown.assetMeta[k].isMagi);
-                // Pass 1: Taxable (Fill Bracket/Standard Deduction)
+                // Pass 1: Taxable (Fill Bracket/Standard Deduction) - Skim Basis first
                 passes.push({ keys: magiSources, limitByMagi: true });
                 // Pass 2: Non-Taxable (Fill Budget)
                 passes.push({ keys: nonMagiSources, limitByMagi: false });
@@ -478,7 +523,7 @@ export const burndown = {
             for (let taxLoop = 0; taxLoop < 3; taxLoop++) {
                 let iterationTax = engine.calculateTax(ordinaryIncomeIter, ltcgIncomeIter, filingStatus, assumptions.state, inflationFactor);
                 let currentTotalNeed = targetBudget + iterationTax;
-                let cashOnHand = netIncomeAvailable + assetsDrawnThisYear; // Includes mandatory draws
+                let cashOnHand = netIncomeAvailable + assetsDrawnThisYear; 
                 let shortfall = currentTotalNeed - cashOnHand;
 
                 if (shortfall <= 5) break; 
@@ -495,32 +540,39 @@ export const burndown = {
                          // Check SEPP Constraints for 401k
                          if (pk === '401k' && age < 59.5) {
                              if (isSeppStarted) {
-                                 // Already took mandatory amount, cannot take more this year
-                                 available = 0; 
+                                 available = 0; // Already took mandatory amount
                              } else if (stateConfig.useSEPP) {
-                                 // Not started yet, but we have a shortfall and 401k is next in priority.
-                                 // TRIGGER START
+                                 // PARTITIONED SEPP LOGIC
+                                 // We only enable SEPP if we actually need the money.
+                                 // Calculate EXACTLY how much we need from 401k to fill gap
+                                 const neededFrom401k = shortfall; // Assuming no other sources after this
+                                 
+                                 // Max Allowed Factor (Annuitization approximation)
+                                 const maxFactor = engine.calculateMaxSepp(100000, age) / 100000;
+                                 
+                                 // The actual 72t amount must be determined now and fixed
+                                 // We want to withdraw 'neededFrom401k'. 
+                                 // Constraint: neededFrom401k <= bal['401k'] * maxFactor
+                                 const maxPossibleSepp = bal['401k'] * maxFactor;
+                                 
+                                 const targetSepp = Math.min(neededFrom401k, maxPossibleSepp);
+                                 
+                                 // Start SEPP
                                  isSeppStarted = true;
-                                 seppFixedAmount = engine.calculateMaxSepp(bal['401k'], age);
+                                 seppFixedAmount = targetSepp;
                                  
-                                 // We take the SEPP amount now as a draw
-                                 // Note: Since we are inside the loop, we treat this as the draw for this step.
-                                 // Ideally, we'd restart the year, but taking it here works if we handle tax.
-                                 // Shortfall might be less than SEPP amount, but 72t requires fixed amount.
-                                 // We take the FULL SEPP amount.
-                                 let amountToTake = Math.min(bal['401k'], seppFixedAmount);
+                                 // Execute Draw
+                                 bal['401k'] -= targetSepp;
+                                 ordinaryIncomeIter += targetSepp;
+                                 yearResult.seppAmount = targetSepp;
+                                 yearResult.draws['401k'] = (yearResult.draws['401k'] || 0) + targetSepp;
+                                 assetsDrawnThisYear += targetSepp;
+                                 shortfall -= targetSepp;
                                  
-                                 bal['401k'] -= amountToTake;
-                                 ordinaryIncomeIter += amountToTake; // Update iter for tax convergence
-                                 yearResult.seppAmount = amountToTake;
-                                 yearResult.draws['401k'] = (yearResult.draws['401k'] || 0) + amountToTake;
-                                 assetsDrawnThisYear += amountToTake;
-                                 shortfall -= amountToTake; // Reduce shortfall (could go negative = surplus)
-                                 
-                                 available = 0; // Consumed for this year
-                                 return; // Continue to next pass/key (we're done with 401k for this year)
+                                 available = 0; 
+                                 return; 
                              } else {
-                                 // No SEPP enabled, assume we can't touch it (or penalty - skipping for now)
+                                 // No SEPP enabled - cannot touch 401k
                                  available = 0;
                              }
                          }
@@ -533,14 +585,17 @@ export const burndown = {
                          if (pass.limitByMagi) {
                              const currentMagi = ordinaryIncomeIter + ltcgIncomeIter;
                              const headroom = Math.max(0, medicaidCeiling - currentMagi);
-                             if (pk === 'taxable') {
-                                 const currentBasis = bal['taxableBasis'];
-                                 const currentVal = bal['taxable']; 
-                                 const gainRatio = currentVal > 0 ? Math.max(0, (currentVal - currentBasis) / currentVal) : 0;
-                                 if (gainRatio > 0) {
-                                     const maxGross = headroom / gainRatio;
-                                     drawLimit = Math.min(drawLimit, maxGross);
-                                 }
+                             
+                             if (pk === 'taxable' && isMedicaidStrategy) {
+                                 // BASIS SKIMMING LOGIC
+                                 // In Medicaid Strat, we assume Specific ID: sell basis (0 gain) first.
+                                 // We can draw up to 'taxableBasis' without ANY impact on MAGI.
+                                 const remainingBasis = bal['taxableBasis'];
+                                 
+                                 // If we have basis, we can draw it freely (limited only by shortfall)
+                                 // If we run out of basis, THEN we hit the headroom limit logic (100% gain)
+                                 
+                                 // Logic handled in Draw Block below
                              } else if (burndown.assetMeta[pk].isMagi) {
                                  drawLimit = Math.min(drawLimit, headroom);
                              }
@@ -557,12 +612,22 @@ export const burndown = {
                              shortfall -= amountToTake;
 
                              if (pk === 'taxable') {
-                                const currentBasis = bal['taxableBasis'];
-                                const currentVal = bal['taxable'] + amountToTake;
-                                const gainRatio = currentVal > 0 ? Math.max(0, (currentVal - currentBasis) / currentVal) : 0;
-                                const gainPart = amountToTake * gainRatio;
-                                ltcgIncomeIter += gainPart;
-                                bal['taxableBasis'] -= (amountToTake - gainPart);
+                                // Basis Skimming for Medicaid
+                                if (isMedicaidStrategy) {
+                                    const basisToUse = Math.min(amountToTake, bal['taxableBasis']);
+                                    const gainToUse = amountToTake - basisToUse;
+                                    
+                                    bal['taxableBasis'] -= basisToUse;
+                                    ltcgIncomeIter += gainToUse; 
+                                } else {
+                                    // Standard Average Cost Basis
+                                    const currentBasis = bal['taxableBasis'];
+                                    const currentVal = bal['taxable'] + amountToTake;
+                                    const gainRatio = currentVal > 0 ? Math.max(0, (currentVal - currentBasis) / currentVal) : 0;
+                                    const gainPart = amountToTake * gainRatio;
+                                    ltcgIncomeIter += gainPart;
+                                    bal['taxableBasis'] -= (amountToTake - gainPart);
+                                }
                              } else if (burndown.assetMeta[pk].isTaxable || burndown.assetMeta[pk].isMagi) {
                                 ordinaryIncomeIter += amountToTake;
                              }
@@ -576,7 +641,18 @@ export const burndown = {
 
             // 5. Final Reconcile & Surplus
             let finalTax = engine.calculateTax(ordinaryIncomeIter, ltcgIncomeIter, filingStatus, assumptions.state, inflationFactor);
-            let finalCash = netIncomeAvailable + assetsDrawnThisYear - finalTax;
+            
+            // ACA Fallback Cost
+            const totalMagi = ordinaryIncomeIter + ltcgIncomeIter;
+            let acaCost = 0;
+            if (isMedicaidStrategy && totalMagi > medicaidCeiling) {
+                // Failed Medicaid Cliff -> Must buy Silver Plan
+                // Cap approx 8.5% of income
+                acaCost = totalMagi * 0.085;
+                yearResult.acaPremium = acaCost;
+            }
+
+            let finalCash = netIncomeAvailable + assetsDrawnThisYear - finalTax - acaCost;
             let surplus = finalCash - targetBudget;
 
             if (surplus > 0) {
@@ -587,9 +663,13 @@ export const burndown = {
                     bal['taxable'] += surplus;
                     bal['taxableBasis'] += surplus;
                 }
+            } else if (surplus < 0) {
+                // Deficit due to Taxes or ACA Cost late in calculation
+                // For simplicity in this simulation, we just reduce NW or Heloc
+                if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; // surplus is neg
+                else bal['heloc'] -= surplus; // increase heloc
             }
             
-            const totalMagi = ordinaryIncomeIter + ltcgIncomeIter;
             yearResult.balances = { ...bal };
             yearResult.budget = targetBudget;
             yearResult.magi = totalMagi;
@@ -645,7 +725,7 @@ export const burndown = {
             } else if (r.isMedicaid) {
                  badge = `<span class="px-2 py-1 rounded bg-emerald-500 text-white text-[9px] font-black uppercase">Medicaid</span>`;
             } else if (r.isSilver) {
-                 badge = `<span class="px-2 py-1 rounded bg-blue-500 text-white text-[9px] font-black uppercase">Silver</span>`;
+                 badge = `<div class="flex flex-col items-center"><span class="px-2 py-1 rounded bg-blue-500 text-white text-[9px] font-black uppercase">Silver</span><span class="text-[8px] text-slate-500 mt-0.5">ACA Prem: ${formatter.formatCurrency(r.acaPremium/inf, 0)}</span></div>`;
             } else {
                  badge = `<span class="px-2 py-1 rounded bg-slate-700 text-slate-400 text-[9px] font-black">Standard</span>`;
             }
