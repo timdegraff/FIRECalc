@@ -1,0 +1,86 @@
+
+:root {
+    --app-bg: #0f172a;
+    --card-bg: #1e293b;
+    --accent-blue: #3b82f6;
+    --accent-teal: #14b8a6;
+    --accent-pink: #ec4899;
+    --accent-purple: #a855f7;
+    --thumb-color: #3b82f6;
+}
+
+body {
+    font-family: 'Inter', sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+.mono-numbers {
+    /* We keep the class name but change the behavior to use Inter's Tabular Numerals */
+    font-family: 'Inter', sans-serif !important;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+}
+
+.label-std {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'Inter', sans-serif;
+}
+
+.tab-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #94a3b8;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+}
+.tab-btn.active { background: #334155; color: #fff; }
+
+.input-base {
+    background: transparent; border: 1px solid transparent; border-bottom-color: #334155;
+    padding: 4px 6px; outline: none; transition: all 0.2s;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+}
+.input-base:focus { border-bottom-color: var(--accent-blue); background: rgba(255, 255, 255, 0.02); }
+
+.input-range, .benefit-slider { 
+    -webkit-appearance: none; 
+    width: 100%; 
+    height: 3px; 
+    background: #334155; 
+    border-radius: 5px; 
+    outline: none; 
+}
+
+.input-range::-webkit-slider-thumb, .benefit-slider::-webkit-slider-thumb { 
+    -webkit-appearance: none; 
+    width: 16px; 
+    height: 16px; 
+    background: var(--thumb-color, var(--accent-blue)); 
+    border-radius: 50%; 
+    border: 3px solid #fff; 
+    cursor: pointer; 
+}
+
+/* Asset Type Colors */
+.text-type-cash { color: #f472b6; }
+.text-type-taxable { color: #10b981; }
+.text-type-pretax { color: #3b82f6; }
+.text-type-posttax { color: #a855f7; }
+.text-type-crypto { color: #f59e0b; }
+.text-type-metals { color: #eab308; }
+.text-type-hsa { color: #2dd4bf; }
+.text-type-529 { color: #fb7185; }
+
+.card-container { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+thead th { position: sticky; top: 0; z-index: 20; background: #1e293b; padding: 6px 8px !important; }
+tbody td { padding: 4px 8px !important; }
+
+.tracking-tighter { letter-spacing: -0.05em; }
+
+h1, h2, h3, h4 { font-family: 'Inter', sans-serif !important; }
