@@ -7,12 +7,21 @@ import { projection } from './projection.js';
 
 let db;
 let user;
+let autoSaveTimeout = null;
 
 export async function initializeData(authUser) {
     db = getFirestore();
     user = authUser;
     return loadData();
 }
+
+// Define the debounced save function globally to satisfy core.js
+window.debouncedAutoSave = () => {
+    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+    autoSaveTimeout = setTimeout(() => {
+        autoSave();
+    }, 1000);
+};
 
 async function loadData() {
     const docRef = doc(db, "users", user.uid);

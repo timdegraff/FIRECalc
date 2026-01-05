@@ -68,7 +68,7 @@ export const templates = {
             <td><input data-id="name" type="text" placeholder="Account" class="input-base w-full font-bold text-white"></td>
             <td>
                 <div class="flex items-center">
-                    <select data-id="type" class="input-base w-full font-bold bg-slate-900 ${templates.helpers.getTypeClass(type)}">
+                    <select data-id="type" class="input-base w-full font-bold bg-slate-900 text-white ${templates.helpers.getTypeClass(type)}">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
                         <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
@@ -126,7 +126,7 @@ export const templates = {
                             <label class="label-std text-slate-500">401k %</label>
                             <input data-id="contribution" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                             <!-- Warning Icon -->
-                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds IRS Limit">
+                            <div data-id="capWarning" class="hidden absolute -top-2 -right-2 text-yellow-500 text-xs animate-pulse cursor-help" title="Contribution exceeds 2026 IRS Limit">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
                         </div>
@@ -180,7 +180,7 @@ export const templates = {
             <td class="px-6 py-3">
                 <div class="flex items-center gap-3">
                     <div class="w-1.5 h-6 rounded-full ${templates.helpers.getTypeClass(type).replace('text-', 'bg-')}"></div>
-                    <select data-id="type" class="input-base bg-slate-900 border-none w-full font-black uppercase tracking-widest text-[11px] ${templates.helpers.getTypeClass(type)} cursor-pointer outline-none">
+                    <select data-id="type" class="input-base bg-slate-900 text-white border-none w-full font-black uppercase tracking-widest text-[11px] ${templates.helpers.getTypeClass(type)} cursor-pointer outline-none">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
                         <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
@@ -202,7 +202,7 @@ export const templates = {
         <td class="px-6 py-3 text-center">
             <div class="flex items-center justify-center gap-4">
                 <label class="flex items-center gap-2 cursor-pointer" title="Expense stops when you retire">
-                    <span class="text-[8px] uppercase font-bold text-slate-500">Stop in Retire?</span>
+                    <span class="text-[8px] uppercase font-bold text-slate-500">Stop</span>
                     <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700">
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer" title="Fixed cost (does not inflate)">

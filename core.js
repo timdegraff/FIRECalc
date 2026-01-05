@@ -382,36 +382,17 @@ window.updateSidebarChart = (data) => {
 window.createAssumptionControls = (data) => {
     const container = document.getElementById('assumptions-container');
     if (!container) return;
+    
     container.innerHTML = `
         <div class="col-span-full mb-4 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-user-circle text-blue-400"></i><h3 class="label-std text-slate-400">Personal & Strategy</h3></div>
         <div class="space-y-6 lg:border-r lg:border-slate-700/30 lg:pr-8">
             <label class="block"><span class="label-std text-slate-500">Legal State of Residence</span>
-                <select data-id="state" class="input-base w-full mt-1 font-bold bg-slate-900">
-                    ${Object.keys(stateTaxRates).sort().map(s => `<option ${data.assumptions?.state === s ? 'selected' : ''}>${s}</option>`).join('')}
-                </select>
-            </label>
-            <!-- ... rest of assumptions ... -->
-`;
-    // Re-render rest of assumptions here is handled by data.js calling window.createAssumptionControls
-    // Note: Since I cut off the innerHTML string in core.js above, I should rely on data.js having the full function or updated it fully if I was changing assumptions structure. 
-    // Since I'm not changing the structure, just the background color of select, I can rely on the listener update for bg-slate-900.
-    // However, to be safe, I will update the function in data.js or just ensure css handles it.
-    // Wait, the user provided core.js content is truncated in my thought. The user provided file `core.js` ends with `window.createAssumptionControls`.
-    // I will replace `window.createAssumptionControls` to ensure bg-slate-900 is present.
-    
-    // Actually, to keep it simple and safe given the partial file provided in prompt (it ends with createAssumptionControls),
-    // I will paste the Full Content of core.js with the fix.
-    
-    const originalHTML = `
-        <div class="col-span-full mb-4 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-user-circle text-blue-400"></i><h3 class="label-std text-slate-400">Personal & Strategy</h3></div>
-        <div class="space-y-6 lg:border-r lg:border-slate-700/30 lg:pr-8">
-            <label class="block"><span class="label-std text-slate-500">Legal State of Residence</span>
-                <select data-id="state" class="input-base w-full mt-1 font-bold bg-slate-900">
+                <select data-id="state" class="input-base w-full mt-1 font-bold bg-slate-900 text-white">
                     ${Object.keys(stateTaxRates).sort().map(s => `<option ${data.assumptions?.state === s ? 'selected' : ''}>${s}</option>`).join('')}
                 </select>
             </label>
             <label class="block"><span class="label-std text-slate-500">Filing Status</span>
-                <select data-id="filingStatus" class="input-base w-full mt-1 font-bold bg-slate-900">
+                <select data-id="filingStatus" class="input-base w-full mt-1 font-bold bg-slate-900 text-white">
                     <option ${data.assumptions?.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
                     <option ${data.assumptions?.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
                     <option ${data.assumptions?.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
@@ -464,5 +445,4 @@ window.createAssumptionControls = (data) => {
             </div>
         </div>
     `;
-    container.innerHTML = originalHTML;
 };
