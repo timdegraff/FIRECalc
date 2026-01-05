@@ -45,6 +45,17 @@ body {
 }
 .input-base:focus { border-bottom-color: var(--accent-blue); background: rgba(255, 255, 255, 0.02); }
 
+/* Force deep slate background on selects to prevent white flash/background artifacts */
+select.input-base {
+    background-color: #0f172a !important;
+    color-scheme: dark;
+}
+
+select.input-base option {
+    background-color: #1e293b !important;
+    color: #fff !important;
+}
+
 .input-range, .benefit-slider { 
     -webkit-appearance: none; 
     width: 100%; 
@@ -65,14 +76,14 @@ body {
 }
 
 /* Asset Type Colors */
-.text-type-cash { color: #f472b6; }
-.text-type-taxable { color: #10b981; }
-.text-type-pretax { color: #3b82f6; }
-.text-type-posttax { color: #a855f7; }
-.text-type-crypto { color: #f59e0b; }
-.text-type-metals { color: #eab308; }
-.text-type-hsa { color: #2dd4bf; }
-.text-type-529 { color: #fb7185; }
+.text-type-cash { color: #f472b6 !important; }
+.text-type-taxable { color: #10b981 !important; }
+.text-type-pretax { color: #3b82f6 !important; }
+.text-type-posttax { color: #a855f7 !important; }
+.text-type-crypto { color: #f59e0b !important; }
+.text-type-metals { color: #eab308 !important; }
+.text-type-hsa { color: #2dd4bf !important; }
+.text-type-529 { color: #fb7185 !important; }
 
 .card-container { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
 ::-webkit-scrollbar { width: 4px; height: 4px; }

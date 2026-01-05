@@ -115,11 +115,24 @@ function syncAllInputs(id, val) {
     selectors.forEach(sel => {
         document.querySelectorAll(sel).forEach(el => {
             if (el.value != val) el.value = val;
-            let lbl = el.id === 'input-top-retire-age' ? document.getElementById('label-top-retire-age') : el.previousElementSibling?.querySelector('span');
+            
+            let lbl = null;
+            if (el.id === 'input-top-retire-age') {
+                lbl = document.getElementById('label-top-retire-age');
+            } else {
+                // Try siblings first (used in the flex wrappers for assumption sliders)
+                lbl = el.parentElement.querySelector('span:not(.label-std)');
+                if (!lbl) {
+                    // Fallback to standard previous element logic
+                    lbl = el.previousElementSibling?.querySelector('span');
+                }
+            }
+
             if (lbl) {
-                if (id === 'ssMonthly') lbl.textContent = math.toCurrency(parseFloat(val));
+                const numericVal = parseFloat(val);
+                if (id === 'ssMonthly') lbl.textContent = math.toCurrency(numericVal);
                 else if (id.toLowerCase().includes('growth') || id === 'inflation') lbl.textContent = `${val}%`;
-                else if (id.toLowerCase().includes('factor')) lbl.textContent = `${Math.round(parseFloat(val) * 100)}%`;
+                else if (id.toLowerCase().includes('factor')) lbl.textContent = `${Math.round(numericVal * 100)}%`;
                 else lbl.textContent = val;
             }
         });
@@ -199,7 +212,9 @@ function attachDynamicRowListeners() {
         const target = e.target;
         if (target.dataset.id === 'type') {
             if (target.closest('#investment-rows')) updateCostBasisVisibility(target.closest('tr'));
-            target.className = `input-base w-full font-bold bg-slate-900 text-white ${templates.helpers.getTypeClass(target.value)}`;
+            // Explicitly set background and color logic via className and inline style to ensure no white background
+            target.className = `input-base w-full font-bold text-white ${templates.helpers.getTypeClass(target.value)}`;
+            target.style.backgroundColor = '#0f172a';
         }
         if (target.dataset.id === 'contribOnBonus' || target.dataset.id === 'matchOnBonus') {
             const row = target.closest('.bg-slate-800'); if (row) checkIrsLimits(row);
@@ -250,7 +265,11 @@ window.addRow = (containerId, type, data = {}) => {
         const key = input.dataset.id, val = data[key];
         if (val !== undefined) {
             if (input.type === 'checkbox') input.checked = !!val;
-            else if (input.tagName === 'SELECT') { input.value = val; input.className = `input-base w-full font-bold bg-slate-900 text-white ${templates.helpers.getTypeClass(val)}`; }
+            else if (input.tagName === 'SELECT') { 
+                input.value = val; 
+                input.className = `input-base w-full font-bold text-white ${templates.helpers.getTypeClass(val)}`;
+                input.style.backgroundColor = '#0f172a';
+            }
             else if (input.dataset.type === 'currency') input.value = math.toCurrency(val);
             else input.value = val;
         }
@@ -327,6 +346,12 @@ window.createAssumptionControls = (data) => {
                     <span class="label-std text-slate-500">No-Go (Age 80+)</span>
                     <div class="flex items-center gap-2 mt-1"><input data-id="noGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${data.assumptions?.noGoFactor || 0.85}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round((parseFloat(data.assumptions?.noGoFactor) || 0.85) * 100)}%</span></div>
                 </label>
+                <div class="pt-3 border-t border-slate-700/30">
+                    <p class="text-[9px] text-slate-500 italic leading-relaxed">
+                        <i class="fas fa-info-circle mr-1 text-slate-600"></i>
+                        Adjust your retirement spending up or down relative to your current baseline budget.
+                    </p>
+                </div>
             </div>
         </div>
     `;

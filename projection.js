@@ -106,7 +106,7 @@ export const projection = {
                 else if (key === 'Crypto') buckets[key] *= (1 + cryptoGrowth);
                 else if (key === 'Metals') buckets[key] *= (1 + metalsGrowth);
                 else if (key === 'Real Estate') buckets[key] *= (1 + realEstateGrowth);
-                else if (key === 'Cash') buckets[key] *= (1 + (inflationRate * 0.5));
+                else if (key === 'Cash') buckets[key] *= 1; // Cash does not grow automatically
             });
 
             // Table Logic: First 10 years, then every 5 years, or exactly 100
