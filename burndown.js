@@ -22,7 +22,7 @@ export const burndown = {
                             <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Decumulation Logic Orchestrator</span>
                         </div>
                         
-                        <!-- Top Inputs Moved Here -->
+                        <!-- Top Inputs -->
                         <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
                              <div class="flex flex-col gap-1">
                                 <label class="label-std text-slate-500 text-[9px]">Retirement Age <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers">65</span></label>
@@ -84,21 +84,21 @@ export const burndown = {
                             <i class="fas fa-calendar-alt"></i> Nominal Dollars
                         </button>
                     </div>
+                    
+                    <!-- Priority Reordering (Merged) -->
+                    <div class="mt-6 pt-6 border-t border-slate-700/50">
+                        <div class="flex flex-wrap items-center gap-4">
+                            <span class="label-std text-slate-500 font-black">Draw Order Priority:</span>
+                            <div id="draw-priority-list" class="flex flex-wrap gap-2">
+                                <!-- Draggable items -->
+                            </div>
+                            <span class="text-[9px] text-slate-600 italic ml-auto font-bold uppercase tracking-widest"><i class="fas fa-info-circle mr-1"></i> Drag to Reorder</span>
+                        </div>
+                    </div>
 
                     <!-- Spending Phases & SS Years -->
                     <div id="burndown-live-sliders" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mt-8 pt-8 border-t border-slate-700/50">
                         <!-- Populated by JS -->
-                    </div>
-                </div>
-
-                <!-- Priority Reordering -->
-                <div class="card-container p-5 bg-slate-800/80 rounded-2xl border border-slate-700 backdrop-blur-sm">
-                    <div class="flex items-center gap-6">
-                        <span class="label-std text-slate-500 font-black">Draw Order Priority:</span>
-                        <div id="draw-priority-list" class="flex flex-wrap gap-3">
-                            <!-- Draggable items -->
-                        </div>
-                        <span class="text-[9px] text-slate-600 italic ml-auto font-bold uppercase tracking-widest"><i class="fas fa-info-circle mr-1"></i> Drag to Reorder</span>
                     </div>
                 </div>
 
@@ -263,7 +263,7 @@ export const burndown = {
             priorityList.innerHTML = burndown.priorityOrder.map(k => {
                 const meta = burndown.assetMeta[k];
                 if (!meta) return ''; 
-                return `<div data-pk="${k}" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl label-std cursor-move flex items-center gap-2 group hover:border-slate-500 transition-all shadow-lg" style="color: ${meta.color}"><i class="fas fa-grip-vertical opacity-30 group-hover:opacity-100 transition-opacity"></i> ${meta.label}</div>`;
+                return `<div data-pk="${k}" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl label-std cursor-move flex items-center gap-2 group hover:border-slate-500 transition-all shadow-lg text-[10px]" style="color: ${meta.color}"><i class="fas fa-grip-vertical opacity-30 group-hover:opacity-100 transition-opacity"></i> ${meta.label}</div>`;
             }).join('');
             if (!burndown.sortable) {
                 burndown.sortable = new Sortable(priorityList, { animation: 150, onEnd: () => { burndown.priorityOrder = Array.from(priorityList.children).map(el => el.dataset.pk); burndown.run(); window.debouncedAutoSave(); } });
@@ -320,7 +320,7 @@ export const burndown = {
         const results = [];
         const duration = 100 - assumptions.currentAge;
         
-        // SEPP (72t) State
+        // SEPP (72t) State - Calculated ONCE at start of retirement, then fixed
         let seppFixedAmount = 0; 
         let isSeppStarted = false;
 
@@ -410,6 +410,7 @@ export const burndown = {
             let mandatoryDist = 0;
             
             // SEPP (72t) Logic - Treated as Mandatory Income if enabled
+            // IMPORTANT: seppFixedAmount is calculated ONCE when plan starts, then used annually.
             if (stateConfig.useSEPP && isRetired && age < 60 && !isSeppStarted && bal['401k'] > 0) {
                  isSeppStarted = true;
                  seppFixedAmount = engine.calculateMaxSepp(bal['401k'], age);
@@ -450,12 +451,12 @@ export const burndown = {
             const isMedicaidStrategy = stateConfig.strategy === 'medicaid' && age < 65;
             
             // Determine Passes
-            // Pass 1: Fill MAGI to Cap (Taxable sources)
-            // Pass 2: Fill remaining Budget with Non-Magi (Cash/Roth)
-            // Pass 3: Emergency fill with remaining Taxable
+            // Pass 1: Fill MAGI to Cap (Taxable sources) - Uses "Free" standard deduction space
+            // Pass 2: Fill remaining Budget with Non-Magi (Cash/Roth/HELOC) - Preserves Medicaid
+            // Pass 3: Emergency fill with remaining Taxable - Breaks Medicaid but pays bills
             
             const passes = [];
-            const priority = burndown.priorityOrder; // Use user's drag order (minus HELOC override)
+            const priority = burndown.priorityOrder; // User's custom order
 
             if (isMedicaidStrategy) {
                 const magiSources = priority.filter(k => burndown.assetMeta[k].isMagi);
@@ -476,15 +477,7 @@ export const burndown = {
             let ltcgIncomeIter = ltcgIncomeBase;
             let assetsDrawnThisYear = 0;
 
-            // --- DRAWING LOOP ---
-            // Iterate passes to fill budget gap
-            for (const pass of passes) {
-                 // Converge Tax Loop within each pass (or overall? Overall is safer for tax acc)
-                 // Simplifying: We just run the draw logic. Tax recalc happens at end of step or we iterate.
-                 // Let's iterate tax calc 2 times per year to stabilize.
-            }
-
-            // Combined Draw Loop with Tax Convergence
+            // Converge Tax Loop (Simulate tax drag to find true net need)
             for (let taxLoop = 0; taxLoop < 3; taxLoop++) {
                 let iterationTax = engine.calculateTax(ordinaryIncomeIter, ltcgIncomeIter, filingStatus, assumptions.state, inflationFactor);
                 let currentTotalNeed = targetBudget + iterationTax;
@@ -545,7 +538,7 @@ export const burndown = {
                                 const gainPart = amountToTake * gainRatio;
                                 ltcgIncomeIter += gainPart;
                                 bal['taxableBasis'] -= (amountToTake - gainPart);
-                             } else if (burndown.assetMeta[pk].isTaxable) {
+                             } else if (burndown.assetMeta[pk].isTaxable || burndown.assetMeta[pk].isMagi) {
                                 ordinaryIncomeIter += amountToTake;
                              }
                              // Roth Earnings Penalty (Early)
