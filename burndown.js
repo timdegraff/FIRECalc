@@ -42,7 +42,7 @@ export const burndown = {
 
                         <div class="h-10 w-[1px] bg-slate-700 mx-2 hidden lg:block"></div>
                         
-                        <div class="flex flex-col gap-1.5">
+                        <div class="flex flex-col gap-1.5 min-w-[200px]">
                             <label class="label-std text-slate-500">Draw Strategy</label>
                             <select id="burndown-strategy" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs font-black text-blue-400 outline-none focus:border-blue-500 transition-all cursor-pointer">
                                 <option value="standard">Standard (Priority Order)</option>
@@ -50,21 +50,23 @@ export const burndown = {
                                 <option value="perpetual">Wealth Preservation (Real Flat Principal)</option>
                             </select>
                         </div>
-                        
-                        <!-- OPTIMIZATION TUNER (HIDDEN BY DEFAULT) -->
-                        <div id="strategy-tuner" class="hidden flex flex-col gap-1 w-48 border-l border-slate-700 pl-4 animate-fade-in">
-                            <div class="flex justify-between items-center">
-                                <label class="label-std text-slate-500">Income Utilization</label>
-                                <span id="tuner-pct-display" class="text-[9px] font-bold text-white mono-numbers">100%</span>
+
+                        <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
+                            <div class="flex flex-col gap-1.5">
+                                <div class="flex justify-between items-center w-48">
+                                    <label class="label-std text-slate-500 text-[9px]">Income Utilization</label>
+                                    <span id="label-income-utilization" class="text-blue-400 font-black mono-numbers text-[10px]">0%</span>
+                                </div>
+                                <input type="range" id="input-income-utilization" min="0" max="100" step="1" value="0" class="input-range w-48">
+                                <div class="flex justify-between text-[7px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
+                                    <span>Max SNAP</span>
+                                    <span>Max Spend</span>
+                                </div>
                             </div>
-                            <input type="range" id="input-strategy-tuner" min="0" max="100" step="5" value="100" class="input-range h-1.5 accent-emerald-500">
-                            <div class="flex justify-between text-[8px] text-slate-600 font-bold uppercase mt-1">
-                                <span>Max SNAP</span>
-                                <span>Max Spend</span>
-                            </div>
-                            <div class="mt-1 text-center bg-emerald-500/10 rounded px-2 py-1 border border-emerald-500/20">
-                                <span class="text-[8px] text-emerald-400 font-bold uppercase mr-1">Est. SNAP:</span>
-                                <span id="tuner-snap-est" class="text-[9px] font-black text-white mono-numbers">$0/mo</span>
+                            <div class="w-[1px] h-10 bg-slate-700"></div>
+                            <div class="flex flex-col items-center justify-center px-2">
+                                <span class="label-std text-slate-500 text-[8px]">Est. SNAP</span>
+                                <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-xs">$0/mo</span>
                             </div>
                         </div>
 
@@ -127,17 +129,17 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        const triggers = ['burndown-strategy', 'toggle-rule-72t', 'toggle-budget-sync'];
+        const triggers = ['burndown-strategy', 'toggle-rule-72t', 'toggle-budget-sync', 'input-income-utilization'];
         triggers.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.onchange = () => {
+            if (el) el.oninput = () => {
+                if (id === 'input-income-utilization') {
+                    const lbl = document.getElementById('label-income-utilization');
+                    if (lbl) lbl.textContent = `${el.value}%`;
+                }
                 if (id === 'burndown-strategy') {
-                    const strategy = el.value;
                     const swrInd = document.getElementById('swr-indicator');
-                    if (swrInd) swrInd.classList.toggle('hidden', strategy !== 'perpetual');
-                    
-                    const tuner = document.getElementById('strategy-tuner');
-                    if (tuner) tuner.classList.toggle('hidden', strategy !== 'medicaid');
+                    if (swrInd) swrInd.classList.toggle('hidden', el.value !== 'perpetual');
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualContainer = document.getElementById('manual-budget-container');
@@ -147,20 +149,6 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
-
-        const tunerInput = document.getElementById('input-strategy-tuner');
-        if (tunerInput) {
-            tunerInput.oninput = (e) => {
-                const val = e.target.value;
-                document.getElementById('tuner-pct-display').textContent = `${val}%`;
-                
-                // CRITICAL CHANGE: We no longer "predict" the SNAP here. 
-                // We run the engine, and let the engine tell us the truth.
-                burndown.run();
-                
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            };
-        }
 
         const optBtn = document.getElementById('btn-optimize-priority');
         if (optBtn) {
@@ -239,28 +227,20 @@ export const burndown = {
             {id: 'burndown-strategy', key: 'strategy', type: 'val'},
             {id: 'toggle-rule-72t', key: 'useSEPP', type: 'check'},
             {id: 'toggle-budget-sync', key: 'useSync', type: 'check'},
-            {id: 'input-strategy-tuner', key: 'tunerValue', type: 'val'}
+            {id: 'input-income-utilization', key: 'incomeUtilization', type: 'val'},
         ];
         config.forEach(c => {
             const el = document.getElementById(c.id);
             if (el && data?.[c.key] !== undefined) {
                 if (c.type === 'check') el.checked = data[c.key];
                 else el.value = data[c.key];
+                if (c.id === 'input-income-utilization') {
+                    const lbl = document.getElementById('label-income-utilization');
+                    if (lbl) lbl.textContent = `${el.value}%`;
+                }
             }
         });
         
-        // Initial visibility check
-        const strat = document.getElementById('burndown-strategy')?.value;
-        const tuner = document.getElementById('strategy-tuner');
-        if (tuner && strat === 'medicaid') tuner.classList.remove('hidden');
-
-        // Initial label update for tuner
-        const tunerInp = document.getElementById('input-strategy-tuner');
-        if (tunerInp) {
-             document.getElementById('tuner-pct-display').textContent = `${tunerInp.value}%`;
-             // Don't trigger run here to avoid double load, just let logic handle it
-        }
-
         const rAge = window.currentData?.assumptions?.retirementAge || 65;
         const rSlider = document.getElementById('input-top-retire-age');
         if (rSlider) {
@@ -300,7 +280,7 @@ export const burndown = {
             useSEPP: document.getElementById('toggle-rule-72t')?.checked ?? false,
             dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
             manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
-            tunerValue: parseFloat(document.getElementById('input-strategy-tuner')?.value || 100),
+            incomeUtilization: parseFloat(document.getElementById('input-income-utilization')?.value || 0),
             isRealDollars
         };
     },
@@ -356,23 +336,10 @@ export const burndown = {
             if (manualInp && document.activeElement !== manualInp) manualInp.value = math.toCurrency(bestBudget);
         } else results = burndown.simulateProjection(data);
 
-        // REACTIVE FEEDBACK LOOP: Update the Est. SNAP label with the ACTUAL simulation result.
-        // We look for the first year where SNAP > 0, or the first retirement year.
-        const firstRetireYear = results.find(r => r.age >= data.assumptions.retirementAge) || results[0];
-        if (firstRetireYear) {
-            // SNAP in results is Annual. Convert to monthly for display.
-            const monthlySnap = (firstRetireYear.snapBenefit || 0) / 12;
-            
-            // Adjust for inflation if needed to show "Real" value in label?
-            // The label usually implies "Today's Purchasing Power". 
-            // We should de-flate the nominal result to give the user a realistic number.
-            const infFactor = Math.pow(1 + inflationRate, firstRetireYear.year - new Date().getFullYear());
-            const realMonthlySnap = monthlySnap / infFactor;
-            
-            const snapLabel = document.getElementById('tuner-snap-est');
-            if (snapLabel) {
-                snapLabel.textContent = `${math.toCurrency(realMonthlySnap)}/mo`;
-            }
+        if (results.length > 0) {
+            const firstYearSnap = results[0].snapBenefit / 12;
+            const snapInd = document.getElementById('est-snap-indicator');
+            if (snapInd) snapInd.textContent = `${formatter.formatCurrency(firstYearSnap, 0)}/mo`;
         }
 
         const tableContainer = document.getElementById('burndown-table-container');
@@ -390,6 +357,7 @@ export const burndown = {
         const filingStatus = assumptions.filingStatus || 'Single';
         const hhSize = benefits.hhSize || 1; 
         const currentYear = new Date().getFullYear();
+        const utilizationPct = (stateConfig.incomeUtilization || 0) / 100;
 
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -410,10 +378,7 @@ export const burndown = {
         const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0);
         const results = [];
         const duration = 100 - assumptions.currentAge;
-        
-        // Ratchet Logic: Track the 'Floor' of SEPP withdrawals. 
-        // 0 means no active plan.
-        let seppFloor = 0;
+        let seppAmt = 0, isSepp = false;
 
         for (let i = 0; i <= duration; i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= assumptions.retirementAge;
@@ -455,28 +420,26 @@ export const burndown = {
             const initialSnap = engine.calculateSnapBenefit(ordInc, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
             if (initialSnap > 0) { netAvail += initialSnap; yearRes.snapBenefit = initialSnap; }
 
-            // SEPP Floor Logic - If we have a running plan, we must withdraw the floor amount.
-            // But we handle this inside the priority loop to ensure it's respected as the '401k' action.
-            // If age >= 60, SEPP rules evaporate.
-            if (age >= 60) seppFloor = 0;
-
+            if (stateConfig.useSEPP && isSepp && age < 60 && bal['401k'] > 0) {
+                 const amt = Math.min(bal['401k'], seppAmt); bal['401k'] -= amt; ordInc += amt; netAvail += amt; yearRes.seppAmount = amt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + amt;
+            } else if (age >= 60) isSepp = false;
             if (age >= 75) {
                 const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; yearRes.rmdAmount = rmd; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + rmd;
             }
             pretaxDed += (budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0);
             ordInc -= pretaxDed; netAvail -= pretaxDed;
 
-            const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fFac => fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
+            const fpl = (16060 + (hhSize - 1) * 5650) * infFac;
+            const medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
             let isMedStrat = stateConfig.strategy === 'medicaid' && age < 65;
-            
-            const tunerFactor = (stateConfig.tunerValue || 100) / 100;
-            const effectiveMedLim = () => medLim() * tunerFactor;
-            
-            if (isMedStrat && ordInc > effectiveMedLim()) isMedStrat = false;
+            if (isMedStrat && ordInc > medLim) isMedStrat = false;
 
             const maxSnapBenefit = (295 + (hhSize - 1) * 215) * infFac;
             const snapDeductions = ((hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) + (benefits.hasSUA !== false ? 680 : 0)) * infFac;
             const snapPhaseOutLimit = (maxSnapBenefit / 0.3) + snapDeductions;
+
+            const hardCap = Math.min(medLim, snapPhaseOutLimit);
+            const strategyMagiTarget = ordInc + (Math.max(0, hardCap - ordInc) * utilizationPct);
 
             let strategyPhases = [];
             if (isMedStrat) {
@@ -486,87 +449,54 @@ export const burndown = {
             } else strategyPhases = [{ keys: burndown.priorityOrder, limitByMagi: false }];
 
             let ordIter = ordInc, ltcgIter = ltcgInc, drawn = 0;
-            strategyPhases.forEach(phase => {
-                let shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
-                if (shortfall <= 5 && seppFloor === 0) return; // If SEPP floor > 0, we must enter to pay it even if shortfall is 0.
-
+            strategyPhases.forEach((phase, pIdx) => {
+                let currentTotalAvail = netAvail + drawn;
+                let shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - currentTotalAvail;
+                
+                // If this is the FIRST phase of a Medicaid strategy, fill the bracket up to the target even if no shortfall
+                const isFirstMagiPhase = isMedStrat && phase.limitByMagi && pIdx === 0;
+                
                 phase.keys.forEach(pk => {
                     if (pk === 'roth-earnings' && bal['roth-basis'] > 0) return;
                     
-                    // RECALCULATE shortfall here in case priority order filled some of it
-                    shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
-                    if (shortfall <= 5 && seppFloor === 0) return;
+                    const tax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
+                    shortfall = targetBudget + tax - (netAvail + drawn);
                     
-                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    // Logic: Take what we NEED, OR fill the bracket if utilization is active
+                    let targetTake = shortfall;
+                    if (isFirstMagiPhase && (burndown.assetMeta[pk].isMagi || pk === '401k')) {
+                        const magiNeedToReachTarget = Math.max(0, strategyMagiTarget - ordIter);
+                        targetTake = Math.max(shortfall, magiNeedToReachTarget);
+                    }
 
-                    // Determine MAGI cap (dLim)
+                    if (targetTake <= 0.01) return;
+
+                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    if (pk === '401k' && age < 59.5) {
+                        if (isSepp) avail = 0; 
+                        else if (stateConfig.useSEPP) {
+                             const maxAllowedSepp = bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000);
+                             seppAmt = Math.min(targetTake, maxAllowedSepp);
+                             isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; 
+                             yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; avail = 0; return;
+                        } else avail = 0; 
+                    }
+                    if (avail <= 0) return;
+
                     let dLim = avail;
                     const increasesMagi = burndown.assetMeta[pk].isMagi || pk === '401k' || pk === 'roth-earnings'; 
                     if (phase.limitByMagi && increasesMagi) {
                         const currentMagi = ordIter + ltcgIter;
-                        const hardCap = Math.min(effectiveMedLim(), snapPhaseOutLimit);
-                        const room = Math.max(0, hardCap - currentMagi);
-                        
-                        // Relaxed crumbs filter: Allow withdrawal even if room is small, provided it's positive.
-                        // This fixes issue where low utilization targets (e.g. 10%) were being skipped entirely.
-                        if (room < 1) dLim = 0; 
+                        const room = Math.max(0, medLim - currentMagi); // Hard Medicaid limit
+                        if (room < 1000 && !isFirstMagiPhase) dLim = 0; // CRUMB FILTER (only for need-based draws)
                         else {
                             if (pk === 'taxable' && bal['taxable'] > 0) {
                                  const ratio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
                                  if (ratio > 0) dLim = Math.min(dLim, room / ratio);
-                                 // If ratio is 0 (all basis), drawing does not increase MAGI, so we are NOT limited by 'room'.
                             } else dLim = Math.min(dLim, room);
                         }
                     }
-
-                    // SEPP LOGIC - NOW WITH RATCHET SUPPORT
-                    if (pk === '401k' && age < 59.5) {
-                        let mandatory = seppFloor;
-                        
-                        if (avail <= 0) { 
-                             return; 
-                        }
-
-                        // Calculate what we WANT to take (Shortfall limited by MAGI preference)
-                        let desired = Math.min(avail, dLim, shortfall);
-                        
-                        // We MUST take at least the mandatory floor (IRS Rule)
-                        let take = Math.max(mandatory, desired);
-
-                        // If we want more than the floor...
-                        if (take > mandatory) {
-                            if (stateConfig.useSEPP) {
-                                // RATCHET UP: We can start a new SEPP on the remaining balance to bridge the gap.
-                                const maxCapacity = engine.calculateMaxSepp(bal['401k'], age); 
-                                
-                                // Cap the new total at max capacity
-                                take = Math.min(take, maxCapacity);
-                                
-                                // Update the floor. We never go back down.
-                                if (take > seppFloor) seppFloor = take; 
-                            } else {
-                                // Not allowed to create new SEPP, stuck at floor
-                                take = mandatory;
-                            }
-                        }
-
-                        // Hard clamp to balance
-                        take = Math.min(take, avail);
-
-                        if (take > 0.01) {
-                            bal['401k'] -= take;
-                            ordIter += take;
-                            yearRes.seppAmount = take;
-                            yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + take;
-                            drawn += take;
-                        }
-                        return; // Done with 401k this phase
-                    }
-
-                    if (avail <= 0) return;
-                    
-                    // Standard withdrawal logic for other assets
-                    const take = Math.min(avail, dLim, shortfall);
+                    const take = Math.min(avail, dLim, targetTake);
                     if (take > 0.01) {
                         if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
                         yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take; drawn += take;
@@ -577,26 +507,32 @@ export const burndown = {
                     }
                 });
             });
-            
-            // Pass 4: Final Calculations & Sanity Check
+
             const magi = ordIter + ltcgIter;
-            if (isMedStrat && magi > medLim()) yearRes.acaPremium = magi * 0.085;
+            if (isMedStrat && magi > medLim) yearRes.acaPremium = magi * 0.085;
             
-            // Re-calculate SNAP using the FINAL MAGI (Source of Truth)
-            // This ensures logic integrity: if we hit the target MAGI, this returns the target SNAP.
-            // If we missed the target (due to RMDs or lack of funds), this returns the ACTUAL SNAP.
             const finalSnap = engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
-            if (finalSnap > 0) { 
-                 yearRes.snapBenefit = finalSnap; 
+            yearRes.snapBenefit = finalSnap;
+
+            let tax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
+            let surplus = netAvail + drawn - tax - yearRes.acaPremium - targetBudget;
+            
+            if (surplus > 0) { 
+                if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; surplus -= p; } 
+                if (surplus > 0) {
+                    bal['taxable'] += surplus; 
+                    bal['taxableBasis'] += surplus; // Reset basis on surplus reinvestment
+                }
+            } else if (surplus < 0) { 
+                if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; else bal['heloc'] -= surplus; 
             }
 
-            let surplus = netAvail + drawn - engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - yearRes.acaPremium - targetBudget;
-            if (surplus > 0) { if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; } else { bal['taxable'] += surplus; bal['taxableBasis'] += surplus; } }
-            else if (surplus < 0) { if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; else bal['heloc'] -= surplus; }
             yearRes.balances = { ...bal }; yearRes.budget = targetBudget; yearRes.magi = magi; yearRes.netWorth = currentNW;
-            yearRes.status = age >= 65 ? 'Medicare' : (magi <= medLim() ? 'Platinum' : (magi <= fpl * 2.5 ? 'Silver' : 'Standard'));
+            yearRes.status = age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= fpl * 2.5 ? 'Silver' : 'Standard'));
             results.push(yearRes);
-            ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
+            
+            ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
+            bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
             if (bal['heloc'] > 0) bal['heloc'] *= (1 + (helocs.reduce((s, h) => s + math.fromCurrency(h.balance) * (h.rate || 7), 0) / (bal['heloc'] || 1)) / 100);
             const rg = (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth; bal['roth-earnings'] += rg;
         }
