@@ -153,7 +153,7 @@ function renderChart(labels, datasets) {
                 legend: { display: true, position: 'bottom', labels: { usePointStyle: true, font: { family: "'Inter', sans-serif", weight: 'bold' } } },
                 tooltip: {
                     backgroundColor: '#0f172a',
-                    bodyFont: { family: "'Inter', sans-serif", size: 10 },
+                    bodyFont: { family: "'JetBrains Mono', monospace", size: 10 },
                     callbacks: { label: (c) => `${c.dataset.label}: ${math.toCurrency(c.parsed.y)}` }
                 }
             },
@@ -167,7 +167,7 @@ function renderChart(labels, datasets) {
                         color: '#475569'
                     },
                     ticks: { 
-                        font: { family: "'Inter', sans-serif" }, 
+                        font: { family: "'JetBrains Mono', monospace", size: 9 }, 
                         callback: (v) => math.toCurrency(v, true) 
                     }, 
                     grid: { color: 'rgba(51, 65, 85, 0.2)' } 

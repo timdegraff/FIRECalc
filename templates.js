@@ -9,11 +9,11 @@ export const templates = {
             const stateRate = (stateTaxRates[state] || {}).rate || 0;
             
             if (type === '529 Plan' || type === 'Post-Tax (Roth)') {
-                return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest border border-current" title="100% Efficient">100%</div>`;
+                return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest border border-current mono-numbers" title="100% Efficient">100%</div>`;
             }
 
             if (v > 0 && b >= v) {
-                 return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest border border-current" title="100% Efficient (No Gains)">100%</div>`;
+                 return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest border border-current mono-numbers" title="100% Efficient (No Gains)">100%</div>`;
             }
 
             const styles = {
@@ -43,7 +43,7 @@ export const templates = {
                 label = '100%';
             }
 
-            return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded ${s.bg} ${s.color} text-[9px] font-black uppercase tracking-widest border border-current opacity-80">${label}</div>`;
+            return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded ${s.bg} ${s.color} text-[9px] font-black uppercase tracking-widest border border-current opacity-80 mono-numbers">${label}</div>`;
         },
         getTypeClass: (type) => {
             const map = {
@@ -65,10 +65,10 @@ export const templates = {
         const type = data.type || 'Taxable';
         return `
             <td class="w-8"><i class="fas fa-bars drag-handle text-slate-700"></i></td>
-            <td><input data-id="name" type="text" placeholder="Account" class="input-base w-full font-bold text-white"></td>
+            <td><input data-id="name" type="text" placeholder="Account" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
             <td>
                 <div class="flex items-center">
-                    <select data-id="type" class="input-base w-full font-bold bg-slate-900 text-white ${templates.helpers.getTypeClass(type)}">
+                    <select data-id="type" class="input-base w-full font-black uppercase tracking-widest text-[11px] bg-slate-900 text-white ${templates.helpers.getTypeClass(type)}">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
                         <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
@@ -215,28 +215,28 @@ export const templates = {
         <td class="px-6 py-3 text-right"><button data-action="remove" class="text-slate-700 hover:text-red-400 transition-colors"><i class="fas fa-times"></i></button></td>
     `,
     realEstate: () => `
-        <td><input data-id="name" type="text" placeholder="Property" class="input-base w-full font-bold text-white"></td>
+        <td><input data-id="name" type="text" placeholder="Property" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
         <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="mortgage" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-bold mono-numbers"></td>
         <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" title="Monthly Principal Payment" class="input-base w-full text-right text-blue-400 font-bold mono-numbers opacity-60"></td>
         <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
     `,
     otherAsset: () => `
-        <td><input data-id="name" type="text" placeholder="Asset" class="input-base w-full font-bold text-white"></td>
+        <td><input data-id="name" type="text" placeholder="Asset" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
         <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="loan" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-bold mono-numbers"></td>
         <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" title="Monthly Principal Payment" class="input-base w-full text-right text-blue-400 font-bold mono-numbers opacity-60"></td>
         <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
     `,
     heloc: (data) => `
-        <td><input data-id="name" type="text" placeholder="HELOC" class="input-base w-full font-bold text-white"></td>
+        <td><input data-id="name" type="text" placeholder="HELOC" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
         <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-black mono-numbers"></td>
         <td><input data-id="rate" type="number" step="0.1" placeholder="7.0" value="${data.rate || 7.0}" class="input-base w-full text-center text-red-400 font-bold mono-numbers"></td>
         <td><input data-id="limit" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right font-bold mono-numbers"></td>
         <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
     `,
     debt: () => `
-        <td><input data-id="name" type="text" placeholder="Debt" class="input-base w-full font-bold text-white"></td>
+        <td><input data-id="name" type="text" placeholder="Debt" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
         <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-black mono-numbers"></td>
         <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" title="Monthly Principal Payment" class="input-base w-full text-right text-blue-400 font-bold mono-numbers opacity-60"></td>
         <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>

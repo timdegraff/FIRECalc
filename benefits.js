@@ -66,8 +66,8 @@ export const benefits = {
                             </div>
                             <table class="w-full text-[10px] border-t border-slate-700/50 pt-3">
                                 <tbody>
-                                    <tr><td class="py-1 text-slate-500 font-medium">Est. Premium</td><td class="py-1 text-right font-bold text-white" id="detail-premium">$0</td></tr>
-                                    <tr><td class="py-1 text-slate-500 font-medium">Deductible</td><td class="py-1 text-right text-slate-400" id="detail-deductible">$0</td></tr>
+                                    <tr><td class="py-1 text-slate-500 font-medium">Est. Premium</td><td class="py-1 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
+                                    <tr><td class="py-1 text-slate-500 font-medium">Deductible</td><td class="py-1 text-right text-slate-400 mono-numbers" id="detail-deductible">$0</td></tr>
                                 </tbody>
                             </table>
                         </div>
