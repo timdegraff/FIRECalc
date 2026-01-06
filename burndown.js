@@ -50,6 +50,23 @@ export const burndown = {
                                 <option value="perpetual">Wealth Preservation (Real Flat Principal)</option>
                             </select>
                         </div>
+                        
+                        <!-- OPTIMIZATION TUNER (HIDDEN BY DEFAULT) -->
+                        <div id="strategy-tuner" class="hidden flex flex-col gap-1 w-48 border-l border-slate-700 pl-4 animate-fade-in">
+                            <div class="flex justify-between items-center">
+                                <label class="label-std text-slate-500">Income Utilization</label>
+                                <span id="tuner-pct-display" class="text-[9px] font-bold text-white mono-numbers">100%</span>
+                            </div>
+                            <input type="range" id="input-strategy-tuner" min="0" max="100" step="5" value="100" class="input-range h-1.5 accent-emerald-500">
+                            <div class="flex justify-between text-[8px] text-slate-600 font-bold uppercase mt-1">
+                                <span>Max SNAP</span>
+                                <span>Max Spend</span>
+                            </div>
+                            <div class="mt-1 text-center bg-emerald-500/10 rounded px-2 py-1 border border-emerald-500/20">
+                                <span class="text-[8px] text-emerald-400 font-bold uppercase mr-1">Est. SNAP:</span>
+                                <span id="tuner-snap-est" class="text-[9px] font-black text-white mono-numbers">$0/mo</span>
+                            </div>
+                        </div>
 
                         <div id="swr-indicator" class="hidden flex flex-col items-center justify-center px-6 border-l border-slate-700">
                             <span class="label-std text-slate-500">Safe Draw (SWR)</span>
@@ -118,6 +135,9 @@ export const burndown = {
                     const strategy = el.value;
                     const swrInd = document.getElementById('swr-indicator');
                     if (swrInd) swrInd.classList.toggle('hidden', strategy !== 'perpetual');
+                    
+                    const tuner = document.getElementById('strategy-tuner');
+                    if (tuner) tuner.classList.toggle('hidden', strategy !== 'medicaid');
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualContainer = document.getElementById('manual-budget-container');
@@ -127,6 +147,29 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
+
+        const tunerInput = document.getElementById('input-strategy-tuner');
+        if (tunerInput) {
+            tunerInput.oninput = (e) => {
+                const val = e.target.value;
+                document.getElementById('tuner-pct-display').textContent = `${val}%`;
+                
+                // Live preview of SNAP estimate
+                const data = window.currentData;
+                const hhSize = data.benefits?.hhSize || 1;
+                const fpl = 16060 + (hhSize - 1) * 5650;
+                const limitMult = data.benefits?.isPregnant ? 1.95 : 1.38;
+                const maxMAGI = fpl * limitMult;
+                const targetMAGI = maxMAGI * (val / 100);
+                
+                // Simple estimate for visual feedback (actual logic is in simulation)
+                const estSnap = engine.calculateSnapBenefit(targetMAGI, hhSize, data.benefits?.shelterCosts || 700, data.benefits?.hasSUA, data.benefits?.isDisabled);
+                document.getElementById('tuner-snap-est').textContent = `${math.toCurrency(estSnap)}/mo`;
+
+                burndown.run();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+        }
 
         const optBtn = document.getElementById('btn-optimize-priority');
         if (optBtn) {
@@ -205,6 +248,7 @@ export const burndown = {
             {id: 'burndown-strategy', key: 'strategy', type: 'val'},
             {id: 'toggle-rule-72t', key: 'useSEPP', type: 'check'},
             {id: 'toggle-budget-sync', key: 'useSync', type: 'check'},
+            {id: 'input-strategy-tuner', key: 'tunerValue', type: 'val'}
         ];
         config.forEach(c => {
             const el = document.getElementById(c.id);
@@ -214,6 +258,18 @@ export const burndown = {
             }
         });
         
+        // Initial visibility check
+        const strat = document.getElementById('burndown-strategy')?.value;
+        const tuner = document.getElementById('strategy-tuner');
+        if (tuner && strat === 'medicaid') tuner.classList.remove('hidden');
+
+        // Initial label update for tuner
+        const tunerInp = document.getElementById('input-strategy-tuner');
+        if (tunerInp) {
+             document.getElementById('tuner-pct-display').textContent = `${tunerInp.value}%`;
+             if (tunerInp.oninput) tunerInp.oninput({target: tunerInp}); // trigger snap calc
+        }
+
         const rAge = window.currentData?.assumptions?.retirementAge || 65;
         const rSlider = document.getElementById('input-top-retire-age');
         if (rSlider) {
@@ -253,6 +309,7 @@ export const burndown = {
             useSEPP: document.getElementById('toggle-rule-72t')?.checked ?? false,
             dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
             manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
+            tunerValue: parseFloat(document.getElementById('input-strategy-tuner')?.value || 100),
             isRealDollars
         };
     },
@@ -396,7 +453,12 @@ export const burndown = {
 
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fFac => fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
             let isMedStrat = stateConfig.strategy === 'medicaid' && age < 65;
-            if (isMedStrat && ordInc > medLim()) isMedStrat = false;
+            
+            // Apply Tuner Factor if Medicaid Strategy is active
+            const tunerFactor = (stateConfig.tunerValue || 100) / 100;
+            const effectiveMedLim = () => medLim() * tunerFactor;
+            
+            if (isMedStrat && ordInc > effectiveMedLim()) isMedStrat = false;
 
             const maxSnapBenefit = (295 + (hhSize - 1) * 215) * infFac;
             const snapDeductions = ((hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) + (benefits.hasSUA !== false ? 680 : 0)) * infFac;
@@ -431,7 +493,7 @@ export const burndown = {
                     const increasesMagi = burndown.assetMeta[pk].isMagi || pk === '401k' || pk === 'roth-earnings'; 
                     if (phase.limitByMagi && increasesMagi) {
                         const currentMagi = ordIter + ltcgIter;
-                        const hardCap = Math.min(medLim(), snapPhaseOutLimit);
+                        const hardCap = Math.min(effectiveMedLim(), snapPhaseOutLimit);
                         const room = Math.max(0, hardCap - currentMagi);
                         if (room < 1000) dLim = 0; // CRUMB FILTER: Prevents tiny fragmented withdrawals
                         else {
