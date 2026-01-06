@@ -154,19 +154,10 @@ export const burndown = {
                 const val = e.target.value;
                 document.getElementById('tuner-pct-display').textContent = `${val}%`;
                 
-                // Live preview of SNAP estimate
-                const data = window.currentData;
-                const hhSize = data.benefits?.hhSize || 1;
-                const fpl = 16060 + (hhSize - 1) * 5650;
-                const limitMult = data.benefits?.isPregnant ? 1.95 : 1.38;
-                const maxMAGI = fpl * limitMult;
-                const targetMAGI = maxMAGI * (val / 100);
-                
-                // Simple estimate for visual feedback
-                const estSnap = engine.calculateSnapBenefit(targetMAGI, hhSize, data.benefits?.shelterCosts || 700, data.benefits?.hasSUA, data.benefits?.isDisabled);
-                document.getElementById('tuner-snap-est').textContent = `${math.toCurrency(estSnap)}/mo`;
-
+                // CRITICAL CHANGE: We no longer "predict" the SNAP here. 
+                // We run the engine, and let the engine tell us the truth.
                 burndown.run();
+                
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         }
@@ -267,7 +258,7 @@ export const burndown = {
         const tunerInp = document.getElementById('input-strategy-tuner');
         if (tunerInp) {
              document.getElementById('tuner-pct-display').textContent = `${tunerInp.value}%`;
-             if (tunerInp.oninput) tunerInp.oninput({target: tunerInp}); // trigger snap calc
+             // Don't trigger run here to avoid double load, just let logic handle it
         }
 
         const rAge = window.currentData?.assumptions?.retirementAge || 65;
@@ -364,6 +355,25 @@ export const burndown = {
             const manualInp = document.getElementById('input-manual-budget');
             if (manualInp && document.activeElement !== manualInp) manualInp.value = math.toCurrency(bestBudget);
         } else results = burndown.simulateProjection(data);
+
+        // REACTIVE FEEDBACK LOOP: Update the Est. SNAP label with the ACTUAL simulation result.
+        // We look for the first year where SNAP > 0, or the first retirement year.
+        const firstRetireYear = results.find(r => r.age >= data.assumptions.retirementAge) || results[0];
+        if (firstRetireYear) {
+            // SNAP in results is Annual. Convert to monthly for display.
+            const monthlySnap = (firstRetireYear.snapBenefit || 0) / 12;
+            
+            // Adjust for inflation if needed to show "Real" value in label?
+            // The label usually implies "Today's Purchasing Power". 
+            // We should de-flate the nominal result to give the user a realistic number.
+            const infFactor = Math.pow(1 + inflationRate, firstRetireYear.year - new Date().getFullYear());
+            const realMonthlySnap = monthlySnap / infFactor;
+            
+            const snapLabel = document.getElementById('tuner-snap-est');
+            if (snapLabel) {
+                snapLabel.textContent = `${math.toCurrency(realMonthlySnap)}/mo`;
+            }
+        }
 
         const tableContainer = document.getElementById('burndown-table-container');
         if (tableContainer) tableContainer.innerHTML = burndown.renderTable(results);
@@ -567,13 +577,19 @@ export const burndown = {
                     }
                 });
             });
-
+            
+            // Pass 4: Final Calculations & Sanity Check
             const magi = ordIter + ltcgIter;
             if (isMedStrat && magi > medLim()) yearRes.acaPremium = magi * 0.085;
-            if (yearRes.snapBenefit > 0) {
-                 const finalSnap = engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
+            
+            // Re-calculate SNAP using the FINAL MAGI (Source of Truth)
+            // This ensures logic integrity: if we hit the target MAGI, this returns the target SNAP.
+            // If we missed the target (due to RMDs or lack of funds), this returns the ACTUAL SNAP.
+            const finalSnap = engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
+            if (finalSnap > 0) { 
                  yearRes.snapBenefit = finalSnap; 
             }
+
             let surplus = netAvail + drawn - engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - yearRes.acaPremium - targetBudget;
             if (surplus > 0) { if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; } else { bal['taxable'] += surplus; bal['taxableBasis'] += surplus; } }
             else if (surplus < 0) { if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; else bal['heloc'] -= surplus; }
