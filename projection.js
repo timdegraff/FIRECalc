@@ -163,16 +163,17 @@ function renderChart(labels, datasets) {
                     title: {
                         display: true,
                         text: isRealDollars ? 'Net Worth (2026 Dollars)' : 'Net Worth (Nominal Dollars)',
-                        font: { family: "'Inter', sans-serif", weight: '800', size: 9 },
-                        color: '#475569'
+                        font: { family: "'Inter', sans-serif", weight: 'bold', size: 10 },
+                        color: '#64748b'
                     },
                     ticks: { 
-                        font: { family: "'JetBrains Mono', monospace", size: 9 }, 
+                        font: { family: "'Inter', sans-serif", size: 10 }, 
+                        color: '#64748b',
                         callback: (v) => math.toCurrency(v, true) 
                     }, 
                     grid: { color: 'rgba(51, 65, 85, 0.2)' } 
                 },
-                x: { ticks: { font: { family: "'Inter', sans-serif" }, maxTicksLimit: 12 }, grid: { display: false } }
+                x: { ticks: { font: { family: "'Inter', sans-serif", size: 10 }, color: '#64748b', maxTicksLimit: 12 }, grid: { display: false } }
             }
         }
     });

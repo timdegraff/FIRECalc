@@ -118,8 +118,6 @@ export const burndown = {
                     const strategy = el.value;
                     const swrInd = document.getElementById('swr-indicator');
                     if (swrInd) swrInd.classList.toggle('hidden', strategy !== 'perpetual');
-                    // We do NOT auto-optimize here anymore, user must click Optimize or drag manually.
-                    // This prevents overriding user customization.
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualContainer = document.getElementById('manual-budget-container');
@@ -135,12 +133,10 @@ export const burndown = {
             optBtn.onclick = () => {
                 const strategy = document.getElementById('burndown-strategy')?.value || 'standard';
                 if (strategy === 'medicaid') {
-                    // Platinum Optimization: Fill Taxable bucket first (MAGI), then Tax-Free (Cash/RothBasis/HSA), then Others.
-                    // Crypto/Metals moved BEFORE 401k/RothEarnings to avoid early penalties/RMD issues if possible, though they trigger MAGI.
+                    // Platinum Optimization: Fill Taxable bucket first (MAGI), then Tax-Free (Cash/RothBasis/HSA/HELOC), then 401k/Gains
                     burndown.priorityOrder = ['taxable', 'cash', 'roth-basis', 'hsa', 'heloc', 'crypto', 'metals', '401k', 'roth-earnings'];
                 } else {
-                    // Standard: Liquid first, then Tax-Advantaged. 
-                    // Roth Earnings last (highest penalty). Crypto/Metals before 401k/RothEarnings.
+                    // Standard: Liquid first, then Tax-Advantaged
                     burndown.priorityOrder = ['cash', 'taxable', 'roth-basis', 'crypto', 'metals', '401k', 'heloc', 'hsa', 'roth-earnings'];
                 }
                 burndown.run();
@@ -428,52 +424,110 @@ export const burndown = {
             let isMedStrat = stateConfig.strategy === 'medicaid' && age < 65;
             if (isMedStrat && ordInc > medLim()) isMedStrat = false;
 
-            // STRATEGY FIX:
-            // Pass 1: Draw from MAGI-generating assets up to the limit, BUT EXCLUDE 401k if < 59.5 to prevent premature SEPP.
-            // Pass 2: Draw from Tax-Free (Non-MAGI) assets to fill the gap.
-            // Pass 3: Last Resort - Draw from remaining MAGI assets (including 401k via SEPP/Penalty) to cover any final shortfall.
-            const passes = isMedStrat ? [
-                { keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi && (k !== '401k' || age >= 59.5)), limitByMagi: true },
-                { keys: burndown.priorityOrder.filter(k => !burndown.assetMeta[k].isMagi), limitByMagi: false },
-                { keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi), limitByMagi: false }
-            ] : [{ keys: burndown.priorityOrder, limitByMagi: false }];
+            // STRATEGY LOGIC REFACTOR:
+            // Explicitly define Buckets based on Strategy Logic, overriding simple linear priority if needed.
+            // If Platinum, we FORCE separation of MAGI vs Non-MAGI.
+            
+            let passBuckets = [];
+            if (isMedStrat) {
+                // PLATINUM STRATEGY:
+                // Pass 1: Fill MAGI bucket (Taxable, 401k if > 59.5, Crypto, Metals)
+                // Pass 2: Fill Gap with Non-MAGI bucket (Cash, Roth Basis, HSA, HELOC)
+                // Pass 3: Emergency fill with MAGI bucket (blows limit)
+                passBuckets = [
+                    { 
+                        keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi && (k !== '401k' || age >= 59.5)), 
+                        limitByMagi: true 
+                    },
+                    { 
+                        keys: burndown.priorityOrder.filter(k => !burndown.assetMeta[k].isMagi), 
+                        limitByMagi: false 
+                    },
+                    { 
+                        keys: burndown.priorityOrder.filter(k => burndown.assetMeta[k].isMagi), 
+                        limitByMagi: false 
+                    }
+                ];
+            } else {
+                // STANDARD STRATEGY:
+                // Just use the priority list linearly.
+                passBuckets = [{ keys: burndown.priorityOrder, limitByMagi: false }];
+            }
 
             let ordIter = ordInc, ltcgIter = ltcgInc, drawn = 0;
-            for (let loop = 0; loop < 3; loop++) {
+            
+            // Loop through passes (buckets)
+            passBuckets.forEach(pass => {
                 let shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
-                if (shortfall <= 5) break;
-                passes.forEach(pass => {
-                    if (shortfall <= 0) return;
-                    pass.keys.forEach(pk => {
-                        if (shortfall <= 0) return;
-                        let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
-                        if (avail <= 0) return;
-                        if (pk === '401k' && age < 59.5) {
-                            if (isSepp) avail = 0;
-                            else if (stateConfig.useSEPP) {
-                                seppAmt = Math.min(shortfall, bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000));
-                                isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; shortfall -= seppAmt; avail = 0; return;
-                            } else avail = 0;
+                if (shortfall <= 5) return; // Gap closed
+
+                // Within this bucket, follow user priority
+                pass.keys.forEach(pk => {
+                    shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
+                    if (shortfall <= 5) return;
+
+                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    
+                    // Special 401k SEPP check
+                    if (pk === '401k' && age < 59.5) {
+                        if (isSepp) avail = 0; // Already took SEPP this year
+                        else if (stateConfig.useSEPP) {
+                            // If we activate SEPP, it's a fixed amount for the year
+                            seppAmt = Math.min(shortfall, bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000));
+                            isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; 
+                            yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; 
+                            drawn += seppAmt; avail = 0; return;
+                        } else avail = 0; // No access
+                    }
+                    
+                    if (avail <= 0) return;
+
+                    let dLim = avail;
+                    if (pass.limitByMagi) {
+                         const currentMagi = ordIter + ltcgIter;
+                         const room = Math.max(0, medLim() - currentMagi);
+                         if (pk === 'taxable') {
+                             // Estimate basis portion to maximize draw
+                             // conservative estimate: assume 50% gain if we don't know exact lots
+                             // Better: Just draw 'room' amount of GAINS. 
+                             // Simplified: Limit total draw to 'room'.
+                             // If we have basis, we can draw more? 
+                             // Current simplified logic: Limit TOTAL withdrawal to room.
+                             dLim = bal['taxableBasis'] + room; 
+                         } else if (burndown.assetMeta[pk].isMagi) {
+                             dLim = Math.min(dLim, room);
+                         }
+                    }
+
+                    // CRITICAL FIX: Ensure we don't draw more than available balance
+                    const take = Math.min(avail, dLim, shortfall);
+                    
+                    if (take > 0) {
+                        if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
+                        
+                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take; 
+                        drawn += take; 
+                        
+                        // Update Tax Trackers
+                        if (pk === 'taxable') {
+                            if (bal['taxable'] > 0) {
+                                // Calculate gain ratio
+                                const ratio = bal['taxable'] > 0 ? Math.max(0, (bal['taxable'] + take - bal['taxableBasis']) / (bal['taxable'] + take)) : 0; 
+                                const g = take * ratio; 
+                                ltcgIter += g; 
+                                bal['taxableBasis'] -= (take - g);
+                            } else {
+                                // If drained, assume all gain/basis logic cleared
+                                bal['taxableBasis'] = 0;
+                            }
+                        } else if (burndown.assetMeta[pk].isTaxable || burndown.assetMeta[pk].isMagi) {
+                            ordIter += take;
                         }
-                        if (avail <= 0) return;
-                        let dLim = avail;
-                        if (pass.limitByMagi) {
-                             const hr = Math.max(0, medLim() - (ordIter + ltcgIter));
-                             if (pk === 'taxable') dLim = bal['taxableBasis'] + hr; else if (burndown.assetMeta[pk].isMagi) dLim = Math.min(dLim, hr);
-                        }
-                        const take = Math.min(dLim, shortfall);
-                        if (take > 0) {
-                            if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
-                            yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take; drawn += take; shortfall -= take;
-                            if (pk === 'taxable') {
-                                if (isMedStrat) { const b = Math.min(take, bal['taxableBasis']); bal['taxableBasis'] -= b; ltcgIter += (take - b); }
-                                else { const r = bal['taxable'] > 0 ? Math.max(0, (bal['taxable'] + take - bal['taxableBasis']) / (bal['taxable'] + take)) : 0; const g = take * r; ltcgIter += g; bal['taxableBasis'] -= (take - g); }
-                            } else if (burndown.assetMeta[pk].isTaxable || burndown.assetMeta[pk].isMagi) ordIter += take;
-                            if (pk === 'roth-earnings' && age < 59.5) ordIter += take;
-                        }
-                    });
+                        
+                        if (pk === 'roth-earnings' && age < 59.5) ordIter += take;
+                    }
                 });
-            }
+            });
 
             const magi = ordIter + ltcgIter;
             if (isMedStrat && magi > medLim()) yearRes.acaPremium = magi * 0.085;
