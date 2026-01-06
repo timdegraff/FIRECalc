@@ -422,6 +422,14 @@ export const burndown = {
             let isMedStrat = stateConfig.strategy === 'medicaid' && age < 65;
             if (isMedStrat && ordInc > medLim()) isMedStrat = false;
 
+            // DYNAMIC SNAP CAP Logic:
+            // Calculate approximate income limit where SNAP benefits hit $0
+            // Formula: Benefit = MaxBenefit - 0.3 * NetIncome.  0 = Max - 0.3 * Net. Net = Max / 0.3
+            // Net ~ Gross - Deductions. Gross ~ (Max / 0.3) + Deductions.
+            const maxSnapBenefit = (295 + (hhSize - 1) * 215) * infFac;
+            const snapDeductions = ((hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) + (benefits.hasSUA !== false ? 680 : 0)) * infFac;
+            const snapPhaseOutLimit = (maxSnapBenefit / 0.3) + snapDeductions;
+
             // STRATEGY ENGINE: 3-PHASE PASS
             let strategyPhases = [];
             
@@ -450,14 +458,6 @@ export const burndown = {
             
             strategyPhases.forEach(phase => {
                 let shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
-                
-                // If checking MAGI Limit, we also check if we have "Room" to fill, even if Shortfall is met?
-                // The user requested: "bump SNAP up". This implies "increase income... to limit".
-                // But generally we only draw if we NEED money.
-                // However, if we are in Phase 1 (Magi Assets) and there is a shortfall, we draw them.
-                // If there is NO shortfall, we generally don't draw just for fun (unless doing Roth conversions, which is out of scope).
-                // So we stick to "Draw to cover shortfall".
-                
                 if (shortfall <= 5) return;
 
                 phase.keys.forEach(pk => {
@@ -492,15 +492,23 @@ export const burndown = {
 
                     if (phase.limitByMagi && increasesMagi) {
                         const currentMagi = ordIter + ltcgIter;
-                        const room = Math.max(0, medLim() - currentMagi);
+                        // Use MIN of Medicaid Limit and SNAP Phase-out Limit to preserve benefits
+                        const hardCap = Math.min(medLim(), snapPhaseOutLimit);
+                        const room = Math.max(0, hardCap - currentMagi);
                         
-                        if (pk === 'taxable') {
-                            if (bal['taxable'] > 0) {
-                                 const gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
-                                 if (gainRatio > 0) dLim = Math.min(dLim, room / gainRatio);
-                            }
+                        // ANTI-FRAGMENTATION: If room < $1000, stop filling this bucket.
+                        // It's not worth withdrawing tiny amounts ($503) just to hit a limit perfectly.
+                        if (room < 1000) {
+                            dLim = 0;
                         } else {
-                            dLim = Math.min(dLim, room);
+                            if (pk === 'taxable') {
+                                if (bal['taxable'] > 0) {
+                                     const gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
+                                     if (gainRatio > 0) dLim = Math.min(dLim, room / gainRatio);
+                                }
+                            } else {
+                                dLim = Math.min(dLim, room);
+                            }
                         }
                     }
 
