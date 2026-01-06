@@ -457,7 +457,7 @@ export const burndown = {
             if (isMedStrat && magi > medLim()) yearRes.acaPremium = magi * 0.085;
             if (yearRes.snapBenefit > 0) {
                  const finalSnap = engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
-                 if (finalSnap <= 0) yearRes.snapBenefit = 0; 
+                 yearRes.snapBenefit = finalSnap; 
             }
             let surplus = netAvail + drawn - engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - yearRes.acaPremium - targetBudget;
             if (surplus > 0) { if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; } else { bal['taxable'] += surplus; bal['taxableBasis'] += surplus; } }
