@@ -50,23 +50,23 @@ export const benefits = {
                                 <span id="health-cost-badge" class="px-2 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center">FREE</span>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col justify-between min-h-[220px]">
+                        <div class="p-5 flex flex-col gap-6">
                             <div class="text-center py-2">
                                 <span class="label-std text-slate-500 block mb-1">Plan Status</span>
                                 <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Platinum</div>
                                 <div id="health-sub-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">100% Full Coverage</div>
                             </div>
                             <!-- DYNAMIC HEALTH BAR -->
-                            <div class="relative h-2 bg-slate-950 rounded-full border border-slate-700 overflow-hidden flex mt-6 mb-4">
+                            <div class="relative h-2 bg-slate-950 rounded-full border border-slate-700 overflow-hidden flex w-full">
                                 <div id="seg-medicaid" class="bg-emerald-500/80 h-full border-r border-slate-900/50"></div>
                                 <div id="seg-hmp" class="bg-emerald-400/60 h-full border-r border-slate-900/50"></div>
                                 <div id="seg-silver" class="bg-blue-500/60 h-full border-r border-slate-900/50"></div>
                                 <div id="seg-gold" class="bg-amber-500/60 h-full border-r border-slate-900/50"></div>
                                 <div id="health-marker" class="absolute top-0 w-1.5 h-full bg-white shadow-[0_0_10px_white] transition-all z-10 rounded-full"></div>
                             </div>
-                            <table class="w-full text-[10px] border-t border-slate-700/50 pt-3">
+                            <table class="w-full text-[10px] border-t border-slate-700/50 pt-3 mt-auto">
                                 <tbody>
-                                    <tr><td class="py-1 text-slate-500 font-medium">Est. Premium</td><td class="py-1 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
+                                    <tr><td class="py-1 text-slate-500 font-medium">Est. Monthly Premium</td><td class="py-1 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
                                     <tr><td class="py-1 text-slate-500 font-medium">Deductible</td><td class="py-1 text-right text-slate-400 mono-numbers" id="detail-deductible">$0</td></tr>
                                 </tbody>
                             </table>
@@ -89,12 +89,12 @@ export const benefits = {
                                 </label>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col justify-between min-h-[220px]">
-                            <div class="flex-grow flex flex-col items-center justify-center py-2">
+                        <div class="p-5 flex flex-col gap-6 h-full">
+                            <div class="flex-grow flex flex-col items-center justify-center py-4">
                                 <span class="label-std text-slate-500 mb-1">Monthly Benefit</span>
                                 <div id="snap-result-value" class="text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg">$0</div>
                             </div>
-                            <div class="mt-4 pt-4 border-t border-slate-700/50">
+                            <div class="pt-4 border-t border-slate-700/50 mt-auto">
                                 <div class="flex justify-between items-center mb-1">
                                     <label class="label-std text-slate-500">Shelter & Utility Cost</label>
                                     <div class="text-xs font-bold text-white mono-numbers" data-label="shelterCosts">$700</div>
@@ -103,6 +103,11 @@ export const benefits = {
                             </div>
                         </div>
                     </div>
+                </div>
+                <div class="text-center pt-2">
+                    <p class="text-[9px] text-slate-600 italic font-medium">
+                        * Estimates based on projected 2026 Federal Poverty Levels and ACA subsidy cliffs. Actual marketplace premiums may vary by region and plan selection.
+                    </p>
                 </div>
             </div>
         `;
@@ -150,6 +155,30 @@ export const benefits = {
         const silverLimit = silverRatio * fpl2026;
         const goldLimit = goldRatio * fpl2026;
 
+        // ACA Premium Calculation Logic (Approximation for 2026)
+        // 0-150% FPL: $0
+        // 150-200% FPL: Linear scale 0% -> 2% of income
+        // 200-250% FPL: Linear scale 2% -> 4% of income
+        // 250-300% FPL: Linear scale 4% -> 6% of income
+        // 300-400% FPL: Linear scale 6% -> 8.5% of income
+        // 400%+ FPL: 8.5% of income
+        
+        let expectedContributionPct = 0;
+        if (ratio <= 1.5) expectedContributionPct = 0;
+        else if (ratio <= 2.0) expectedContributionPct = 0.00 + ((ratio - 1.5) / 0.5) * 0.02;
+        else if (ratio <= 2.5) expectedContributionPct = 0.02 + ((ratio - 2.0) / 0.5) * 0.02;
+        else if (ratio <= 3.0) expectedContributionPct = 0.04 + ((ratio - 2.5) / 0.5) * 0.02;
+        else if (ratio <= 4.0) expectedContributionPct = 0.06 + ((ratio - 3.0) / 1.0) * 0.025;
+        else expectedContributionPct = 0.085;
+
+        // If income is below poverty line but not Medicaid eligible (gap), they pay full price, 
+        // but here we assume expansion state (MI) where 0-138% is covered.
+        // Dynamic Premium is the Expected Contribution (capped).
+        let dynamicPremium = 0;
+        if (ratio > medRatio) {
+            dynamicPremium = (data.unifiedIncome * expectedContributionPct) / 12;
+        }
+
         // Dynamic Bar Segment Widths
         const setWidth = (id, start, end) => {
             const el = document.getElementById(id);
@@ -177,11 +206,21 @@ export const benefits = {
             document.getElementById('health-cost-badge').className = `px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center ${prem === "$0" ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`;
         };
 
-        if (ratio <= medRatio) setHealth("Platinum", data.isPregnant ? "Pregnancy Coverage" : "100% Full Coverage", "$0", "$0", "text-emerald-400", "border-emerald-500/50");
-        else if (ratio <= hmpRatio) setHealth("HMP+", "Small Copayments", "$20", "Low", "text-emerald-300", "border-emerald-500/30");
-        else if (ratio <= silverRatio) setHealth("Silver CSR", "Subsidized Deductible", "$60", "$800", "text-blue-400", "border-blue-500/30");
-        else if (ratio <= goldRatio) setHealth("Gold Plan", "Market Rate", "$250", "$1500", "text-amber-400", "border-amber-500/30");
-        else setHealth("Standard", "No Subsidies", "$450+", "High", "text-slate-500", "border-slate-700");
+        if (ratio <= medRatio) {
+            setHealth("Platinum", data.isPregnant ? "Pregnancy Coverage" : "100% Full Coverage", "$0", "$0", "text-emerald-400", "border-emerald-500/50");
+        } else if (ratio <= hmpRatio) {
+            setHealth("HMP+", "Small Copayments", "$20", "Low", "text-emerald-300", "border-emerald-500/30");
+        } else if (ratio <= silverRatio) {
+             // Cost Sharing Reduction (CSR) Zone
+             const formattedPrem = math.toCurrency(dynamicPremium);
+             setHealth("Silver CSR", "Subsidized Deductible", formattedPrem, "$800", "text-blue-400", "border-blue-500/30");
+        } else if (ratio <= goldRatio) {
+             const formattedPrem = math.toCurrency(dynamicPremium);
+             setHealth("Gold Plan", "ACA Subsidy Cap", formattedPrem, "$1500", "text-amber-400", "border-amber-500/30");
+        } else {
+             const formattedPrem = math.toCurrency(dynamicPremium);
+             setHealth("Standard", "Subsidy Phase-out", formattedPrem, "$4000+", "text-slate-500", "border-slate-700");
+        }
 
         const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled);
         const snapRes = document.getElementById('snap-result-value'), snapCard = document.getElementById('card-snap');
