@@ -10,9 +10,9 @@ export const burndown = {
     init: () => {
         const container = document.getElementById('tab-burndown');
         container.innerHTML = `
-            <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-4">
                 <div class="card-container p-6 bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl">
-                    <div class="flex flex-wrap items-center justify-between gap-8 mb-8">
+                    <div class="flex flex-wrap items-center justify-between gap-8 mb-6">
                         <div class="flex flex-col">
                             <h3 class="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
                                 <i class="fas fa-microchip text-purple-400"></i> Strategy Engine
@@ -46,7 +46,7 @@ export const burndown = {
                             <label class="label-std text-slate-500">Draw Strategy</label>
                             <select id="burndown-strategy" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs font-black text-blue-400 outline-none focus:border-blue-500 transition-all cursor-pointer">
                                 <option value="standard">Standard (Priority Order)</option>
-                                <option value="medicaid">Medicaid Max (Limit Income to 138% FPL)</option>
+                                <option value="medicaid">Platinum Max (Limit Income to 138% FPL)</option>
                                 <option value="perpetual">Wealth Preservation (Real Flat Principal)</option>
                             </select>
                         </div>
@@ -57,18 +57,18 @@ export const burndown = {
                         </div>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-4 border-t border-slate-700/50 pt-6">
-                        <label class="flex items-center gap-4 px-5 py-3 bg-slate-900/50 rounded-2xl border border-slate-700 cursor-pointer group transition-all hover:bg-slate-900">
-                            <input type="checkbox" id="toggle-rule-72t" class="w-5 h-5 accent-blue-500">
+                    <div class="flex flex-wrap items-center gap-4 border-t border-slate-700/50 pt-4">
+                        <label class="flex items-center gap-4 px-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700 cursor-pointer group transition-all hover:bg-slate-900">
+                            <input type="checkbox" id="toggle-rule-72t" class="w-4 h-4 accent-blue-500">
                             <div class="flex flex-col">
                                 <span class="label-std text-slate-300 group-hover:text-blue-400 transition-colors">Allow 72t Bridge</span>
                                 <span class="text-[8px] text-slate-600 uppercase font-black">Auto-trigger on shortfall</span>
                             </div>
                         </label>
 
-                        <button id="btn-dwz-toggle" class="px-5 py-3 bg-slate-900/50 rounded-2xl border border-slate-700 text-left transition-all hover:bg-slate-900 flex items-center gap-4 group min-w-[180px]">
-                            <div class="w-5 h-5 rounded-full border-2 border-slate-700 flex items-center justify-center group-[.active]:border-rose-500 group-[.active]:bg-rose-500/20">
-                                <div class="w-2 h-2 rounded-full bg-slate-700 group-[.active]:bg-rose-500"></div>
+                        <button id="btn-dwz-toggle" class="px-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700 text-left transition-all hover:bg-slate-900 flex items-center gap-3 group min-w-[160px]">
+                            <div class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center group-[.active]:border-rose-500 group-[.active]:bg-rose-500/20">
+                                <div class="w-1.5 h-1.5 rounded-full bg-slate-700 group-[.active]:bg-rose-500"></div>
                             </div>
                             <div class="flex flex-col">
                                 <span id="dwz-label" class="label-std text-slate-500 group-[.active]:text-rose-400 transition-colors">Die With Zero</span>
@@ -76,20 +76,19 @@ export const burndown = {
                             </div>
                         </button>
                         
-                        <button id="toggle-burndown-real" class="ml-auto px-5 py-3 bg-slate-900/50 border border-slate-700 rounded-2xl label-std font-black text-slate-400 hover:text-white transition-all flex items-center gap-3">
+                        <button id="toggle-burndown-real" class="ml-auto px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-xl label-std font-black text-slate-400 hover:text-white transition-all flex items-center gap-2">
                             <i class="fas fa-calendar-alt"></i> Nominal Dollars
                         </button>
                     </div>
                     
-                    <div class="mt-6 pt-6 border-t border-slate-700/50">
-                        <div class="flex flex-wrap items-center gap-4">
+                    <div class="mt-4 pt-4 border-t border-slate-700/50">
+                        <div class="flex flex-wrap items-center gap-3">
                             <span class="label-std text-slate-500 font-black">Draw Order Priority:</span>
+                            <button id="btn-optimize-priority" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[9px] font-bold uppercase tracking-widest transition-all"><i class="fas fa-magic mr-1"></i> Optimize</button>
+                            <div class="w-[1px] h-4 bg-slate-700 mx-1"></div>
                             <div id="draw-priority-list" class="flex flex-wrap gap-2"></div>
-                            <span class="text-[9px] text-slate-600 italic ml-auto font-bold uppercase tracking-widest"><i class="fas fa-info-circle mr-1"></i> Drag to Reorder</span>
                         </div>
                     </div>
-
-                    <div id="burndown-live-sliders" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mt-8 pt-8 border-t border-slate-700/50"></div>
                 </div>
 
                 <div class="card-container p-6 bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden shadow-inner">
@@ -119,11 +118,8 @@ export const burndown = {
                     const strategy = el.value;
                     const swrInd = document.getElementById('swr-indicator');
                     if (swrInd) swrInd.classList.toggle('hidden', strategy !== 'perpetual');
-                    if (strategy === 'medicaid') {
-                        burndown.priorityOrder = ['taxable', 'cash', 'roth-basis', 'hsa', 'heloc', 'roth-earnings', 'crypto', 'metals', '401k'];
-                    } else {
-                        burndown.priorityOrder = ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'];
-                    }
+                    // We do NOT auto-optimize here anymore, user must click Optimize or drag manually.
+                    // This prevents overriding user customization.
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualContainer = document.getElementById('manual-budget-container');
@@ -133,6 +129,24 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
+
+        const optBtn = document.getElementById('btn-optimize-priority');
+        if (optBtn) {
+            optBtn.onclick = () => {
+                const strategy = document.getElementById('burndown-strategy')?.value || 'standard';
+                if (strategy === 'medicaid') {
+                    // Platinum Optimization: Fill Taxable bucket first (MAGI), then Tax-Free (Cash/RothBasis/HSA), then Others.
+                    // Crypto/Metals moved BEFORE 401k/RothEarnings to avoid early penalties/RMD issues if possible, though they trigger MAGI.
+                    burndown.priorityOrder = ['taxable', 'cash', 'roth-basis', 'hsa', 'heloc', 'crypto', 'metals', '401k', 'roth-earnings'];
+                } else {
+                    // Standard: Liquid first, then Tax-Advantaged. 
+                    // Roth Earnings last (highest penalty). Crypto/Metals before 401k/RothEarnings.
+                    burndown.priorityOrder = ['cash', 'taxable', 'roth-basis', 'crypto', 'metals', '401k', 'heloc', 'hsa', 'roth-earnings'];
+                }
+                burndown.run();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+        }
         
         const topRetireSlider = document.getElementById('input-top-retire-age');
         if (topRetireSlider) {
@@ -151,7 +165,6 @@ export const burndown = {
                 const lblSub = document.getElementById('dwz-sub');
                 if (lblSub) lblSub.textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
                 
-                // If DWZ is enabled, we need to force manual budget mode to show the result
                 if (active) {
                     const syncToggle = document.getElementById('toggle-budget-sync');
                     if (syncToggle && syncToggle.checked) {
@@ -396,6 +409,7 @@ export const burndown = {
             ordInc += engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus);
             netAvail += ssGross;
 
+            // SNAP Benefit now acts as income offset
             const snap = engine.calculateSnapBenefit(ordInc, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
             if (snap > 0) { netAvail += snap; yearRes.snapBenefit = snap; }
 
@@ -468,7 +482,7 @@ export const burndown = {
             else if (surplus < 0) { if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; else bal['heloc'] -= surplus; }
             
             yearRes.balances = { ...bal }; yearRes.budget = targetBudget; yearRes.magi = magi; yearRes.netWorth = currentNW;
-            yearRes.status = age >= 65 ? 'Medicare' : (magi <= medLim() ? 'Medicaid' : (magi <= fpl * 2.5 ? 'Silver' : 'Standard'));
+            yearRes.status = age >= 65 ? 'Medicare' : (magi <= medLim() ? 'Platinum' : (magi <= fpl * 2.5 ? 'Silver' : 'Standard'));
             results.push(yearRes);
 
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth));
@@ -491,7 +505,7 @@ export const burndown = {
                 return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${meta.color}` : ''}">${formatter.formatCurrency(amt, 0)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40">${formatter.formatCurrency(bal, 0)}</div></td>`;
             }).join('');
             
-            let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Medicaid' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'))}">${r.status}</span>`;
+            let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'))}">${r.status}</span>`;
             if (r.status === 'Silver' && r.acaPremium > 0) badge += `<div class="text-[7px] text-slate-500 mt-1">Prem: ${formatter.formatCurrency(r.acaPremium / inf, 0)}</div>`;
             
             const benefitsCell = r.snapBenefit > 0 ? `<span class="text-emerald-400 font-bold">${formatter.formatCurrency(r.snapBenefit / inf, 0)}</span>` : `<span class="text-slate-700">-</span>`;
@@ -499,6 +513,6 @@ export const burndown = {
             return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px]"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatter.formatCurrency(r.budget / inf, 0)}</td><td class="p-2 text-right font-black text-white">${formatter.formatCurrency(r.magi / inf, 0)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50">${benefitsCell}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatter.formatCurrency(r.netWorth / inf, 0)}</td></tr>`;
         }).join('');
         
-        return `<table class="w-full text-left border-collapse table-auto"><thead class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><tr><th class="p-2 border-r border-slate-700 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center border-x border-slate-800/50">Status</th><th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">Benefits</th>${headerCells}<th class="p-2 text-right border-l border-slate-700">Net Worth</th></tr></thead><tbody>${rows}</tbody></table>`;
+        return `<table class="w-full text-left border-collapse table-auto"><thead class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><tr><th class="p-2 border-r border-slate-700 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center border-x border-slate-800/50">Status</th><th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${headerCells}<th class="p-2 text-right border-l border-slate-700">Net Worth</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
 };
