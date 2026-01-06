@@ -162,7 +162,7 @@ export const burndown = {
                 const maxMAGI = fpl * limitMult;
                 const targetMAGI = maxMAGI * (val / 100);
                 
-                // Simple estimate for visual feedback (actual logic is in simulation)
+                // Simple estimate for visual feedback
                 const estSnap = engine.calculateSnapBenefit(targetMAGI, hhSize, data.benefits?.shelterCosts || 700, data.benefits?.hasSUA, data.benefits?.isDisabled);
                 document.getElementById('tuner-snap-est').textContent = `${math.toCurrency(estSnap)}/mo`;
 
@@ -454,7 +454,6 @@ export const burndown = {
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fFac => fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
             let isMedStrat = stateConfig.strategy === 'medicaid' && age < 65;
             
-            // Apply Tuner Factor if Medicaid Strategy is active
             const tunerFactor = (stateConfig.tunerValue || 100) / 100;
             const effectiveMedLim = () => medLim() * tunerFactor;
             
@@ -477,25 +476,21 @@ export const burndown = {
                 if (shortfall <= 5) return;
                 phase.keys.forEach(pk => {
                     if (pk === 'roth-earnings' && bal['roth-basis'] > 0) return;
+                    
+                    // RECALCULATE shortfall here in case priority order filled some of it
                     shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
                     if (shortfall <= 5) return;
+                    
                     let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
-                    if (pk === '401k' && age < 59.5) {
-                        if (isSepp) avail = 0; 
-                        else if (stateConfig.useSEPP) {
-                             seppAmt = Math.min(shortfall, bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000));
-                             isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; 
-                             yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; avail = 0; return;
-                        } else avail = 0; 
-                    }
-                    if (avail <= 0) return;
+
+                    // Determine MAGI cap (dLim) BEFORE considering SEPP
                     let dLim = avail;
                     const increasesMagi = burndown.assetMeta[pk].isMagi || pk === '401k' || pk === 'roth-earnings'; 
                     if (phase.limitByMagi && increasesMagi) {
                         const currentMagi = ordIter + ltcgIter;
                         const hardCap = Math.min(effectiveMedLim(), snapPhaseOutLimit);
                         const room = Math.max(0, hardCap - currentMagi);
-                        if (room < 1000) dLim = 0; // CRUMB FILTER: Prevents tiny fragmented withdrawals
+                        if (room < 1000) dLim = 0; 
                         else {
                             if (pk === 'taxable' && bal['taxable'] > 0) {
                                  const ratio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
@@ -503,6 +498,31 @@ export const burndown = {
                             } else dLim = Math.min(dLim, room);
                         }
                     }
+
+                    // SEPP LOGIC - NOW RESPECTS dLim
+                    if (pk === '401k' && age < 59.5) {
+                        if (isSepp) {
+                            // If SEPP active, we can't take more than scheduled. 
+                            // Avail is effectively 0 for 'extra' withdrawals.
+                            avail = 0; 
+                        } else if (stateConfig.useSEPP) {
+                             const maxSepp = bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000);
+                             let targetSepp = Math.min(shortfall, maxSepp);
+                             
+                             // CRITICAL FIX: Clamp SEPP to MAGI limit if active
+                             if (phase.limitByMagi) targetSepp = Math.min(targetSepp, dLim);
+
+                             if (targetSepp > 0) {
+                                 seppAmt = targetSepp;
+                                 isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; 
+                                 yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; avail = 0; return;
+                             } else avail = 0; 
+                        } else avail = 0; 
+                    }
+
+                    if (avail <= 0) return;
+                    
+                    // Standard withdrawal logic
                     const take = Math.min(avail, dLim, shortfall);
                     if (take > 0.01) {
                         if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
