@@ -53,7 +53,7 @@ export const benefits = {
                         <div class="p-5 flex flex-col justify-between min-h-[220px]">
                             <div class="text-center py-2">
                                 <span class="label-std text-slate-500 block mb-1">Plan Status</span>
-                                <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Medicaid</div>
+                                <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Platinum</div>
                                 <div id="health-sub-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">100% Full Coverage</div>
                             </div>
                             <!-- DYNAMIC HEALTH BAR -->
@@ -177,7 +177,7 @@ export const benefits = {
             document.getElementById('health-cost-badge').className = `px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center ${prem === "$0" ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`;
         };
 
-        if (ratio <= medRatio) setHealth("Medicaid", data.isPregnant ? "Pregnancy Coverage" : "100% Full Coverage", "$0", "$0", "text-emerald-400", "border-emerald-500/50");
+        if (ratio <= medRatio) setHealth("Platinum", data.isPregnant ? "Pregnancy Coverage" : "100% Full Coverage", "$0", "$0", "text-emerald-400", "border-emerald-500/50");
         else if (ratio <= hmpRatio) setHealth("HMP+", "Small Copayments", "$20", "Low", "text-emerald-300", "border-emerald-500/30");
         else if (ratio <= silverRatio) setHealth("Silver CSR", "Subsidized Deductible", "$60", "$800", "text-blue-400", "border-blue-500/30");
         else if (ratio <= goldRatio) setHealth("Gold Plan", "Market Rate", "$250", "$1500", "text-amber-400", "border-amber-500/30");
