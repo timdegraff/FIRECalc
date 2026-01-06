@@ -400,7 +400,10 @@ export const burndown = {
         const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0);
         const results = [];
         const duration = 100 - assumptions.currentAge;
-        let seppAmt = 0, isSepp = false;
+        
+        // Ratchet Logic: Track the 'Floor' of SEPP withdrawals. 
+        // 0 means no active plan.
+        let seppFloor = 0;
 
         for (let i = 0; i <= duration; i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= assumptions.retirementAge;
@@ -442,9 +445,11 @@ export const burndown = {
             const initialSnap = engine.calculateSnapBenefit(ordInc, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
             if (initialSnap > 0) { netAvail += initialSnap; yearRes.snapBenefit = initialSnap; }
 
-            if (stateConfig.useSEPP && isSepp && age < 60 && bal['401k'] > 0) {
-                 const amt = Math.min(bal['401k'], seppAmt); bal['401k'] -= amt; ordInc += amt; netAvail += amt; yearRes.seppAmount = amt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + amt;
-            } else if (age >= 60) isSepp = false;
+            // SEPP Floor Logic - If we have a running plan, we must withdraw the floor amount.
+            // But we handle this inside the priority loop to ensure it's respected as the '401k' action.
+            // If age >= 60, SEPP rules evaporate.
+            if (age >= 60) seppFloor = 0;
+
             if (age >= 75) {
                 const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; yearRes.rmdAmount = rmd; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + rmd;
             }
@@ -473,17 +478,18 @@ export const burndown = {
             let ordIter = ordInc, ltcgIter = ltcgInc, drawn = 0;
             strategyPhases.forEach(phase => {
                 let shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
-                if (shortfall <= 5) return;
+                if (shortfall <= 5 && seppFloor === 0) return; // If SEPP floor > 0, we must enter to pay it even if shortfall is 0.
+
                 phase.keys.forEach(pk => {
                     if (pk === 'roth-earnings' && bal['roth-basis'] > 0) return;
                     
                     // RECALCULATE shortfall here in case priority order filled some of it
                     shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
-                    if (shortfall <= 5) return;
+                    if (shortfall <= 5 && seppFloor === 0) return;
                     
                     let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
 
-                    // Determine MAGI cap (dLim) BEFORE considering SEPP
+                    // Determine MAGI cap (dLim)
                     let dLim = avail;
                     const increasesMagi = burndown.assetMeta[pk].isMagi || pk === '401k' || pk === 'roth-earnings'; 
                     if (phase.limitByMagi && increasesMagi) {
@@ -499,30 +505,57 @@ export const burndown = {
                         }
                     }
 
-                    // SEPP LOGIC - NOW RESPECTS dLim
+                    // SEPP LOGIC - NOW WITH RATCHET SUPPORT
                     if (pk === '401k' && age < 59.5) {
-                        if (isSepp) {
-                            // If SEPP active, we can't take more than scheduled. 
-                            // Avail is effectively 0 for 'extra' withdrawals.
-                            avail = 0; 
-                        } else if (stateConfig.useSEPP) {
-                             const maxSepp = bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000);
-                             let targetSepp = Math.min(shortfall, maxSepp);
-                             
-                             // CRITICAL FIX: Clamp SEPP to MAGI limit if active
-                             if (phase.limitByMagi) targetSepp = Math.min(targetSepp, dLim);
+                        let mandatory = seppFloor;
+                        
+                        // We physically cannot withdraw more than the account has, regardless of rules.
+                        // (Though 72t usually kills the plan if you deplete it, for sim we just take what is left)
+                        if (avail <= 0) { 
+                             // If balance is 0, we can't pay. The floor remains, effectively accumulating penalty in real life, but for sim we just skip.
+                             return; 
+                        }
 
-                             if (targetSepp > 0) {
-                                 seppAmt = targetSepp;
-                                 isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; 
-                                 yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; avail = 0; return;
-                             } else avail = 0; 
-                        } else avail = 0; 
+                        // Calculate what we WANT to take (Shortfall limited by MAGI preference)
+                        let desired = Math.min(avail, dLim, shortfall);
+                        
+                        // We MUST take at least the mandatory floor (IRS Rule)
+                        let take = Math.max(mandatory, desired);
+
+                        // If we want more than the floor...
+                        if (take > mandatory) {
+                            if (stateConfig.useSEPP) {
+                                // RATCHET UP: We can start a new SEPP on the remaining balance to bridge the gap.
+                                // Constraint: Total extraction cannot exceed max physical SEPP capacity of the current balance.
+                                const maxCapacity = engine.calculateMaxSepp(bal['401k'], age); 
+                                
+                                // Cap the new total at max capacity
+                                take = Math.min(take, maxCapacity);
+                                
+                                // Update the floor. We never go back down.
+                                if (take > seppFloor) seppFloor = take; 
+                            } else {
+                                // Not allowed to create new SEPP, stuck at floor
+                                take = mandatory;
+                            }
+                        }
+
+                        // Hard clamp to balance
+                        take = Math.min(take, avail);
+
+                        if (take > 0.01) {
+                            bal['401k'] -= take;
+                            ordIter += take;
+                            yearRes.seppAmount = take;
+                            yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + take;
+                            drawn += take;
+                        }
+                        return; // Done with 401k this phase
                     }
 
                     if (avail <= 0) return;
                     
-                    // Standard withdrawal logic
+                    // Standard withdrawal logic for other assets
                     const take = Math.min(avail, dLim, shortfall);
                     if (take > 0.01) {
                         if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
