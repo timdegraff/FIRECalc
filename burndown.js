@@ -367,7 +367,9 @@ export const burndown = {
             'roth-earnings': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + Math.max(0, math.fromCurrency(i.value) - (math.fromCurrency(i.costBasis) || 0)), 0),
             '401k': investments.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'crypto': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+            'cryptoBasis': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
             'metals': investments.filter(i => i.type === 'Metals').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+            'metalsBasis': investments.filter(i => i.type === 'Metals').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
             'hsa': investments.filter(i => i.type === 'HSA').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'heloc': helocs.reduce((s, h) => s + math.fromCurrency(h.balance), 0)
         };
@@ -450,60 +452,74 @@ export const burndown = {
 
             let ordIter = ordInc, ltcgIter = ltcgInc, drawn = 0;
             strategyPhases.forEach((phase, pIdx) => {
-                let currentTotalAvail = netAvail + drawn;
-                let shortfall = targetBudget + engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) - currentTotalAvail;
-                
-                // If this is the FIRST phase of a Medicaid strategy, fill the bracket up to the target even if no shortfall
                 const isFirstMagiPhase = isMedStrat && phase.limitByMagi && pIdx === 0;
                 
                 phase.keys.forEach(pk => {
                     if (pk === 'roth-earnings' && bal['roth-basis'] > 0) return;
                     
                     const tax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
-                    shortfall = targetBudget + tax - (netAvail + drawn);
+                    let shortfall = targetBudget + tax - (netAvail + drawn);
                     
-                    // Logic: Take what we NEED, OR fill the bracket if utilization is active
-                    let targetTake = shortfall;
+                    // TARGET CALCULATION: How much more MAGI (gain) do we want to pull?
+                    let targetGainToPull = shortfall > 0 ? shortfall : 0;
                     if (isFirstMagiPhase && (burndown.assetMeta[pk].isMagi || pk === '401k')) {
-                        const magiNeedToReachTarget = Math.max(0, strategyMagiTarget - ordIter);
-                        targetTake = Math.max(shortfall, magiNeedToReachTarget);
+                        const magiGap = Math.max(0, strategyMagiTarget - ordIter);
+                        targetGainToPull = Math.max(shortfall, magiGap);
                     }
 
-                    if (targetTake <= 0.01) return;
+                    if (targetGainToPull <= 0.01) return;
 
-                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    let availTotal = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    if (availTotal <= 0) return;
+
+                    // SPECIAL 401k Logic for 72t
                     if (pk === '401k' && age < 59.5) {
-                        if (isSepp) avail = 0; 
+                        if (isSepp) availTotal = 0; 
                         else if (stateConfig.useSEPP) {
                              const maxAllowedSepp = bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000);
-                             seppAmt = Math.min(targetTake, maxAllowedSepp);
+                             seppAmt = Math.min(targetGainToPull, maxAllowedSepp);
                              isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; 
-                             yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; avail = 0; return;
-                        } else avail = 0; 
+                             yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; availTotal = 0; return;
+                        } else availTotal = 0; 
                     }
-                    if (avail <= 0) return;
+                    if (availTotal <= 0) return;
 
-                    let dLim = avail;
-                    const increasesMagi = burndown.assetMeta[pk].isMagi || pk === '401k' || pk === 'roth-earnings'; 
-                    if (phase.limitByMagi && increasesMagi) {
-                        const currentMagi = ordIter + ltcgIter;
-                        const room = Math.max(0, medLim - currentMagi); // Hard Medicaid limit
-                        if (room < 1000 && !isFirstMagiPhase) dLim = 0; // CRUMB FILTER (only for need-based draws)
-                        else {
-                            if (pk === 'taxable' && bal['taxable'] > 0) {
-                                 const ratio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
-                                 if (ratio > 0) dLim = Math.min(dLim, room / ratio);
-                            } else dLim = Math.min(dLim, room);
-                        }
+                    // COST BASIS RATIO MATH
+                    let gainRatio = 1.0; // Default (401k, Cash, etc)
+                    if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
+                    else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
+                    else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
+                    else if (!burndown.assetMeta[pk].isMagi) gainRatio = 0.0;
+
+                    // Calculate how much TOTAL CASH to take to hit the GAIN target
+                    let takeTotal = 0;
+                    if (gainRatio > 0) {
+                        // If we need $X of gains, we take $X / gainRatio of cash
+                        takeTotal = Math.min(availTotal, targetGainToPull / gainRatio);
+                    } else {
+                        // Tax-free asset (Cash, Roth Basis), only take what is needed for shortfall
+                        takeTotal = Math.min(availTotal, Math.max(0, shortfall));
                     }
-                    const take = Math.min(avail, dLim, targetTake);
-                    if (take > 0.01) {
-                        if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
-                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take; drawn += take;
-                        if (pk === 'taxable') {
-                             const preBal = bal['taxable'] + take, ratio = preBal > 0 ? Math.max(0, (preBal - bal['taxableBasis']) / preBal) : 0;
-                             const g = take * ratio; ltcgIter += g; bal['taxableBasis'] -= (take - g);
-                        } else if (increasesMagi) ordIter += take;
+
+                    // MEDICAID CAP ENFORCEMENT
+                    if (phase.limitByMagi && gainRatio > 0) {
+                        const roomInMagi = Math.max(0, medLim - ordIter);
+                        const cappedTakeByMagi = roomInMagi / gainRatio;
+                        takeTotal = Math.min(takeTotal, cappedTakeByMagi);
+                    }
+
+                    if (takeTotal > 0.01) {
+                        const realizedGain = takeTotal * gainRatio;
+                        if (pk === 'heloc') bal['heloc'] += takeTotal; else bal[pk] -= takeTotal;
+                        
+                        // Update Basis Tracking
+                        if (pk === 'taxable') bal['taxableBasis'] -= (takeTotal - realizedGain);
+                        else if (pk === 'crypto') bal['cryptoBasis'] -= (takeTotal - realizedGain);
+                        else if (pk === 'metals') bal['metalsBasis'] -= (takeTotal - realizedGain);
+
+                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + takeTotal; 
+                        drawn += takeTotal;
+                        ordIter += realizedGain; // Only the gain counts as MAGI
                     }
                 });
             });
@@ -521,7 +537,7 @@ export const burndown = {
                 if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; surplus -= p; } 
                 if (surplus > 0) {
                     bal['taxable'] += surplus; 
-                    bal['taxableBasis'] += surplus; // Reset basis on surplus reinvestment
+                    bal['taxableBasis'] += surplus; // TAX GAIN HARVESTING: Surplus reinvestment resets basis
                 }
             } else if (surplus < 0) { 
                 if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; else bal['heloc'] -= surplus; 
