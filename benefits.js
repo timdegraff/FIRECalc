@@ -37,7 +37,8 @@ export const benefits = {
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div id="card-healthcare" class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg transition-all duration-300">
+                    <!-- Healthcare Card -->
+                    <div id="card-healthcare" class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg transition-all duration-300 flex flex-col">
                         <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
                             <h3 class="text-xs font-bold text-white flex items-center gap-2 tracking-wide uppercase">
                                 <i class="fas fa-plus-square text-red-500 text-sm"></i> Healthcare Stratum
@@ -50,7 +51,7 @@ export const benefits = {
                                 <span id="health-cost-badge" class="px-2 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center">FREE</span>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col gap-6">
+                        <div class="p-5 flex flex-col gap-6 flex-grow">
                             <div class="text-center py-2">
                                 <span class="label-std text-slate-500 block mb-1">Plan Status</span>
                                 <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Platinum</div>
@@ -64,16 +65,19 @@ export const benefits = {
                                 <div id="seg-gold" class="bg-amber-500/60 h-full border-r border-slate-900/50"></div>
                                 <div id="health-marker" class="absolute top-0 w-1.5 h-full bg-white shadow-[0_0_10px_white] transition-all z-10 rounded-full"></div>
                             </div>
-                            <table class="w-full text-[10px] border-t border-slate-700/50 pt-3 mt-auto">
-                                <tbody>
-                                    <tr><td class="py-1 text-slate-500 font-medium">Est. Monthly Premium</td><td class="py-1 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
-                                    <tr><td class="py-1 text-slate-500 font-medium">Deductible</td><td class="py-1 text-right text-slate-400 mono-numbers" id="detail-deductible">$0</td></tr>
-                                </tbody>
-                            </table>
+                            <div class="mt-auto pt-3 border-t border-slate-700/50">
+                                <table class="w-full text-[10px]">
+                                    <tbody>
+                                        <tr><td class="py-1 text-slate-500 font-medium">Est. Monthly Premium</td><td class="py-1 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
+                                        <tr><td class="py-1 text-slate-500 font-medium">Deductible</td><td class="py-1 text-right text-slate-400 mono-numbers" id="detail-deductible">$0</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
-                    <div id="card-snap" class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg transition-all duration-300">
+                    <!-- SNAP Card -->
+                    <div id="card-snap" class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg transition-all duration-300 flex flex-col">
                         <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
                             <h3 class="text-xs font-bold text-white flex items-center gap-2 tracking-wide uppercase">
                                 <i class="fas fa-utensils text-emerald-400 text-sm"></i> Food Assistance
@@ -89,7 +93,7 @@ export const benefits = {
                                 </label>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col gap-6 h-full">
+                        <div class="p-5 flex flex-col gap-6 flex-grow">
                             <div class="flex-grow flex flex-col items-center justify-center py-4">
                                 <span class="label-std text-slate-500 mb-1">Monthly Benefit</span>
                                 <div id="snap-result-value" class="text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg">$0</div>
@@ -201,7 +205,7 @@ export const benefits = {
             document.getElementById('health-sub-display').textContent = sub;
             document.getElementById('detail-premium').textContent = prem;
             document.getElementById('detail-deductible').textContent = ded;
-            document.getElementById('card-healthcare').className = `card-container bg-slate-800 rounded-2xl border overflow-hidden shadow-lg transition-all duration-300 ${borderColor}`;
+            document.getElementById('card-healthcare').className = `card-container bg-slate-800 rounded-2xl border overflow-hidden shadow-lg transition-all duration-300 ${borderColor} flex flex-col`;
             document.getElementById('health-cost-badge').textContent = prem === "$0" ? "FREE" : `${prem} / mo`;
             document.getElementById('health-cost-badge').className = `px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center ${prem === "$0" ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`;
         };
@@ -227,10 +231,10 @@ export const benefits = {
         snapRes.textContent = math.toCurrency(estimatedBenefit);
         if (estimatedBenefit <= 0) {
             snapRes.className = "text-5xl font-black text-slate-700 mono-numbers tracking-tighter transition-all";
-            snapCard.className = "card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg opacity-80 transition-all";
+            snapCard.className = "card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg opacity-80 transition-all flex flex-col";
         } else {
             snapRes.className = "text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg transition-all";
-            snapCard.className = "card-container bg-slate-800 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-lg transition-all";
+            snapCard.className = "card-container bg-slate-800 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-lg transition-all flex flex-col";
         }
     },
 
