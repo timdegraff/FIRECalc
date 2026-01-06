@@ -496,11 +496,15 @@ export const burndown = {
                         const currentMagi = ordIter + ltcgIter;
                         const hardCap = Math.min(effectiveMedLim(), snapPhaseOutLimit);
                         const room = Math.max(0, hardCap - currentMagi);
-                        if (room < 1000) dLim = 0; 
+                        
+                        // Relaxed crumbs filter: Allow withdrawal even if room is small, provided it's positive.
+                        // This fixes issue where low utilization targets (e.g. 10%) were being skipped entirely.
+                        if (room < 1) dLim = 0; 
                         else {
                             if (pk === 'taxable' && bal['taxable'] > 0) {
                                  const ratio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
                                  if (ratio > 0) dLim = Math.min(dLim, room / ratio);
+                                 // If ratio is 0 (all basis), drawing does not increase MAGI, so we are NOT limited by 'room'.
                             } else dLim = Math.min(dLim, room);
                         }
                     }
@@ -509,10 +513,7 @@ export const burndown = {
                     if (pk === '401k' && age < 59.5) {
                         let mandatory = seppFloor;
                         
-                        // We physically cannot withdraw more than the account has, regardless of rules.
-                        // (Though 72t usually kills the plan if you deplete it, for sim we just take what is left)
                         if (avail <= 0) { 
-                             // If balance is 0, we can't pay. The floor remains, effectively accumulating penalty in real life, but for sim we just skip.
                              return; 
                         }
 
@@ -526,7 +527,6 @@ export const burndown = {
                         if (take > mandatory) {
                             if (stateConfig.useSEPP) {
                                 // RATCHET UP: We can start a new SEPP on the remaining balance to bridge the gap.
-                                // Constraint: Total extraction cannot exceed max physical SEPP capacity of the current balance.
                                 const maxCapacity = engine.calculateMaxSepp(bal['401k'], age); 
                                 
                                 // Cap the new total at max capacity
