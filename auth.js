@@ -4,6 +4,13 @@ import { auth } from './firebase-config.js';
 
 const provider = new GoogleAuthProvider();
 
+// Force the account selection screen every time the user clicks login.
+// This prevents the browser from automatically using the existing Google session 
+// to sign in without user interaction after they have explicitly logged out.
+provider.setCustomParameters({
+    prompt: 'select_account'
+});
+
 export async function signInWithGoogle() {
     try {
         const result = await signInWithPopup(auth, provider);
