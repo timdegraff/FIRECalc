@@ -131,7 +131,7 @@ const MOBILE_TEMPLATES = {
             </div>
             
             <h3 class="mobile-label mb-2">Yearly Data</h3>
-            <div id="projection-table-container" class="overflow-x-auto rounded-xl border border-slate-800"></div>
+            <div id="projection-table-container" class="overflow-y-auto overflow-x-auto rounded-xl border border-slate-800 max-h-[300px] bg-slate-900/50"></div>
             
             <div class="h-8"></div>
             <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800">
@@ -152,7 +152,7 @@ const MOBILE_TEMPLATES = {
                         <span class="mobile-label">Strategy Dial (MAGI)</span>
                         <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
                     </div>
-                    <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full">
+                    <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full bg-slate-600">
                     <div class="flex justify-between text-[7px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
                         <span>0%</span>
                         <span class="text-emerald-500/50">Platinum</span>
@@ -570,7 +570,8 @@ function attachSwipeListeners() {
     let currentSwipeCard = null;
 
     document.body.addEventListener('touchstart', (e) => {
-        const card = e.target.closest('.mobile-card');
+        // FIX: Only target cards inside a swipe-wrapper (prevents swipe on static cards in More/Strategy)
+        const card = e.target.closest('.swipe-wrapper .mobile-card');
         if (!card) return;
         
         // If we touch a different card, close the open one
@@ -735,7 +736,7 @@ function renderMobileProfile() {
         </div>
         <div>
              <span class="mobile-label">Household Size</span>
-             <input data-benefit-id="hhSize" type="range" min="1" max="10" step="1" value="${hhSize}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-2">
+             <input data-benefit-id="hhSize" type="range" min="1" max="10" step="1" value="${hhSize}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-2">
              <div class="text-right text-white font-black text-sm mt-1">${hhSize} Person(s)</div>
         </div>
         <div>
@@ -758,23 +759,23 @@ function renderMobileProfile() {
         <div class="space-y-4">
             <div class="space-y-2">
                 <div class="flex justify-between"><span class="mobile-label">Stock Growth</span><span class="text-white font-bold text-xs">${a.stockGrowth}%</span></div>
-                <input data-id="stockGrowth" type="range" min="0" max="15" step="0.5" value="${a.stockGrowth}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                <input data-id="stockGrowth" type="range" min="0" max="15" step="0.5" value="${a.stockGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500">
             </div>
              <div class="space-y-2">
                 <div class="flex justify-between"><span class="mobile-label">Crypto Growth</span><span class="text-white font-bold text-xs">${a.cryptoGrowth}%</span></div>
-                <input data-id="cryptoGrowth" type="range" min="0" max="50" step="1" value="${a.cryptoGrowth}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500">
+                <input data-id="cryptoGrowth" type="range" min="0" max="50" step="1" value="${a.cryptoGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-orange-500">
             </div>
              <div class="space-y-2">
                 <div class="flex justify-between"><span class="mobile-label">Metals Growth</span><span class="text-white font-bold text-xs">${a.metalsGrowth}%</span></div>
-                <input data-id="metalsGrowth" type="range" min="0" max="15" step="0.5" value="${a.metalsGrowth}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-yellow-500">
+                <input data-id="metalsGrowth" type="range" min="0" max="15" step="0.5" value="${a.metalsGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-yellow-500">
             </div>
              <div class="space-y-2">
                 <div class="flex justify-between"><span class="mobile-label">Real Estate</span><span class="text-white font-bold text-xs">${a.realEstateGrowth}%</span></div>
-                <input data-id="realEstateGrowth" type="range" min="0" max="10" step="0.5" value="${a.realEstateGrowth}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                <input data-id="realEstateGrowth" type="range" min="0" max="10" step="0.5" value="${a.realEstateGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-indigo-500">
             </div>
             <div class="space-y-2">
                 <div class="flex justify-between"><span class="mobile-label">Inflation</span><span class="text-white font-bold text-xs">${a.inflation}%</span></div>
-                <input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+                <input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-red-500">
             </div>
         </div>
     `;
