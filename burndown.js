@@ -492,14 +492,18 @@ export const burndown = {
                 if (magiGap <= 0.01 || bal[pk] <= 0) return;
 
                 let gainRatio = 1.0; 
-                if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0.001, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
-                else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0.001, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
-                else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0.001, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
+                if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
+                else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
+                else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
                 
                 // If this is a 401k, the gain ratio is 100% (it's all ordinary income)
                 // If it's taxable, we only pull enough to hit the MAGI GAP via the GAIN component.
-                let maxPullFromAsset = (magiGap / gainRatio);
-                let actualPull = Math.min(bal[pk], maxPullFromAsset);
+                
+                let actualPull = 0;
+                if (gainRatio > 0) {
+                    let maxPullFromAsset = (magiGap / gainRatio);
+                    actualPull = Math.min(bal[pk], maxPullFromAsset);
+                }
                 
                 if (actualPull > 0) {
                     const realizedGain = actualPull * gainRatio;
@@ -573,6 +577,11 @@ export const burndown = {
                 if (surplus > 0) {
                     bal['taxable'] += surplus; 
                     bal['taxableBasis'] += surplus; 
+                    // Visual Fix: Adjust the draw down because we reinvested
+                    if (yearRes.draws['taxable']) {
+                        yearRes.draws['taxable'] -= surplus;
+                        trace.push(`  * Visual Adjustment: Reducing displayed Taxable Draw by ${formatter.formatCurrency(surplus, 0)} (Net Draw = Gross - Reinvestment)`);
+                    }
                 }
             } else if (surplus < -0.1) {
                 trace.push(`WARNING: INSOLVENT. Budget gap of ${formatter.formatCurrency(Math.abs(surplus), 0)} could not be covered.`);
