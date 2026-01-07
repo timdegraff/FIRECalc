@@ -8,6 +8,23 @@ import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { formatter } from './formatter.js';
 
+// --- MOBILE POLYFILLS & OVERRIDES ---
+// These prevent data.js from crashing when it tries to call desktop-only UI functions
+window.addRow = () => {}; 
+window.updateSidebarChart = () => {};
+window.createAssumptionControls = () => {};
+
+// Override desktop auto-save to skip HTML scraping. 
+// Mobile updates window.currentData directly via Live Binding.
+window.debouncedAutoSave = () => {
+    if (window.mobileSaveTimeout) clearTimeout(window.mobileSaveTimeout);
+    window.mobileSaveTimeout = setTimeout(() => {
+        // Pass 'false' to skip scraping and save window.currentData as-is
+        autoSave(false); 
+    }, 1000);
+};
+// ------------------------------------
+
 let currentTab = 'assets-debts';
 
 const MOBILE_TEMPLATES = {
@@ -63,8 +80,8 @@ const MOBILE_TEMPLATES = {
 };
 
 const ITEM_TEMPLATES = {
-    investment: (data) => `
-        <div class="mobile-card flex flex-col gap-3">
+    investment: (data, idx, arrayName) => `
+        <div class="mobile-card flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Account Name">
                 <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
@@ -89,8 +106,8 @@ const ITEM_TEMPLATES = {
             </div>
         </div>
     `,
-    income: (data) => `
-        <div class="mobile-card space-y-4">
+    income: (data, idx, arrayName) => `
+        <div class="mobile-card space-y-4" data-idx="${idx}" data-array="${arrayName}">
              <div class="flex justify-between items-center">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Source">
                 <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
@@ -107,8 +124,8 @@ const ITEM_TEMPLATES = {
             </div>
         </div>
     `,
-    expense: (data) => `
-        <div class="mobile-card flex justify-between items-center">
+    expense: (data, idx, arrayName) => `
+        <div class="mobile-card flex justify-between items-center" data-idx="${idx}" data-array="${arrayName}">
             <div class="flex flex-col w-1/2">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-xs outline-none" placeholder="Item Name">
                 <div class="flex gap-3 mt-1">
@@ -155,14 +172,84 @@ function attachGlobal() {
 
     const fab = document.getElementById('mobile-fab');
     fab.onclick = () => {
-        if (currentTab === 'assets-debts') addMobileRow('m-investment-cards', 'investment');
-        if (currentTab === 'income') addMobileRow('m-income-cards', 'income');
-        if (currentTab === 'budget') addMobileRow('m-budget-expenses', 'expense');
+        if (currentTab === 'assets-debts') {
+            if (!window.currentData.investments) window.currentData.investments = [];
+            window.currentData.investments.push({ type: 'Taxable', value: 0 });
+            renderTab();
+        }
+        if (currentTab === 'income') {
+             if (!window.currentData.income) window.currentData.income = [];
+             window.currentData.income.push({ amount: 0, increase: 0 });
+             renderTab();
+        }
+        if (currentTab === 'budget') {
+             if (!window.currentData.budget.expenses) window.currentData.budget.expenses = [];
+             window.currentData.budget.expenses.push({ monthly: 0, annual: 0 });
+             renderTab();
+        }
     };
 
+    // Live Data Binding for Mobile
     document.body.addEventListener('input', (e) => {
+        const input = e.target;
+        
+        // 1. Update In-Memory Data immediately
+        const card = input.closest('.mobile-card');
+        if (card && card.dataset.array && card.dataset.idx !== undefined) {
+            const arrayName = card.dataset.array;
+            const idx = parseInt(card.dataset.idx);
+            const key = input.dataset.id;
+            
+            // Handle nested objects for budget
+            let targetArray;
+            if (arrayName === 'budget.expenses') targetArray = window.currentData.budget.expenses;
+            else if (arrayName === 'budget.savings') targetArray = window.currentData.budget.savings;
+            else targetArray = window.currentData[arrayName];
+
+            if (targetArray && targetArray[idx]) {
+                let val;
+                if (input.type === 'checkbox') val = input.checked;
+                else if (input.dataset.type === 'currency') val = math.fromCurrency(input.value);
+                else if (input.type === 'number' || input.type === 'range') val = parseFloat(input.value) || 0;
+                else val = input.value;
+
+                targetArray[idx][key] = val;
+                
+                // Linked fields logic for budget
+                if (key === 'monthly' && (arrayName.includes('budget'))) targetArray[idx]['annual'] = val * 12;
+                if (key === 'annual' && (arrayName.includes('budget'))) targetArray[idx]['monthly'] = val / 12;
+            }
+        } else if (input.closest('#m-assumptions-container')) {
+             if (!window.currentData.assumptions) window.currentData.assumptions = {};
+             window.currentData.assumptions[input.dataset.id] = parseFloat(input.value) || 0;
+        }
+
+        // 2. Trigger AutoSave (which now skips scraping)
         if (window.debouncedAutoSave) window.debouncedAutoSave();
         updateMobileNW();
+    });
+    
+    // Remove handler
+    document.body.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (btn && btn.dataset.action === 'remove') {
+            const card = btn.closest('.mobile-card');
+            if (card) {
+                 const arrayName = card.dataset.array;
+                 const idx = parseInt(card.dataset.idx);
+                 
+                 let targetArray;
+                 if (arrayName === 'budget.expenses') targetArray = window.currentData.budget.expenses;
+                 else if (arrayName === 'budget.savings') targetArray = window.currentData.budget.savings;
+                 else targetArray = window.currentData[arrayName];
+
+                 if (targetArray) {
+                     targetArray.splice(idx, 1);
+                     renderTab();
+                     if (window.debouncedAutoSave) window.debouncedAutoSave();
+                 }
+            }
+        }
     });
 
     document.getElementById('close-inspector').onclick = () => {
@@ -171,6 +258,7 @@ function attachGlobal() {
 }
 
 function updateMobileNW() {
+    if (!window.currentData) return;
     const s = engine.calculateSummaries(window.currentData);
     const lbl = document.getElementById('mobile-nw-label');
     if (lbl) lbl.textContent = `${math.toCurrency(s.netWorth)} Net Worth`;
@@ -181,30 +269,29 @@ function renderTab() {
     const fab = document.getElementById('mobile-fab');
     main.innerHTML = MOBILE_TEMPLATES[currentTab]();
     
-    // FAB visibility
     fab.classList.toggle('hidden', !['assets-debts', 'income', 'budget'].includes(currentTab));
 
+    if (!window.currentData) return;
+
     if (currentTab === 'assets-debts') {
-        window.currentData.investments?.forEach(i => addMobileRow('m-investment-cards', 'investment', i));
-        window.currentData.realEstate?.forEach(i => addMobileRow('m-re-cards', 'investment', { ...i, type: 'Real Estate' }));
-        window.currentData.debts?.forEach(d => addMobileRow('m-debt-cards', 'investment', { ...d, type: 'Debt', value: -d.balance }));
+        window.currentData.investments?.forEach((item, i) => addMobileRow('m-investment-cards', 'investment', item, i, 'investments'));
+        window.currentData.realEstate?.forEach((item, i) => addMobileRow('m-re-cards', 'investment', { ...item, type: 'Real Estate' }, i, 'realEstate'));
+        window.currentData.debts?.forEach((item, i) => addMobileRow('m-debt-cards', 'investment', { ...item, type: 'Debt', value: -item.balance }, i, 'debts'));
     }
 
     if (currentTab === 'income') {
-        window.currentData.income?.forEach(i => addMobileRow('m-income-cards', 'income', i));
+        window.currentData.income?.forEach((item, i) => addMobileRow('m-income-cards', 'income', item, i, 'income'));
     }
 
     if (currentTab === 'budget') {
-        window.currentData.budget?.savings?.forEach(i => addMobileRow('m-budget-savings', 'expense', { ...i, monthly: i.annual/12 }));
-        window.currentData.budget?.expenses?.forEach(i => addMobileRow('m-budget-expenses', 'expense', i));
+        window.currentData.budget?.savings?.forEach((item, i) => addMobileRow('m-budget-savings', 'expense', { ...item, monthly: item.annual/12 }, i, 'budget.savings'));
+        window.currentData.budget?.expenses?.forEach((item, i) => addMobileRow('m-budget-expenses', 'expense', item, i, 'budget.expenses'));
     }
 
     if (currentTab === 'burndown') {
         burndown.init();
         burndown.run();
         renderMobilePriority();
-        
-        // Mobile-specific Inspector hook for the table
         setTimeout(() => {
             const container = document.getElementById('burndown-table-container');
             if (container) {
@@ -231,7 +318,6 @@ function renderTab() {
 function renderMobilePriority() {
     const container = document.getElementById('m-priority-list');
     if (!container) return;
-    
     const items = burndown.priorityOrder;
     container.innerHTML = items.map((pk, i) => {
         const meta = burndown.assetMeta[pk];
@@ -254,11 +340,9 @@ window.reorderPriority = (index, dir) => {
     const items = burndown.priorityOrder;
     const newIndex = index + dir;
     if (newIndex < 0 || newIndex >= items.length) return;
-    
     const temp = items[index];
     items[index] = items[newIndex];
     items[newIndex] = temp;
-    
     burndown.run();
     renderMobilePriority();
     if (window.debouncedAutoSave) window.debouncedAutoSave();
@@ -270,14 +354,13 @@ function openInspector(age) {
     document.getElementById('inspector-overlay').classList.remove('hidden');
 }
 
-function addMobileRow(containerId, type, data = {}) {
+function addMobileRow(containerId, type, data = {}, idx = 0, arrayName = '') {
     const container = document.getElementById(containerId);
     if (!container) return;
     const el = document.createElement('div');
-    el.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : `<div class="mobile-card">...</div>`;
+    // Pass index and arrayName to template
+    el.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data, idx, arrayName) : `<div class="mobile-card">...</div>`;
     container.appendChild(el.firstElementChild);
-    
-    // Bind currency formatting logic
     el.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
 }
 
