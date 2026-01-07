@@ -63,13 +63,19 @@ const MOBILE_TEMPLATES = {
         </div>
     `,
     'projection': () => `
-        <div class="h-full flex flex-col">
-            <div class="flex items-center justify-between mb-4"><h2 class="text-xl font-black text-white uppercase tracking-tighter">Visual Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal</button></div>
-            <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 mb-4 h-[300px] flex-shrink-0 relative"><canvas id="projection-chart"></canvas></div>
-            <h3 class="mobile-label mb-2">Yearly Data</h3>
-            <div id="projection-table-container" class="overflow-y-auto overflow-x-auto rounded-xl border border-slate-800 max-h-[300px] bg-slate-900/50"></div>
-            <div class="h-8"></div>
-            <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800"><div class="flex flex-col"><span class="mobile-label">End Age</span><span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-sm">72</span></div><input type="range" id="input-projection-end" min="50" max="100" value="72" class="flex-grow h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer"></div>
+        <div class="space-y-6 pb-4">
+            <div class="flex items-center justify-between"><h2 class="text-xl font-black text-white uppercase tracking-tighter">Visual Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal</button></div>
+            <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 h-[300px] relative"><canvas id="projection-chart"></canvas></div>
+            
+            <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-inner">
+                <div class="flex flex-col"><span class="mobile-label">End Age</span><span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-sm">72</span></div>
+                <input type="range" id="input-projection-end" min="50" max="100" value="72" class="flex-grow h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+            </div>
+
+            <div class="space-y-3">
+                <h3 class="mobile-label px-1">Yearly Data Breakdown</h3>
+                <div id="projection-table-container" class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50 shadow-inner"></div>
+            </div>
         </div>
     `,
     'burndown': () => `
