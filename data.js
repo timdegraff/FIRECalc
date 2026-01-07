@@ -66,6 +66,7 @@ export function loadUserDataIntoUI(data) {
 
     window.createAssumptionControls(data);
     updateSummaries(data);
+    window.updateSidebarChart(data);
 }
 
 function clearDynamicContent() {
