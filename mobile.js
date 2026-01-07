@@ -21,7 +21,7 @@ window.debouncedAutoSave = () => {
 };
 
 let currentTab = 'assets-debts';
-let isRedirecting = true;
+let isRedirecting = sessionStorage.getItem('fc_redirect_active') === 'true';
 
 const ASSET_TYPE_COLORS = {
     'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax',
@@ -136,8 +136,10 @@ function init() {
     attachSwipeListeners();
     
     getRedirectResult(auth).then(() => {
+        sessionStorage.removeItem('fc_redirect_active');
         isRedirecting = false;
     }).catch(e => {
+        sessionStorage.removeItem('fc_redirect_active');
         isRedirecting = false;
         console.error("Mobile Redirect Auth Error:", e);
     });
@@ -147,6 +149,7 @@ function init() {
         const appContainer = document.getElementById('app-container');
 
         if (user) { 
+            sessionStorage.removeItem('fc_redirect_active');
             await initializeData(user); 
             if (loginScreen) loginScreen.classList.add('hidden'); 
             if (appContainer) appContainer.classList.remove('hidden'); 
@@ -154,14 +157,17 @@ function init() {
         }
         else { 
             if (isRedirecting) {
-                if (loginScreen) loginScreen.innerHTML = `
-                    <div class="p-8 text-center w-full">
-                        <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
-                        <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-12">
-                            <i class="fas fa-circle-notch fa-spin"></i>
-                            Connecting...
-                        </div>
-                    </div>`;
+                if (loginScreen) {
+                    loginScreen.classList.remove('hidden');
+                    loginScreen.innerHTML = `
+                        <div class="p-8 text-center w-full">
+                            <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
+                            <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-12">
+                                <i class="fas fa-circle-notch fa-spin"></i>
+                                Connecting...
+                            </div>
+                        </div>`;
+                }
                 return;
             }
             if (loginScreen) {

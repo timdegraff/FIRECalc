@@ -7,21 +7,25 @@ import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 
 // --- VERSION CHECK LOGIC ---
-const APP_VERSION = "1.9"; 
+const APP_VERSION = "2.0"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
 // Handle Redirect Results (Required for Brave/Safari compatibility)
-let isRedirecting = true;
+// We check session storage because getRedirectResult can sometimes take a moment to fire
+let isRedirecting = sessionStorage.getItem('fc_redirect_active') === 'true';
 
-getRedirectResult(auth).then(() => {
+getRedirectResult(auth).then((result) => {
+    // Once getRedirectResult resolves (even if user is null), we are no longer "redirecting"
+    sessionStorage.removeItem('fc_redirect_active');
     isRedirecting = false;
-    // Only reload for version update AFTER we check if we're redirecting
+    
     if (currentSavedVersion !== APP_VERSION) {
         localStorage.setItem('firecalc_app_version', APP_VERSION);
         sessionStorage.clear();
         window.location.reload();
     }
 }).catch((error) => {
+    sessionStorage.removeItem('fc_redirect_active');
     isRedirecting = false;
     console.error("Redirect Error:", error);
 });
@@ -35,6 +39,7 @@ onAuthStateChanged(auth, async (user) => {
     const appContainer = document.getElementById('app-container');
 
     if (user) {
+        sessionStorage.removeItem('fc_redirect_active');
         const avatar = document.getElementById('user-avatar');
         if (avatar) avatar.src = user.photoURL || '';
         const name = document.getElementById('user-name');
@@ -44,24 +49,28 @@ onAuthStateChanged(auth, async (user) => {
         if (loginScreen) loginScreen.classList.add('hidden');
         if (appContainer) appContainer.classList.remove('hidden');
     } else {
-        // If we are still waiting for the redirect result, don't show the login button yet
+        // If we suspect a redirect is still in progress, STICK to the loading screen
         if (isRedirecting) {
-            if (loginScreen) loginScreen.innerHTML = `
-                <div class="p-8 text-center w-full">
-                    <h1 class="text-4xl font-black mb-2 text-white tracking-tighter">FIRECalc</h1>
-                    <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-xs mt-8">
-                        <i class="fas fa-circle-notch fa-spin"></i>
-                        Authenticating...
-                    </div>
-                </div>`;
+            if (loginScreen) {
+                loginScreen.classList.remove('hidden');
+                loginScreen.innerHTML = `
+                    <div class="p-8 text-center w-full">
+                        <h1 class="text-4xl font-black mb-2 text-white tracking-tighter">FIRECalc</h1>
+                        <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-xs mt-8">
+                            <i class="fas fa-circle-notch fa-spin text-lg"></i>
+                            Authenticating...
+                        </div>
+                        <p class="text-[9px] text-slate-600 uppercase mt-4">Waiting for Google Handshake</p>
+                    </div>`;
+            }
             return;
         }
         
         if (loginScreen) {
             loginScreen.classList.remove('hidden');
-            // If the innerHTML was replaced by the 'Authenticating' message, restore it
+            // If the innerHTML was replaced by the 'Authenticating' message, refresh the login UI
             if (loginScreen.innerHTML.includes('Authenticating')) {
-                window.location.reload();
+                 window.location.reload(); 
             }
         }
         if (appContainer) appContainer.classList.add('hidden');

@@ -5,7 +5,7 @@ TO DO LIST
 [THE FOLLOWING SECTION IS RESERVED FOR THE HUMAN ARCHITECT]
 
 - [x] Implement "Cash Ceiling" optimization in Burndown to prevent over-selling high-basis stock.
-- [x] Fix Brave/Safari login loops using signInWithRedirect and Auth-Pending states.
+- [x] Fix Brave/Safari login loops using signInWithRedirect and session-storage handshake.
 - [x] Sync "Nominal vs Real" toggles across Desktop and Mobile views.
 - [x] Align Gross Amount and Growth % in Income Cards.
 - [x] Replace non-taxable checkbox with "Non-Taxable Until (Year)" input.
@@ -23,9 +23,9 @@ state benefits while simulating complex retirement bridges (72t/SEPP).
 --------------------------------------------------------------------------------
 CORE PHILOSOPHY & UI PREFERENCES
 --------------------------------------------------------------------------------
-1.  AESTHETICS: High-contrast "Dark Mode" (Slate-900/800). 
-    - NUMBERS: Must use 'JetBrains Mono' or 'Inter' with tabular-nums.
-    - LABELS: 'Inter' font with heavy tracking-tighter and 800+ weight.
+1.  AESTHETICS: High-contrast "Dark Mode" (Slate-900/800/950). 
+    - NUMBERS: Must use 'Inter' with tabular-nums or 'JetBrains Mono'.
+    - LABELS: 'Inter' font with heavy weight (800+) and tracking-tighter.
 2.  COLOR LOGIC (STRICT ADHERENCE):
     - Teal (#14b8a6): Growth, Assets, Net Worth, HSA.
     - Pink (#ec4899): Expenses, Liabilities, Debts.
@@ -40,73 +40,59 @@ CORE PHILOSOPHY & UI PREFERENCES
     * NOTE: All Liabilities/Debt items must use Text-Red-400 or Text-Pink-400.
 3.  AUTH & COMPATIBILITY: 
     - Uses Firebase Auth with Google Provider.
-    - Brave/Safari fix: Must use `signInWithRedirect` instead of popups.
-    - Application tracks `APP_VERSION` in localStorage to force clean reloads on updates.
+    - Brave/Safari Safeguard: Uses `fc_redirect_active` sessionStorage flag to 
+      manage sign-in redirect handshakes and prevent infinite login loops.
+    - Version Control: Application tracks `APP_VERSION` to force clean reloads.
 
 --------------------------------------------------------------------------------
 MOBILE ARCHITECTURE
 --------------------------------------------------------------------------------
-1.  DETECTION: Surgical redirect in index.html for widths < 768px.
-2.  NAVIGATION: 6-tab fixed bottom bar (Assets, Income, Budget, More, Burndown, Chart).
-3.  INPUTS: Global 16px font-size enforcement to prevent iOS auto-zoom.
-4.  SWIPE ACTIONS: List items (Investments, Budget, etc.) use touch-start/move 
-    listeners to reveal a red "Trash" action on left-swipe (-80px).
-5.  SCROLLING: Natural document scrolling for Projection and Burndown tabs; 
-    restricted internal scrolling only for large data tables.
+1.  DETECTION: Redirect logic in index.html for viewport < 768px.
+2.  NAVIGATION: Fixed 6-tab bottom bar (Assets, Income, Budget, More, Burndown, Chart).
+3.  INPUTS: Global 16px font-size enforcement to bypass iOS auto-zoom behavior.
+4.  INTERACTIONS: Swipe-to-delete logic implemented for list items.
+5.  BURNDOWN: Vertical card-based layout with horizontal table for detailed views.
 
 --------------------------------------------------------------------------------
-SPECIFIC USER PREFERENCES (DO NOT CHANGE)
+SPECIFIC USER PREFERENCES & ENGINE RULES
 --------------------------------------------------------------------------------
 1.  PROJECTION TABLE:
-    - Simulate to age 100.
-    - First 10 years: Annual granularity.
-    - Years 11-60: 5-year granularity (age % 5 === 0).
+    - granularity: Annual for years 1-10, then 5-year steps to age 100.
 2.  BENEFITS LOGIC:
-    - MAGI Slider increments: 1000.
-    - Medicaid "Pregnant" limit: 195% FPL vs Standard 138% FPL.
-    - Shelter costs in SNAP are always editable.
+    - Healthcare: Uses projected 2026 FPL ($16,060 for size 1 + $5,650/extra).
+    - Medicaid Ceiling: 138% FPL (Standard) or 195% FPL (Pregnant).
+    - SNAP: Includes SUA ($680) and standard deductions scaled by inflation.
 3.  TAX EFFICIENCY (EFF %):
-    - Displayed on Investment rows.
-    - Roth/529: Always 100%.
-    - Pre-Tax: Calculated as 1 - (22% Fed + State Rate).
-    - Taxable: Calculated based on Gain Ratio (Value - Basis) * Cap Gains Rate.
+    - Roth/529: 100%
+    - Pre-Tax: 1 - (22% Fed + State Rate)
+    - Taxable: Calculated via Gain Ratio * (15% CapGains + State Rate).
 
 --------------------------------------------------------------------------------
 BURNDOWN ENGINE & DECUMULATION LOGIC
 --------------------------------------------------------------------------------
-The engine is a sequential cash-flow simulator:
+A dual-loop sequential simulator:
 
-1.  BUDGET CALCULATION:
-    - Sync Mode: (Sum of Budget Expenses) - (Items removed in retirement).
-    - Manual Mode: User-defined flat amount.
-    - Both apply inflation and "Go-Factor" adjustments based on age.
-
-2.  WITHDRAWAL SEQUENCE (TWO-LOOP SYSTEM):
-    - LOOP 1 (MAGI HARVESTING): Sells assets to reach the user's MAGI target 
-      (e.g., to qualify for Silver CSR or Platinum Medicaid).
-      - CRITICAL OPTIMIZATION: "Cash Ceiling". The engine stops harvesting MAGI 
-        if the total cash raised (Drawn + Net Income) already covers the year's 
-        Budget + estimated Taxes. This prevents over-selling high-basis stock.
-    - LOOP 2 (CASH SHORTFALL): If Loop 1 didn't raise enough cash to pay the 
-      bills, Loop 2 drains accounts in the user's "Draw Priority" order regardless 
-      of MAGI impact until the budget is met.
-
-3.  SOLVENCY TEST:
-    - Net Worth includes (Liquid Assets + RE Equity - Debts).
-    - Insolvency triggers when (Cash Available + SNAP < Budget + Taxes).
+1.  CASH TARGETING: Calculates Budget + Taxes - Fixed Income - SNAP.
+2.  LOOP 1 (MAGI HARVESTING): Withdraws from taxable/pre-tax assets to reach 
+    the MAGI target (Platinum/Silver). 
+    - OPTIMIZATION: Stops harvesting immediately if cash needs are met, even 
+      if the MAGI target hasn't been reached (The "Cash Ceiling").
+3.  LOOP 2 (SHORTFALL): If Loop 1 failed to raise enough cash, it drains 
+    accounts in strict priority order regardless of tax impact.
+4.  ORDER: Cash -> Taxable -> Roth Basis -> 401k -> Crypto -> Metals -> Roth Gains.
 
 --------------------------------------------------------------------------------
 PRE-POPULATED INITIAL DATA (CONSISTENCY REFERENCE)
 --------------------------------------------------------------------------------
-- Assumptions: Age 40, Retire 45, SS Start 62, SS $3k/mo. 
+- Assumptions: Age 40, Retire 45, SS Start 62, SS $3,000/mo. 
 - Growth: Stock 10%, Crypto 10%, Metals 8%, RE 3.5%, Inflation 3%.
 - Investments:
     - Emergency Fund (Cash): $25,000
     - Vanguard 401k (Pre-Tax): $300,000 (Basis: $200k)
     - Roth IRA (Post-Tax): $200,000 (Basis: $150k)
 - Real Estate: Primary Home $450k (Mortgage: $250k, Principal: $900/mo).
-- Income: Primary Salary $175,000 (3% growth, 6% contrib, 4% match).
+- Income: Primary Salary $175,000 (3% growth, 6% personal contrib, 4% match).
 - Budget Expenses: 
-    - Mortgage $2k, Cars $1k, Groceries $1k, Utilities $400, Discretionary $2k.
-- Benefits: Household size 5, Shelter costs $2k.
+    - Mortgage $2,000, Cars $1,000, Groceries $1,000, Utilities $400, Discretionary $2,000.
+- Benefits: Household size 5, Shelter costs $2,000.
 ================================================================================
