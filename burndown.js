@@ -4,10 +4,14 @@ import { math, engine, assetColors, stateTaxRates } from './utils.js';
 
 let isRealDollars = false;
 let simulationTrace = {}; // Stores year-by-year logic logs
+let firstInsolvencyAge = null; // Store for external access
 
 export const burndown = {
     priorityOrder: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'],
     
+    // Getter for mobile/chart injection
+    getInsolvencyAge: () => firstInsolvencyAge,
+
     init: () => {
         const container = document.getElementById('tab-burndown');
         const viewContainer = document.getElementById('burndown-view-container');
@@ -424,6 +428,7 @@ export const burndown = {
         const rAge = stateConfig.retirementAge || assumptions.retirementAge || 65;
 
         simulationTrace = {};
+        firstInsolvencyAge = null; // Reset
 
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -450,7 +455,7 @@ export const burndown = {
 
         for (let i = 0; i <= duration; i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge;
-            const yearRes = { age, year, draws: {}, seppAmount: 0, rmdAmount: 0, acaPremium: 0, snapBenefit: 0 };
+            const yearRes = { age, year, draws: {}, seppAmount: 0, rmdAmount: 0, acaPremium: 0, snapBenefit: 0, isInsolvent: false };
             const infFac = Math.pow(1 + inflationRate, i);
             const trace = [`--- LOGIC TRACE FOR AGE ${age} (${year}) ---`];
             let traceSources = []; // Store income components for final trace
@@ -634,6 +639,8 @@ export const burndown = {
                 }
             } else if (surplus < -0.1) {
                 trace.push(`WARNING: INSOLVENT. Budget gap of ${formatter.formatCurrency(Math.abs(surplus), 0)} could not be covered.`);
+                yearRes.isInsolvent = true;
+                if (firstInsolvencyAge === null) firstInsolvencyAge = age;
             }
 
             // ADDED: Detailed breakdown equation for the user
@@ -659,7 +666,7 @@ export const burndown = {
             }
 
             yearRes.balances = { ...bal }; yearRes.budget = targetBudget; yearRes.magi = magi; yearRes.netWorth = currentNW;
-            yearRes.status = age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard'));
+            yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard')));
             results.push(yearRes);
             simulationTrace[age] = trace;
             
@@ -694,15 +701,22 @@ export const burndown = {
             const draws = keys.map(k => {
                 const amt = (r.draws[k] || 0) / inf, bal = r.balances[k] / inf, m = burndown.assetMeta[k];
                 const note = k === '401k' ? (r.seppAmount > 0 ? '72t' : (r.rmdAmount > 0 ? 'RMD' : '')) : '';
-                return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${m.color}` : ''}">${formatCell(amt)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40">${formatCell(bal)}</div></td>`;
+                return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${m.color}` : ''}">${formatCell(amt)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40 ${r.isInsolvent ? 'text-red-500 font-bold' : ''}">${formatCell(bal)}</div></td>`;
             }).join('');
-            let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'))}">${r.status}</span>`;
+            
+            let badgeClass = 'bg-slate-700 text-slate-400';
+            if (r.status === 'INSOLVENT') badgeClass = 'bg-red-600 text-white';
+            else if (r.status === 'Medicare') badgeClass = 'bg-slate-600 text-white';
+            else if (r.status === 'Platinum') badgeClass = 'bg-emerald-500 text-white';
+            else if (r.status === 'Silver') badgeClass = 'bg-blue-500 text-white';
+
+            let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>`;
             
             // SHOW DOLLAR VALUE FOR SNAP, NOT TEXT LABEL
             const snapVal = (r.snapBenefit / inf);
             const snapDisplay = snapVal > 0 ? `<span class="font-bold text-emerald-500">${formatCell(snapVal)}</span>` : `<span class="text-slate-700">$0</span>`;
 
-            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50">${snapDisplay}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatCell(r.netWorth / inf)}</td></tr>`;
+            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer ${r.isInsolvent ? 'bg-red-900/10' : ''}" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20 ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50 text-emerald-500">${snapDisplay}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'} bg-slate-800/20">${formatCell(r.netWorth / inf)}</td></tr>`;
         }).join('');
         return `<table class="w-full text-left border-collapse table-auto"><thead class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><tr><th class="p-2 border-r border-slate-700 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center border-x border-slate-800/50">Status</th><th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${headerCells}<th class="p-2 text-right border-l border-slate-700">Net Worth</th></tr></thead><tbody>${rows}</tbody></table>`;
     }

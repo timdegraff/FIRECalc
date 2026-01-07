@@ -217,6 +217,7 @@ const MOBILE_TEMPLATES = {
 };
 
 const ITEM_TEMPLATES = {
+    // ... (rest of ITEM_TEMPLATES remains unchanged) ...
     investment: (data, idx, arrayName) => {
         const typeColorClass = ASSET_TYPE_COLORS[data.type] || 'text-white';
         return `
@@ -455,6 +456,7 @@ const ITEM_TEMPLATES = {
 };
 
 function init() {
+    // ... (rest of init function)
     attachGlobal();
     attachSwipeListeners();
     onAuthStateChanged(auth, async (user) => {
@@ -471,6 +473,7 @@ function init() {
 }
 
 function attachGlobal() {
+    // ... (rest of attachGlobal)
     document.getElementById('login-btn').onclick = signInWithGoogle;
     document.getElementById('logout-btn').onclick = logoutUser;
 
@@ -683,9 +686,9 @@ function updateMobileSummaries() {
     if (!window.currentData) return;
     const s = engine.calculateSummaries(window.currentData);
     
-    // Header NW
+    // Header NW - Use new smart compact formatter
     const lbl = document.getElementById('mobile-nw-label');
-    if (lbl) lbl.textContent = `${math.toCurrency(s.netWorth)} Net Worth`;
+    if (lbl) lbl.textContent = `${math.toSmartCompactCurrency(s.netWorth)} Net Worth`;
 
     // Income Tab Summary
     const incSum = document.getElementById('mobile-sum-income');
@@ -759,6 +762,26 @@ function renderTab() {
     }
 
     if (currentTab === 'burndown') {
+        // Run simulation to get insolvency age
+        burndown.run();
+        
+        // Inject Insolvency Warning Card if detected
+        const insolvAge = burndown.getInsolvencyAge();
+        if (insolvAge) {
+            const container = document.getElementById('burndown-view-container');
+            const snapCard = container.querySelector('.mobile-card:nth-child(2)'); // SNAP card is 2nd (Strategy, SNAP, Hidden Inputs)
+            
+            if (snapCard) {
+                const insolvCard = document.createElement('div');
+                insolvCard.className = 'mobile-card bg-red-600 border-red-500 flex flex-col items-center justify-center p-3 animate-pulse';
+                insolvCard.innerHTML = `
+                    <span class="text-[9px] font-black text-white/70 uppercase tracking-widest mb-0.5">Liquid assets depleted</span>
+                    <span class="text-white font-black mono-numbers text-xl uppercase">INSOLVENT AT AGE ${insolvAge}</span>
+                `;
+                snapCard.parentNode.insertBefore(insolvCard, snapCard.nextSibling);
+            }
+        }
+
         // We do not run burndown.init() here as it injects desktop HTML.
         // Instead we attach listeners manually for mobile.
         const slider = document.getElementById('input-strategy-dial');
@@ -784,14 +807,13 @@ function renderTab() {
                  if (navigator.vibrate && (val === 33 || val === 66)) navigator.vibrate(10);
                  
                  burndown.run();
+                 // Re-render tab to update insolvency card
+                 renderTab();
                  if (window.debouncedAutoSave) window.debouncedAutoSave();
             }
             // Trigger initial label set
             slider.dispatchEvent(new Event('input'));
         }
-
-        burndown.run();
-        // REMOVED renderMobilePriority for this view as requested
     }
 
     if (currentTab === 'more') {
@@ -808,6 +830,7 @@ function renderTab() {
     updateMobileSummaries();
 }
 
+// ... (rest of renderMobileProfile, openInspector, addMobileRow remains unchanged) ...
 function renderMobileProfile() {
     const pContainer = document.getElementById('m-profile-container');
     const mContainer = document.getElementById('m-market-container');

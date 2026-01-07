@@ -1,5 +1,6 @@
 
 import { math, engine, assetColors } from './utils.js';
+import { burndown } from './burndown.js'; // Import engine to access insolvency age
 
 let chartInstance = null;
 let isRealDollars = false;
@@ -138,20 +139,60 @@ export const projection = {
             }
         }
         
-        renderChart(labels, datasets);
+        renderChart(labels, datasets, labels.length);
         renderTable(tableData);
     }
 };
 
-function renderChart(labels, datasets) {
+function renderChart(labels, datasets, totalPoints) {
     if (typeof Chart === 'undefined') return;
     const ctx = document.getElementById('projection-chart')?.getContext('2d');
     if (!ctx) return;
     if (chartInstance) chartInstance.destroy();
 
+    // Custom Plugin for Insolvency Line
+    const insolvencyPlugin = {
+        id: 'insolvencyLine',
+        afterDatasetsDraw: (chart) => {
+            const insolvAge = burndown.getInsolvencyAge();
+            if (!insolvAge) return;
+
+            const ctx = chart.ctx;
+            const xAxis = chart.scales.x;
+            const yAxis = chart.scales.y;
+            
+            // Find index of the label containing the insolvency age
+            // Label format: "Age (Year)" e.g., "72 (2058)"
+            const index = chart.data.labels.findIndex(l => l.startsWith(insolvAge.toString()));
+            
+            if (index !== -1) {
+                const x = xAxis.getPixelForValue(index);
+                const topY = yAxis.top;
+                const bottomY = yAxis.bottom;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.strokeStyle = '#ef4444'; // Red-500
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(x, topY);
+                ctx.lineTo(x, bottomY);
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = '#ef4444';
+                ctx.font = "bold 10px 'Inter', sans-serif";
+                ctx.textAlign = 'center';
+                ctx.fillText('SOLVENCY CLIFF', x, topY + 10);
+                ctx.restore();
+            }
+        }
+    };
+
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: { labels, datasets },
+        plugins: [insolvencyPlugin],
         options: {
             responsive: true,
             maintainAspectRatio: false,

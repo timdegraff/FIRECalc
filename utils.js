@@ -56,10 +56,6 @@ export const math = {
         if (isNaN(value) || value === null) return '$0';
         const absVal = Math.abs(value);
         
-        // Logic for FIRECalc presentation:
-        // 1. If compact mode (Tables/Charts) and >= $1M, allow 1 decimal for precision (e.g., $1.2M).
-        // 2. If compact mode and < $1M, force 0 decimals to just show the 'K' (e.g., $234K instead of $234.1K).
-        // 3. If standard mode (Inputs/Summaries), always round to whole dollars (no decimals).
         let maxFrac = 0;
         if (isCompact && absVal >= 1000000) {
             maxFrac = 1;
@@ -71,6 +67,39 @@ export const math = {
             minimumFractionDigits: 0, 
             maximumFractionDigits: maxFrac
         }).format(value);
+    },
+    toSmartCompactCurrency: (value) => {
+        if (isNaN(value) || value === null) return '$0';
+        const absVal = Math.abs(value);
+        
+        // Cap at 999B
+        if (absVal >= 1000000000000) return '$999B';
+
+        // < 1K: Standard ($950)
+        if (absVal < 1000) return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+
+        // 1K - 999K: 0 decimals ($333K)
+        if (absVal < 1000000) {
+            return '$' + Math.round(absVal / 1000) + 'K';
+        }
+
+        // 1M - 9.9M: 1 decimal ($1.2M)
+        if (absVal < 10000000) {
+            return '$' + (absVal / 1000000).toFixed(1) + 'M';
+        }
+
+        // 10M - 999M: 0 decimals ($22M, $145M)
+        if (absVal < 1000000000) {
+            return '$' + Math.round(absVal / 1000000) + 'M';
+        }
+
+        // 1B - 9.9B: 1 decimal ($1.5B)
+        if (absVal < 10000000000) {
+            return '$' + (absVal / 1000000000).toFixed(1) + 'B';
+        }
+
+        // 10B+: 0 decimals ($12B)
+        return '$' + Math.round(absVal / 1000000000) + 'B';
     },
     fromCurrency: (value) => {
         if (typeof value === 'number') return value;
