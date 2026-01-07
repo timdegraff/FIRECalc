@@ -39,28 +39,36 @@ const MOBILE_TEMPLATES = {
     'assets-debts': () => `
         <div class="space-y-4">
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-black text-white uppercase tracking-tighter">Investments</h2>
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-chart-line text-orange-400"></i> Investments
+                </h2>
                 <button data-add-context="investment" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
             </div>
             <div id="m-investment-cards" class="space-y-3"></div>
             
             <div class="h-8"></div>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-black text-white uppercase tracking-tighter">Real Estate</h2>
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-home text-teal-400"></i> Real Estate
+                </h2>
                 <button data-add-context="realEstate" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
             </div>
             <div id="m-re-cards" class="space-y-3"></div>
 
              <div class="h-8"></div>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-black text-white uppercase tracking-tighter">HELOCs</h2>
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-university text-blue-400"></i> HELOCs
+                </h2>
                 <button data-add-context="heloc" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
             </div>
             <div id="m-heloc-cards" class="space-y-3"></div>
 
             <div class="h-8"></div>
             <div class="flex items-center justify-between">
-                <h2 class="text-xl font-black text-white uppercase tracking-tighter">Liabilities</h2>
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-credit-card text-pink-500"></i> Other Debts
+                </h2>
                 <button data-add-context="debt" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
             </div>
             <div id="m-debt-cards" class="space-y-3"></div>
@@ -69,7 +77,9 @@ const MOBILE_TEMPLATES = {
     'income': () => `
         <div class="space-y-6">
             <div class="flex items-center justify-between">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Income Sources</h2>
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-money-bill-wave text-emerald-400"></i> Income Sources
+                </h2>
                 <button data-add-context="income" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
             </div>
             <div id="m-income-cards" class="space-y-4"></div>
@@ -78,13 +88,17 @@ const MOBILE_TEMPLATES = {
     'budget': () => `
         <div class="space-y-8">
             <div class="flex items-center justify-between">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Savings</h2>
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-piggy-bank text-emerald-400"></i> Savings
+                </h2>
                 <button data-add-context="savings" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
             </div>
             <div id="m-budget-savings" class="space-y-3"></div>
             
              <div class="flex items-center justify-between">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Monthly Spending</h2>
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-shopping-cart text-pink-500"></i> Monthly Spending
+                </h2>
                 <button data-add-context="spending" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
             </div>
             <div id="m-budget-expenses" class="space-y-3"></div>
@@ -210,6 +224,67 @@ const ITEM_TEMPLATES = {
             </div>
         </div>
     `},
+    realEstate: (data, idx, arrayName) => `
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
+                <div class="flex justify-between items-start">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-full outline-none" placeholder="Property Name">
+                </div>
+                <div class="flex justify-between items-center gap-4">
+                     <div class="flex-1">
+                        <span class="mobile-label">Value</span>
+                        <input data-id="value" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.value || 0)}" class="block w-full bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none">
+                    </div>
+                    <div class="flex-1 text-right">
+                        <span class="mobile-label">Mortgage</span>
+                        <input data-id="mortgage" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.mortgage || 0)}" class="block w-full text-right bg-transparent text-red-400 font-black text-lg mono-numbers outline-none">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
+    heloc: (data, idx, arrayName) => `
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
+                <div class="flex justify-between items-start">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-full outline-none" placeholder="Bank/HELOC Name">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                     <div class="col-span-1">
+                        <span class="mobile-label">Balance</span>
+                        <input data-id="balance" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.balance || 0)}" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none">
+                    </div>
+                     <div class="col-span-1 text-right">
+                        <span class="mobile-label">Limit</span>
+                        <input data-id="limit" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.limit || 0)}" class="block w-full text-right bg-transparent text-slate-500 font-bold text-lg mono-numbers outline-none">
+                    </div>
+                </div>
+                <!-- Rate hidden on mobile, defaults to 7% -->
+            </div>
+        </div>
+    `,
+    debt: (data, idx, arrayName) => `
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
+                <div class="flex justify-between items-start">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-full outline-none" placeholder="Liability Name">
+                </div>
+                <div class="text-right">
+                    <span class="mobile-label">Current Balance</span>
+                    <input data-id="balance" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.balance || 0)}" class="block w-full text-right bg-transparent text-red-400 font-black text-xl mono-numbers outline-none">
+                </div>
+            </div>
+        </div>
+    `,
     income: (data, idx, arrayName) => `
         <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
             <div class="swipe-action-bg">
@@ -219,15 +294,35 @@ const ITEM_TEMPLATES = {
                  <div class="flex justify-between items-center">
                     <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-full outline-none" placeholder="Source">
                 </div>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4 border-b border-slate-700/50 pb-3">
                     <div>
                         <span class="mobile-label">Gross Amount</span>
-                        <input data-id="amount" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.amount || 0)}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                        <input data-id="amount" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.amount || 0)}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none">
                     </div>
-                    <div>
+                    <div class="text-right">
                         <span class="mobile-label">Growth %</span>
-                        <input data-id="increase" type="number" inputmode="decimal" value="${data.increase || 0}" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-700">
+                        <input data-id="increase" type="number" inputmode="decimal" value="${data.increase || 0}" class="block w-full text-right bg-transparent text-white font-bold mono-numbers outline-none">
                     </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <span class="mobile-label">Bonus %</span>
+                        <input data-id="bonusPct" type="number" inputmode="decimal" value="${data.bonusPct || 0}" class="block w-full bg-transparent text-slate-400 font-bold mono-numbers outline-none">
+                    </div>
+                    <div class="text-center">
+                        <span class="mobile-label">401k %</span>
+                        <input data-id="contribution" type="number" inputmode="decimal" value="${data.contribution || 0}" class="block w-full text-center bg-transparent text-blue-400 font-bold mono-numbers outline-none">
+                    </div>
+                    <div class="text-right">
+                        <span class="mobile-label">Match %</span>
+                        <input data-id="match" type="number" inputmode="decimal" value="${data.match || 0}" class="block w-full text-right bg-transparent text-emerald-400 font-bold mono-numbers outline-none">
+                    </div>
+                </div>
+                <div class="pt-2 border-t border-slate-700/50">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" data-id="remainsInRetirement" ${data.remainsInRetirement ? 'checked' : ''} class="w-4 h-4 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase">Retirement Income?</span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -321,7 +416,7 @@ function attachGlobal() {
         }
         else if (context === 'realEstate') {
             if (!window.currentData.realEstate) window.currentData.realEstate = [];
-            window.currentData.realEstate.push({ name: '', value: 0, mortgage: 0 });
+            window.currentData.realEstate.push({ name: '', value: 0, mortgage: 0, principalPayment: 0 });
         }
         else if (context === 'heloc') {
             if (!window.currentData.helocs) window.currentData.helocs = [];
@@ -491,9 +586,9 @@ function renderTab() {
 
     if (currentTab === 'assets-debts') {
         window.currentData.investments?.forEach((item, i) => addMobileRow('m-investment-cards', 'investment', item, i, 'investments'));
-        window.currentData.realEstate?.forEach((item, i) => addMobileRow('m-re-cards', 'investment', { ...item, type: 'Real Estate' }, i, 'realEstate'));
-        window.currentData.helocs?.forEach((item, i) => addMobileRow('m-heloc-cards', 'investment', { ...item, type: 'HELOC', value: -item.balance }, i, 'helocs'));
-        window.currentData.debts?.forEach((item, i) => addMobileRow('m-debt-cards', 'investment', { ...item, type: 'Debt', value: -item.balance }, i, 'debts'));
+        window.currentData.realEstate?.forEach((item, i) => addMobileRow('m-re-cards', 'realEstate', { ...item, type: 'Real Estate' }, i, 'realEstate'));
+        window.currentData.helocs?.forEach((item, i) => addMobileRow('m-heloc-cards', 'heloc', { ...item, type: 'HELOC', value: -item.balance }, i, 'helocs'));
+        window.currentData.debts?.forEach((item, i) => addMobileRow('m-debt-cards', 'debt', { ...item, type: 'Debt', value: -item.balance }, i, 'debts'));
     }
 
     if (currentTab === 'income') {
