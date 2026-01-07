@@ -16,13 +16,26 @@ input, select, textarea {
 .mobile-nav-btn {
     width: 60px;
     height: 100%;
-    color: #64748b;
+    color: #64748b; /* Default slate color */
     transition: all 0.2s;
+    border-radius: 12px;
+    margin: 4px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .mobile-nav-btn.active {
-    color: #3b82f6;
+    background-color: rgba(30, 41, 59, 0.5); /* slate-800/50 */
 }
+
+/* Specific Tab Active Colors */
+.mobile-nav-btn.active[data-tab="assets-debts"] { color: #fb923c; } /* Orange */
+.mobile-nav-btn.active[data-tab="income"] { color: #2dd4bf; } /* Teal */
+.mobile-nav-btn.active[data-tab="budget"] { color: #ec4899; } /* Pink */
+.mobile-nav-btn.active[data-tab="burndown"] { color: #a855f7; } /* Purple */
+.mobile-nav-btn.active[data-tab="more"] { color: #10b981; } /* Emerald */
 
 .mobile-card {
     background: #1e293b;
@@ -44,6 +57,15 @@ input, select, textarea {
     font-family: 'JetBrains Mono', monospace;
     font-variant-numeric: tabular-nums;
 }
+
+/* Asset Type Text Colors */
+.text-type-cash { color: #f472b6; }
+.text-type-taxable { color: #10b981; }
+.text-type-pretax { color: #3b82f6; }
+.text-type-posttax { color: #a855f7; }
+.text-type-crypto { color: #f59e0b; }
+.text-type-metals { color: #eab308; }
+.text-type-hsa { color: #2dd4bf; }
 
 /* Orientation Logic for Burndown */
 @media screen and (orientation: portrait) {
