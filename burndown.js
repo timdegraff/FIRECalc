@@ -428,6 +428,7 @@ export const burndown = {
             const yearRes = { age, year, draws: {}, seppAmount: 0, rmdAmount: 0, acaPremium: 0, snapBenefit: 0 };
             const infFac = Math.pow(1 + inflationRate, i);
             const trace = [`--- LOGIC TRACE FOR AGE ${age} (${year}) ---`];
+            let traceSources = []; // Store income components for final trace
 
             const amort = (arr, key) => arr.reduce((s, item) => { if (item[key] > 0) item[key] = Math.max(0, item[key] - (item.principalPayment || 0) * 12); return s + item[key]; }, 0);
             const totalMort = amort(simRE, 'mortgage'), totalOL = amort(simOA, 'loan'), totalDebt = amort(simDebts, 'balance');
@@ -453,9 +454,11 @@ export const burndown = {
                 if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) {
                      netAvail += netSrc;
                      trace.push(`Fixed Non-Taxable Income (${inc.name}): ${formatter.formatCurrency(netSrc, 0)}`);
+                     if (netSrc > 0) traceSources.push({name: inc.name, amt: netSrc});
                 } else {
                     ordInc += netSrc; netAvail += netSrc;
                     trace.push(`Fixed Ordinary Income (${inc.name}): ${formatter.formatCurrency(netSrc, 0)}`);
+                    if (netSrc > 0) traceSources.push({name: inc.name, amt: netSrc});
                     const contribRate = parseFloat(inc.contribution) / 100 || 0;
                     let rawContrib = gross * contribRate; if (inc.contribOnBonus) rawContrib += bonus * contribRate;
                     const limit = (age >= 50 ? 31000 : 23500) * infFac; pretaxDed += Math.min(rawContrib, limit);
@@ -467,6 +470,7 @@ export const burndown = {
                 const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus);
                 ordInc += taxableSS; netAvail += ssGross;
                 trace.push(`Social Security: ${formatter.formatCurrency(ssGross, 0)} (Taxable Portion: ${formatter.formatCurrency(taxableSS, 0)})`);
+                traceSources.push({name: 'Social Security', amt: ssGross});
             }
             
             if (stateConfig.useSEPP && isSepp && age < 60 && bal['401k'] > 0) {
@@ -605,6 +609,28 @@ export const burndown = {
                 }
             } else if (surplus < -0.1) {
                 trace.push(`WARNING: INSOLVENT. Budget gap of ${formatter.formatCurrency(Math.abs(surplus), 0)} could not be covered.`);
+            }
+
+            // ADDED: Detailed breakdown equation for the user
+            burndown.priorityOrder.forEach(k => {
+                const amt = yearRes.draws[k];
+                if (amt && Math.abs(amt) > 1) {
+                    traceSources.push({name: burndown.assetMeta[k]?.short || k, amt: amt});
+                }
+            });
+            if (finalSnap > 0) traceSources.push({name: 'SNAP', amt: finalSnap});
+            
+            const totalTaxCost = tax + yearRes.acaPremium;
+            const sourcesStr = traceSources.map(s => `${formatter.formatCurrency(s.amt, 0)} (${s.name})`).join(' + ');
+            const taxStr = totalTaxCost > 0 ? ` - ${formatter.formatCurrency(totalTaxCost, 0)} (Taxes)` : '';
+            const netResult = traceSources.reduce((s, x) => s + x.amt, 0) - totalTaxCost;
+            
+            trace.push(`Funding Equation:`);
+            trace.push(`${sourcesStr}${taxStr} = ${formatter.formatCurrency(netResult, 0)} (Net Available)`);
+            if (Math.abs(netResult - targetBudget) > 100) {
+                 trace.push(`Target Budget: ${formatter.formatCurrency(targetBudget, 0)} (Diff: ${formatter.formatCurrency(netResult - targetBudget, 0)})`);
+            } else {
+                 trace.push(`Matches Budget: ${formatter.formatCurrency(targetBudget, 0)}`);
             }
 
             yearRes.balances = { ...bal }; yearRes.budget = targetBudget; yearRes.magi = magi; yearRes.netWorth = currentNW;
