@@ -792,6 +792,22 @@ function renderMobileProfile() {
             </div>
         </div>
     `;
+
+    // Bind number behavior to the newly created static inputs
+    [pContainer, mContainer, sContainer].forEach(c => {
+        if (!c) return;
+        c.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('focus', (e) => {
+                if (parseFloat(e.target.value) === 0) e.target.value = '';
+            });
+            input.addEventListener('blur', (e) => {
+                if (e.target.value.trim() === '') {
+                    e.target.value = '0';
+                    e.target.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            });
+        });
+    });
 }
 
 function renderMobilePriority() {
@@ -850,6 +866,21 @@ function addMobileRow(containerId, type, data = {}, idx = 0, arrayName = '') {
         // Explicitly clear 0 on click for mobile
         input.addEventListener('click', (e) => {
             if (math.fromCurrency(e.target.value) === 0) e.target.value = '';
+        });
+    });
+
+    // NEW: Handle percentage/number inputs (clear 0 on focus, restore on blur)
+    card.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('focus', (e) => {
+            if (parseFloat(e.target.value) === 0) {
+                e.target.value = '';
+            }
+        });
+        input.addEventListener('blur', (e) => {
+            if (e.target.value.trim() === '') {
+                e.target.value = '0';
+                e.target.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         });
     });
 }
