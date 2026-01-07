@@ -287,15 +287,72 @@ window.addRow = (containerId, type, data = {}) => {
 window.updateSidebarChart = (data) => {
     const ctx = document.getElementById('sidebar-asset-chart')?.getContext('2d'); if (!ctx) return;
     const totals = {}; let totalSum = 0;
+    
     data.investments?.forEach(i => { const v = math.fromCurrency(i.value); totals[i.type] = (totals[i.type] || 0) + v; totalSum += v; });
     data.realEstate?.forEach(r => { const v = math.fromCurrency(r.value); totals['Real Estate'] = (totals['Real Estate'] || 0) + v; totalSum += v; });
     data.otherAssets?.forEach(o => { const v = math.fromCurrency(o.value); totals['Other'] = (totals['Other'] || 0) + v; totalSum += v; });
+
     if (lastChartSum !== 0 && (Math.abs(totalSum - lastChartSum) / lastChartSum) < 0.005) return;
     lastChartSum = totalSum;
+
+    // --- RENDER DOUBLE COLUMN LIST ---
+    const legendContainer = document.getElementById('sidebar-asset-legend');
+    if (legendContainer) {
+        legendContainer.innerHTML = '';
+        const shortNames = {
+            'Pre-Tax (401k/IRA)': 'Pre-Tax',
+            'Post-Tax (Roth)': 'Roth',
+            'Taxable': 'Brokerage',
+            'Real Estate': 'Real Est',
+            'Crypto': 'Crypto',
+            'Metals': 'Metals',
+            'Cash': 'Cash',
+            'HSA': 'HSA',
+            '529 Plan': '529',
+            'Other': 'Other'
+        };
+
+        Object.entries(totals)
+            .sort(([, a], [, b]) => b - a)
+            .forEach(([type, value]) => {
+                if (value <= 0) return;
+                const percent = Math.round((value / totalSum) * 100);
+                const color = assetColors[type] || assetColors['Taxable'];
+                const shortName = shortNames[type] || type;
+                
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
+                item.innerHTML = `
+                    <div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div>
+                    <span class="truncate">${shortName}</span>
+                    <span class="ml-auto text-white">${percent}%</span>
+                `;
+                legendContainer.appendChild(item);
+            });
+    }
+
     if (assetChart) assetChart.destroy();
     assetChart = new Chart(ctx, {
-        type: 'doughnut', data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: Object.keys(totals).map(l => assetColors[l] || assetColors['Taxable']), borderWidth: 0, hoverOffset: 2 }] },
-        options: { plugins: { legend: { display: false }, tooltip: { bodyFont: { family: "'Inter', sans-serif" }, callbacks: { label: (c) => `${c.label}: ${((c.parsed / totalSum) * 100).toFixed(1)}%` } } }, cutout: '75%', responsive: true, maintainAspectRatio: false }
+        type: 'doughnut', 
+        data: { 
+            labels: Object.keys(totals), 
+            datasets: [{ 
+                data: Object.values(totals), 
+                backgroundColor: Object.keys(totals).map(l => assetColors[l] || assetColors['Taxable']), 
+                borderWidth: 0, 
+                hoverOffset: 0 
+            }] 
+        },
+        options: { 
+            plugins: { 
+                legend: { display: false }, 
+                tooltip: { enabled: false } // Disable tooltips entirely as requested
+            }, 
+            cutout: '85%', 
+            responsive: true, 
+            maintainAspectRatio: false,
+            events: [] // Disable hover events for performance
+        }
     });
 };
 
