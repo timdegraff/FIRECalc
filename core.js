@@ -200,10 +200,17 @@ function attachDynamicRowListeners() {
         else if (btn.dataset.action === 'toggle-freq') {
             const isMon = btn.textContent.trim().toLowerCase() === 'monthly';
             btn.textContent = isMon ? 'Annual' : 'Monthly';
-            const input = btn.closest('div')?.querySelector('input');
+            
+            // Fix traversal: Input is a sibling of the parent container of the button
+            const wrapper = btn.closest('.space-y-1.5');
+            const input = wrapper ? wrapper.querySelector('input') : null;
+
             if (input) { 
                 const cur = math.fromCurrency(input.value); 
+                // isMon was 'true' (displayed Monthly), so current value is monthly. 
+                // We are switching to Annual, so x12. Vice versa.
                 input.value = math.toCurrency(isMon ? cur * 12 : cur / 12);
+                
                 // Dispatch input event to ensure data model is updated and saved
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }

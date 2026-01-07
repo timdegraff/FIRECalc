@@ -357,23 +357,31 @@ const ITEM_TEMPLATES = {
             <div class="swipe-action-bg">
                 <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
             </div>
-            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex justify-between items-center" data-idx="${idx}" data-array="${arrayName}">
-                 <div class="flex flex-col w-1/2">
-                    <span class="mobile-label mb-1">Destination</span>
-                    <select data-id="type" class="bg-slate-900 text-sm font-bold rounded px-2 py-1 outline-none ${typeColorClass} -ml-2">
-                        <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
-                        <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
-                        <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
-                        <option value="Cash" ${data.type === 'Cash' ? 'selected' : ''}>Cash</option>
-                        <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
-                        <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
-                        <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
-                        <option value="529 Plan" ${data.type === '529 Plan' ? 'selected' : ''}>529 Plan</option>
-                    </select>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
+                 <div class="flex justify-between items-center">
+                     <div class="flex flex-col w-1/2">
+                        <span class="mobile-label mb-1">Destination</span>
+                        <select data-id="type" class="bg-slate-900 text-sm font-bold rounded px-2 py-1 outline-none ${typeColorClass} -ml-2">
+                            <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
+                            <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
+                            <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
+                            <option value="Cash" ${data.type === 'Cash' ? 'selected' : ''}>Cash</option>
+                            <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
+                            <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
+                            <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
+                            <option value="529 Plan" ${data.type === '529 Plan' ? 'selected' : ''}>529 Plan</option>
+                        </select>
+                    </div>
+                    <div class="text-right">
+                        <span class="mobile-label">Monthly</span>
+                        <input data-id="monthly" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}>
+                    </div>
                 </div>
-                <div class="text-right">
-                    <span class="mobile-label">Monthly</span>
-                    <input data-id="monthly" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}>
+                <div class="pt-2 border-t border-slate-700/50 mt-2">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" data-id="removedInRetirement" ${data.removedInRetirement ? 'checked' : ''} class="w-4 h-4 accent-pink-500 rounded bg-slate-900 border-slate-600">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase">Stop in Retirement</span>
+                    </label>
                 </div>
             </div>
         </div>
