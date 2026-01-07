@@ -6,6 +6,18 @@ import { initializeData } from './data.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 
+// --- VERSION CHECK LOGIC ---
+// Increment this timestamp to force a one-time reload on all devices
+const APP_VERSION = "2026.1.4"; 
+const currentSavedVersion = localStorage.getItem('firecalc_app_version');
+
+if (currentSavedVersion !== APP_VERSION) {
+    localStorage.setItem('firecalc_app_version', APP_VERSION);
+    // Hard refresh to clear browser cache for mobile
+    window.location.reload();
+}
+// ---------------------------
+
 initializeUI();
 benefits.init();
 burndown.init();

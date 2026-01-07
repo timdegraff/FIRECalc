@@ -23,7 +23,11 @@ export const burndown = {
                         <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
                              <div class="flex flex-col gap-1">
                                 <label class="label-std text-slate-500 text-[9px]">Retirement Age <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers">65</span></label>
-                                <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="input-range w-32">
+                                <div class="flex items-center gap-2">
+                                    <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-[10px] font-black transition-all">-</button>
+                                    <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="input-range w-24">
+                                    <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-[10px] font-black transition-all">+</button>
+                                </div>
                              </div>
                              <div class="w-[1px] h-8 bg-slate-700"></div>
                              <div class="flex flex-col gap-1">
@@ -171,6 +175,13 @@ export const burndown = {
                 const lbl = document.getElementById('label-top-retire-age');
                 if (lbl) lbl.textContent = val;
             };
+        }
+
+        const btnMinus = document.getElementById('btn-retire-minus');
+        const btnPlus = document.getElementById('btn-retire-plus');
+        if (btnMinus && btnPlus && topRetireSlider) {
+            btnMinus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) - 1; topRetireSlider.dispatchEvent(new Event('input')); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
+            btnPlus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) + 1; topRetireSlider.dispatchEvent(new Event('input')); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
         }
 
         const dwzBtn = document.getElementById('btn-dwz-toggle');
@@ -337,7 +348,9 @@ export const burndown = {
         } else results = burndown.simulateProjection(data);
 
         if (results.length > 0) {
-            const firstYearSnap = results[0].snapBenefit / 12;
+            // Find the first year of retirement to show SNAP indicator
+            const firstRetYear = results.find(r => r.age >= (data.assumptions.retirementAge || 65)) || results[0];
+            const firstYearSnap = (firstRetYear.snapBenefit || 0) / 12;
             const snapInd = document.getElementById('est-snap-indicator');
             if (snapInd) snapInd.textContent = `${formatter.formatCurrency(firstYearSnap, 0)}/mo`;
         }
@@ -383,7 +396,7 @@ export const burndown = {
         let seppAmt = 0, isSepp = false;
 
         for (let i = 0; i <= duration; i++) {
-            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= assumptions.retirementAge;
+            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= (assumptions.retirementAge || 65);
             const yearRes = { age, year, draws: {}, seppAmount: 0, rmdAmount: 0, acaPremium: 0, snapBenefit: 0 };
             const infFac = Math.pow(1 + inflationRate, i);
 
@@ -419,9 +432,7 @@ export const burndown = {
 
             const ssGross = (age >= assumptions.ssStartAge) ? engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac) : 0;
             ordInc += engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus); netAvail += ssGross;
-            const initialSnap = engine.calculateSnapBenefit(ordInc, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
-            if (initialSnap > 0) { netAvail += initialSnap; yearRes.snapBenefit = initialSnap; }
-
+            
             if (stateConfig.useSEPP && isSepp && age < 60 && bal['401k'] > 0) {
                  const amt = Math.min(bal['401k'], seppAmt); bal['401k'] -= amt; ordInc += amt; netAvail += amt; yearRes.seppAmount = amt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + amt;
             } else if (age >= 60) isSepp = false;
@@ -485,23 +496,19 @@ export const burndown = {
                     if (availTotal <= 0) return;
 
                     // COST BASIS RATIO MATH
-                    let gainRatio = 1.0; // Default (401k, Cash, etc)
+                    let gainRatio = 1.0; 
                     if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
                     else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
                     else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
                     else if (!burndown.assetMeta[pk].isMagi) gainRatio = 0.0;
 
-                    // Calculate how much TOTAL CASH to take to hit the GAIN target
                     let takeTotal = 0;
                     if (gainRatio > 0) {
-                        // If we need $X of gains, we take $X / gainRatio of cash
                         takeTotal = Math.min(availTotal, targetGainToPull / gainRatio);
                     } else {
-                        // Tax-free asset (Cash, Roth Basis), only take what is needed for shortfall
                         takeTotal = Math.min(availTotal, Math.max(0, shortfall));
                     }
 
-                    // MEDICAID CAP ENFORCEMENT
                     if (phase.limitByMagi && gainRatio > 0) {
                         const roomInMagi = Math.max(0, medLim - ordIter);
                         const cappedTakeByMagi = roomInMagi / gainRatio;
@@ -512,14 +519,13 @@ export const burndown = {
                         const realizedGain = takeTotal * gainRatio;
                         if (pk === 'heloc') bal['heloc'] += takeTotal; else bal[pk] -= takeTotal;
                         
-                        // Update Basis Tracking
                         if (pk === 'taxable') bal['taxableBasis'] -= (takeTotal - realizedGain);
                         else if (pk === 'crypto') bal['cryptoBasis'] -= (takeTotal - realizedGain);
                         else if (pk === 'metals') bal['metalsBasis'] -= (takeTotal - realizedGain);
 
                         yearRes.draws[pk] = (yearRes.draws[pk] || 0) + takeTotal; 
                         drawn += takeTotal;
-                        ordIter += realizedGain; // Only the gain counts as MAGI
+                        ordIter += realizedGain; 
                     }
                 });
             });
@@ -537,7 +543,7 @@ export const burndown = {
                 if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; surplus -= p; } 
                 if (surplus > 0) {
                     bal['taxable'] += surplus; 
-                    bal['taxableBasis'] += surplus; // TAX GAIN HARVESTING: Surplus reinvestment resets basis
+                    bal['taxableBasis'] += surplus; 
                 }
             } else if (surplus < 0) { 
                 if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; else bal['heloc'] -= surplus; 
