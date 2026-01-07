@@ -7,42 +7,32 @@ import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 
 // --- VERSION CHECK LOGIC ---
-const APP_VERSION = "1.8"; // Brave redirect fix version
+const APP_VERSION = "1.9"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
-if (currentSavedVersion !== APP_VERSION) {
-    localStorage.setItem('firecalc_app_version', APP_VERSION);
-    sessionStorage.clear();
-    window.location.reload();
-}
+// Handle Redirect Results (Required for Brave/Safari compatibility)
+let isRedirecting = true;
 
-const verLabel = document.getElementById('app-version-label');
-if (verLabel) verLabel.textContent = `v${APP_VERSION}`;
+getRedirectResult(auth).then(() => {
+    isRedirecting = false;
+    // Only reload for version update AFTER we check if we're redirecting
+    if (currentSavedVersion !== APP_VERSION) {
+        localStorage.setItem('firecalc_app_version', APP_VERSION);
+        sessionStorage.clear();
+        window.location.reload();
+    }
+}).catch((error) => {
+    isRedirecting = false;
+    console.error("Redirect Error:", error);
+});
 
 initializeUI();
 benefits.init();
 burndown.init();
 
-// Use a flag to track if we are waiting for a redirect response
-let isRedirecting = true;
-
-getRedirectResult(auth).then(() => {
-    isRedirecting = false;
-}).catch((error) => {
-    isRedirecting = false;
-    if (error.code === 'auth/cross-origin-isolated-biometric-auth-not-supported') return;
-    console.error("Redirect Error:", error);
-});
-
 onAuthStateChanged(auth, async (user) => {
     const loginScreen = document.getElementById('login-screen');
     const appContainer = document.getElementById('app-container');
-
-    // If a redirect is still being processed, don't show the login screen yet
-    if (!user && isRedirecting) {
-        if (loginScreen) loginScreen.innerHTML = '<div class="text-white font-bold animate-pulse uppercase tracking-widest">Validating Session...</div>';
-        return;
-    }
 
     if (user) {
         const avatar = document.getElementById('user-avatar');
@@ -54,11 +44,24 @@ onAuthStateChanged(auth, async (user) => {
         if (loginScreen) loginScreen.classList.add('hidden');
         if (appContainer) appContainer.classList.remove('hidden');
     } else {
+        // If we are still waiting for the redirect result, don't show the login button yet
+        if (isRedirecting) {
+            if (loginScreen) loginScreen.innerHTML = `
+                <div class="p-8 text-center w-full">
+                    <h1 class="text-4xl font-black mb-2 text-white tracking-tighter">FIRECalc</h1>
+                    <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-xs mt-8">
+                        <i class="fas fa-circle-notch fa-spin"></i>
+                        Authenticating...
+                    </div>
+                </div>`;
+            return;
+        }
+        
         if (loginScreen) {
             loginScreen.classList.remove('hidden');
-            // Restore original login button if it was replaced by 'Validating' text
-            if (loginScreen.innerHTML.includes('Validating')) {
-                window.location.reload(); 
+            // If the innerHTML was replaced by the 'Authenticating' message, restore it
+            if (loginScreen.innerHTML.includes('Authenticating')) {
+                window.location.reload();
             }
         }
         if (appContainer) appContainer.classList.add('hidden');
