@@ -3,13 +3,17 @@ import { formatter } from './formatter.js';
 import { math, engine, assetColors, stateTaxRates } from './utils.js';
 
 let isRealDollars = false;
+let simulationTrace = {}; // Stores year-by-year logic logs
 
 export const burndown = {
     priorityOrder: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'],
     
     init: () => {
         const container = document.getElementById('tab-burndown');
-        container.innerHTML = `
+        const viewContainer = document.getElementById('burndown-view-container');
+        if (!viewContainer) return;
+
+        viewContainer.innerHTML = `
             <div class="flex flex-col gap-4">
                 <div class="card-container p-6 bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl">
                     <div class="flex flex-wrap items-center justify-between gap-8 mb-6">
@@ -46,25 +50,18 @@ export const burndown = {
 
                         <div class="h-10 w-[1px] bg-slate-700 mx-2 hidden lg:block"></div>
                         
-                        <div class="flex flex-col gap-1.5 min-w-[200px]">
-                            <label class="label-std text-slate-500">Draw Strategy</label>
-                            <select id="burndown-strategy" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs font-black text-blue-400 outline-none focus:border-blue-500 transition-all cursor-pointer">
-                                <option value="standard">Standard (Priority Order)</option>
-                                <option value="medicaid">Platinum Max (Limit Income to 138% FPL)</option>
-                                <option value="perpetual">Wealth Preservation (Real Flat Principal)</option>
-                            </select>
-                        </div>
-
                         <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
-                            <div class="flex flex-col gap-1.5">
-                                <div class="flex justify-between items-center w-48">
-                                    <label class="label-std text-slate-500 text-[9px]">Income Utilization</label>
-                                    <span id="label-income-utilization" class="text-blue-400 font-black mono-numbers text-[10px]">0%</span>
+                            <div class="flex flex-col gap-1.5 min-w-[280px]">
+                                <div class="flex justify-between items-center w-full">
+                                    <label class="label-std text-slate-500 text-[9px]">Strategy Dial (MAGI Target)</label>
+                                    <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
                                 </div>
-                                <input type="range" id="input-income-utilization" min="0" max="100" step="1" value="0" class="input-range w-48">
+                                <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full">
                                 <div class="flex justify-between text-[7px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
-                                    <span>Max SNAP</span>
-                                    <span>Max Spend</span>
+                                    <span title="Target $0 MAGI">0%</span>
+                                    <span title="Max Benefits (138% FPL)" class="text-emerald-500/50">Platinum (33%)</span>
+                                    <span title="Optimal Subsidies (250% FPL)" class="text-blue-500/50">Silver (66%)</span>
+                                    <span title="Meet Budget regardless">Standard (100%)</span>
                                 </div>
                             </div>
                             <div class="w-[1px] h-10 bg-slate-700"></div>
@@ -133,21 +130,20 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        const triggers = ['burndown-strategy', 'toggle-rule-72t', 'toggle-budget-sync', 'input-income-utilization', 'input-top-retire-age'];
+        const triggers = ['input-strategy-dial', 'toggle-rule-72t', 'toggle-budget-sync', 'input-top-retire-age'];
         triggers.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = (e) => {
-                if (id === 'input-income-utilization') {
-                    const lbl = document.getElementById('label-income-utilization');
-                    if (lbl) lbl.textContent = `${el.value}%`;
+                if (id === 'input-strategy-dial') {
+                    const lbl = document.getElementById('label-strategy-status');
+                    const val = parseInt(el.value);
+                    if (val <= 33) lbl.textContent = "Platinum Zone";
+                    else if (val <= 66) lbl.textContent = "Silver CSR Zone";
+                    else lbl.textContent = "Standard / Budget Focus";
                 }
                 if (id === 'input-top-retire-age') {
                     const lbl = document.getElementById('label-top-retire-age');
                     if (lbl) lbl.textContent = el.value;
-                }
-                if (id === 'burndown-strategy') {
-                    const swrInd = document.getElementById('swr-indicator');
-                    if (swrInd) swrInd.classList.toggle('hidden', el.value !== 'perpetual');
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualContainer = document.getElementById('manual-budget-container');
@@ -158,13 +154,29 @@ export const burndown = {
             };
         });
 
+        const debugAgeInp = document.getElementById('input-debug-age');
+        if (debugAgeInp) {
+            debugAgeInp.oninput = () => {
+                const age = parseInt(debugAgeInp.value);
+                const logEl = document.getElementById('burndown-trace-log');
+                if (simulationTrace[age]) {
+                    logEl.textContent = simulationTrace[age].join('\n');
+                    logEl.scrollTop = 0;
+                } else {
+                    logEl.textContent = `No data for age ${age}. Ensure simulation has run.`;
+                }
+            };
+        }
+
         const optBtn = document.getElementById('btn-optimize-priority');
         if (optBtn) {
             optBtn.onclick = () => {
-                const strategy = document.getElementById('burndown-strategy')?.value || 'standard';
-                if (strategy === 'medicaid') {
-                    burndown.priorityOrder = ['taxable', 'cash', 'roth-basis', 'hsa', 'heloc', 'crypto', 'metals', '401k', 'roth-earnings'];
+                const dialVal = parseInt(document.getElementById('input-strategy-dial')?.value || 33);
+                if (dialVal <= 66) {
+                    // Benefit Focus: Kill taxable/cash first, preserve protected accounts
+                    burndown.priorityOrder = ['taxable', 'cash', 'crypto', 'metals', 'roth-basis', 'hsa', 'heloc', '401k', 'roth-earnings'];
                 } else {
+                    // Standard: Preserve liquidity
                     burndown.priorityOrder = ['cash', 'taxable', 'roth-basis', 'crypto', 'metals', '401k', 'heloc', 'hsa', 'roth-earnings'];
                 }
                 burndown.run();
@@ -194,7 +206,6 @@ export const burndown = {
                 const active = dwzBtn.classList.contains('active');
                 const lblSub = document.getElementById('dwz-sub');
                 if (lblSub) lblSub.textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
-                
                 if (active) {
                     const syncToggle = document.getElementById('toggle-budget-sync');
                     if (syncToggle && syncToggle.checked) {
@@ -203,7 +214,6 @@ export const burndown = {
                         if (manualContainer) manualContainer.classList.remove('hidden');
                     }
                 }
-                
                 burndown.run();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
@@ -238,10 +248,9 @@ export const burndown = {
         }
         isRealDollars = !!data?.isRealDollars;
         const config = [
-            {id: 'burndown-strategy', key: 'strategy', type: 'val'},
+            {id: 'input-strategy-dial', key: 'strategyDial', type: 'val'},
             {id: 'toggle-rule-72t', key: 'useSEPP', type: 'check'},
             {id: 'toggle-budget-sync', key: 'useSync', type: 'check'},
-            {id: 'input-income-utilization', key: 'incomeUtilization', type: 'val'},
             {id: 'input-top-retire-age', key: 'retirementAge', type: 'val'}
         ];
         config.forEach(c => {
@@ -249,9 +258,12 @@ export const burndown = {
             if (el && data?.[c.key] !== undefined) {
                 if (c.type === 'check') el.checked = data[c.key];
                 else el.value = data[c.key];
-                if (c.id === 'input-income-utilization') {
-                    const lbl = document.getElementById('label-income-utilization');
-                    if (lbl) lbl.textContent = `${el.value}%`;
+                if (c.id === 'input-strategy-dial') {
+                    const lbl = document.getElementById('label-strategy-status');
+                    const val = parseInt(el.value);
+                    if (val <= 33) lbl.textContent = "Platinum Zone";
+                    else if (val <= 66) lbl.textContent = "Silver CSR Zone";
+                    else lbl.textContent = "Standard / Budget Focus";
                 }
                 if (c.id === 'input-top-retire-age') {
                     const lbl = document.getElementById('label-top-retire-age');
@@ -268,9 +280,6 @@ export const burndown = {
             const lblSub = document.getElementById('dwz-sub');
             if (lblSub) lblSub.textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
         }
-        
-        const swrInd = document.getElementById('swr-indicator');
-        if (swrInd) swrInd.classList.toggle('hidden', (data?.strategy !== 'perpetual'));
 
         const realBtn = document.getElementById('toggle-burndown-real');
         if (realBtn) {
@@ -286,12 +295,11 @@ export const burndown = {
     scrape: () => {
         return { 
             priority: burndown.priorityOrder,
-            strategy: document.getElementById('burndown-strategy')?.value || 'standard',
+            strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
             useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
             useSEPP: document.getElementById('toggle-rule-72t')?.checked ?? false,
             dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
             manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
-            incomeUtilization: parseFloat(document.getElementById('input-income-utilization')?.value || 0),
             retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
             isRealDollars
         };
@@ -325,14 +333,8 @@ export const burndown = {
             }
         }
 
-        const stockGrowth = (data.assumptions.stockGrowth || 8) / 100;
-        const inflationRate = (data.assumptions.inflation || 3) / 100;
-        const swrValue = Math.max(0, stockGrowth - inflationRate);
-        const swrEl = document.getElementById('swr-value');
-        if (swrEl) swrEl.textContent = `${(swrValue * 100).toFixed(1)}%`;
-
-        let results = [];
         const config = burndown.scrape();
+        let results = [];
 
         if (config.dieWithZero) {
             let low = 0, high = 2000000, bestBudget = low;
@@ -346,15 +348,21 @@ export const burndown = {
             results = burndown.simulateProjection(data, bestBudget);
             const manualInp = document.getElementById('input-manual-budget');
             if (manualInp && document.activeElement !== manualInp) manualInp.value = math.toCurrency(bestBudget);
-        } else results = burndown.simulateProjection(data);
+        } else {
+            results = burndown.simulateProjection(data);
+        }
 
         if (results.length > 0) {
-            // Find the first year of retirement to show SNAP indicator
             const rAge = parseFloat(document.getElementById('input-top-retire-age')?.value || data.assumptions.retirementAge || 65);
             const firstRetYear = results.find(r => r.age >= rAge) || results[0];
             const firstYearSnap = (firstRetYear.snapBenefit || 0) / 12;
             const snapInd = document.getElementById('est-snap-indicator');
             if (snapInd) snapInd.textContent = `${formatter.formatCurrency(firstYearSnap, 0)}/mo`;
+
+            const debugAge = parseInt(document.getElementById('input-debug-age')?.value);
+            if (debugAge && simulationTrace[debugAge]) {
+                 document.getElementById('burndown-trace-log').textContent = simulationTrace[debugAge].join('\n');
+            }
         }
 
         const tableContainer = document.getElementById('burndown-table-container');
@@ -372,8 +380,10 @@ export const burndown = {
         const filingStatus = assumptions.filingStatus || 'Single';
         const hhSize = benefits.hhSize || 1; 
         const currentYear = new Date().getFullYear();
-        const utilizationPct = (stateConfig.incomeUtilization || 0) / 100;
+        const dial = stateConfig.strategyDial || 33;
         const rAge = stateConfig.retirementAge || assumptions.retirementAge || 65;
+
+        simulationTrace = {};
 
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -402,6 +412,7 @@ export const burndown = {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge;
             const yearRes = { age, year, draws: {}, seppAmount: 0, rmdAmount: 0, acaPremium: 0, snapBenefit: 0 };
             const infFac = Math.pow(1 + inflationRate, i);
+            const trace = [`--- LOGIC TRACE FOR AGE ${age} (${year}) ---`];
 
             const amort = (arr, key) => arr.reduce((s, item) => { if (item[key] > 0) item[key] = Math.max(0, item[key] - (item.principalPayment || 0) * 12); return s + item[key]; }, 0);
             const totalMort = amort(simRE, 'mortgage'), totalOL = amort(simOA, 'loan'), totalDebt = amort(simDebts, 'balance');
@@ -413,10 +424,10 @@ export const burndown = {
 
             let targetBudget = baseBudget;
             if (isRet) targetBudget *= (age < 65 ? (assumptions.slowGoFactor || 1.1) : (age < 80 ? (assumptions.midGoFactor || 1.0) : (assumptions.noGoFactor || 0.85)));
+            trace.push(`Target Budget (Inflation Adjusted): ${formatter.formatCurrency(targetBudget, 0)}`);
 
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const currentNW = (bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0) + (currentREVal - totalMort)) - bal['heloc'] - totalOL - totalDebt;
-            if (stateConfig.strategy === 'perpetual') targetBudget = currentNW * Math.max(0, stockGrowth - inflationRate);
 
             let ordInc = 0, ltcgInc = 0, netAvail = 0, pretaxDed = 0;
             const activeIncs = isRet ? income.filter(inc => inc.remainsInRetirement) : income;
@@ -424,9 +435,12 @@ export const burndown = {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i);
                 const bonus = gross * (parseFloat(inc.bonusPct) / 100 || 0), totalComp = gross + bonus;
                 const netSrc = totalComp - math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1);
-                if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) netAvail += netSrc;
-                else {
+                if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) {
+                     netAvail += netSrc;
+                     trace.push(`Fixed Non-Taxable Income (${inc.name}): ${formatter.formatCurrency(netSrc, 0)}`);
+                } else {
                     ordInc += netSrc; netAvail += netSrc;
+                    trace.push(`Fixed Ordinary Income (${inc.name}): ${formatter.formatCurrency(netSrc, 0)}`);
                     const contribRate = parseFloat(inc.contribution) / 100 || 0;
                     let rawContrib = gross * contribRate; if (inc.contribOnBonus) rawContrib += bonus * contribRate;
                     const limit = (age >= 50 ? 31000 : 23500) * infFac; pretaxDed += Math.min(rawContrib, limit);
@@ -434,128 +448,142 @@ export const burndown = {
             });
 
             const ssGross = (age >= assumptions.ssStartAge) ? engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac) : 0;
-            ordInc += engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus); netAvail += ssGross;
+            if (ssGross > 0) {
+                const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus);
+                ordInc += taxableSS; netAvail += ssGross;
+                trace.push(`Social Security: ${formatter.formatCurrency(ssGross, 0)} (Taxable Portion: ${formatter.formatCurrency(taxableSS, 0)})`);
+            }
             
             if (stateConfig.useSEPP && isSepp && age < 60 && bal['401k'] > 0) {
                  const amt = Math.min(bal['401k'], seppAmt); bal['401k'] -= amt; ordInc += amt; netAvail += amt; yearRes.seppAmount = amt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + amt;
+                 trace.push(`72t/SEPP Draw: ${formatter.formatCurrency(amt, 0)}`);
             } else if (age >= 60) isSepp = false;
+
             if (age >= 75) {
                 const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; yearRes.rmdAmount = rmd; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + rmd;
+                trace.push(`RMD Forced Pull: ${formatter.formatCurrency(rmd, 0)}`);
             }
             pretaxDed += (budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0);
             ordInc -= pretaxDed; netAvail -= pretaxDed;
 
+            // STRATEGY LOGIC: Target MAGI based on Dial
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac;
             const medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
-            let isMedStrat = stateConfig.strategy === 'medicaid' && age < 65;
-            if (isMedStrat && ordInc > medLim) isMedStrat = false;
-
-            const maxSnapBenefit = (295 + (hhSize - 1) * 215) * infFac;
-            const snapDeductions = ((hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) + (benefits.hasSUA !== false ? 680 : 0)) * infFac;
-            const snapPhaseOutLimit = (maxSnapBenefit / 0.3) + snapDeductions;
-
-            const hardCap = Math.min(medLim, snapPhaseOutLimit);
-            const strategyMagiTarget = ordInc + (Math.max(0, hardCap - ordInc) * utilizationPct);
-
-            let strategyPhases = [];
-            if (isMedStrat) {
-                const magiAssets = burndown.priorityOrder.filter(k => { const m = burndown.assetMeta[k]; return m.isMagi || k === '401k' || k === 'roth-earnings'; });
-                const nonMagiAssets = burndown.priorityOrder.filter(k => { const m = burndown.assetMeta[k]; return !m.isMagi && k !== '401k' && k !== 'roth-earnings'; });
-                strategyPhases = [{ keys: magiAssets, limitByMagi: true }, { keys: nonMagiAssets, limitByMagi: false }, { keys: magiAssets, limitByMagi: false }];
-            } else strategyPhases = [{ keys: burndown.priorityOrder, limitByMagi: false }];
+            const silverLim = fpl * 2.5;
+            
+            let magiTarget = 0;
+            if (dial <= 33) magiTarget = medLim * (dial / 33);
+            else if (dial <= 66) magiTarget = medLim + (silverLim - medLim) * ((dial - 33) / 33);
+            else magiTarget = Math.max(silverLim, targetBudget);
+            
+            trace.push(`--- BRACKET ENGINE ---`);
+            trace.push(`Current Fixed MAGI: ${formatter.formatCurrency(ordInc, 0)}`);
+            trace.push(`Strategy Dial Target MAGI: ${formatter.formatCurrency(magiTarget, 0)} (vs. 138% FPL: ${formatter.formatCurrency(medLim, 0)})`);
 
             let ordIter = ordInc, ltcgIter = ltcgInc, drawn = 0;
-            strategyPhases.forEach((phase, pIdx) => {
-                const isFirstMagiPhase = isMedStrat && phase.limitByMagi && pIdx === 0;
+            
+            // PHASE 1: Fill MAGI Bracket via priority list
+            trace.push(`Phase 1: Filling MAGI Bracket (Gain Harvesting)`);
+            burndown.priorityOrder.forEach(pk => {
+                const meta = burndown.assetMeta[pk];
+                if (!meta.isMagi || pk === 'roth-earnings') return;
                 
-                phase.keys.forEach(pk => {
-                    if (pk === 'roth-earnings' && bal['roth-basis'] > 0) return;
-                    
-                    const tax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
-                    let shortfall = targetBudget + tax - (netAvail + drawn);
-                    
-                    // TARGET CALCULATION: How much more MAGI (gain) do we want to pull?
-                    let targetGainToPull = shortfall > 0 ? shortfall : 0;
-                    if (isFirstMagiPhase && (burndown.assetMeta[pk].isMagi || pk === '401k')) {
-                        const magiGap = Math.max(0, strategyMagiTarget - ordIter);
-                        targetGainToPull = Math.max(targetGainToPull, magiGap);
-                    }
+                const magiGap = magiTarget - ordIter;
+                if (magiGap <= 0.01 || bal[pk] <= 0) return;
 
-                    if (targetGainToPull <= 0.01) return;
+                let gainRatio = 1.0; 
+                if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0.001, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
+                else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0.001, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
+                else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0.001, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
+                
+                // If this is a 401k, the gain ratio is 100% (it's all ordinary income)
+                // If it's taxable, we only pull enough to hit the MAGI GAP via the GAIN component.
+                let maxPullFromAsset = (magiGap / gainRatio);
+                let actualPull = Math.min(bal[pk], maxPullFromAsset);
+                
+                if (actualPull > 0) {
+                    const realizedGain = actualPull * gainRatio;
+                    bal[pk] -= actualPull;
+                    if (pk === 'taxable') bal['taxableBasis'] -= (actualPull - realizedGain);
+                    else if (pk === 'crypto') bal['cryptoBasis'] -= (actualPull - realizedGain);
+                    else if (pk === 'metals') bal['metalsBasis'] -= (actualPull - realizedGain);
 
-                    let availTotal = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
-                    if (availTotal <= 0) return;
-
-                    // SPECIAL 401k Logic for 72t
-                    if (pk === '401k' && age < 59.5) {
-                        if (isSepp) availTotal = 0; 
-                        else if (stateConfig.useSEPP) {
-                             const maxAllowedSepp = bal['401k'] * (engine.calculateMaxSepp(100000, age) / 100000);
-                             seppAmt = Math.min(targetGainToPull, maxAllowedSepp);
-                             isSepp = true; bal['401k'] -= seppAmt; ordIter += seppAmt; 
-                             yearRes.seppAmount = seppAmt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + seppAmt; drawn += seppAmt; availTotal = 0; return;
-                        } else availTotal = 0; 
-                    }
-                    if (availTotal <= 0) return;
-
-                    // COST BASIS RATIO MATH
-                    let gainRatio = 1.0; 
-                    if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0.001, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
-                    else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0.001, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
-                    else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0.001, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
-                    else if (!burndown.assetMeta[pk].isMagi) gainRatio = 0.0;
-
-                    let takeTotal = 0;
-                    if (gainRatio > 0) {
-                        takeTotal = Math.min(availTotal, targetGainToPull / gainRatio);
-                    } else {
-                        takeTotal = Math.min(availTotal, Math.max(0, shortfall));
-                    }
-
-                    if (phase.limitByMagi && gainRatio > 0) {
-                        const roomInMagi = Math.max(0, medLim - ordIter);
-                        const cappedTakeByMagi = roomInMagi / gainRatio;
-                        takeTotal = Math.min(takeTotal, cappedTakeByMagi);
-                    }
-
-                    if (takeTotal > 0.01) {
-                        const realizedGain = takeTotal * gainRatio;
-                        if (pk === 'heloc') bal['heloc'] += takeTotal; else bal[pk] -= takeTotal;
-                        
-                        if (pk === 'taxable') bal['taxableBasis'] -= (takeTotal - realizedGain);
-                        else if (pk === 'crypto') bal['cryptoBasis'] -= (takeTotal - realizedGain);
-                        else if (pk === 'metals') bal['metalsBasis'] -= (takeTotal - realizedGain);
-
-                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + takeTotal; 
-                        drawn += takeTotal;
-                        ordIter += realizedGain; 
-                    }
-                });
+                    yearRes.draws[pk] = (yearRes.draws[pk] || 0) + actualPull;
+                    drawn += actualPull;
+                    ordIter += realizedGain;
+                    trace.push(`  - Pulling ${formatter.formatCurrency(actualPull, 0)} from ${pk} to harvest ${formatter.formatCurrency(realizedGain, 0)} gains.`);
+                }
             });
 
+            // PHASE 2: Check Shortfall and pull from Non-MAGI sources if needed
+            let currentTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
+            let shortfall = targetBudget + currentTax - (netAvail + drawn);
+            
+            if (shortfall > 0) {
+                trace.push(`Phase 2: Covering Shortfall (${formatter.formatCurrency(shortfall, 0)}) via Non-MAGI sources`);
+                burndown.priorityOrder.forEach(pk => {
+                    const meta = burndown.assetMeta[pk];
+                    if (meta.isMagi || pk === 'roth-earnings' || shortfall <= 0.01) return;
+                    
+                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    let take = Math.min(avail, shortfall);
+                    if (take > 0) {
+                        if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
+                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take;
+                        drawn += take;
+                        shortfall -= take;
+                        trace.push(`  - Pulling ${formatter.formatCurrency(take, 0)} from ${pk} (Non-MAGI)`);
+                    }
+                });
+            }
+
+            // PHASE 3: If still shortfall, blow the bracket (Standard priority)
+            if (shortfall > 0) {
+                trace.push(`Phase 3: EMERGENCY. Shortfall remains (${formatter.formatCurrency(shortfall, 0)}). Pulling from remaining priority list.`);
+                burndown.priorityOrder.forEach(pk => {
+                    if (shortfall <= 0.01) return;
+                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    let take = Math.min(avail, shortfall);
+                    if (take > 0) {
+                        if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
+                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take;
+                        drawn += take;
+                        shortfall -= take;
+                        trace.push(`  - Final Pull ${formatter.formatCurrency(take, 0)} from ${pk}`);
+                    }
+                });
+            }
+
             const magi = ordIter + ltcgIter;
-            if (isMedStrat && magi > medLim) yearRes.acaPremium = magi * 0.085;
+            if (magi > medLim && age < 65 && dial <= 66) yearRes.acaPremium = magi * 0.085;
             
             const finalSnap = engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
             yearRes.snapBenefit = finalSnap;
 
+            trace.push(`--- FINAL CALCS ---`);
+            trace.push(`Final MAGI: ${formatter.formatCurrency(magi, 0)}`);
+            trace.push(`Final Est. SNAP: ${formatter.formatCurrency(finalSnap / 12, 0)}/mo`);
+            
             let tax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
             let surplus = netAvail + drawn - tax - yearRes.acaPremium - targetBudget;
             
             if (surplus > 0) { 
+                trace.push(`Surplus Cash Generated: ${formatter.formatCurrency(surplus, 0)}. Re-investing into Brokerage.`);
                 if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; surplus -= p; } 
                 if (surplus > 0) {
                     bal['taxable'] += surplus; 
                     bal['taxableBasis'] += surplus; 
                 }
-            } else if (surplus < 0) { 
-                if (bal['cash'] > Math.abs(surplus)) bal['cash'] += surplus; else bal['heloc'] -= surplus; 
+            } else if (surplus < -0.1) {
+                trace.push(`WARNING: INSOLVENT. Budget gap of ${formatter.formatCurrency(Math.abs(surplus), 0)} could not be covered.`);
             }
 
             yearRes.balances = { ...bal }; yearRes.budget = targetBudget; yearRes.magi = magi; yearRes.netWorth = currentNW;
-            yearRes.status = age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= fpl * 2.5 ? 'Silver' : 'Standard'));
+            yearRes.status = age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard'));
             results.push(yearRes);
+            simulationTrace[age] = trace;
             
+            // Growth for next year
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
             bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
             if (bal['heloc'] > 0) bal['heloc'] *= (1 + (helocs.reduce((s, h) => s + math.fromCurrency(h.balance) * (h.rate || 7), 0) / (bal['heloc'] || 1)) / 100);
@@ -575,8 +603,7 @@ export const burndown = {
                 return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${m.color}` : ''}">${formatter.formatCurrency(amt, 0)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40">${formatter.formatCurrency(bal, 0)}</div></td>`;
             }).join('');
             let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'))}">${r.status}</span>`;
-            if (r.status === 'Silver' && r.acaPremium > 0) badge += `<div class="text-[7px] text-slate-500 mt-1">Prem: ${formatter.formatCurrency(r.acaPremium / inf, 0)}</div>`;
-            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px]"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatter.formatCurrency(r.budget / inf, 0)}</td><td class="p-2 text-right font-black text-white">${formatter.formatCurrency(r.magi / inf, 0)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50">${r.snapBenefit > 0 ? `<span class="text-emerald-400 font-bold">${formatter.formatCurrency(r.snapBenefit / inf, 0)}</span>` : '<span class="text-slate-700">-</span>'}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatter.formatCurrency(r.netWorth / inf, 0)}</td></tr>`;
+            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatter.formatCurrency(r.budget / inf, 0)}</td><td class="p-2 text-right font-black text-white">${formatter.formatCurrency(r.magi / inf, 0)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50">${r.snapBenefit > 0 ? `<span class="text-emerald-400 font-bold">${formatter.formatCurrency(r.snapBenefit / inf, 0)}</span>` : '<span class="text-slate-700">-</span>'}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatter.formatCurrency(r.netWorth / inf, 0)}</td></tr>`;
         }).join('');
         return `<table class="w-full text-left border-collapse table-auto"><thead class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><tr><th class="p-2 border-r border-slate-700 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center border-x border-slate-800/50">Status</th><th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${headerCells}<th class="p-2 text-right border-l border-slate-700">Net Worth</th></tr></thead><tbody>${rows}</tbody></table>`;
     }

@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Cache Control: Discourage mobile browsers from caching the entry point aggressively -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -42,7 +41,6 @@
     </div>
 
     <div id="app-container" class="hidden flex h-screen overflow-hidden relative">
-        <!-- Persistent Top Right Version Badge -->
         <div class="fixed top-6 right-8 z-[100] pointer-events-none">
             <span id="app-version-badge" class="text-[8px] font-black text-slate-600 uppercase tracking-widest bg-slate-900/40 backdrop-blur px-2 py-1 rounded-md border border-slate-800/50">Engine v.2026.1.4</span>
         </div>
@@ -300,12 +298,29 @@
                         <canvas id="projection-chart"></canvas>
                     </div>
                 </div>
-                <!-- Data Table for Projection -->
                 <div id="projection-table-container" class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden mb-8"></div>
             </section>
 
             <!-- Burndown -->
-            <section id="tab-burndown" class="tab-content hidden max-w-full mx-auto"></section>
+            <section id="tab-burndown" class="tab-content hidden max-w-full mx-auto">
+                <div id="burndown-view-container"></div>
+                <!-- Logic Trace Debugger Section -->
+                <div id="burndown-debug-container" class="mt-8 p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-inner">
+                    <div class="flex items-center justify-between mb-4">
+                         <div class="flex items-center gap-3">
+                            <i class="fas fa-terminal text-blue-400"></i>
+                            <h3 class="text-sm font-black text-white uppercase tracking-tighter">Engine Decumulation Trace</h3>
+                         </div>
+                         <div class="flex items-center gap-3">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase">Focus Age:</label>
+                            <input type="number" id="input-debug-age" min="30" max="100" placeholder="Age" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs text-blue-400 font-black outline-none w-16 mono-numbers">
+                         </div>
+                    </div>
+                    <div id="burndown-trace-log" class="text-[10px] font-mono leading-relaxed text-slate-400 bg-black/30 p-4 rounded-xl border border-slate-800 max-h-[400px] overflow-y-auto whitespace-pre-wrap">
+                        Select an age or run simulation to see logic trace...
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 

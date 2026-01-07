@@ -9,7 +9,6 @@ let db;
 let user;
 let autoSaveTimeout = null;
 
-// Ensure this is attached to window immediately when the module is imported
 window.debouncedAutoSave = () => {
     if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
     autoSaveTimeout = setTimeout(() => {
@@ -120,8 +119,7 @@ function scrapeDataFromUI() {
     const filingStatusEl = document.querySelector('[data-id="filingStatus"]');
     if (filingStatusEl) data.assumptions.filingStatus = filingStatusEl.value;
 
-    // Scrape assumption values including the standalone retirement slider in Burndown
-    document.querySelectorAll('#assumptions-container [data-id], #burndown-live-sliders [data-id], #input-top-retire-age').forEach(i => {
+    document.querySelectorAll('#assumptions-container [data-id], #burndown-view-container [data-id], #input-top-retire-age').forEach(i => {
         if (i.tagName !== 'SELECT') {
             const val = parseFloat(i.value);
             data.assumptions[i.dataset.id] = isNaN(val) ? 0 : val;
