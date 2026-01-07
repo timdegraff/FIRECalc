@@ -4,9 +4,12 @@ import { math, engine, assetColors } from './utils.js';
 let chartInstance = null;
 let isRealDollars = false;
 
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.font.size = 10;
-Chart.defaults.color = "#64748b";
+// SAFEGUARD: Only configure defaults if Chart is loaded
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'Inter', sans-serif";
+    Chart.defaults.font.size = 10;
+    Chart.defaults.color = "#64748b";
+}
 
 export const projection = {
     load: (settings) => {
@@ -33,6 +36,9 @@ export const projection = {
     },
 
     run: (data) => {
+        // Guard against missing Chart library
+        if (typeof Chart === 'undefined') return;
+
         const { assumptions, investments = [], realEstate = [], otherAssets = [], budget = {} } = data;
         const currentYear = new Date().getFullYear();
         // Chart uses this limit
@@ -138,6 +144,7 @@ export const projection = {
 };
 
 function renderChart(labels, datasets) {
+    if (typeof Chart === 'undefined') return;
     const ctx = document.getElementById('projection-chart')?.getContext('2d');
     if (!ctx) return;
     if (chartInstance) chartInstance.destroy();

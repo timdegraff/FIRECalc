@@ -16,6 +16,12 @@ if (currentSavedVersion !== APP_VERSION) {
     // Hard refresh to clear browser cache for mobile
     window.location.reload();
 }
+
+// Link version to UI
+const verLabel = document.getElementById('app-version-label');
+if (verLabel) {
+    verLabel.textContent = `v${APP_VERSION}`;
+}
 // ---------------------------
 
 initializeUI();
