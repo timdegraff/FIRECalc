@@ -304,7 +304,12 @@ const ITEM_TEMPLATES = {
             </div>
         </div>
     `,
-    income: (data, idx, arrayName) => `
+    income: (data, idx, arrayName) => {
+        // Enforce Annual Display
+        const isMonthly = data.isMonthly || false;
+        const annualAmt = isMonthly ? (data.amount || 0) * 12 : (data.amount || 0);
+
+        return `
         <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
             <div class="swipe-action-bg">
                 <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
@@ -315,8 +320,8 @@ const ITEM_TEMPLATES = {
                 </div>
                 <div class="grid grid-cols-2 gap-4 border-b border-slate-700/50 pb-3">
                     <div>
-                        <span class="mobile-label">Gross Amount</span>
-                        <input data-id="amount" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.amount || 0)}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none">
+                        <span class="mobile-label">Annual Amount</span>
+                        <input data-id="amount" data-type="currency" inputmode="decimal" value="${math.toCurrency(annualAmt)}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none">
                     </div>
                     <div class="text-right">
                         <span class="mobile-label">Growth %</span>
@@ -345,7 +350,7 @@ const ITEM_TEMPLATES = {
                 </div>
             </div>
         </div>
-    `,
+    `},
     savings: (data, idx, arrayName) => {
         const typeColorClass = ASSET_TYPE_COLORS[data.type] || 'text-white';
         // Note: Hidden inputs are handled by data binding logic, but we ensure defaults are set when adding.
@@ -492,6 +497,14 @@ function attachGlobal() {
                 else if (input.dataset.type === 'currency') val = math.fromCurrency(input.value);
                 else if (input.type === 'number' || input.type === 'range') val = parseFloat(input.value) || 0;
                 else val = input.value;
+
+                // SPECIAL LOGIC: INCOME IS ALWAYS ANNUAL ON MOBILE
+                // If editing Income Amount, update the value AND force isMonthly to false so it syncs correctly as Annual to desktop
+                if (arrayName === 'income' && key === 'amount') {
+                    targetArray[idx]['isMonthly'] = false;
+                    // Note: incomeExpenses are less likely to be edited on mobile but if they were, similar logic would apply. 
+                    // For now, focusing on the main amount.
+                }
 
                 targetArray[idx][key] = val;
                 
@@ -831,7 +844,13 @@ function addMobileRow(containerId, type, data = {}, idx = 0, arrayName = '') {
     container.appendChild(card);
     
     // Bind listeners to the card that is now in the DOM
-    card.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
+    card.querySelectorAll('[data-type="currency"]').forEach(input => {
+        formatter.bindCurrencyEventListeners(input);
+        // Explicitly clear 0 on click for mobile
+        input.addEventListener('click', (e) => {
+            if (math.fromCurrency(e.target.value) === 0) e.target.value = '';
+        });
+    });
 }
 
 init();

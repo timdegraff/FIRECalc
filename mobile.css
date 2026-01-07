@@ -4,13 +4,39 @@
     --safe-bottom: env(safe-area-inset-bottom);
 }
 
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Prevent body scroll */
+    overscroll-behavior: none; /* Prevent browser bounce */
+    position: fixed; /* Lock content in place */
+}
+
 body.safe-bottom {
-    padding-bottom: var(--safe-bottom);
+    padding-bottom: 0; /* Handled by flex layout */
 }
 
 /* 16px font to prevent mobile auto-zoom on focus */
 input, select, textarea {
     font-size: 16px !important;
+}
+
+#app-container {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* The scrollable area */
+#mobile-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+    overscroll-behavior-y: contain;
+    padding-bottom: calc(80px + var(--safe-bottom)); /* Clear nav bar */
 }
 
 .mobile-nav-btn {

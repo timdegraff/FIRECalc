@@ -201,7 +201,12 @@ function attachDynamicRowListeners() {
             const isMon = btn.textContent.trim().toLowerCase() === 'monthly';
             btn.textContent = isMon ? 'Annual' : 'Monthly';
             const input = btn.closest('div')?.querySelector('input');
-            if (input) { const cur = math.fromCurrency(input.value); input.value = math.toCurrency(isMon ? cur * 12 : cur / 12); }
+            if (input) { 
+                const cur = math.fromCurrency(input.value); 
+                input.value = math.toCurrency(isMon ? cur * 12 : cur / 12);
+                // Dispatch input event to ensure data model is updated and saved
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
             const parent = btn.closest('.bg-slate-800'); if (parent) checkIrsLimits(parent);
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
