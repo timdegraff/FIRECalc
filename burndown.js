@@ -3,17 +3,14 @@ import { formatter } from './formatter.js';
 import { math, engine, assetColors, stateTaxRates } from './utils.js';
 
 let isRealDollars = false;
-let simulationTrace = {}; // Stores year-by-year logic logs
-let firstInsolvencyAge = null; // Store for external access
+let simulationTrace = {}; 
+let firstInsolvencyAge = null; 
 
 export const burndown = {
     priorityOrder: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'],
-    
-    // Getter for mobile/chart injection
     getInsolvencyAge: () => firstInsolvencyAge,
 
     init: () => {
-        const container = document.getElementById('tab-burndown');
         const viewContainer = document.getElementById('burndown-view-container');
         if (!viewContainer) return;
 
@@ -23,11 +20,10 @@ export const burndown = {
                     <div class="flex flex-wrap items-center justify-between gap-8 mb-6">
                         <div class="flex flex-col">
                             <h3 class="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
-                                <i class="fas fa-microchip text-purple-400"></i> Strategy Engine
+                                <i class="fas fa-microchip text-purple-400"></i> Burndown Engine
                             </h3>
                             <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Decumulation Logic Orchestrator</span>
                         </div>
-                        
                         <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
                              <div class="flex flex-col gap-1">
                                 <label class="label-std text-slate-500 text-[9px]">Retirement Age <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers">65</span></label>
@@ -51,22 +47,14 @@ export const burndown = {
                                 </div>
                              </div>
                         </div>
-
                         <div class="h-10 w-[1px] bg-slate-700 mx-2 hidden lg:block"></div>
-                        
                         <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
                             <div class="flex flex-col gap-1.5 min-w-[280px]">
                                 <div class="flex justify-between items-center w-full">
-                                    <label class="label-std text-slate-500 text-[9px]">Strategy Dial (MAGI Target)</label>
+                                    <label class="label-std text-slate-500 text-[9px]">Burndown Dial (MAGI Target)</label>
                                     <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
                                 </div>
                                 <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full">
-                                <div class="flex justify-between text-[7px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
-                                    <span title="Target $0 MAGI">0%</span>
-                                    <span title="Max Benefits (138% FPL)" class="text-emerald-500/50">Platinum (33%)</span>
-                                    <span title="Optimal Subsidies (250% FPL)" class="text-blue-500/50">Silver (66%)</span>
-                                    <span title="Meet Budget regardless">Standard (100%)</span>
-                                </div>
                             </div>
                             <div class="w-[1px] h-10 bg-slate-700"></div>
                             <div class="flex flex-col items-center justify-center min-w-[90px]">
@@ -74,47 +62,27 @@ export const burndown = {
                                 <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-xs text-center w-full">$0/mo</span>
                             </div>
                         </div>
-
-                        <div id="swr-indicator" class="hidden flex flex-col items-center justify-center px-6 border-l border-slate-700">
-                            <span class="label-std text-slate-500">Safe Draw (SWR)</span>
-                            <span id="swr-value" class="text-teal-400 font-black mono-numbers text-xl">0%</span>
-                        </div>
                     </div>
-
                     <div class="flex flex-wrap items-center gap-4 border-t border-slate-700/50 pt-4">
                         <label class="flex items-center gap-4 px-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700 cursor-pointer group transition-all hover:bg-slate-900">
                             <input type="checkbox" id="toggle-rule-72t" class="w-4 h-4 accent-blue-500">
-                            <div class="flex flex-col">
-                                <span class="label-std text-slate-300 group-hover:text-blue-400 transition-colors">Allow 72t Bridge</span>
-                                <span class="text-[8px] text-slate-600 uppercase font-black">Auto-trigger on shortfall</span>
-                            </div>
+                            <div class="flex flex-col"><span class="label-std text-slate-300">Allow 72t Bridge</span><span class="text-[8px] text-slate-600 uppercase font-black">Auto-trigger</span></div>
                         </label>
-
                         <button id="btn-dwz-toggle" class="px-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700 text-left transition-all hover:bg-slate-900 flex items-center gap-3 group min-w-[160px]">
-                            <div class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center group-[.active]:border-rose-500 group-[.active]:bg-rose-500/20">
-                                <div class="w-1.5 h-1.5 rounded-full bg-slate-700 group-[.active]:bg-rose-500"></div>
-                            </div>
-                            <div class="flex flex-col">
-                                <span id="dwz-label" class="label-std text-slate-500 group-[.active]:text-rose-400 transition-colors">Die With Zero</span>
-                                <span id="dwz-sub" class="text-[8px] text-slate-600 uppercase font-black">Target $0 at Age 100</span>
-                            </div>
+                            <div class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center group-[.active]:border-rose-500 group-[.active]:bg-rose-500/20"><div class="w-1.5 h-1.5 rounded-full bg-slate-700 group-[.active]:bg-rose-500"></div></div>
+                            <div class="flex flex-col"><span id="dwz-label" class="label-std text-slate-500 group-[.active]:text-rose-400">Die With Zero</span><span id="dwz-sub" class="text-[8px] text-slate-600 uppercase font-black">Target $0</span></div>
                         </button>
-                        
                         <button id="toggle-burndown-real" class="ml-auto px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-xl label-std font-black text-slate-400 hover:text-white transition-all flex items-center gap-2">
                             <i class="fas fa-calendar-alt"></i> Nominal Dollars
                         </button>
                     </div>
-                    
                     <div class="mt-4 pt-4 border-t border-slate-700/50">
                         <div class="flex flex-wrap items-center gap-3">
                             <span class="label-std text-slate-500 font-black">Draw Order Priority:</span>
-                            <button id="btn-optimize-priority" class="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-[9px] font-bold uppercase tracking-widest transition-all"><i class="fas fa-magic mr-1"></i> Optimize</button>
-                            <div class="w-[1px] h-4 bg-slate-700 mx-1"></div>
                             <div id="draw-priority-list" class="flex flex-wrap gap-2"></div>
                         </div>
                     </div>
                 </div>
-
                 <div class="card-container p-6 bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden shadow-inner">
                     <div id="burndown-table-container" class="max-h-[75vh] overflow-auto rounded-2xl border border-slate-800 mono-numbers"></div>
                 </div>
@@ -123,216 +91,47 @@ export const burndown = {
         burndown.attachListeners();
     },
 
+    attachListeners: () => {
+        ['input-strategy-dial', 'toggle-rule-72t', 'toggle-budget-sync', 'input-top-retire-age'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.oninput = () => {
+                if (id === 'input-strategy-dial') {
+                    const lbl = document.getElementById('label-strategy-status');
+                    const val = parseInt(el.value);
+                    lbl.textContent = val <= 33 ? "Platinum Zone" : (val <= 66 ? "Silver CSR Zone" : "Standard / Budget Focus");
+                }
+                if (id === 'input-top-retire-age') document.getElementById('label-top-retire-age').textContent = el.value;
+                burndown.run();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+        });
+        const realBtn = document.getElementById('toggle-burndown-real');
+        if (realBtn) realBtn.onclick = () => { isRealDollars = !isRealDollars; burndown.updateToggleStyle(realBtn); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
+    },
+
     updateToggleStyle: (btn) => {
         if (!btn) return;
         btn.classList.toggle('bg-blue-600/20', isRealDollars);
         btn.classList.toggle('text-blue-400', isRealDollars);
-        btn.classList.toggle('border-blue-500/30', isRealDollars);
-        btn.innerHTML = isRealDollars ? 
-            '<i class="fas fa-sync-alt"></i> 2026 Dollars' : 
-            '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
-    },
-
-    attachListeners: () => {
-        let lastZone = 'platinum'; // Default start zone
-
-        const triggers = ['input-strategy-dial', 'toggle-rule-72t', 'toggle-budget-sync', 'input-top-retire-age'];
-        triggers.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.oninput = (e) => {
-                if (id === 'input-strategy-dial') {
-                    const lbl = document.getElementById('label-strategy-status');
-                    const val = parseInt(el.value);
-                    
-                    let currentZone = '';
-                    if (val <= 33) {
-                        lbl.textContent = "Platinum Zone";
-                        currentZone = 'platinum';
-                    } else if (val <= 66) {
-                        lbl.textContent = "Silver CSR Zone";
-                        currentZone = 'silver';
-                    } else {
-                        lbl.textContent = "Standard / Budget Focus";
-                        currentZone = 'standard';
-                    }
-
-                    // Haptic Feedback for Mobile on Zone Cross
-                    if (currentZone !== lastZone) {
-                        if (navigator.vibrate) navigator.vibrate(15);
-                        lastZone = currentZone;
-                    }
-                }
-                if (id === 'input-top-retire-age') {
-                    const lbl = document.getElementById('label-top-retire-age');
-                    if (lbl) lbl.textContent = el.value;
-                }
-                if (id === 'toggle-budget-sync') {
-                    const manualContainer = document.getElementById('manual-budget-container');
-                    if (manualContainer) manualContainer.classList.toggle('hidden', el.checked);
-                }
-                burndown.run();
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            };
-        });
-
-        const debugAgeInp = document.getElementById('input-debug-age');
-        if (debugAgeInp) {
-            debugAgeInp.oninput = () => {
-                const age = parseInt(debugAgeInp.value);
-                const logEl = document.getElementById('burndown-trace-log');
-                if (simulationTrace[age]) {
-                    logEl.textContent = simulationTrace[age].join('\n');
-                    // Removed: logEl.scrollTop = 0; (User requested dynamic updates without jumping)
-                } else {
-                    logEl.textContent = `No data for age ${age}. Ensure simulation has run.`;
-                }
-            };
-        }
-
-        const optBtn = document.getElementById('btn-optimize-priority');
-        if (optBtn) {
-            optBtn.onclick = () => {
-                const dialVal = parseInt(document.getElementById('input-strategy-dial')?.value || 33);
-                if (dialVal <= 66) {
-                    // Benefit Focus: Kill taxable/cash first, preserve protected accounts
-                    burndown.priorityOrder = ['taxable', 'cash', 'crypto', 'metals', 'roth-basis', 'hsa', 'heloc', '401k', 'roth-earnings'];
-                } else {
-                    // Standard: Preserve liquidity
-                    burndown.priorityOrder = ['cash', 'taxable', 'roth-basis', 'crypto', 'metals', '401k', 'heloc', 'hsa', 'roth-earnings'];
-                }
-                burndown.run();
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            };
-        }
-        
-        const btnMinus = document.getElementById('btn-retire-minus');
-        const btnPlus = document.getElementById('btn-retire-plus');
-        const topRetireSlider = document.getElementById('input-top-retire-age');
-
-        if (btnMinus && btnPlus && topRetireSlider) {
-            btnMinus.onclick = () => { 
-                topRetireSlider.value = parseInt(topRetireSlider.value) - 1; 
-                topRetireSlider.dispatchEvent(new Event('input')); 
-            };
-            btnPlus.onclick = () => { 
-                topRetireSlider.value = parseInt(topRetireSlider.value) + 1; 
-                topRetireSlider.dispatchEvent(new Event('input')); 
-            };
-        }
-
-        const dwzBtn = document.getElementById('btn-dwz-toggle');
-        if (dwzBtn) {
-            dwzBtn.onclick = () => {
-                dwzBtn.classList.toggle('active');
-                const active = dwzBtn.classList.contains('active');
-                const lblSub = document.getElementById('dwz-sub');
-                if (lblSub) lblSub.textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
-                if (active) {
-                    const syncToggle = document.getElementById('toggle-budget-sync');
-                    if (syncToggle && syncToggle.checked) {
-                        syncToggle.checked = false;
-                        const manualContainer = document.getElementById('manual-budget-container');
-                        if (manualContainer) manualContainer.classList.remove('hidden');
-                    }
-                }
-                burndown.run();
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            };
-        }
-
-        const manualInput = document.getElementById('input-manual-budget');
-        if (manualInput) {
-            manualInput.oninput = () => { burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
-            manualInput.addEventListener('blur', (e) => {
-                const val = math.fromCurrency(e.target.value);
-                e.target.value = math.toCurrency(val);
-            });
-            manualInput.addEventListener('focus', (e) => {
-                const val = math.fromCurrency(e.target.value);
-                e.target.value = val === 0 ? '' : val;
-            });
-        }
-        const realBtn = document.getElementById('toggle-burndown-real');
-        if (realBtn) {
-            realBtn.onclick = () => {
-                isRealDollars = !isRealDollars;
-                burndown.updateToggleStyle(realBtn);
-                burndown.run();
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            };
-        }
+        btn.innerHTML = isRealDollars ? '<i class="fas fa-sync-alt"></i> 2026 Dollars' : '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
     },
 
     load: (data) => {
-        if (data?.priority) {
-            burndown.priorityOrder = [...new Set(data.priority)];
-        }
+        if (data?.priority) burndown.priorityOrder = [...new Set(data.priority)];
         isRealDollars = !!data?.isRealDollars;
-        const config = [
-            {id: 'input-strategy-dial', key: 'strategyDial', type: 'val'},
-            {id: 'toggle-rule-72t', key: 'useSEPP', type: 'check'},
-            {id: 'toggle-budget-sync', key: 'useSync', type: 'check'},
-            {id: 'input-top-retire-age', key: 'retirementAge', type: 'val'}
-        ];
-        config.forEach(c => {
-            const el = document.getElementById(c.id);
-            if (el && data?.[c.key] !== undefined) {
-                if (c.type === 'check') el.checked = data[c.key];
-                else el.value = data[c.key];
-                if (c.id === 'input-strategy-dial') {
-                    const lbl = document.getElementById('label-strategy-status');
-                    const val = parseInt(el.value);
-                    if (val <= 33) lbl.textContent = "Platinum Zone";
-                    else if (val <= 66) lbl.textContent = "Silver CSR Zone";
-                    else lbl.textContent = "Standard / Budget Focus";
-                }
-                if (c.id === 'input-top-retire-age') {
-                    const lbl = document.getElementById('label-top-retire-age');
-                    if (lbl) lbl.textContent = el.value;
-                }
-            }
-        });
-
-        const dwzBtn = document.getElementById('btn-dwz-toggle');
-        if (dwzBtn && data?.dieWithZero !== undefined) {
-            if (data.dieWithZero) dwzBtn.classList.add('active');
-            else dwzBtn.classList.remove('active');
-            const active = dwzBtn.classList.contains('active');
-            const lblSub = document.getElementById('dwz-sub');
-            if (lblSub) lblSub.textContent = active ? 'Target $0 at Age 100' : 'Hold Assets for Heirs';
-        }
-
-        const realBtn = document.getElementById('toggle-burndown-real');
-        if (realBtn) {
-            burndown.updateToggleStyle(realBtn);
-        }
-        
-        const manualInput = document.getElementById('input-manual-budget');
-        if (manualInput && data?.manualBudget !== undefined) {
-            manualInput.value = math.toCurrency(data.manualBudget);
-        }
+        burndown.run();
     },
 
-    scrape: () => {
-        // Robust strategy dial parsing to handle '0' value correctly
-        const dialEl = document.getElementById('input-strategy-dial');
-        let dialVal = 33;
-        if (dialEl) {
-            const raw = dialEl.value;
-            dialVal = (raw === '' || raw === undefined) ? 33 : parseInt(raw);
-        }
-
-        return { 
-            priority: burndown.priorityOrder,
-            strategyDial: dialVal,
-            useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
-            useSEPP: document.getElementById('toggle-rule-72t')?.checked ?? false,
-            dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
-            manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
-            retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
-            isRealDollars
-        };
-    },
+    scrape: () => ({
+        priority: burndown.priorityOrder,
+        strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
+        useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
+        useSEPP: document.getElementById('toggle-rule-72t')?.checked ?? false,
+        dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
+        manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
+        retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
+        isRealDollars
+    }),
 
     assetMeta: {
         'cash': { label: 'Cash', short: 'Cash', color: assetColors['Cash'], isTaxable: false, isMagi: false },
@@ -349,93 +148,31 @@ export const burndown = {
     run: () => {
         const data = window.currentData;
         if (!data || !data.assumptions) return;
-        
-        const priorityList = document.getElementById('draw-priority-list');
-        if (priorityList) {
-            // Dedup before rendering
-            burndown.priorityOrder = [...new Set(burndown.priorityOrder)];
-
-            priorityList.innerHTML = burndown.priorityOrder.map(k => {
-                const meta = burndown.assetMeta[k];
-                if (!meta) return ''; 
-                return `<div data-pk="${k}" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl label-std cursor-move flex items-center gap-2 group hover:border-slate-500 transition-all shadow-lg text-[10px]" style="color: ${meta.color}"><i class="fas fa-grip-vertical opacity-30 group-hover:opacity-100 transition-opacity"></i> ${meta.label}</div>`;
-            }).join('');
-            if (!burndown.sortable) {
-                burndown.sortable = new Sortable(priorityList, { 
-                    animation: 150, 
-                    onEnd: () => { 
-                        const newOrder = Array.from(priorityList.children).map(el => el.dataset.pk);
-                        burndown.priorityOrder = [...new Set(newOrder)]; // Ensure dedup on drag end
-                        burndown.run(); 
-                        if (window.debouncedAutoSave) window.debouncedAutoSave(); 
-                    } 
-                });
-            }
-        }
-
-        const config = burndown.scrape();
-        let results = [];
-
-        if (config.dieWithZero) {
-            let low = 0, high = 2000000, bestBudget = low;
-            for (let i = 0; i < 25; i++) {
-                let mid = (low + high) / 2;
-                const simResults = burndown.simulateProjection(data, mid);
-                const finalYear = simResults[simResults.length - 1];
-                if (finalYear.netWorth < 0) high = mid;
-                else { bestBudget = mid; low = mid; }
-            }
-            results = burndown.simulateProjection(data, bestBudget);
-            const manualInp = document.getElementById('input-manual-budget');
-            if (manualInp && document.activeElement !== manualInp) manualInp.value = math.toCurrency(bestBudget);
-        } else {
-            results = burndown.simulateProjection(data);
-        }
-
+        const results = burndown.simulateProjection(data);
         if (results.length > 0) {
             const rAge = parseFloat(document.getElementById('input-top-retire-age')?.value || data.assumptions.retirementAge || 65);
             const firstRetYear = results.find(r => r.age >= rAge) || results[0];
-            const firstYearSnap = (firstRetYear.snapBenefit || 0) / 12;
             const snapInd = document.getElementById('est-snap-indicator');
-            if (snapInd) snapInd.textContent = `${formatter.formatCurrency(firstYearSnap, 0)}/mo`;
-
-            const debugAge = parseInt(document.getElementById('input-debug-age')?.value);
-            const logEl = document.getElementById('burndown-trace-log');
-            if (debugAge && simulationTrace[debugAge] && logEl) {
-                 // Preserve scroll position
-                 const currentScroll = logEl.scrollTop;
-                 logEl.textContent = simulationTrace[debugAge].join('\n');
-                 logEl.scrollTop = currentScroll;
-            }
+            if (snapInd) snapInd.textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}/mo`;
         }
-
         const tableContainer = document.getElementById('burndown-table-container');
         if (tableContainer) tableContainer.innerHTML = burndown.renderTable(results);
     },
 
-    simulateProjection: (data, overrideManualBudget = null) => {
+    simulateProjection: (data) => {
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = [], debts = [] } = data;
-        const stateConfig = burndown.scrape(); 
-        const inflationRate = (assumptions.inflation || 3) / 100;
-        const stockGrowth = (assumptions.stockGrowth || 8) / 100;
-        const cryptoGrowth = (assumptions.cryptoGrowth || 10) / 100;
-        const metalsGrowth = (assumptions.metalsGrowth || 6) / 100;
-        const realEstateGrowth = (assumptions.realEstateGrowth || 3) / 100;
-        const filingStatus = assumptions.filingStatus || 'Single';
-        const hhSize = benefits.hhSize || 1; 
-        const currentYear = new Date().getFullYear();
-        const dial = stateConfig.strategyDial;
-        const rAge = stateConfig.retirementAge || assumptions.retirementAge || 65;
+        const config = burndown.scrape(); 
+        const inflationRate = (assumptions.inflation || 3) / 100, stockGrowth = (assumptions.stockGrowth || 8) / 100, cryptoGrowth = (assumptions.cryptoGrowth || 10) / 100, metalsGrowth = (assumptions.metalsGrowth || 6) / 100, realEstateGrowth = (assumptions.realEstateGrowth || 3) / 100;
+        const filingStatus = assumptions.filingStatus || 'Single', hhSize = benefits.hhSize || 1, currentYear = new Date().getFullYear();
+        const dial = config.strategyDial, rAge = config.retirementAge;
 
-        simulationTrace = {};
-        firstInsolvencyAge = null; // Reset
-
+        simulationTrace = {}; firstInsolvencyAge = null;
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxableBasis': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
-            'roth-basis': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + (math.fromCurrency(i.costBasis) || 0), 0),
-            'roth-earnings': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + Math.max(0, math.fromCurrency(i.value) - (math.fromCurrency(i.costBasis) || 0)), 0),
+            'roth-basis': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
+            'roth-earnings': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + Math.max(0, math.fromCurrency(i.value) - math.fromCurrency(i.costBasis)), 0),
             '401k': investments.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'crypto': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'cryptoBasis': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
@@ -450,274 +187,86 @@ export const burndown = {
         const simOA = otherAssets.map(o => ({ ...o, loan: math.fromCurrency(o.loan), principalPayment: math.fromCurrency(o.principalPayment) }));
         const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0);
         const results = [];
-        const duration = 100 - assumptions.currentAge;
-        let seppAmt = 0, isSepp = false;
 
-        for (let i = 0; i <= duration; i++) {
-            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge;
-            const yearRes = { age, year, draws: {}, seppAmount: 0, rmdAmount: 0, acaPremium: 0, snapBenefit: 0, isInsolvent: false };
-            const infFac = Math.pow(1 + inflationRate, i);
-            const trace = [`--- LOGIC TRACE FOR AGE ${age} (${year}) ---`];
-            let traceSources = []; // Store income components for final trace
+        for (let i = 0; i <= (100 - assumptions.currentAge); i++) {
+            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
+            const totalMort = simRE.reduce((s, r) => s + (r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12)), 0);
+            const totalOL = simOA.reduce((s, o) => s + (o.loan = Math.max(0, o.loan - (o.principalPayment || 0) * 12)), 0);
+            const totalDebt = simDebts.reduce((s, d) => s + (d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12)), 0);
 
-            const amort = (arr, key) => arr.reduce((s, item) => { if (item[key] > 0) item[key] = Math.max(0, item[key] - (item.principalPayment || 0) * 12); return s + item[key]; }, 0);
-            const totalMort = amort(simRE, 'mortgage'), totalOL = amort(simOA, 'loan'), totalDebt = amort(simDebts, 'balance');
-
-            let baseBudget = 0;
-            if (overrideManualBudget !== null) baseBudget = overrideManualBudget * infFac;
-            else if (stateConfig.useSync) (budget.expenses || []).forEach(exp => { if (isRet && exp.removedInRetirement) return; const amt = math.fromCurrency(exp.annual); baseBudget += exp.isFixed ? amt : amt * infFac; });
-            else baseBudget = (stateConfig.manualBudget || 100000) * infFac; 
-
-            let targetBudget = baseBudget;
-            if (isRet) targetBudget *= (age < 65 ? (assumptions.slowGoFactor || 1.1) : (age < 80 ? (assumptions.midGoFactor || 1.0) : (assumptions.noGoFactor || 0.85)));
-            trace.push(`Target Budget (Inflation Adjusted): ${formatter.formatCurrency(targetBudget, 0)}`);
+            let baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
+            let targetBudget = isRet ? baseBudget * (age < 65 ? (assumptions.slowGoFactor || 1.1) : (age < 80 ? (assumptions.midGoFactor || 1.0) : (assumptions.noGoFactor || 0.85))) : baseBudget;
 
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const currentNW = (bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0) + (currentREVal - totalMort)) - bal['heloc'] - totalOL - totalDebt;
 
             let ordInc = 0, ltcgInc = 0, netAvail = 0, pretaxDed = 0;
-            const activeIncs = isRet ? income.filter(inc => inc.remainsInRetirement) : income;
-            activeIncs.forEach(inc => {
+            (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i);
-                const bonus = gross * (parseFloat(inc.bonusPct) / 100 || 0), totalComp = gross + bonus;
+                const totalComp = gross + gross * (parseFloat(inc.bonusPct) / 100 || 0);
                 const netSrc = totalComp - math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1);
-                if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) {
-                     netAvail += netSrc;
-                     trace.push(`Fixed Non-Taxable Income (${inc.name}): ${formatter.formatCurrency(netSrc, 0)}`);
-                     if (netSrc > 0) traceSources.push({name: inc.name, amt: netSrc});
-                } else {
-                    ordInc += netSrc; netAvail += netSrc;
-                    trace.push(`Fixed Ordinary Income (${inc.name}): ${formatter.formatCurrency(netSrc, 0)}`);
-                    if (netSrc > 0) traceSources.push({name: inc.name, amt: netSrc});
-                    const contribRate = parseFloat(inc.contribution) / 100 || 0;
-                    let rawContrib = gross * contribRate; if (inc.contribOnBonus) rawContrib += bonus * contribRate;
-                    const limit = (age >= 50 ? 31000 : 23500) * infFac; pretaxDed += Math.min(rawContrib, limit);
-                }
+                if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) netAvail += netSrc;
+                else { ordInc += netSrc; netAvail += netSrc; pretaxDed += Math.min(gross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
             });
 
-            const ssGross = (age >= assumptions.ssStartAge) ? engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac) : 0;
-            if (ssGross > 0) {
-                const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus);
-                ordInc += taxableSS; netAvail += ssGross;
-                trace.push(`Social Security: ${formatter.formatCurrency(ssGross, 0)} (Taxable Portion: ${formatter.formatCurrency(taxableSS, 0)})`);
-                traceSources.push({name: 'Social Security', amt: ssGross});
+            if (age >= assumptions.ssStartAge) {
+                const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac);
+                ordInc += engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus); netAvail += ssGross;
             }
+            if (age >= 75) { const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; }
+            ordInc -= (pretaxDed + (budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0));
             
-            if (stateConfig.useSEPP && isSepp && age < 60 && bal['401k'] > 0) {
-                 const amt = Math.min(bal['401k'], seppAmt); bal['401k'] -= amt; ordInc += amt; netAvail += amt; yearRes.seppAmount = amt; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + amt;
-                 trace.push(`72t/SEPP Draw: ${formatter.formatCurrency(amt, 0)}`);
-            } else if (age >= 60) isSepp = false;
+            const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
+            let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget));
 
-            if (age >= 75) {
-                const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; yearRes.rmdAmount = rmd; yearRes.draws['401k'] = (yearRes.draws['401k'] || 0) + rmd;
-                trace.push(`RMD Forced Pull: ${formatter.formatCurrency(rmd, 0)}`);
-            }
-            
-            // HSA/Asset Contributions stopping in retirement
-            const deductibleSavings = budget.savings?.filter(s => {
-                if (s.type !== 'HSA') return false; 
-                if (isRet && s.removedInRetirement) return false;
-                return true;
-            }) || [];
-            pretaxDed += deductibleSavings.reduce((s, x) => s + math.fromCurrency(x.annual), 0);
-            
-            ordInc -= pretaxDed; netAvail -= pretaxDed;
-
-            // STRATEGY LOGIC: Target MAGI based on Dial
-            const fpl = (16060 + (hhSize - 1) * 5650) * infFac;
-            const medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
-            const silverLim = fpl * 2.5;
-            
-            let magiTarget = 0;
-            if (dial <= 33) magiTarget = medLim * (dial / 33);
-            else if (dial <= 66) magiTarget = medLim + (silverLim - medLim) * ((dial - 33) / 33);
-            else magiTarget = Math.max(silverLim, targetBudget);
-            
-            trace.push(`--- BRACKET ENGINE ---`);
-            trace.push(`Current Fixed MAGI: ${formatter.formatCurrency(ordInc, 0)}`);
-            trace.push(`Strategy Dial Target MAGI: ${formatter.formatCurrency(magiTarget, 0)} (vs. 138% FPL: ${formatter.formatCurrency(medLim, 0)})`);
-
-            let ordIter = ordInc, ltcgIter = ltcgInc, drawn = 0;
-            
-            // PHASE 1: Fill MAGI Bracket via priority list
-            trace.push(`Phase 1: Filling MAGI Bracket (Gain Harvesting)`);
+            let drawn = 0, ordIter = ordInc;
             burndown.priorityOrder.forEach(pk => {
                 const meta = burndown.assetMeta[pk];
-                if (!meta.isMagi || pk === 'roth-earnings') return;
-                
-                const magiGap = magiTarget - ordIter;
-                if (magiGap <= 0.01 || (bal[pk] || 0) <= 0) return;
-
-                let gainRatio = 1.0; 
-                if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
-                else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
-                else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
-                
-                let actualPull = 0;
-                if (gainRatio > 0) {
-                    let maxPullFromAsset = (magiGap / gainRatio);
-                    actualPull = Math.min(bal[pk] || 0, maxPullFromAsset);
-                }
-                
-                if (actualPull > 0) {
-                    const realizedGain = actualPull * gainRatio;
-                    bal[pk] -= actualPull;
-                    if (pk === 'taxable') bal['taxableBasis'] -= (actualPull - realizedGain);
-                    else if (pk === 'crypto') bal['cryptoBasis'] -= (actualPull - realizedGain);
-                    else if (pk === 'metals') bal['metalsBasis'] -= (actualPull - realizedGain);
-
-                    yearRes.draws[pk] = (yearRes.draws[pk] || 0) + actualPull;
-                    drawn += actualPull;
-                    ordIter += realizedGain;
-                    trace.push(`  - Pulling ${formatter.formatCurrency(actualPull, 0)} from ${pk} to harvest ${formatter.formatCurrency(realizedGain, 0)} gains.`);
-                }
+                if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
+                const gr = pk === 'taxable' ? Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']) : 1;
+                const take = Math.min(bal[pk], (magiTarget - ordIter) / gr);
+                bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); drawn += take; ordIter += (take * gr);
             });
 
-            // PHASE 2: Check Shortfall and pull from Non-MAGI sources if needed
-            let currentTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
-            let shortfall = targetBudget + currentTax - (netAvail + drawn);
-            
-            if (shortfall > 0) {
-                trace.push(`Phase 2: Covering Shortfall (${formatter.formatCurrency(shortfall, 0)}) via Non-MAGI sources`);
-                burndown.priorityOrder.forEach(pk => {
-                    const meta = burndown.assetMeta[pk];
-                    if (meta.isMagi || pk === 'roth-earnings' || shortfall <= 0.01) return;
-                    
-                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : (bal[pk] || 0);
-                    let take = Math.min(avail, shortfall);
-                    if (take > 0) {
-                        if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
-                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take;
-                        drawn += take;
-                        shortfall -= take;
-                        trace.push(`  - Pulling ${formatter.formatCurrency(take, 0)} from ${pk} (Non-MAGI)`);
-                    }
-                });
-            }
-
-            // PHASE 3: If still shortfall, blow the bracket (Standard priority)
-            if (shortfall > 0) {
-                trace.push(`Phase 3: EMERGENCY. Shortfall remains (${formatter.formatCurrency(shortfall, 0)}). Pulling from remaining priority list.`);
-                burndown.priorityOrder.forEach(pk => {
-                    if (shortfall <= 0.01) return;
-                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : (bal[pk] || 0);
-                    let take = Math.min(avail, shortfall);
-                    if (take > 0) {
-                        if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
-                        yearRes.draws[pk] = (yearRes.draws[pk] || 0) + take;
-                        drawn += take;
-                        shortfall -= take;
-                        trace.push(`  - Final Pull ${formatter.formatCurrency(take, 0)} from ${pk}`);
-                    }
-                });
-            }
-
-            const magi = ordIter + ltcgIter;
-            if (magi > medLim && age < 65 && dial <= 66) yearRes.acaPremium = magi * 0.085;
-            
-            const finalSnap = engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
-            yearRes.snapBenefit = finalSnap;
-
-            trace.push(`--- FINAL CALCS ---`);
-            trace.push(`Final MAGI: ${formatter.formatCurrency(magi, 0)}`);
-            trace.push(`Final Est. SNAP: ${formatter.formatCurrency(finalSnap / 12, 0)}/mo`);
-            
-            let tax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
-            let surplus = netAvail + drawn - tax - yearRes.acaPremium - targetBudget;
-            
-            if (surplus > 0) { 
-                trace.push(`Surplus Cash Generated: ${formatter.formatCurrency(surplus, 0)}. Re-investing into Brokerage.`);
-                if (bal['heloc'] > 0) { const p = Math.min(bal['heloc'], surplus); bal['heloc'] -= p; surplus -= p; } 
-                if (surplus > 0) {
-                    bal['taxable'] += surplus; 
-                    bal['taxableBasis'] += surplus; 
-                    // Visual Fix: Adjust the draw down because we reinvested
-                    if (yearRes.draws['taxable']) {
-                        yearRes.draws['taxable'] -= surplus;
-                        trace.push(`  * Visual Adjustment: Reducing displayed Taxable Draw by ${formatter.formatCurrency(surplus, 0)} (Net Draw = Gross - Reinvestment)`);
-                    }
-                }
-            } else if (surplus < -0.1) {
-                trace.push(`WARNING: INSOLVENT. Budget gap of ${formatter.formatCurrency(Math.abs(surplus), 0)} could not be covered.`);
-                yearRes.isInsolvent = true;
-                if (firstInsolvencyAge === null) firstInsolvencyAge = age;
-            }
-
-            // ADDED: Detailed breakdown equation for the user
-            burndown.priorityOrder.forEach(k => {
-                const amt = yearRes.draws[k];
-                if (amt && Math.abs(amt) > 1) {
-                    traceSources.push({name: burndown.assetMeta[k]?.short || k, amt: amt});
-                }
+            let shortfall = targetBudget + engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
+            if (shortfall > 0) burndown.priorityOrder.forEach(pk => {
+                if (shortfall <= 0.01) return;
+                const take = Math.min((pk === 'heloc' ? helocLimit - bal['heloc'] : bal[pk] || 0), shortfall);
+                if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
+                drawn += take; shortfall -= take;
             });
-            if (finalSnap > 0) traceSources.push({name: 'SNAP', amt: finalSnap});
-            
-            const totalTaxCost = tax + yearRes.acaPremium;
-            const sourcesStr = traceSources.map(s => `${formatter.formatCurrency(s.amt, 0)} (${s.name})`).join(' + ');
-            const taxStr = totalTaxCost > 0 ? ` - ${formatter.formatCurrency(totalTaxCost, 0)} (Taxes)` : '';
-            const netResult = traceSources.reduce((s, x) => s + x.amt, 0) - totalTaxCost;
-            
-            trace.push(`Funding Equation:`);
-            trace.push(`${sourcesStr}${taxStr} = ${formatter.formatCurrency(netResult, 0)} (Net Available)`);
-            if (Math.abs(netResult - targetBudget) > 100) {
-                 trace.push(`Target Budget: ${formatter.formatCurrency(targetBudget, 0)} (Diff: ${formatter.formatCurrency(netResult - targetBudget, 0)})`);
-            } else {
-                 trace.push(`Matches Budget: ${formatter.formatCurrency(targetBudget, 0)}`);
-            }
 
-            yearRes.balances = { ...bal }; yearRes.budget = targetBudget; yearRes.magi = magi; yearRes.netWorth = currentNW;
+            const magi = ordIter, totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (magi > medLim && age < 65 && dial <= 66 ? magi * 0.085 : 0);
+            const yearRes = { age, year, budget: targetBudget, magi, netWorth: currentNW, isInsolvent: (netAvail + drawn - totalTax - targetBudget) < -1, balances: { ...bal }, snapBenefit: engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12 };
+            if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard')));
             results.push(yearRes);
-            simulationTrace[age] = trace;
-            
-            // Growth for next year
-            ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
-            bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
-            if (bal['heloc'] > 0) bal['heloc'] *= (1 + (helocs.reduce((s, h) => s + math.fromCurrency(h.balance) * (h.rate || 7), 0) / (bal['heloc'] || 1)) / 100);
-            const rg = (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth; bal['roth-earnings'] += rg;
+            ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
+            if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); bal['roth-earnings'] += (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth;
         }
         return results;
     },
 
     renderTable: (results) => {
-        const isMobile = window.innerWidth < 768;
-        const formatCell = (val) => {
-            if (isMobile) {
-                if (!val || val === 0) return '$0';
-                // Strict integer rounding for compact notation (e.g. $1K, $5K, $100K)
-                return new Intl.NumberFormat('en-US', { 
-                    style: 'currency', currency: 'USD',
-                    notation: 'compact',
-                    maximumFractionDigits: 0 
-                }).format(val);
-            }
-            return formatter.formatCurrency(val, 0);
-        };
+        const isMobile = window.innerWidth < 768, infRate = (window.currentData.assumptions.inflation || 3) / 100;
+        const formatCell = (v) => isMobile ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 0 }).format(v) : formatter.formatCurrency(v, 0);
+        
+        // COLUMN PRUNING FOR MOBILE SPEED
+        const header = isMobile 
+            ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">Net Worth</th></tr>`
+            : `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-right text-[9px]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-right">Net Worth</th></tr>`;
 
-        const keys = burndown.priorityOrder, infRate = (window.currentData.assumptions.inflation || 3) / 100;
-        const headerCells = keys.map(k => `<th class="p-2 text-right text-[9px] min-w-[75px]" style="color: ${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('');
         const rows = results.map((r, i) => {
             const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
-            const draws = keys.map(k => {
-                const amt = (r.draws[k] || 0) / inf, bal = r.balances[k] / inf, m = burndown.assetMeta[k];
-                const note = k === '401k' ? (r.seppAmount > 0 ? '72t' : (r.rmdAmount > 0 ? 'RMD' : '')) : '';
-                return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${m.color}` : ''}">${formatCell(amt)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40 ${r.isInsolvent ? 'text-red-500 font-bold' : ''}">${formatCell(bal)}</div></td>`;
-            }).join('');
+            const badgeClass = r.status === 'INSOLVENT' ? 'bg-red-600 text-white' : (r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'));
             
-            let badgeClass = 'bg-slate-700 text-slate-400';
-            if (r.status === 'INSOLVENT') badgeClass = 'bg-red-600 text-white';
-            else if (r.status === 'Medicare') badgeClass = 'bg-slate-600 text-white';
-            else if (r.status === 'Platinum') badgeClass = 'bg-emerald-500 text-white';
-            else if (r.status === 'Silver') badgeClass = 'bg-blue-500 text-white';
-
-            let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>`;
-            
-            // SHOW DOLLAR VALUE FOR SNAP, NOT TEXT LABEL
-            const snapVal = (r.snapBenefit / inf);
-            const snapDisplay = snapVal > 0 ? `<span class="font-bold text-emerald-500">${formatCell(snapVal)}</span>` : `<span class="text-slate-700">$0</span>`;
-
-            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer ${r.isInsolvent ? 'bg-red-900/10' : ''}" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20 ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50 text-emerald-500">${snapDisplay}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'} bg-slate-800/20">${formatCell(r.netWorth / inf)}</td></tr>`;
+            if (isMobile) {
+                return `<tr class="border-b border-slate-800/50 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${badgeClass}">${r.status}</span></td><td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
+            }
+            const draws = burndown.priorityOrder.map(k => `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${r.draws?.[k] > 0 ? 'font-bold' : 'text-slate-700'}" style="color:${r.draws?.[k] > 0 ? burndown.assetMeta[k]?.color : ''}">${formatCell((r.draws?.[k] || 0) / inf)}</div><div class="text-[8px] opacity-40">${formatCell(r.balances[k] / inf)}</div></td>`).join('');
+            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span></td><td class="p-2 text-right text-emerald-500">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
         }).join('');
-        return `<table class="w-full text-left border-collapse table-auto"><thead class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><tr><th class="p-2 border-r border-slate-700 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center border-x border-slate-800/50">Status</th><th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${headerCells}<th class="p-2 text-right border-l border-slate-700">Net Worth</th></tr></thead><tbody>${rows}</tbody></table>`;
+
+        return `<table class="w-full text-left border-collapse table-auto">${header}<tbody>${rows}</tbody></table>`;
     }
 };

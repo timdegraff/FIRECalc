@@ -1,11 +1,10 @@
 
 import { math, engine, assetColors } from './utils.js';
-import { burndown } from './burndown.js'; // Import engine to access insolvency age
+import { burndown } from './burndown.js'; 
 
 let chartInstance = null;
 let isRealDollars = false;
 
-// SAFEGUARD: Only configure defaults if Chart is loaded
 if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.font.size = 10;
@@ -17,48 +16,23 @@ export const projection = {
         if (!settings) return;
         isRealDollars = !!settings.isRealDollars;
         const realBtn = document.getElementById('toggle-projection-real');
-        if (realBtn) {
-            projection.updateToggleStyle(realBtn);
-        }
+        if (realBtn) projection.updateToggleStyle(realBtn);
     },
 
-    scrape: () => {
-        return { isRealDollars };
-    },
+    scrape: () => ({ isRealDollars }),
 
     updateToggleStyle: (btn) => {
         if (!btn) return;
         btn.classList.toggle('bg-blue-600/20', isRealDollars);
         btn.classList.toggle('text-blue-400', isRealDollars);
-        btn.classList.toggle('border-blue-500/30', isRealDollars);
-        btn.innerHTML = isRealDollars ? 
-            '<i class="fas fa-sync-alt"></i> 2026 Dollars' : 
-            '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
+        btn.innerHTML = isRealDollars ? '<i class="fas fa-sync-alt"></i> 2026 Dollars' : '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
     },
 
     run: (data) => {
-        // Guard against missing Chart library
         if (typeof Chart === 'undefined') return;
-
         const { assumptions, investments = [], realEstate = [], otherAssets = [], budget = {} } = data;
-        const currentYear = new Date().getFullYear();
-        // Chart uses this limit
-        const chartEndAge = parseFloat(document.getElementById('input-projection-end')?.value) || 72;
-        // Table always simulates to 100
-        const maxSimAge = 100;
-        const duration = maxSimAge - assumptions.currentAge;
+        const currentYear = new Date().getFullYear(), chartEndAge = parseFloat(document.getElementById('input-projection-end')?.value) || 72, maxSimAge = 100, duration = maxSimAge - assumptions.currentAge;
 
-        const realBtn = document.getElementById('toggle-projection-real');
-        if (realBtn && !realBtn.dataset.init) {
-            realBtn.dataset.init = "true";
-            realBtn.onclick = () => {
-                isRealDollars = !isRealDollars;
-                projection.updateToggleStyle(realBtn);
-                projection.run(window.currentData);
-                window.debouncedAutoSave();
-            };
-        }
-        
         let buckets = {
             'Cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'Brokerage': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -71,202 +45,81 @@ export const projection = {
             'Other': otherAssets.reduce((s, o) => s + (math.fromCurrency(o.value) - math.fromCurrency(o.loan)), 0)
         };
 
-        const stockGrowth = (assumptions.stockGrowth || 7) / 100;
-        const cryptoGrowth = (assumptions.cryptoGrowth || 15) / 100;
-        const metalsGrowth = (assumptions.metalsGrowth || 4) / 100;
-        const realEstateGrowth = (assumptions.realEstateGrowth || 3) / 100;
-        const inflationRate = (assumptions.inflation || 3) / 100;
-        
-        const labels = [];
-        const datasets = Object.keys(buckets).map(key => ({
-            label: key,
-            data: [],
-            backgroundColor: assetColors[key] || '#ccc',
-            borderColor: 'transparent',
-            fill: true,
-            pointRadius: 0
-        }));
-        
-        const tableData = [];
+        const stockGrowth = (assumptions.stockGrowth || 7) / 100, cryptoGrowth = (assumptions.cryptoGrowth || 15) / 100, metalsGrowth = (assumptions.metalsGrowth || 4) / 100, realEstateGrowth = (assumptions.realEstateGrowth || 3) / 100, inflationRate = (assumptions.inflation || 3) / 100;
+        const labels = [], datasets = Object.keys(buckets).map(key => ({ label: key, data: [], backgroundColor: assetColors[key] || '#ccc', borderColor: 'transparent', fill: true, pointRadius: 0 })), tableData = [];
 
         for (let i = 0; i <= duration; i++) {
-            const age = assumptions.currentAge + i;
-            // Only add labels if within chart range
-            if (age <= chartEndAge) {
-                labels.push(`${age} (${currentYear + i})`);
-            }
+            const age = assumptions.currentAge + i, infFac = Math.pow(1 + inflationRate, i);
+            if (age <= chartEndAge) labels.push(`${age} (${currentYear + i})`);
             
-            const inflationFactor = Math.pow(1 + inflationRate, i);
             const currentYearBuckets = {};
-
             Object.keys(buckets).forEach((key, idx) => {
-                let displayValue = isRealDollars ? (buckets[key] / inflationFactor) : buckets[key];
-                
-                // Only plot if within chart range
-                if (age <= chartEndAge) {
-                    datasets[idx].data.push(displayValue);
-                }
-                
-                currentYearBuckets[key] = displayValue;
-                
-                if (key === 'Brokerage' || key === 'Pre-Tax' || key === 'Post-Tax' || key === 'HSA') buckets[key] *= (1 + stockGrowth);
+                let disp = isRealDollars ? (buckets[key] / infFac) : buckets[key];
+                if (age <= chartEndAge) datasets[idx].data.push(disp);
+                currentYearBuckets[key] = disp;
+                if (['Brokerage', 'Pre-Tax', 'Post-Tax', 'HSA'].includes(key)) buckets[key] *= (1 + stockGrowth);
                 else if (key === 'Crypto') buckets[key] *= (1 + cryptoGrowth);
                 else if (key === 'Metals') buckets[key] *= (1 + metalsGrowth);
                 else if (key === 'Real Estate') buckets[key] *= (1 + realEstateGrowth);
-                else if (key === 'Cash') buckets[key] *= 1; // Cash does not grow automatically
             });
 
-            // Table Logic: First 10 years, then every 5 years, or exactly 100
-            if (i < 10 || age % 5 === 0 || age === maxSimAge) {
-                tableData.push({ age, year: currentYear + i, ...currentYearBuckets });
-            }
-
+            if (i < 10 || age % 5 === 0 || age === maxSimAge) tableData.push({ age, year: currentYear + i, ...currentYearBuckets });
             if (age < assumptions.retirementAge) {
-                const summaries = engine.calculateSummaries(data);
-                buckets['Pre-Tax'] += summaries.total401kContribution;
-                
-                (budget.savings || []).forEach(s => {
-                    const amt = math.fromCurrency(s.annual);
-                    const type = s.type;
-                    if (type === 'Taxable') buckets['Brokerage'] += amt;
-                    else if (type === 'Post-Tax (Roth)') buckets['Post-Tax'] += amt;
-                    else if (type === 'Cash') buckets['Cash'] += amt;
-                    else if (type === 'HSA') buckets['HSA'] += amt;
-                    else if (type === 'Crypto') buckets['Crypto'] += amt;
-                    else if (type === 'Metals') buckets['Metals'] += amt;
-                    else if (type === 'Pre-Tax (401k/IRA)') buckets['Pre-Tax'] += amt;
+                const s = engine.calculateSummaries(data); buckets['Pre-Tax'] += s.total401kContribution;
+                (budget.savings || []).forEach(sav => {
+                    const amt = math.fromCurrency(sav.annual);
+                    if (sav.type === 'Taxable') buckets['Brokerage'] += amt;
+                    else if (sav.type === 'Post-Tax (Roth)') buckets['Post-Tax'] += amt;
+                    else if (sav.type === 'Cash') buckets['Cash'] += amt;
+                    else if (sav.type === 'HSA') buckets['HSA'] += amt;
+                    else if (sav.type === 'Crypto') buckets['Crypto'] += amt;
+                    else if (sav.type === 'Metals') buckets['Metals'] += amt;
                 });
             }
         }
-        
-        renderChart(labels, datasets, labels.length);
+        renderChart(labels, datasets);
         renderTable(tableData);
     }
 };
 
-function renderChart(labels, datasets, totalPoints) {
-    if (typeof Chart === 'undefined') return;
+function renderChart(labels, datasets) {
     const ctx = document.getElementById('projection-chart')?.getContext('2d');
     if (!ctx) return;
     if (chartInstance) chartInstance.destroy();
 
-    // Custom Plugin for Insolvency Line
-    const insolvencyPlugin = {
+    const insolvPlugin = {
         id: 'insolvencyLine',
         afterDatasetsDraw: (chart) => {
-            const insolvAge = burndown.getInsolvencyAge();
-            if (!insolvAge) return;
-
-            const ctx = chart.ctx;
-            const xAxis = chart.scales.x;
-            const yAxis = chart.scales.y;
-            
-            // Find index of the label containing the insolvency age
-            // Label format: "Age (Year)" e.g., "72 (2058)"
-            const index = chart.data.labels.findIndex(l => l.startsWith(insolvAge.toString()));
-            
+            const age = burndown.getInsolvencyAge();
+            if (!age) return;
+            const index = chart.data.labels.findIndex(l => l.startsWith(age.toString()));
             if (index !== -1) {
-                const x = xAxis.getPixelForValue(index);
-                const topY = yAxis.top;
-                const bottomY = yAxis.bottom;
-
-                ctx.save();
-                ctx.beginPath();
-                ctx.strokeStyle = '#ef4444'; // Red-500
-                ctx.lineWidth = 2;
-                ctx.setLineDash([5, 5]);
-                ctx.moveTo(x, topY);
-                ctx.lineTo(x, bottomY);
-                ctx.stroke();
-
-                // Label
-                ctx.fillStyle = '#ef4444';
-                ctx.font = "bold 10px 'Inter', sans-serif";
-                ctx.textAlign = 'center';
-                ctx.fillText('SOLVENCY CLIFF', x, topY + 10);
-                ctx.restore();
+                const x = chart.scales.x.getPixelForValue(index), top = chart.scales.y.top, bottom = chart.scales.y.bottom;
+                chart.ctx.save();
+                chart.ctx.beginPath(); chart.ctx.strokeStyle = '#ef4444'; chart.ctx.lineWidth = 2; chart.ctx.setLineDash([5, 5]);
+                chart.ctx.moveTo(x, top); chart.ctx.lineTo(x, bottom); chart.ctx.stroke();
+                chart.ctx.fillStyle = '#ef4444'; chart.ctx.font = "bold 10px Inter"; chart.ctx.textAlign = 'center';
+                chart.ctx.fillText('SOLVENCY CLIFF', x, top + 10);
+                chart.ctx.restore();
             }
         }
     };
 
     chartInstance = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets },
-        plugins: [insolvencyPlugin],
+        type: 'line', data: { labels, datasets }, plugins: [insolvPlugin],
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: { 
-                legend: { display: true, position: 'bottom', labels: { usePointStyle: true, font: { family: "'Inter', sans-serif", weight: 'bold' } } },
-                tooltip: {
-                    backgroundColor: '#0f172a',
-                    bodyFont: { family: "'JetBrains Mono', monospace", size: 10 },
-                    callbacks: { label: (c) => `${c.dataset.label}: ${math.toCurrency(c.parsed.y)}` }
-                }
-            },
+            responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { display: true, position: 'bottom', labels: { usePointStyle: true, font: { weight: 'bold' } } }, tooltip: { backgroundColor: '#0f172a', bodyFont: { family: "monospace", size: 10 }, callbacks: { label: (c) => `${c.dataset.label}: ${math.toCurrency(c.parsed.y)}` } } },
             scales: {
-                y: { 
-                    stacked: true, 
-                    title: {
-                        display: true,
-                        text: isRealDollars ? 'Net Worth (2026 Dollars)' : 'Net Worth (Nominal Dollars)',
-                        font: { family: "'Inter', sans-serif", weight: 'bold', size: 10 },
-                        color: '#64748b'
-                    },
-                    ticks: { 
-                        font: { family: "'Inter', sans-serif", size: 10 }, 
-                        color: '#64748b',
-                        callback: (v) => math.toCurrency(v, true) 
-                    }, 
-                    grid: { color: 'rgba(51, 65, 85, 0.2)' } 
-                },
-                x: { ticks: { font: { family: "'Inter', sans-serif", size: 10 }, color: '#64748b', maxTicksLimit: 12 }, grid: { display: false } }
+                y: { stacked: true, ticks: { callback: (v) => math.toCurrency(v, true) }, grid: { color: 'rgba(51, 65, 85, 0.2)' } },
+                x: { ticks: { maxTicksLimit: 12 }, grid: { display: false } }
             }
         }
     });
 }
 
 function renderTable(tableData) {
-    const container = document.getElementById('projection-table-container');
-    if (!container) return;
-
-    if (tableData.length === 0) {
-        container.innerHTML = '';
-        return;
-    }
-
+    const container = document.getElementById('projection-table-container'); if (!container || tableData.length === 0) return;
     const keys = Object.keys(tableData[0]).filter(k => k !== 'age' && k !== 'year');
-    
-    const headerHtml = `
-        <thead class="bg-slate-900/50 text-slate-500 label-std">
-            <tr>
-                <th class="px-4 py-2 text-left">Age (Year)</th>
-                ${keys.map(k => `<th class="px-4 py-2 text-right" style="color: ${assetColors[k] || '#94a3b8'}">${k}</th>`).join('')}
-                <th class="px-4 py-2 text-right text-teal-400">Total</th>
-            </tr>
-        </thead>
-    `;
-
-    const bodyHtml = `
-        <tbody class="mono-numbers text-xs">
-            ${tableData.map(row => {
-                const total = keys.reduce((s, k) => s + (row[k] || 0), 0);
-                return `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/20 transition-colors">
-                        <td class="px-4 py-2 font-bold text-white">${row.age} <span class="text-slate-500 font-normal">(${row.year})</span></td>
-                        ${keys.map(k => `<td class="px-4 py-2 text-right">${math.toCurrency(row[k], true)}</td>`).join('')}
-                        <td class="px-4 py-2 text-right font-black text-teal-400">${math.toCurrency(total, true)}</td>
-                    </tr>
-                `;
-            }).join('')}
-        </tbody>
-    `;
-
-    container.innerHTML = `
-        <table class="w-full text-left border-collapse">
-            ${headerHtml}
-            ${bodyHtml}
-        </table>
-    `;
+    container.innerHTML = `<table class="w-full text-left border-collapse"><thead class="bg-slate-900/50 text-slate-500 label-std"><tr><th class="px-4 py-2">Age (Year)</th>${keys.map(k => `<th class="px-4 py-2 text-right" style="color:${assetColors[k] || '#94a3b8'}">${k}</th>`).join('')}<th class="px-4 py-2 text-right text-teal-400">Total</th></tr></thead><tbody class="mono-numbers text-xs">${tableData.map(row => { const total = keys.reduce((s, k) => s + (row[k] || 0), 0); return `<tr class="border-b border-slate-700/50 hover:bg-slate-800/20"><td class="px-4 py-2 font-bold text-white">${row.age} <span class="text-slate-500 font-normal">(${row.year})</span></td>${keys.map(k => `<td class="px-4 py-2 text-right">${math.toCurrency(row[k], true)}</td>`).join('')}<td class="px-4 py-2 text-right font-black text-teal-400">${math.toCurrency(total, true)}</td></tr>` }).join('')}</tbody></table>`;
 }
