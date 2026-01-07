@@ -42,7 +42,7 @@ export const burndown = {
                                         <span class="text-[9px] text-slate-300 font-bold uppercase">Sync</span>
                                     </label>
                                     <div id="manual-budget-container" class="hidden">
-                                        <input type="text" id="input-manual-budget" data-type="currency" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-[10px] text-teal-400 font-black outline-none w-20 mono-numbers">
+                                        <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-[10px] text-teal-400 font-black outline-none w-20 mono-numbers">
                                     </div>
                                 </div>
                              </div>
@@ -130,6 +130,8 @@ export const burndown = {
     },
 
     attachListeners: () => {
+        let lastZone = 'platinum'; // Default start zone
+
         const triggers = ['input-strategy-dial', 'toggle-rule-72t', 'toggle-budget-sync', 'input-top-retire-age'];
         triggers.forEach(id => {
             const el = document.getElementById(id);
@@ -137,9 +139,24 @@ export const burndown = {
                 if (id === 'input-strategy-dial') {
                     const lbl = document.getElementById('label-strategy-status');
                     const val = parseInt(el.value);
-                    if (val <= 33) lbl.textContent = "Platinum Zone";
-                    else if (val <= 66) lbl.textContent = "Silver CSR Zone";
-                    else lbl.textContent = "Standard / Budget Focus";
+                    
+                    let currentZone = '';
+                    if (val <= 33) {
+                        lbl.textContent = "Platinum Zone";
+                        currentZone = 'platinum';
+                    } else if (val <= 66) {
+                        lbl.textContent = "Silver CSR Zone";
+                        currentZone = 'silver';
+                    } else {
+                        lbl.textContent = "Standard / Budget Focus";
+                        currentZone = 'standard';
+                    }
+
+                    // Haptic Feedback for Mobile on Zone Cross
+                    if (currentZone !== lastZone) {
+                        if (navigator.vibrate) navigator.vibrate(15);
+                        lastZone = currentZone;
+                    }
                 }
                 if (id === 'input-top-retire-age') {
                     const lbl = document.getElementById('label-top-retire-age');
@@ -666,7 +683,7 @@ export const burndown = {
                 return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${m.color}` : ''}">${formatter.formatCurrency(amt, 0)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40">${formatter.formatCurrency(bal, 0)}</div></td>`;
             }).join('');
             let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'))}">${r.status}</span>`;
-            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatter.formatCurrency(r.budget / inf, 0)}</td><td class="p-2 text-right font-black text-white">${formatter.formatCurrency(r.magi / inf, 0)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50">${r.snapBenefit > 0 ? `<span class="text-emerald-400 font-bold">${formatter.formatCurrency(r.snapBenefit / inf, 0)}</span>` : '<span class="text-slate-700">-</span>'}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatter.formatCurrency(r.netWorth / inf, 0)}</td></tr>`;
+            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatter.formatCurrency(r.budget / inf, 0)}</td><td class="p-2 text-right font-black text-white">${formatter.formatCurrency(r.magi / inf, 0)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatter.formatCurrency(r.netWorth / inf, 0)}</td></tr>`;
         }).join('');
         return `<table class="w-full text-left border-collapse table-auto"><thead class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><tr><th class="p-2 border-r border-slate-700 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center border-x border-slate-800/50">Status</th><th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${headerCells}<th class="p-2 text-right border-l border-slate-700">Net Worth</th></tr></thead><tbody>${rows}</tbody></table>`;
     }

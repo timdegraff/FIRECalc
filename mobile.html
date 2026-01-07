@@ -46,11 +46,6 @@
                 <p id="mobile-nw-label" class="text-[10px] font-black text-teal-400 mono-numbers">$0 Net Worth</p>
              </div>
              <div class="flex items-center gap-2">
-                <!-- Context Aware Add Button -->
-                <button id="header-add-btn" class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all mr-2">
-                    <i class="fas fa-plus"></i>
-                </button>
-
                 <!-- Coffee Link -->
                 <a href="https://buymeacoffee.com/timdegraff" target="_blank" rel="noreferrer" class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-500 active:scale-95 transition-all">
                     <i class="fas fa-coffee"></i>
@@ -69,7 +64,7 @@
         </main>
 
         <!-- Bottom Navigation (Condensed) -->
-        <nav class="fixed bottom-0 left-0 right-0 h-16 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-50 pb-safe px-2">
+        <nav class="fixed bottom-0 left-0 right-0 h-16 bg-slate-900 border-t border-slate-800 flex items-center justify-between z-50 pb-safe px-2">
             <button data-tab="assets-debts" class="mobile-nav-btn active">
                 <i class="fas fa-wallet text-lg mb-0.5"></i>
                 <span class="text-[8px] uppercase font-black">Assets</span>
@@ -81,6 +76,10 @@
             <button data-tab="budget" class="mobile-nav-btn">
                 <i class="fas fa-chart-pie text-lg mb-0.5"></i>
                 <span class="text-[8px] uppercase font-black">Budget</span>
+            </button>
+             <button data-tab="projection" class="mobile-nav-btn">
+                <i class="fas fa-chart-line text-lg mb-0.5"></i>
+                <span class="text-[8px] uppercase font-black">Chart</span>
             </button>
             <button data-tab="burndown" class="mobile-nav-btn">
                 <i class="fas fa-stairs text-lg mb-0.5" style="transform: scaleX(-1);"></i>

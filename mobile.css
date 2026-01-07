@@ -14,12 +14,13 @@ input, select, textarea {
 }
 
 .mobile-nav-btn {
-    width: 60px;
+    width: 16.66%; /* 6 items = ~16.6% */
+    min-width: 50px;
     height: 100%;
     color: #64748b; /* Default slate color */
     transition: all 0.2s;
-    border-radius: 12px;
-    margin: 4px 0;
+    border-radius: 8px; /* Slightly tighter radius */
+    margin: 4px 1px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -34,6 +35,7 @@ input, select, textarea {
 .mobile-nav-btn.active[data-tab="assets-debts"] { color: #fb923c; } /* Orange */
 .mobile-nav-btn.active[data-tab="income"] { color: #2dd4bf; } /* Teal */
 .mobile-nav-btn.active[data-tab="budget"] { color: #ec4899; } /* Pink */
+.mobile-nav-btn.active[data-tab="projection"] { color: #3b82f6; } /* Blue */
 .mobile-nav-btn.active[data-tab="burndown"] { color: #a855f7; } /* Purple */
 .mobile-nav-btn.active[data-tab="more"] { color: #10b981; } /* Emerald */
 
@@ -43,6 +45,27 @@ input, select, textarea {
     border-radius: 20px;
     padding: 16px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 10;
+}
+
+.swipe-wrapper {
+    position: relative;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+    border-radius: 20px;
+}
+
+.swipe-action-bg {
+    position: absolute;
+    inset: 0;
+    background-color: #dc2626; /* Red-600 */
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 24px;
+    z-index: 0;
+    border-radius: 20px;
 }
 
 .mobile-label {

@@ -28,6 +28,9 @@ async function loadData() {
     if (docSnap.exists()) {
         window.currentData = docSnap.data();
         if (!window.currentData.assumptions) window.currentData.assumptions = { ...assumptions.defaults };
+        
+        // Ensure burndown default exists if not present in legacy data
+        if (!window.currentData.burndown) window.currentData.burndown = { useSEPP: true };
     } else {
         window.currentData = getInitialData();
         await autoSave(false);
@@ -168,7 +171,8 @@ function scrapeRow(row, rowType = null) {
 }
 
 function getInitialData() {
-    return { assumptions: { ...assumptions.defaults }, investments: [], realEstate: [], otherAssets: [], helocs: [], debts: [], income: [], budget: { savings: [], expenses: [] }, benefits: {}, burndown: {}, projectionSettings: {}, projectionEndAge: 75 };
+    // Default 72t to true (useSEPP)
+    return { assumptions: { ...assumptions.defaults }, investments: [], realEstate: [], otherAssets: [], helocs: [], debts: [], income: [], budget: { savings: [], expenses: [] }, benefits: {}, burndown: { useSEPP: true }, projectionSettings: {}, projectionEndAge: 75 };
 }
 
 export function updateSummaries(data) {

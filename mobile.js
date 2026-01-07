@@ -6,6 +6,7 @@ import { signInWithGoogle, logoutUser } from './auth.js';
 import { math, engine, assetColors, assumptions, stateTaxRates } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
+import { projection } from './projection.js';
 import { formatter } from './formatter.js';
 
 // --- MOBILE POLYFILLS & OVERRIDES ---
@@ -30,42 +31,114 @@ const ASSET_TYPE_COLORS = {
     'Cash': 'text-type-cash',
     'Crypto': 'text-type-crypto',
     'Metals': 'text-type-metals',
-    'HSA': 'text-type-hsa'
+    'HSA': 'text-type-hsa',
+    '529 Plan': 'text-type-529'
 };
 
 const MOBILE_TEMPLATES = {
     'assets-debts': () => `
         <div class="space-y-4">
-            <h2 class="text-xl font-black text-white uppercase tracking-tighter">Investments</h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter">Investments</h2>
+                <button data-add-context="investment" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
             <div id="m-investment-cards" class="space-y-3"></div>
             
             <div class="h-8"></div>
-            <h2 class="text-xl font-black text-white uppercase tracking-tighter">Real Estate & Assets</h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter">Real Estate</h2>
+                <button data-add-context="realEstate" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
             <div id="m-re-cards" class="space-y-3"></div>
 
+             <div class="h-8"></div>
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter">HELOCs</h2>
+                <button data-add-context="heloc" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
+            <div id="m-heloc-cards" class="space-y-3"></div>
+
             <div class="h-8"></div>
-            <h2 class="text-xl font-black text-white uppercase tracking-tighter">Liabilities</h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter">Liabilities</h2>
+                <button data-add-context="debt" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
             <div id="m-debt-cards" class="space-y-3"></div>
         </div>
     `,
     'income': () => `
         <div class="space-y-6">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Income Sources</h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Income Sources</h2>
+                <button data-add-context="income" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
             <div id="m-income-cards" class="space-y-4"></div>
         </div>
     `,
     'budget': () => `
         <div class="space-y-8">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Asset Funding</h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Savings</h2>
+                <button data-add-context="savings" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
             <div id="m-budget-savings" class="space-y-3"></div>
             
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Monthly Spending</h2>
+             <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Monthly Spending</h2>
+                <button data-add-context="spending" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
             <div id="m-budget-expenses" class="space-y-3"></div>
+        </div>
+    `,
+    'projection': () => `
+        <div class="h-full flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter">Visual Projection</h2>
+                <button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal</button>
+            </div>
+            <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 mb-4 h-[300px] flex-shrink-0 relative">
+                <canvas id="projection-chart"></canvas>
+            </div>
+            
+            <h3 class="mobile-label mb-2">Yearly Data</h3>
+            <div id="projection-table-container" class="overflow-x-auto rounded-xl border border-slate-800"></div>
+            
+            <div class="h-8"></div>
+            <div class="flex items-center gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                <span class="mobile-label">Chart End Age</span>
+                <input type="range" id="input-projection-end" min="50" max="100" value="75" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+            </div>
         </div>
     `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
-            <div id="burndown-view-container" class="space-y-4"></div>
+            <div id="burndown-view-container" class="space-y-6">
+                <!-- Mobile Strategy Layout -->
+                <div class="mobile-card space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="mobile-label">Strategy Dial (MAGI)</span>
+                        <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
+                    </div>
+                    <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full">
+                    <div class="flex justify-between text-[7px] font-black text-slate-600 uppercase tracking-widest mt-0.5">
+                        <span>0%</span>
+                        <span class="text-emerald-500/50">Platinum</span>
+                        <span class="text-blue-500/50">Silver</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+
+                <div class="mobile-card flex flex-col items-center justify-center p-4">
+                    <span class="mobile-label mb-1">Estimated SNAP Benefit</span>
+                    <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-3xl">$0/mo</span>
+                </div>
+
+                <!-- Hidden inputs required by burndown logic -->
+                <input type="checkbox" id="toggle-rule-72t" checked class="hidden">
+                <input type="checkbox" id="toggle-budget-sync" checked class="hidden">
+                <input type="range" id="input-top-retire-age" class="hidden"> 
+            </div>
+
             <div class="mt-8">
                 <h3 class="mobile-label mb-2">Funding Priority</h3>
                 <div id="m-priority-list" class="space-y-2"></div>
@@ -107,15 +180,70 @@ const ITEM_TEMPLATES = {
     investment: (data, idx, arrayName) => {
         const typeColorClass = ASSET_TYPE_COLORS[data.type] || 'text-white';
         return `
-        <div class="mobile-card flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
-            <div class="flex justify-between items-start">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Account Name">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
             </div>
-            <div class="flex justify-between items-end">
-                <div class="flex flex-col">
-                    <span class="mobile-label">Asset Class</span>
-                    <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 mt-1 outline-none ${typeColorClass}">
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
+                <div class="flex justify-between items-start">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-full outline-none" placeholder="Account Name">
+                </div>
+                <div class="flex justify-between items-end">
+                    <div class="flex flex-col">
+                        <span class="mobile-label">Asset Class</span>
+                        <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 mt-1 outline-none ${typeColorClass}">
+                            <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
+                            <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
+                            <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
+                            <option value="Cash" ${data.type === 'Cash' ? 'selected' : ''}>Cash</option>
+                            <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
+                            <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
+                            <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
+                            <option value="529 Plan" ${data.type === '529 Plan' ? 'selected' : ''}>529 Plan</option>
+                        </select>
+                    </div>
+                    <div class="text-right">
+                        <span class="mobile-label">Balance</span>
+                        <input data-id="value" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.value || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-xl mono-numbers outline-none">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `},
+    income: (data, idx, arrayName) => `
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform space-y-4" data-idx="${idx}" data-array="${arrayName}">
+                 <div class="flex justify-between items-center">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-full outline-none" placeholder="Source">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <span class="mobile-label">Gross Amount</span>
+                        <input data-id="amount" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.amount || 0)}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                    </div>
+                    <div>
+                        <span class="mobile-label">Growth %</span>
+                        <input data-id="increase" type="number" inputmode="decimal" value="${data.increase || 0}" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-700">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
+    savings: (data, idx, arrayName) => {
+        const typeColorClass = ASSET_TYPE_COLORS[data.type] || 'text-white';
+        // Note: Hidden inputs are handled by data binding logic, but we ensure defaults are set when adding.
+        return `
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex justify-between items-center" data-idx="${idx}" data-array="${arrayName}">
+                 <div class="flex flex-col w-1/2">
+                    <span class="mobile-label mb-1">Destination</span>
+                    <select data-id="type" class="bg-slate-900 text-sm font-bold rounded px-2 py-1 outline-none ${typeColorClass} -ml-2">
                         <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
                         <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
@@ -123,53 +251,37 @@ const ITEM_TEMPLATES = {
                         <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
                         <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
+                        <option value="529 Plan" ${data.type === '529 Plan' ? 'selected' : ''}>529 Plan</option>
                     </select>
                 </div>
                 <div class="text-right">
-                    <span class="mobile-label">Balance</span>
-                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-xl mono-numbers outline-none">
+                    <span class="mobile-label">Monthly</span>
+                    <input data-id="monthly" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}>
                 </div>
             </div>
         </div>
     `},
-    income: (data, idx, arrayName) => `
-        <div class="mobile-card space-y-4" data-idx="${idx}" data-array="${arrayName}">
-             <div class="flex justify-between items-center">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Source">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <span class="mobile-label">Gross Amount</span>
-                    <input data-id="amount" data-type="currency" value="${math.toCurrency(data.amount || 0)}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
-                </div>
-                <div>
-                    <span class="mobile-label">Growth %</span>
-                    <input data-id="increase" type="number" value="${data.increase || 0}" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-700">
-                </div>
-            </div>
-        </div>
-    `,
     expense: (data, idx, arrayName) => `
-        <div class="mobile-card flex justify-between items-center" data-idx="${idx}" data-array="${arrayName}">
-            <div class="flex flex-col w-1/2">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-xs outline-none" placeholder="Item Name">
-                <div class="flex gap-3 mt-1">
-                    <label class="flex items-center gap-1"><input type="checkbox" data-id="removedInRetirement" ${data.removedInRetirement ? 'checked' : ''} class="w-3 h-3"><span class="text-[7px] uppercase font-black text-slate-500">Stop</span></label>
-                    <label class="flex items-center gap-1"><input type="checkbox" data-id="isFixed" ${data.isFixed ? 'checked' : ''} class="w-3 h-3"><span class="text-[7px] uppercase font-black text-slate-500">Fixed</span></label>
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex justify-between items-center" data-idx="${idx}" data-array="${arrayName}">
+                <div class="flex flex-col w-1/2">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-xs outline-none" placeholder="Item Name">
+                </div>
+                <div class="text-right">
+                    <span class="mobile-label">Monthly</span>
+                    <input data-id="monthly" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-pink-400 font-black text-lg mono-numbers outline-none">
                 </div>
             </div>
-            <div class="text-right">
-                <span class="mobile-label">Monthly</span>
-                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-pink-400 font-black text-lg mono-numbers outline-none">
-            </div>
-            <button data-action="remove" class="ml-3 text-slate-600"><i class="fas fa-times"></i></button>
         </div>
     `
 };
 
 function init() {
     attachGlobal();
+    attachSwipeListeners();
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             await initializeData(user);
@@ -196,34 +308,54 @@ function attachGlobal() {
         };
     });
 
-    // New Header Add Button Logic
-    const headerAddBtn = document.getElementById('header-add-btn');
-    headerAddBtn.onclick = () => {
-        if (currentTab === 'assets-debts') {
+    // Specific Add Buttons
+    document.body.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn || !btn.dataset.addContext) return;
+        
+        const context = btn.dataset.addContext;
+        
+        if (context === 'investment') {
             if (!window.currentData.investments) window.currentData.investments = [];
             window.currentData.investments.push({ type: 'Taxable', value: 0 });
-            renderTab();
         }
-        if (currentTab === 'income') {
+        else if (context === 'realEstate') {
+            if (!window.currentData.realEstate) window.currentData.realEstate = [];
+            window.currentData.realEstate.push({ name: '', value: 0, mortgage: 0 });
+        }
+        else if (context === 'heloc') {
+            if (!window.currentData.helocs) window.currentData.helocs = [];
+            window.currentData.helocs.push({ name: '', balance: 0, limit: 0, rate: 7.0 });
+        }
+        else if (context === 'debt') {
+             if (!window.currentData.debts) window.currentData.debts = [];
+             window.currentData.debts.push({ name: '', balance: 0 });
+        }
+        else if (context === 'income') {
              if (!window.currentData.income) window.currentData.income = [];
              window.currentData.income.push({ amount: 0, increase: 0 });
-             renderTab();
         }
-        if (currentTab === 'budget') {
+        else if (context === 'savings') {
+             if (!window.currentData.budget.savings) window.currentData.budget.savings = [];
+             // Default: Stop in Retirement = true, Fixed = false
+             window.currentData.budget.savings.push({ type: 'Taxable', monthly: 0, annual: 0, removedInRetirement: true, isFixed: false });
+        }
+        else if (context === 'spending') {
              if (!window.currentData.budget.expenses) window.currentData.budget.expenses = [];
-             window.currentData.budget.expenses.push({ monthly: 0, annual: 0 });
-             renderTab();
+             // Default: Stop in Retirement = false, Fixed = false
+             window.currentData.budget.expenses.push({ name: '', monthly: 0, annual: 0, removedInRetirement: false, isFixed: false });
         }
-    };
+        
+        renderTab();
+        if (window.debouncedAutoSave) window.debouncedAutoSave();
+    });
 
-    // Live Data Binding for Mobile
     document.body.addEventListener('input', (e) => {
         const input = e.target;
         
         // Handle Select Color Change
         if (input.tagName === 'SELECT' && input.dataset.id === 'type') {
             const newColor = ASSET_TYPE_COLORS[input.value] || 'text-white';
-            // Remove old color classes
             Object.values(ASSET_TYPE_COLORS).forEach(c => input.classList.remove(c));
             input.classList.add(newColor);
         }
@@ -253,52 +385,95 @@ function attachGlobal() {
                 if (key === 'annual' && (arrayName.includes('budget'))) targetArray[idx]['monthly'] = val / 12;
             }
         } 
-        // Handle Assumptions (Profile & Market)
         else if (input.closest('#m-profile-container') || input.closest('#m-market-container') || input.closest('#m-ss-container')) {
              if (!window.currentData.assumptions) window.currentData.assumptions = {};
              let val = input.value;
              if (input.type === 'number' || input.type === 'range') val = parseFloat(val) || 0;
              window.currentData.assumptions[input.dataset.id] = val;
         }
-        // Handle Household Size binding (Specific Case: UI is in profile, but data might be synced to benefits)
+        else if (input.id === 'input-projection-end') {
+             if (window.currentData) {
+                 window.currentData.projectionEndAge = parseInt(input.value);
+                 projection.run(window.currentData);
+             }
+        }
+        
         if (input.dataset.benefitId === 'hhSize') {
              if (!window.currentData.benefits) window.currentData.benefits = {};
              window.currentData.benefits.hhSize = parseFloat(input.value) || 1;
-             // Force refresh logic in benefits if needed
              if (benefits.refresh) benefits.refresh();
         }
 
-        // 2. Trigger AutoSave
         if (window.debouncedAutoSave) window.debouncedAutoSave();
         updateMobileNW();
     });
     
-    // Remove handler
+    // Swipe Remove Handler
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
-        if (btn && btn.dataset.action === 'remove') {
-            const card = btn.closest('.mobile-card');
-            if (card) {
-                 const arrayName = card.dataset.array;
-                 const idx = parseInt(card.dataset.idx);
-                 
-                 let targetArray;
-                 if (arrayName === 'budget.expenses') targetArray = window.currentData.budget.expenses;
-                 else if (arrayName === 'budget.savings') targetArray = window.currentData.budget.savings;
-                 else targetArray = window.currentData[arrayName];
+        if (btn && btn.dataset.action === 'remove-swipe') {
+             const arrayName = btn.dataset.array;
+             const idx = parseInt(btn.dataset.idx);
+             
+             let targetArray;
+             if (arrayName === 'budget.expenses') targetArray = window.currentData.budget.expenses;
+             else if (arrayName === 'budget.savings') targetArray = window.currentData.budget.savings;
+             else targetArray = window.currentData[arrayName];
 
-                 if (targetArray) {
-                     targetArray.splice(idx, 1);
-                     renderTab();
-                     if (window.debouncedAutoSave) window.debouncedAutoSave();
-                 }
-            }
+             if (targetArray) {
+                 targetArray.splice(idx, 1);
+                 renderTab();
+                 if (window.debouncedAutoSave) window.debouncedAutoSave();
+             }
         }
     });
 
     document.getElementById('close-inspector').onclick = () => {
         document.getElementById('inspector-overlay').classList.add('hidden');
     };
+}
+
+// --- SWIPE LOGIC ---
+function attachSwipeListeners() {
+    let touchStartX = 0;
+    let currentSwipeCard = null;
+
+    document.body.addEventListener('touchstart', (e) => {
+        const card = e.target.closest('.mobile-card');
+        if (!card) return;
+        
+        // If we touch a different card, close the open one
+        if (currentSwipeCard && currentSwipeCard !== card) {
+            currentSwipeCard.style.transform = `translateX(0)`;
+        }
+        
+        currentSwipeCard = card;
+        touchStartX = e.touches[0].clientX;
+        card.style.transition = 'none';
+    }, {passive: true});
+
+    document.body.addEventListener('touchmove', (e) => {
+        if (!currentSwipeCard) return;
+        const diff = e.touches[0].clientX - touchStartX;
+        
+        // Only allow swipe left (negative) and cap at -80px
+        if (diff < 0 && diff > -100) {
+             currentSwipeCard.style.transform = `translateX(${diff}px)`;
+        }
+    }, {passive: true});
+
+    document.body.addEventListener('touchend', (e) => {
+         if (!currentSwipeCard) return;
+         const diff = e.changedTouches[0].clientX - touchStartX;
+         currentSwipeCard.style.transition = 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+         
+         // Threshold to snap open
+         if (diff < -60) {
+             currentSwipeCard.style.transform = `translateX(-80px)`;
+         } else {
+             currentSwipeCard.style.transform = `translateX(0)`;
+         }
+    });
 }
 
 function updateMobileNW() {
@@ -310,22 +485,14 @@ function updateMobileNW() {
 
 function renderTab() {
     const main = document.getElementById('mobile-content');
-    const headerAddBtn = document.getElementById('header-add-btn');
-    
     main.innerHTML = MOBILE_TEMPLATES[currentTab]();
-    
-    // Header Add Button Visibility
-    if (['assets-debts', 'income', 'budget'].includes(currentTab)) {
-        headerAddBtn.classList.remove('invisible');
-    } else {
-        headerAddBtn.classList.add('invisible');
-    }
 
     if (!window.currentData) return;
 
     if (currentTab === 'assets-debts') {
         window.currentData.investments?.forEach((item, i) => addMobileRow('m-investment-cards', 'investment', item, i, 'investments'));
         window.currentData.realEstate?.forEach((item, i) => addMobileRow('m-re-cards', 'investment', { ...item, type: 'Real Estate' }, i, 'realEstate'));
+        window.currentData.helocs?.forEach((item, i) => addMobileRow('m-heloc-cards', 'investment', { ...item, type: 'HELOC', value: -item.balance }, i, 'helocs'));
         window.currentData.debts?.forEach((item, i) => addMobileRow('m-debt-cards', 'investment', { ...item, type: 'Debt', value: -item.balance }, i, 'debts'));
     }
 
@@ -334,26 +501,53 @@ function renderTab() {
     }
 
     if (currentTab === 'budget') {
-        window.currentData.budget?.savings?.forEach((item, i) => addMobileRow('m-budget-savings', 'expense', { ...item, monthly: item.annual/12 }, i, 'budget.savings'));
+        window.currentData.budget?.savings?.forEach((item, i) => addMobileRow('m-budget-savings', 'savings', { ...item, monthly: item.annual/12 }, i, 'budget.savings'));
         window.currentData.budget?.expenses?.forEach((item, i) => addMobileRow('m-budget-expenses', 'expense', item, i, 'budget.expenses'));
+    }
+    
+    if (currentTab === 'projection') {
+        if (!window.currentData.projectionSettings) window.currentData.projectionSettings = {};
+        projection.load(window.currentData.projectionSettings);
+        // Ensure end age slider is synced
+        const slider = document.getElementById('input-projection-end');
+        if (slider) slider.value = window.currentData.projectionEndAge || 75;
+        projection.run(window.currentData);
     }
 
     if (currentTab === 'burndown') {
-        burndown.init();
+        // We do not run burndown.init() here as it injects desktop HTML.
+        // Instead we attach listeners manually for mobile.
+        const slider = document.getElementById('input-strategy-dial');
+        const hiddenRetireAge = document.getElementById('input-top-retire-age');
+        
+        if (hiddenRetireAge && window.currentData.assumptions) {
+            // Sync with global assumption for calculation
+            hiddenRetireAge.value = window.currentData.assumptions.retirementAge || 65;
+        }
+
+        if (slider) {
+            // Restore previous value
+            if (window.currentData.burndown?.strategyDial) slider.value = window.currentData.burndown.strategyDial;
+            
+            slider.oninput = () => {
+                 const lbl = document.getElementById('label-strategy-status');
+                 const val = parseInt(slider.value);
+                 if (val <= 33) lbl.textContent = "Platinum Zone";
+                 else if (val <= 66) lbl.textContent = "Silver CSR Zone";
+                 else lbl.textContent = "Standard";
+                 
+                 // Haptic
+                 if (navigator.vibrate && (val === 33 || val === 66)) navigator.vibrate(10);
+                 
+                 burndown.run();
+                 if (window.debouncedAutoSave) window.debouncedAutoSave();
+            }
+            // Trigger initial label set
+            slider.dispatchEvent(new Event('input'));
+        }
+
         burndown.run();
         renderMobilePriority();
-        setTimeout(() => {
-            const container = document.getElementById('burndown-table-container');
-            if (container) {
-                container.onclick = (e) => {
-                    const row = e.target.closest('tr');
-                    if (row) {
-                        const age = row.querySelector('td')?.textContent;
-                        if (age) openInspector(age);
-                    }
-                };
-            }
-        }, 300);
     }
 
     if (currentTab === 'more') {
@@ -361,8 +555,6 @@ function renderTab() {
         benefits.init();
         benefits.load(window.currentData.benefits);
         
-        // Hide Desktop Benefit HH Size slider if present to avoid confusion, 
-        // since we moved it to Profile section
         setTimeout(() => {
             const benefitsHH = document.querySelector('#benefits-module [data-benefit-id="hhSize"]')?.closest('.flex.items-center.gap-4');
             if(benefitsHH) benefitsHH.style.display = 'none';
@@ -385,11 +577,11 @@ function renderMobileProfile() {
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <span class="mobile-label">Current Age</span>
-                <input data-id="currentAge" type="number" value="${a.currentAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
+                <input data-id="currentAge" type="number" inputmode="decimal" value="${a.currentAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
             </div>
             <div>
                 <span class="mobile-label">Retire Age</span>
-                <input data-id="retirementAge" type="number" value="${a.retirementAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-blue-400 outline-none">
+                <input data-id="retirementAge" type="number" inputmode="decimal" value="${a.retirementAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-blue-400 outline-none">
             </div>
         </div>
         <div>
@@ -442,11 +634,11 @@ function renderMobileProfile() {
         <div class="grid grid-cols-2 gap-4">
             <div>
                 <span class="mobile-label">Start Age</span>
-                <input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
+                <input data-id="ssStartAge" type="number" inputmode="decimal" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
             </div>
             <div>
                 <span class="mobile-label">Monthly Benefit</span>
-                <input data-id="ssMonthly" type="number" value="${a.ssMonthly}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-teal-400 outline-none">
+                <input data-id="ssMonthly" type="number" inputmode="decimal" value="${a.ssMonthly}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-teal-400 outline-none">
             </div>
         </div>
     `;
