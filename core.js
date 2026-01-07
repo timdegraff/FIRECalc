@@ -358,8 +358,8 @@ window.createAssumptionControls = (data) => {
                 </select>
             </label>
             <div class="grid grid-cols-2 gap-4">
-                <label class="block"><span class="label-std text-slate-500">Current Age</span><input data-id="currentAge" type="number" value="${data.assumptions?.currentAge}" class="input-base w-full mt-1 font-bold text-white"></label>
-                <label class="block"><span class="label-std text-slate-500">Retirement Age</span><input data-id="retirementAge" type="number" value="${data.assumptions?.retirementAge}" class="input-base w-full mt-1 font-bold text-blue-400"></label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span><input data-id="currentAge" type="number" value="${data.assumptions?.currentAge}" class="input-base w-full mt-auto font-bold text-white"></label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span><input data-id="retirementAge" type="number" value="${data.assumptions?.retirementAge}" class="input-base w-full mt-auto font-bold text-blue-400"></label>
             </div>
             <label class="block"><span class="label-std text-slate-500">SS Start Age</span><input data-id="ssStartAge" type="number" value="${data.assumptions?.ssStartAge}" class="input-base w-full mt-1 font-bold text-white"></label>
             <label class="block"><span class="label-std text-slate-500">SS Monthly Benefit</span><input data-id="ssMonthly" type="number" value="${data.assumptions?.ssMonthly}" class="input-base w-full mt-1 font-bold text-white"></label>

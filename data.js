@@ -95,6 +95,7 @@ export async function autoSave(scrape = true) {
     updateSummaries(window.currentData);
     window.updateSidebarChart(window.currentData);
     
+    // SAFEGUARD: On mobile, these tabs might not exist in the DOM. Check before accessing.
     const projTab = document.getElementById('tab-projection');
     if (projTab && !projTab.classList.contains('hidden')) projection.run(window.currentData);
     
