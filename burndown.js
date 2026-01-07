@@ -89,9 +89,11 @@ export const burndown = {
             </div>
         `;
         burndown.attachListeners();
+        burndown.run(); // Ensure initial population
     },
 
     attachListeners: () => {
+        // Range Inputs and Toggles
         ['input-strategy-dial', 'toggle-rule-72t', 'toggle-budget-sync', 'input-top-retire-age'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
@@ -100,13 +102,60 @@ export const burndown = {
                     const val = parseInt(el.value);
                     lbl.textContent = val <= 33 ? "Platinum Zone" : (val <= 66 ? "Silver CSR Zone" : "Standard / Budget Focus");
                 }
-                if (id === 'input-top-retire-age') document.getElementById('label-top-retire-age').textContent = el.value;
+                if (id === 'input-top-retire-age') {
+                    document.getElementById('label-top-retire-age').textContent = el.value;
+                }
+                if (id === 'toggle-budget-sync') {
+                    document.getElementById('manual-budget-container')?.classList.toggle('hidden', el.checked);
+                }
                 burndown.run();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
+
+        // Retirement Age Plus/Minus Buttons
+        const btnMinus = document.getElementById('btn-retire-minus');
+        const btnPlus = document.getElementById('btn-retire-plus');
+        const topRetireSlider = document.getElementById('input-top-retire-age');
+        if (btnMinus && btnPlus && topRetireSlider) {
+            btnMinus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) - 1; topRetireSlider.dispatchEvent(new Event('input')); };
+            btnPlus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) + 1; topRetireSlider.dispatchEvent(new Event('input')); };
+        }
+
+        // Die With Zero Toggle
+        const dwzBtn = document.getElementById('btn-dwz-toggle');
+        if (dwzBtn) {
+            dwzBtn.onclick = () => {
+                dwzBtn.classList.toggle('active');
+                if (dwzBtn.classList.contains('active')) {
+                    const syncToggle = document.getElementById('toggle-budget-sync');
+                    if (syncToggle?.checked) {
+                        syncToggle.checked = false;
+                        document.getElementById('manual-budget-container')?.classList.remove('hidden');
+                    }
+                }
+                burndown.run();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+        }
+
+        // Real/Nominal Toggle
         const realBtn = document.getElementById('toggle-burndown-real');
-        if (realBtn) realBtn.onclick = () => { isRealDollars = !isRealDollars; burndown.updateToggleStyle(realBtn); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
+        if (realBtn) {
+            realBtn.onclick = () => {
+                isRealDollars = !isRealDollars;
+                burndown.updateToggleStyle(realBtn);
+                burndown.run();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+        }
+
+        // Manual Budget Input
+        const manualInput = document.getElementById('input-manual-budget');
+        if (manualInput) {
+            manualInput.oninput = () => { burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
+            manualInput.addEventListener('blur', (e) => { e.target.value = math.toCurrency(math.fromCurrency(e.target.value)); });
+        }
     },
 
     updateToggleStyle: (btn) => {
@@ -119,6 +168,25 @@ export const burndown = {
     load: (data) => {
         if (data?.priority) burndown.priorityOrder = [...new Set(data.priority)];
         isRealDollars = !!data?.isRealDollars;
+        
+        // Populate UI from loaded data
+        const sync = (id, val, isCheck = false) => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (isCheck) el.checked = val; else el.value = val;
+                el.dispatchEvent(new Event('input'));
+            }
+        };
+
+        if (data) {
+            sync('input-strategy-dial', data.strategyDial || 33);
+            sync('toggle-rule-72t', data.useSEPP || false, true);
+            sync('toggle-budget-sync', data.useSync ?? true, true);
+            sync('input-top-retire-age', data.retirementAge || 65);
+            if (data.dieWithZero) document.getElementById('btn-dwz-toggle')?.classList.add('active');
+            if (data.manualBudget) document.getElementById('input-manual-budget').value = math.toCurrency(data.manualBudget);
+        }
+
         burndown.run();
     },
 
@@ -148,25 +216,64 @@ export const burndown = {
     run: () => {
         const data = window.currentData;
         if (!data || !data.assumptions) return;
-        const results = burndown.simulateProjection(data);
+
+        // Initialize Draggable Priority List (Desktop only)
+        const priorityList = document.getElementById('draw-priority-list');
+        if (priorityList && !priorityList.innerHTML) {
+            burndown.priorityOrder = [...new Set(burndown.priorityOrder)];
+            priorityList.innerHTML = burndown.priorityOrder.map(k => {
+                const meta = burndown.assetMeta[k];
+                return `<div data-pk="${k}" class="px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-[9px] font-bold cursor-move hover:border-slate-500" style="color: ${meta.color}">${meta.short}</div>`;
+            }).join('');
+            if (typeof Sortable !== 'undefined' && !burndown.sortable) {
+                burndown.sortable = new Sortable(priorityList, {
+                    animation: 150,
+                    onEnd: () => {
+                        burndown.priorityOrder = Array.from(priorityList.children).map(el => el.dataset.pk);
+                        burndown.run();
+                        if (window.debouncedAutoSave) window.debouncedAutoSave();
+                    }
+                });
+            }
+        }
+
+        const config = burndown.scrape();
+        let results = [];
+
+        // Die With Zero solver
+        if (config.dieWithZero) {
+            let low = 0, high = 2000000, bestBudget = low;
+            for (let i = 0; i < 20; i++) {
+                let mid = (low + high) / 2;
+                const sim = burndown.simulateProjection(data, mid);
+                if (sim[sim.length - 1].netWorth < 0) high = mid;
+                else { bestBudget = mid; low = mid; }
+            }
+            results = burndown.simulateProjection(data, bestBudget);
+            const manualInp = document.getElementById('input-manual-budget');
+            if (manualInp && document.activeElement !== manualInp) manualInp.value = math.toCurrency(bestBudget);
+        } else {
+            results = burndown.simulateProjection(data);
+        }
+
         if (results.length > 0) {
-            const rAge = parseFloat(document.getElementById('input-top-retire-age')?.value || data.assumptions.retirementAge || 65);
-            const firstRetYear = results.find(r => r.age >= rAge) || results[0];
+            const firstRetYear = results.find(r => r.age >= config.retirementAge) || results[0];
             const snapInd = document.getElementById('est-snap-indicator');
             if (snapInd) snapInd.textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}/mo`;
         }
+
         const tableContainer = document.getElementById('burndown-table-container');
         if (tableContainer) tableContainer.innerHTML = burndown.renderTable(results);
     },
 
-    simulateProjection: (data) => {
+    simulateProjection: (data, overrideManualBudget = null) => {
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = [], debts = [] } = data;
         const config = burndown.scrape(); 
         const inflationRate = (assumptions.inflation || 3) / 100, stockGrowth = (assumptions.stockGrowth || 8) / 100, cryptoGrowth = (assumptions.cryptoGrowth || 10) / 100, metalsGrowth = (assumptions.metalsGrowth || 6) / 100, realEstateGrowth = (assumptions.realEstateGrowth || 3) / 100;
         const filingStatus = assumptions.filingStatus || 'Single', hhSize = benefits.hhSize || 1, currentYear = new Date().getFullYear();
         const dial = config.strategyDial, rAge = config.retirementAge;
 
-        simulationTrace = {}; firstInsolvencyAge = null;
+        firstInsolvencyAge = null;
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -194,17 +301,16 @@ export const burndown = {
             const totalOL = simOA.reduce((s, o) => s + (o.loan = Math.max(0, o.loan - (o.principalPayment || 0) * 12)), 0);
             const totalDebt = simDebts.reduce((s, d) => s + (d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12)), 0);
 
-            let baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
+            let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
             let targetBudget = isRet ? baseBudget * (age < 65 ? (assumptions.slowGoFactor || 1.1) : (age < 80 ? (assumptions.midGoFactor || 1.0) : (assumptions.noGoFactor || 0.85))) : baseBudget;
 
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const currentNW = (bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0) + (currentREVal - totalMort)) - bal['heloc'] - totalOL - totalDebt;
 
-            let ordInc = 0, ltcgInc = 0, netAvail = 0, pretaxDed = 0;
+            let ordInc = 0, netAvail = 0, pretaxDed = 0;
             (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i);
-                const totalComp = gross + gross * (parseFloat(inc.bonusPct) / 100 || 0);
-                const netSrc = totalComp - math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1);
+                const netSrc = (gross + gross * (parseFloat(inc.bonusPct) / 100 || 0)) - math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1);
                 if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) netAvail += netSrc;
                 else { ordInc += netSrc; netAvail += netSrc; pretaxDed += Math.min(gross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
             });
@@ -219,13 +325,13 @@ export const burndown = {
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
             let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget));
 
-            let drawn = 0, ordIter = ordInc;
+            let drawn = 0, ordIter = ordInc, yrDraws = {};
             burndown.priorityOrder.forEach(pk => {
                 const meta = burndown.assetMeta[pk];
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
-                const gr = pk === 'taxable' ? Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']) : 1;
-                const take = Math.min(bal[pk], (magiTarget - ordIter) / gr);
-                bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); drawn += take; ordIter += (take * gr);
+                const gr = pk === 'taxable' ? Math.max(0, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
+                const take = Math.min(bal[pk], (magiTarget - ordIter) / (gr || 0.01));
+                bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); drawn += take; ordIter += (take * gr); yrDraws[pk] = take;
             });
 
             let shortfall = targetBudget + engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
@@ -233,11 +339,11 @@ export const burndown = {
                 if (shortfall <= 0.01) return;
                 const take = Math.min((pk === 'heloc' ? helocLimit - bal['heloc'] : bal[pk] || 0), shortfall);
                 if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
-                drawn += take; shortfall -= take;
+                drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
             });
 
             const magi = ordIter, totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (magi > medLim && age < 65 && dial <= 66 ? magi * 0.085 : 0);
-            const yearRes = { age, year, budget: targetBudget, magi, netWorth: currentNW, isInsolvent: (netAvail + drawn - totalTax - targetBudget) < -1, balances: { ...bal }, snapBenefit: engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12 };
+            const yearRes = { age, year, budget: targetBudget, magi, netWorth: currentNW, isInsolvent: (netAvail + drawn - totalTax - targetBudget) < -1, balances: { ...bal }, draws: yrDraws, snapBenefit: engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12 };
             if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard')));
             results.push(yearRes);
@@ -251,7 +357,6 @@ export const burndown = {
         const isMobile = window.innerWidth < 768, infRate = (window.currentData.assumptions.inflation || 3) / 100;
         const formatCell = (v) => isMobile ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 0 }).format(v) : formatter.formatCurrency(v, 0);
         
-        // COLUMN PRUNING FOR MOBILE SPEED
         const header = isMobile 
             ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">Net Worth</th></tr>`
             : `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-right text-[9px]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-right">Net Worth</th></tr>`;
