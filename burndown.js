@@ -293,9 +293,17 @@ export const burndown = {
     },
 
     scrape: () => {
+        // Robust strategy dial parsing to handle '0' value correctly
+        const dialEl = document.getElementById('input-strategy-dial');
+        let dialVal = 33;
+        if (dialEl) {
+            const raw = dialEl.value;
+            dialVal = (raw === '' || raw === undefined) ? 33 : parseInt(raw);
+        }
+
         return { 
             priority: burndown.priorityOrder,
-            strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
+            strategyDial: dialVal,
             useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
             useSEPP: document.getElementById('toggle-rule-72t')?.checked ?? false,
             dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
@@ -395,7 +403,7 @@ export const burndown = {
         const filingStatus = assumptions.filingStatus || 'Single';
         const hhSize = benefits.hhSize || 1; 
         const currentYear = new Date().getFullYear();
-        const dial = stateConfig.strategyDial || 33;
+        const dial = stateConfig.strategyDial;
         const rAge = stateConfig.retirementAge || assumptions.retirementAge || 65;
 
         simulationTrace = {};
@@ -516,7 +524,7 @@ export const burndown = {
                 if (!meta.isMagi || pk === 'roth-earnings') return;
                 
                 const magiGap = magiTarget - ordIter;
-                if (magiGap <= 0.01 || bal[pk] <= 0) return;
+                if (magiGap <= 0.01 || (bal[pk] || 0) <= 0) return;
 
                 let gainRatio = 1.0; 
                 if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
@@ -526,7 +534,7 @@ export const burndown = {
                 let actualPull = 0;
                 if (gainRatio > 0) {
                     let maxPullFromAsset = (magiGap / gainRatio);
-                    actualPull = Math.min(bal[pk], maxPullFromAsset);
+                    actualPull = Math.min(bal[pk] || 0, maxPullFromAsset);
                 }
                 
                 if (actualPull > 0) {
@@ -553,7 +561,7 @@ export const burndown = {
                     const meta = burndown.assetMeta[pk];
                     if (meta.isMagi || pk === 'roth-earnings' || shortfall <= 0.01) return;
                     
-                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : (bal[pk] || 0);
                     let take = Math.min(avail, shortfall);
                     if (take > 0) {
                         if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
@@ -570,7 +578,7 @@ export const burndown = {
                 trace.push(`Phase 3: EMERGENCY. Shortfall remains (${formatter.formatCurrency(shortfall, 0)}). Pulling from remaining priority list.`);
                 burndown.priorityOrder.forEach(pk => {
                     if (shortfall <= 0.01) return;
-                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : bal[pk];
+                    let avail = (pk === 'heloc') ? (helocLimit - bal['heloc']) : (bal[pk] || 0);
                     let take = Math.min(avail, shortfall);
                     if (take > 0) {
                         if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
