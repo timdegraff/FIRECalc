@@ -360,29 +360,33 @@ export const burndown = {
                 const meta = burndown.assetMeta[pk];
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
                 
-                // CRITICAL FIX: If we already have enough cash to cover the budget + estimated tax, stop harvesting MAGI
-                const estimatedRemainingNeed = (targetBudget + (ordIter * 0.15)) - (netAvail + drawn);
-                if (estimatedRemainingNeed < 0) {
-                    trace.push(`[Optimization] MAGI Harvesting skipped for ${pk} - cash already covers budget.`);
+                // CRITICAL FIX: Estimate total needed cash to prevent selling $143k for $26k gain.
+                const estimatedCashCap = (targetBudget + (ordIter * 0.15)) - (netAvail + drawn);
+                if (estimatedCashCap <= 0.01) {
+                    trace.push(`[Optimization] MAGI Harvesting capped for ${pk} - cash already covers needs.`);
                     return;
                 }
 
-                const gr = pk === 'taxable' ? Math.max(0, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
-                const take = Math.min(bal[pk], (magiTarget - ordIter) / (gr || 0.01));
+                const gr = pk === 'taxable' ? Math.max(0.01, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
+                let take = Math.min(bal[pk], (magiTarget - ordIter) / gr);
+                
+                // Don't sell more total assets than the cash needed for the budget
+                take = Math.min(take, estimatedCashCap);
+
+                if (take <= 0.01) return;
+
                 bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); 
-                drawn += take; ordIter += (take * gr); yrDraws[pk] = take;
+                drawn += take; ordIter += (take * gr); yrDraws[pk] = (yrDraws[pk] || 0) + take;
                 trace.push(`MAGI Harvesting from ${pk}: sold ${math.toCurrency(take)} to get ${math.toCurrency(take * gr)} gain.`);
             });
 
             // --- LOOP 2: COVER CASH SHORTFALL ---
             let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
-            let shortfall = targetBudget + totalTax - (netAvail + drawn);
-            
             const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
-            if (snapBen > 0) {
-                trace.push(`<span class="text-emerald-400">SNAP Benefit covering: ${math.toCurrency(snapBen)}</span>`);
-                shortfall -= snapBen;
-            }
+            
+            let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
+            
+            if (snapBen > 0) trace.push(`<span class="text-emerald-400">SNAP Benefit covering: ${math.toCurrency(snapBen)}</span>`);
 
             if (shortfall > 0) {
                 trace.push(`Cash Shortfall detected: ${math.toCurrency(shortfall)}`);
