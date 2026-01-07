@@ -112,6 +112,19 @@ export const burndown = {
             };
         });
 
+        const debugAgeInp = document.getElementById('input-debug-age');
+        if (debugAgeInp) {
+            debugAgeInp.oninput = () => {
+                const age = parseInt(debugAgeInp.value);
+                const log = document.getElementById('burndown-trace-log');
+                if (log && simulationTrace[age]) {
+                    log.innerHTML = simulationTrace[age].join('\n');
+                } else if (log) {
+                    log.innerHTML = `No data for age ${age || '??'}. Run simulation first.`;
+                }
+            };
+        }
+
         const btnMinus = document.getElementById('btn-retire-minus');
         const btnPlus = document.getElementById('btn-retire-plus');
         const topRetireSlider = document.getElementById('input-top-retire-age');
@@ -256,6 +269,14 @@ export const burndown = {
 
         const tableContainer = document.getElementById('burndown-table-container');
         if (tableContainer) tableContainer.innerHTML = burndown.renderTable(results);
+
+        // Update Trace Log if focused age matches
+        const debugAgeInp = document.getElementById('input-debug-age');
+        const focusAge = parseInt(debugAgeInp?.value || results[0]?.age);
+        const log = document.getElementById('burndown-trace-log');
+        if (log && simulationTrace[focusAge]) {
+            log.innerHTML = simulationTrace[focusAge].join('\n');
+        }
     },
 
     simulateProjection: (data, overrideManualBudget = null) => {
@@ -265,6 +286,7 @@ export const burndown = {
         const filingStatus = assumptions.filingStatus || 'Single', hhSize = benefits.hhSize || 1, currentYear = new Date().getFullYear();
         const dial = config.strategyDial, rAge = config.retirementAge;
 
+        simulationTrace = {};
         firstInsolvencyAge = null;
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -289,8 +311,9 @@ export const burndown = {
 
         for (let i = 0; i <= (100 - assumptions.currentAge); i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
-            
-            // Dynamic APY for this year
+            const trace = [];
+            trace.push(`<span class="text-blue-400 font-bold">--- STARTING AGE ${age} (${year}) ---</span>`);
+
             const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
             const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
             const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
@@ -302,6 +325,7 @@ export const burndown = {
 
             let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
             let targetBudget = isRet ? baseBudget * (age < 65 ? (assumptions.slowGoFactor || 1.1) : (age < 80 ? (assumptions.midGoFactor || 1.0) : (assumptions.noGoFactor || 0.85))) : baseBudget;
+            trace.push(`Target Spending: ${math.toCurrency(targetBudget)}`);
 
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const currentNW = (bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0) + (currentREVal - totalMort)) - bal['heloc'] - totalOL - totalDebt;
@@ -316,38 +340,73 @@ export const burndown = {
 
             if (age >= assumptions.ssStartAge) {
                 const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac);
-                ordInc += engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus); netAvail += ssGross;
+                const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus);
+                ordInc += taxableSS; netAvail += ssGross;
+                trace.push(`Social Security: ${math.toCurrency(ssGross)} (${math.toCurrency(taxableSS)} taxable)`);
             }
-            if (age >= 75) { const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; }
-            ordInc -= (pretaxDed + (budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0));
+            if (age >= 75) { const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; trace.push(`RMD Forced Draw: ${math.toCurrency(rmd)}`); }
+            
+            const hsaCont = budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
+            ordInc -= (pretaxDed + hsaCont);
+            trace.push(`Fixed Income & Deductions: ${math.toCurrency(netAvail)} cash, ${math.toCurrency(ordInc)} MAGI base`);
             
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
             let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget));
+            trace.push(`MAGI Strategy Target: ${math.toCurrency(magiTarget)} (FPL @ 100%: ${math.toCurrency(fpl)})`);
 
             let drawn = 0, ordIter = ordInc, yrDraws = {};
+            // --- LOOP 1: HARVEST MAGI ---
             burndown.priorityOrder.forEach(pk => {
                 const meta = burndown.assetMeta[pk];
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
+                
+                // CRITICAL FIX: If we already have enough cash to cover the budget + estimated tax, stop harvesting MAGI
+                const estimatedRemainingNeed = (targetBudget + (ordIter * 0.15)) - (netAvail + drawn);
+                if (estimatedRemainingNeed < 0) {
+                    trace.push(`[Optimization] MAGI Harvesting skipped for ${pk} - cash already covers budget.`);
+                    return;
+                }
+
                 const gr = pk === 'taxable' ? Math.max(0, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
                 const take = Math.min(bal[pk], (magiTarget - ordIter) / (gr || 0.01));
-                bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); drawn += take; ordIter += (take * gr); yrDraws[pk] = take;
+                bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); 
+                drawn += take; ordIter += (take * gr); yrDraws[pk] = take;
+                trace.push(`MAGI Harvesting from ${pk}: sold ${math.toCurrency(take)} to get ${math.toCurrency(take * gr)} gain.`);
             });
 
-            let shortfall = targetBudget + engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) - (netAvail + drawn);
-            if (shortfall > 0) burndown.priorityOrder.forEach(pk => {
-                if (shortfall <= 0.01) return;
-                const take = Math.min((pk === 'heloc' ? helocLimit - bal['heloc'] : bal[pk] || 0), shortfall);
-                if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
-                drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
-            });
+            // --- LOOP 2: COVER CASH SHORTFALL ---
+            let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
+            let shortfall = targetBudget + totalTax - (netAvail + drawn);
+            
+            const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
+            if (snapBen > 0) {
+                trace.push(`<span class="text-emerald-400">SNAP Benefit covering: ${math.toCurrency(snapBen)}</span>`);
+                shortfall -= snapBen;
+            }
 
-            const magi = ordIter, totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (magi > medLim && age < 65 && dial <= 66 ? magi * 0.085 : 0);
-            const yearRes = { age, year, budget: targetBudget, magi, netWorth: currentNW, isInsolvent: (netAvail + drawn - totalTax - targetBudget) < -1, balances: { ...bal }, draws: yrDraws, snapBenefit: engine.calculateSnapBenefit(magi, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12 };
+            if (shortfall > 0) {
+                trace.push(`Cash Shortfall detected: ${math.toCurrency(shortfall)}`);
+                burndown.priorityOrder.forEach(pk => {
+                    if (shortfall <= 0.01) return;
+                    const take = Math.min((pk === 'heloc' ? helocLimit - bal['heloc'] : bal[pk] || 0), shortfall);
+                    if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
+                    drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
+                    trace.push(`Shortfall pull from ${pk}: ${math.toCurrency(take)}`);
+                });
+            }
+
+            const magi = ordIter;
+            const yearRes = { age, year, budget: targetBudget, magi, netWorth: currentNW, isInsolvent: (netAvail + drawn + snapBen - totalTax - targetBudget) < -1, balances: { ...bal }, draws: yrDraws, snapBenefit: snapBen };
             if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard')));
+            
+            trace.push(`<span class="text-white">Year End MAGI: ${math.toCurrency(magi)}</span>`);
+            trace.push(`<span class="text-red-400">Year End Taxes: ${math.toCurrency(totalTax)}</span>`);
+            trace.push(`Year End Net Worth: ${math.toCurrency(currentNW)}`);
+            simulationTrace[age] = trace;
+            
             results.push(yearRes);
 
-            // Apply APY for next year based on current segmented rates
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
             bal['crypto'] *= (1 + cryptoGrowth); 
             bal['metals'] *= (1 + metalsGrowth);
