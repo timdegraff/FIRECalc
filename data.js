@@ -176,8 +176,61 @@ function scrapeRow(row, rowType = null) {
 }
 
 function getInitialData() {
-    // Default 72t to true (useSEPP)
-    return { assumptions: { ...assumptions.defaults }, investments: [], realEstate: [], otherAssets: [], helocs: [], debts: [], income: [], budget: { savings: [], expenses: [] }, benefits: {}, burndown: { useSEPP: true }, projectionSettings: {}, projectionEndAge: 75 };
+    return { 
+        assumptions: { 
+            ...assumptions.defaults,
+            currentAge: 40,
+            retirementAge: 45,
+            ssStartAge: 62,
+            ssMonthly: 3000,
+            stockGrowth: 10,
+            cryptoGrowth: 10,
+            metalsGrowth: 8,
+            realEstateGrowth: 3.5,
+            inflation: 3,
+            state: 'Michigan',
+            filingStatus: 'Married Filing Jointly'
+        }, 
+        investments: [
+            { name: "Emergency Fund", type: "Cash", value: 25000, costBasis: 25000 },
+            { name: "Vanguard 401k", type: "Pre-Tax (401k/IRA)", value: 300000, costBasis: 200000 },
+            { name: "Roth IRA", type: "Post-Tax (Roth)", value: 200000, costBasis: 150000 }
+        ], 
+        realEstate: [
+            { name: "Primary Home", value: 450000, mortgage: 250000, principalPayment: 900 }
+        ], 
+        otherAssets: [], 
+        helocs: [], 
+        debts: [], 
+        income: [
+            { name: "Primary Salary", amount: 175000, increase: 3.0, bonusPct: 0, contribution: 6, match: 4, isMonthly: false, incomeExpenses: 0, incomeExpensesMonthly: false, remainsInRetirement: false }
+        ], 
+        budget: { 
+            savings: [
+                { type: "Post-Tax (Roth)", name: "Roth Contrib", monthly: 500, annual: 6000, removedInRetirement: true, isFixed: false },
+                { type: "HSA", name: "HSA Contrib", monthly: 500, annual: 6000, removedInRetirement: true, isFixed: false }
+            ], 
+            expenses: [
+                { name: "Mortgage", monthly: 2000, annual: 24000, isFixed: true, removedInRetirement: false },
+                { name: "Cars", monthly: 1000, annual: 12000, isFixed: false, removedInRetirement: false },
+                { name: "Groceries", monthly: 1000, annual: 12000, isFixed: false, removedInRetirement: false },
+                { name: "Utilities", monthly: 400, annual: 4800, isFixed: false, removedInRetirement: false },
+                { name: "Discretionary / Other", monthly: 2000, annual: 24000, isFixed: false, removedInRetirement: false }
+            ] 
+        }, 
+        benefits: {
+            hhSize: 5,
+            unifiedIncome: 40000,
+            shelterCosts: 2000
+        }, 
+        burndown: { 
+            useSEPP: true,
+            strategyDial: 10,
+            priority: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa']
+        }, 
+        projectionSettings: {}, 
+        projectionEndAge: 90 
+    };
 }
 
 export function updateSummaries(data) {
