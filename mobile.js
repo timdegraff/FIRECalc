@@ -517,6 +517,12 @@ function attachGlobal() {
              let val = input.value;
              if (input.type === 'number' || input.type === 'range') val = parseFloat(val) || 0;
              window.currentData.assumptions[input.dataset.id] = val;
+             
+             // Update visible text for market assumptions
+             if (input.closest('#m-market-container')) {
+                 const disp = document.getElementById('val-' + input.dataset.id);
+                 if (disp) disp.textContent = input.value + '%';
+             }
         }
         else if (input.id === 'input-projection-end') {
              if (window.currentData) {
@@ -532,6 +538,11 @@ function attachGlobal() {
         if (input.dataset.benefitId === 'hhSize') {
              if (!window.currentData.benefits) window.currentData.benefits = {};
              window.currentData.benefits.hhSize = parseFloat(input.value) || 1;
+             
+             // Visual Update
+             const disp = document.getElementById('val-hhSize');
+             if (disp) disp.textContent = input.value + ' Person(s)';
+             
              if (benefits.refresh) benefits.refresh();
         }
 
@@ -737,7 +748,7 @@ function renderMobileProfile() {
         <div>
              <span class="mobile-label">Household Size</span>
              <input data-benefit-id="hhSize" type="range" min="1" max="10" step="1" value="${hhSize}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-500 mt-2">
-             <div class="text-right text-white font-black text-sm mt-1">${hhSize} Person(s)</div>
+             <div class="text-right text-white font-black text-sm mt-1" id="val-hhSize">${hhSize} Person(s)</div>
         </div>
         <div>
             <span class="mobile-label">Legal State</span>
@@ -758,23 +769,23 @@ function renderMobileProfile() {
     mContainer.innerHTML = `
         <div class="space-y-4">
             <div class="space-y-2">
-                <div class="flex justify-between"><span class="mobile-label">Stock Growth</span><span class="text-white font-bold text-xs">${a.stockGrowth}%</span></div>
+                <div class="flex justify-between"><span class="mobile-label text-blue-400">Stock Growth</span><span id="val-stockGrowth" class="text-white font-bold text-xs">${a.stockGrowth}%</span></div>
                 <input data-id="stockGrowth" type="range" min="0" max="15" step="0.5" value="${a.stockGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500">
             </div>
              <div class="space-y-2">
-                <div class="flex justify-between"><span class="mobile-label">Crypto Growth</span><span class="text-white font-bold text-xs">${a.cryptoGrowth}%</span></div>
+                <div class="flex justify-between"><span class="mobile-label text-blue-400">Crypto Growth</span><span id="val-cryptoGrowth" class="text-white font-bold text-xs">${a.cryptoGrowth}%</span></div>
                 <input data-id="cryptoGrowth" type="range" min="0" max="50" step="1" value="${a.cryptoGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-orange-500">
             </div>
              <div class="space-y-2">
-                <div class="flex justify-between"><span class="mobile-label">Metals Growth</span><span class="text-white font-bold text-xs">${a.metalsGrowth}%</span></div>
+                <div class="flex justify-between"><span class="mobile-label text-blue-400">Metals Growth</span><span id="val-metalsGrowth" class="text-white font-bold text-xs">${a.metalsGrowth}%</span></div>
                 <input data-id="metalsGrowth" type="range" min="0" max="15" step="0.5" value="${a.metalsGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-yellow-500">
             </div>
              <div class="space-y-2">
-                <div class="flex justify-between"><span class="mobile-label">Real Estate</span><span class="text-white font-bold text-xs">${a.realEstateGrowth}%</span></div>
+                <div class="flex justify-between"><span class="mobile-label text-blue-400">Real Estate</span><span id="val-realEstateGrowth" class="text-white font-bold text-xs">${a.realEstateGrowth}%</span></div>
                 <input data-id="realEstateGrowth" type="range" min="0" max="10" step="0.5" value="${a.realEstateGrowth}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-indigo-500">
             </div>
             <div class="space-y-2">
-                <div class="flex justify-between"><span class="mobile-label">Inflation</span><span class="text-white font-bold text-xs">${a.inflation}%</span></div>
+                <div class="flex justify-between"><span class="mobile-label text-blue-400">Inflation</span><span id="val-inflation" class="text-white font-bold text-xs">${a.inflation}%</span></div>
                 <input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-red-500">
             </div>
         </div>
