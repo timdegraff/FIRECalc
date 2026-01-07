@@ -65,9 +65,9 @@ export const burndown = {
                                 </div>
                             </div>
                             <div class="w-[1px] h-10 bg-slate-700"></div>
-                            <div class="flex flex-col items-center justify-center px-2">
+                            <div class="flex flex-col items-center justify-center min-w-[90px]">
                                 <span class="label-std text-slate-500 text-[8px]">Est. SNAP</span>
-                                <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-xs">$0/mo</span>
+                                <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-xs text-center w-full">$0/mo</span>
                             </div>
                         </div>
 
