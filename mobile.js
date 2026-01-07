@@ -76,6 +76,11 @@ const MOBILE_TEMPLATES = {
     `,
     'income': () => `
         <div class="space-y-6">
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center shadow-lg">
+                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">2026 Total Income</p>
+                <p id="mobile-sum-income" class="text-3xl font-black text-white mono-numbers tracking-tighter">$0</p>
+            </div>
+
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
                     <i class="fas fa-money-bill-wave text-emerald-400"></i> Income Sources
@@ -87,6 +92,17 @@ const MOBILE_TEMPLATES = {
     `,
     'budget': () => `
         <div class="space-y-8">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center shadow-lg">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Savings</p>
+                    <p id="mobile-sum-savings" class="text-xl font-black text-emerald-400 mono-numbers tracking-tighter">$0</p>
+                </div>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center shadow-lg">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Budget</p>
+                    <p id="mobile-sum-budget" class="text-xl font-black text-pink-500 mono-numbers tracking-tighter">$0</p>
+                </div>
+            </div>
+
             <div class="flex items-center justify-between">
                 <h2 class="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
                     <i class="fas fa-piggy-bank text-emerald-400"></i> Savings
@@ -118,9 +134,12 @@ const MOBILE_TEMPLATES = {
             <div id="projection-table-container" class="overflow-x-auto rounded-xl border border-slate-800"></div>
             
             <div class="h-8"></div>
-            <div class="flex items-center gap-3 bg-slate-900 p-3 rounded-xl border border-slate-800">
-                <span class="mobile-label">Chart End Age</span>
-                <input type="range" id="input-projection-end" min="50" max="100" value="75" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+            <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                <div class="flex flex-col">
+                    <span class="mobile-label">End Age</span>
+                    <span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-sm">75</span>
+                </div>
+                <input type="range" id="input-projection-end" min="50" max="100" value="75" class="flex-grow h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
             </div>
         </div>
     `,
@@ -489,6 +508,10 @@ function attachGlobal() {
         else if (input.id === 'input-projection-end') {
              if (window.currentData) {
                  window.currentData.projectionEndAge = parseInt(input.value);
+                 // Update label
+                 const lbl = document.getElementById('mobile-proj-end-val');
+                 if (lbl) lbl.textContent = input.value;
+                 
                  projection.run(window.currentData);
              }
         }
@@ -500,7 +523,7 @@ function attachGlobal() {
         }
 
         if (window.debouncedAutoSave) window.debouncedAutoSave();
-        updateMobileNW();
+        updateMobileSummaries();
     });
     
     // Swipe Remove Handler
@@ -571,11 +594,24 @@ function attachSwipeListeners() {
     });
 }
 
-function updateMobileNW() {
+function updateMobileSummaries() {
     if (!window.currentData) return;
     const s = engine.calculateSummaries(window.currentData);
+    
+    // Header NW
     const lbl = document.getElementById('mobile-nw-label');
     if (lbl) lbl.textContent = `${math.toCurrency(s.netWorth)} Net Worth`;
+
+    // Income Tab Summary
+    const incSum = document.getElementById('mobile-sum-income');
+    if (incSum) incSum.textContent = math.toCurrency(s.totalGrossIncome);
+
+    // Budget Tab Summary
+    const savSum = document.getElementById('mobile-sum-savings');
+    if (savSum) savSum.textContent = math.toCurrency(s.totalAnnualSavings);
+    
+    const budSum = document.getElementById('mobile-sum-budget');
+    if (budSum) budSum.textContent = math.toCurrency(s.totalAnnualBudget);
 }
 
 function renderTab() {
@@ -605,7 +641,12 @@ function renderTab() {
         projection.load(window.currentData.projectionSettings);
         // Ensure end age slider is synced
         const slider = document.getElementById('input-projection-end');
-        if (slider) slider.value = window.currentData.projectionEndAge || 75;
+        if (slider) {
+            const val = window.currentData.projectionEndAge || 75;
+            slider.value = val;
+            const lbl = document.getElementById('mobile-proj-end-val');
+            if(lbl) lbl.textContent = val;
+        }
         projection.run(window.currentData);
     }
 
@@ -656,7 +697,7 @@ function renderTab() {
         }, 100);
     }
     
-    updateMobileNW();
+    updateMobileSummaries();
 }
 
 function renderMobileProfile() {
@@ -784,8 +825,13 @@ function addMobileRow(containerId, type, data = {}, idx = 0, arrayName = '') {
     const el = document.createElement('div');
     // Pass index and arrayName to template
     el.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data, idx, arrayName) : `<div class="mobile-card">...</div>`;
-    container.appendChild(el.firstElementChild);
-    el.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
+    
+    // FIX: Get reference to the child before appending, or use the container's last child after appending
+    const card = el.firstElementChild;
+    container.appendChild(card);
+    
+    // Bind listeners to the card that is now in the DOM
+    card.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
 }
 
 init();
