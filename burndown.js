@@ -161,7 +161,7 @@ export const burndown = {
                 const logEl = document.getElementById('burndown-trace-log');
                 if (simulationTrace[age]) {
                     logEl.textContent = simulationTrace[age].join('\n');
-                    logEl.scrollTop = 0;
+                    // Removed: logEl.scrollTop = 0; (User requested dynamic updates without jumping)
                 } else {
                     logEl.textContent = `No data for age ${age}. Ensure simulation has run.`;
                 }
