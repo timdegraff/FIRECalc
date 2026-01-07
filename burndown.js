@@ -7,6 +7,11 @@ let simulationTrace = {};
 let firstInsolvencyAge = null; 
 
 export const burndown = {
+    getIsRealDollars: () => isRealDollars,
+    toggleRealDollars: () => {
+        isRealDollars = !isRealDollars;
+        return isRealDollars;
+    },
     priorityOrder: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'],
     getInsolvencyAge: () => firstInsolvencyAge,
 
@@ -168,9 +173,15 @@ export const burndown = {
 
     updateToggleStyle: (btn) => {
         if (!btn) return;
+        const isMobile = window.innerWidth < 768;
         btn.classList.toggle('bg-blue-600/20', isRealDollars);
         btn.classList.toggle('text-blue-400', isRealDollars);
-        btn.innerHTML = isRealDollars ? '<i class="fas fa-sync-alt"></i> 2026 Dollars' : '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
+        
+        if (isMobile) {
+            btn.textContent = isRealDollars ? '2026 $' : 'Nominal $';
+        } else {
+            btn.innerHTML = isRealDollars ? '<i class="fas fa-sync-alt"></i> 2026 Dollars' : '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
+        }
     },
 
     load: (data) => {

@@ -1,18 +1,15 @@
-
 ================================================================================
 TO DO LIST
 ================================================================================
 [HUMAN-ONLY ACCESS: AI AGENTS ARE PROHIBITED FROM MODIFYING OR EDITING THIS BOX]
 [THE FOLLOWING SECTION IS RESERVED FOR THE HUMAN ARCHITECT]
 
+- [x] Implement "Cash Ceiling" optimization in Burndown to prevent over-selling high-basis stock.
+- [x] Fix Brave/Safari login loops using signInWithRedirect and Auth-Pending states.
+- [x] Sync "Nominal vs Real" toggles across Desktop and Mobile views.
 - [x] Align Gross Amount and Growth % in Income Cards.
 - [x] Replace non-taxable checkbox with "Non-Taxable Until (Year)" input.
-- [x] Fix persistence for Asset Class selects and Budget edits.
-- [x] Move Benefit Threshold to Burndown and implement Strategy selection.
-- [x] Add "Reset Market Growth" button to Assumptions.
-- [x] Implement SWR indicator and Perpetual Wealth strategy.
-- [x] Decouple Budget Sourcing (Sync/Manual) from Draw Strategy.
-- [ ] Add "Net Income" preview to Income cards (Gross - Taxes - 401k - Match)
+- [ ] Add "Net Income" preview to Income cards (Gross - Taxes - 401k - Match).
 - [ ] Implement "Educational Needs" section in Budget for 529 drawdown tracking.
 
 ================================================================================
@@ -20,124 +17,96 @@ PROJECT OVERVIEW: FIRECALC RETIREMENT PLANNER
 ================================================================================
 FIRECalc is a high-fidelity financial architecture tool designed for precision 
 planning, specifically optimized for the 2026 Michigan tax/benefit landscape. 
-It differs from generic calculators by focusing on MAGI (Modified Adjusted Gross 
-Income) manipulation to maximize state benefits like Medicaid and SNAP while 
-simulating complex retirement bridges (72t/SEPP).
+It focuses on MAGI (Modified Adjusted Gross Income) manipulation to maximize 
+state benefits while simulating complex retirement bridges (72t/SEPP).
 
 --------------------------------------------------------------------------------
 CORE PHILOSOPHY & UI PREFERENCES
 --------------------------------------------------------------------------------
-1.  AESTHETICS: High-contrast "Dark Mode" (Slate-900/800). All numbers MUST use 
-    'JetBrains Mono'. Labels use 'Inter' font with heavy tracking-tighter.
+1.  AESTHETICS: High-contrast "Dark Mode" (Slate-900/800). 
+    - NUMBERS: Must use 'JetBrains Mono' or 'Inter' with tabular-nums.
+    - LABELS: 'Inter' font with heavy tracking-tighter and 800+ weight.
 2.  COLOR LOGIC (STRICT ADHERENCE):
     - Teal (#14b8a6): Growth, Assets, Net Worth, HSA.
     - Pink (#ec4899): Expenses, Liabilities, Debts.
-    - Magenta (#f472b6): Cash.
-    - Amber (#f59e0b): Crypto (Bitcoin).
-    - Yellow (#eab308): Metals (Gold).
+    - Magenta/Pink-400 (#f472b6): Cash.
+    - Emerald/Green-500 (#10b981): Brokerage / Taxable Assets.
     - Blue (#3b82f6): Pre-Tax / 401k / Strategy.
     - Purple (#a855f7): Post-Tax / Roth.
+    - Amber/Orange (#f59e0b): Crypto (Bitcoin).
+    - Yellow (#eab308): Metals (Gold).
     - Indigo (#6366f1): Real Estate.
     - Rose (#fb7185): 529 Plan.
     * NOTE: All Liabilities/Debt items must use Text-Red-400 or Text-Pink-400.
-3.  REAL-TIME: Every slider and input must trigger an immediate re-calculation. 
-    Persistence is handled via debounced Firebase saves on BOTH 'input' and 'change' events.
-4.  ACCURACY: Tax brackets and benefit thresholds (FPL) are modeled on 2026 
-    projections for Michigan.
-5.  PRECISION: MAGI calculation is king. The system must accurately distinguish 
-    between taxable and non-taxable income for benefit optimization.
+3.  AUTH & COMPATIBILITY: 
+    - Uses Firebase Auth with Google Provider.
+    - Brave/Safari fix: Must use `signInWithRedirect` instead of popups.
+    - Application tracks `APP_VERSION` in localStorage to force clean reloads on updates.
 
 --------------------------------------------------------------------------------
-SPECIFIC USER PREFERENCES (DO NOT CHANGE WITHOUT PERMISSION)
+MOBILE ARCHITECTURE
+--------------------------------------------------------------------------------
+1.  DETECTION: Surgical redirect in index.html for widths < 768px.
+2.  NAVIGATION: 6-tab fixed bottom bar (Assets, Income, Budget, More, Burndown, Chart).
+3.  INPUTS: Global 16px font-size enforcement to prevent iOS auto-zoom.
+4.  SWIPE ACTIONS: List items (Investments, Budget, etc.) use touch-start/move 
+    listeners to reveal a red "Trash" action on left-swipe (-80px).
+5.  SCROLLING: Natural document scrolling for Projection and Burndown tabs; 
+    restricted internal scrolling only for large data tables.
+
+--------------------------------------------------------------------------------
+SPECIFIC USER PREFERENCES (DO NOT CHANGE)
 --------------------------------------------------------------------------------
 1.  PROJECTION TABLE:
-    - Must ALWAYS simulate up to age 100, even if the chart ends earlier.
-    - Granularity: Must show every single year for the first 10 years (from current age).
-    - After the first 10 years, show data every 5 years (when age % 5 === 0).
-    - Chart duration is controlled separately by the "End Age" slider.
-
+    - Simulate to age 100.
+    - First 10 years: Annual granularity.
+    - Years 11-60: 5-year granularity (age % 5 === 0).
 2.  BENEFITS LOGIC:
-    - MAGI Slider increments must be 1000, not 500.
-    - Medicaid logic must include a "Pregnant" toggle. 
-      - Standard limit: 138% FPL.
-      - Pregnant limit: 195% FPL.
-    - Shelter & Utility Costs in SNAP card must be editable regardless of "Max Ded" checkbox.
-    - Healthcare card uses a Red Cross icon and dynamic visual feedback (Green -> Slate).
-
-3.  BUDGET UI:
-    - "Stop in Retirement" and "Fixed Cost" checkboxes must be side-by-side with a gap, 
-      not stacked vertically.
-
-4.  ASSUMPTIONS / BURNDOWN SPLIT:
-    - Retirement spending sliders (SlowGo, MidGo, NoGo) belong in the Assumptions tab, 
-      not the Burndown tab.
-    - Defaults: Early (110%), Mid (100%), Late (85%).
+    - MAGI Slider increments: 1000.
+    - Medicaid "Pregnant" limit: 195% FPL vs Standard 138% FPL.
+    - Shelter costs in SNAP are always editable.
+3.  TAX EFFICIENCY (EFF %):
+    - Displayed on Investment rows.
+    - Roth/529: Always 100%.
+    - Pre-Tax: Calculated as 1 - (22% Fed + State Rate).
+    - Taxable: Calculated based on Gain Ratio (Value - Basis) * Cap Gains Rate.
 
 --------------------------------------------------------------------------------
-BURNDOWN CHART & STRATEGY ENGINE (KEY FEATURES)
+BURNDOWN ENGINE & DECUMULATION LOGIC
 --------------------------------------------------------------------------------
-The Burndown engine is a year-by-year cashflow simulator that models the 
-transition from accumulation to decumulation.
+The engine is a sequential cash-flow simulator:
 
-1.  BUDGET SOURCING:
-    - SYNC MODE: Pulls live data from the Budget tab. In retirement years, it 
-      filters out expenses marked "Removed in Retirement".
-    - MANUAL MODE: Allows user to define a fixed annual spending target (default 100k) 
-      which is then adjusted for inflation.
+1.  BUDGET CALCULATION:
+    - Sync Mode: (Sum of Budget Expenses) - (Items removed in retirement).
+    - Manual Mode: User-defined flat amount.
+    - Both apply inflation and "Go-Factor" adjustments based on age.
 
-2.  INCOME SEQUENCING:
-    - PERSISTENT INCOME: The engine first pulls from active income or retirement-
-      stable sources (Pensions, Rental Income, Social Security).
-    - SOCIAL SECURITY: Automatically kicks in at the user-defined "SS Start Age" 
-      with inflation-adjusted payments.
-    - SEPP BRIDGE: If enabled, 72(t) distributions are calculated to avoid 
-      penalties while bridging to age 59.5.
-      
-3.  WITHDRAWAL LOGIC (FUNGIBLE PRIORITY):
-    - Users can drag and drop the "Draw Priority" list to change which accounts 
-      are tapped first (e.g., Cash vs. Taxable vs. Roth).
-    - The engine drains each bucket to zero before moving to the next.
-    - HELOCs are treated as a revolving liability used only when liquid assets fail.
+2.  WITHDRAWAL SEQUENCE (TWO-LOOP SYSTEM):
+    - LOOP 1 (MAGI HARVESTING): Sells assets to reach the user's MAGI target 
+      (e.g., to qualify for Silver CSR or Platinum Medicaid).
+      - CRITICAL OPTIMIZATION: "Cash Ceiling". The engine stops harvesting MAGI 
+        if the total cash raised (Drawn + Net Income) already covers the year's 
+        Budget + estimated Taxes. This prevents over-selling high-basis stock.
+    - LOOP 2 (CASH SHORTFALL): If Loop 1 didn't raise enough cash to pay the 
+      bills, Loop 2 drains accounts in the user's "Draw Priority" order regardless 
+      of MAGI impact until the budget is met.
 
-4.  TAX & BENEFIT MODELING:
-    - MAGI TRACKING: Every dollar pulled is categorized (Taxable vs. Non-Taxable).
-    - DYNAMIC TAXES: Federal and Michigan state taxes are recalculated every year 
-      based on that year's specific MAGI.
-    - BENEFIT CALIBRATION: SNAP and Medicaid eligibility are tested annually. 
-      Strategies like "Medicaid Max" dynamically adjust withdrawals to stay 
-      under 138% of the inflation-adjusted Federal Poverty Level.
-
-5.  PERPETUAL WEALTH PRESERVATION:
-    - Calculates the "Safe Withdrawal Rate" (SWR) as (Asset Growth % - Inflation %).
-    - When active, the system draws the maximum amount possible that leaves the 
-      portfolio "Flat" in Real Dollar terms (Purchasing Power remains constant).
-      
-6.  INFLATION HANDLING:
-    - All future cashflows are modeled in nominal dollars.
-    - "Real Dollars" toggle applies a deflationary divisor to show all future 
-      values in today's purchasing power.
+3.  SOLVENCY TEST:
+    - Net Worth includes (Liquid Assets + RE Equity - Debts).
+    - Insolvency triggers when (Cash Available + SNAP < Budget + Taxes).
 
 --------------------------------------------------------------------------------
-FILE ARCHITECTURE
+PRE-POPULATED INITIAL DATA (CONSISTENCY REFERENCE)
 --------------------------------------------------------------------------------
-- index.html: The shell. Uses a sidebar-main layout with tab-based navigation.
-- index.css: Global styles, custom scrollbars, and Tailwind overrides.
-- main.js: The entry point. Initializes modules and handles Firebase Auth state.
-- core.js: UI Orchestrator. Manages listeners, tab switching, and assumptions.
-- data.js: The "Brain". Handles UI scraping, Firebase persistence, and summary updates.
-- utils.js: The "Engine". Contains all math for taxes, SEPP, SNAP, and asset colors.
-- templates.js: Visual building blocks. Contains the HTML generators for dynamic rows.
-- formatter.js: Standardizes currency and numeric input behaviors.
-- benefits.js: Specialized logic for Medicaid/HMP and SNAP eligibility.
-- projection.js: Long-term forecasting logic. Renders the Stacked Area chart and Data Table.
-- burndown.js: Retirement simulator. Handles draggable priority and withdrawal logic.
-- auth.js: Google OAuth bridge.
-
---------------------------------------------------------------------------------
-DATA PERSISTENCE (FIREBASE)
---------------------------------------------------------------------------------
-- Structure: /users/{uid}/
-- All tables are scraped into JSON arrays.
-- Scraper covers: inputs, selects, checkboxes, and toggle-buttons (frequency).
-- Persistence must be triggered by 'change' events on dropdowns and 'input' on text fields.
+- Assumptions: Age 40, Retire 45, SS Start 62, SS $3k/mo. 
+- Growth: Stock 10%, Crypto 10%, Metals 8%, RE 3.5%, Inflation 3%.
+- Investments:
+    - Emergency Fund (Cash): $25,000
+    - Vanguard 401k (Pre-Tax): $300,000 (Basis: $200k)
+    - Roth IRA (Post-Tax): $200,000 (Basis: $150k)
+- Real Estate: Primary Home $450k (Mortgage: $250k, Principal: $900/mo).
+- Income: Primary Salary $175,000 (3% growth, 6% contrib, 4% match).
+- Budget Expenses: 
+    - Mortgage $2k, Cars $1k, Groceries $1k, Utilities $400, Discretionary $2k.
+- Benefits: Household size 5, Shelter costs $2k.
 ================================================================================

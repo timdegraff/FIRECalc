@@ -12,6 +12,11 @@ if (typeof Chart !== 'undefined') {
 }
 
 export const projection = {
+    getIsRealDollars: () => isRealDollars,
+    toggleRealDollars: () => {
+        isRealDollars = !isRealDollars;
+        return isRealDollars;
+    },
     load: (settings) => {
         if (!settings) return;
         isRealDollars = !!settings.isRealDollars;
@@ -23,9 +28,15 @@ export const projection = {
 
     updateToggleStyle: (btn) => {
         if (!btn) return;
+        const isMobile = window.innerWidth < 768;
         btn.classList.toggle('bg-blue-600/20', isRealDollars);
         btn.classList.toggle('text-blue-400', isRealDollars);
-        btn.innerHTML = isRealDollars ? '<i class="fas fa-sync-alt"></i> 2026 Dollars' : '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
+        
+        if (isMobile) {
+            btn.textContent = isRealDollars ? '2026 $' : 'Nominal $';
+        } else {
+            btn.innerHTML = isRealDollars ? '<i class="fas fa-sync-alt"></i> 2026 Dollars' : '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
+        }
     },
 
     run: (data) => {
@@ -49,7 +60,7 @@ export const projection = {
         const labels = [], datasets = Object.keys(buckets).map(key => ({ label: key, data: [], backgroundColor: assetColors[key] || '#ccc', borderColor: 'transparent', fill: true, pointRadius: 0 })), tableData = [];
 
         for (let i = 0; i <= duration; i++) {
-            const age = assumptions.currentAge + i, infFac = Math.pow(1 + inflationRate, i);
+            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= assumptions.retirementAge, infFac = Math.pow(1 + inflationRate, i);
             
             // Dynamic APY for this year
             const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);

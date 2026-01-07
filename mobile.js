@@ -64,7 +64,7 @@ const MOBILE_TEMPLATES = {
     `,
     'projection': () => `
         <div class="space-y-6 pb-4">
-            <div class="flex items-center justify-between"><h2 class="text-xl font-black text-white uppercase tracking-tighter">Visual Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal</button></div>
+            <div class="flex items-center justify-between"><h2 class="text-xl font-black text-white uppercase tracking-tighter">Visual Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal $</button></div>
             <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 h-[300px] relative"><canvas id="projection-chart"></canvas></div>
             
             <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-inner">
@@ -81,7 +81,8 @@ const MOBILE_TEMPLATES = {
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
             <div id="burndown-view-container" class="space-y-6">
-                <div class="mobile-card flex flex-col items-center justify-center p-4">
+                <div class="mobile-card flex flex-col items-center justify-center p-4 relative">
+                    <button id="toggle-burndown-real" class="absolute top-2 right-2 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-[9px] font-black text-slate-500 uppercase">Nominal $</button>
                     <span class="mobile-label mb-1">Estimated SNAP Benefit</span>
                     <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-3xl">$0/mo</span>
                 </div>
@@ -158,17 +159,37 @@ function attachGlobal() {
     });
 
     document.body.addEventListener('click', (e) => {
-        const btn = e.target.closest('button'); if (!btn || !btn.dataset.addContext) return;
-        const ctx = btn.dataset.addContext;
-        if (ctx === 'investment') (window.currentData.investments = window.currentData.investments || []).push({ type: 'Taxable', value: 0 });
-        else if (ctx === 'realEstate') (window.currentData.realEstate = window.currentData.realEstate || []).push({ name: '', value: 0, mortgage: 0, principalPayment: 0 });
-        else if (ctx === 'otherAsset') (window.currentData.otherAssets = window.currentData.otherAssets || []).push({ name: '', value: 0, loan: 0, principalPayment: 0 });
-        else if (ctx === 'heloc') (window.currentData.helocs = window.currentData.helocs || []).push({ name: '', balance: 0, limit: 0, rate: 7.0 });
-        else if (ctx === 'debt') (window.currentData.debts = window.currentData.debts || []).push({ name: '', balance: 0 });
-        else if (ctx === 'income') (window.currentData.income = window.currentData.income || []).push({ amount: 0, increase: 0 });
-        else if (ctx === 'savings') (window.currentData.budget.savings = window.currentData.budget.savings || []).push({ type: 'Taxable', monthly: 0, annual: 0, removedInRetirement: true, isFixed: false });
-        else if (ctx === 'spending') (window.currentData.budget.expenses = window.currentData.budget.expenses || []).push({ name: '', monthly: 0, annual: 0, removedInRetirement: false, isFixed: false });
-        renderTab(); if (window.debouncedAutoSave) window.debouncedAutoSave();
+        const btn = e.target.closest('button'); if (!btn) return;
+        
+        // Handle Nominal/Real Dollar Toggles
+        if (btn.id === 'toggle-projection-real') {
+            projection.toggleRealDollars();
+            projection.updateToggleStyle(btn);
+            projection.run(window.currentData);
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+            return;
+        }
+
+        if (btn.id === 'toggle-burndown-real') {
+            burndown.toggleRealDollars();
+            burndown.updateToggleStyle(btn);
+            burndown.run();
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+            return;
+        }
+
+        if (btn.dataset.addContext) {
+            const ctx = btn.dataset.addContext;
+            if (ctx === 'investment') (window.currentData.investments = window.currentData.investments || []).push({ type: 'Taxable', value: 0 });
+            else if (ctx === 'realEstate') (window.currentData.realEstate = window.currentData.realEstate || []).push({ name: '', value: 0, mortgage: 0, principalPayment: 0 });
+            else if (ctx === 'otherAsset') (window.currentData.otherAssets = window.currentData.otherAssets || []).push({ name: '', value: 0, loan: 0, principalPayment: 0 });
+            else if (ctx === 'heloc') (window.currentData.helocs = window.currentData.helocs || []).push({ name: '', balance: 0, limit: 0, rate: 7.0 });
+            else if (ctx === 'debt') (window.currentData.debts = window.currentData.debts || []).push({ name: '', balance: 0 });
+            else if (ctx === 'income') (window.currentData.income = window.currentData.income || []).push({ amount: 0, increase: 0 });
+            else if (ctx === 'savings') (window.currentData.budget.savings = window.currentData.budget.savings || []).push({ type: 'Taxable', monthly: 0, annual: 0, removedInRetirement: true, isFixed: false });
+            else if (ctx === 'spending') (window.currentData.budget.expenses = window.currentData.budget.expenses || []).push({ name: '', monthly: 0, annual: 0, removedInRetirement: false, isFixed: false });
+            renderTab(); if (window.debouncedAutoSave) window.debouncedAutoSave();
+        }
     });
 
     document.body.addEventListener('input', (e) => {
@@ -238,9 +259,11 @@ function renderTab() {
         projection.load(window.currentData.projectionSettings);
         const sl = document.getElementById('input-projection-end'), val = window.currentData.projectionEndAge || 72;
         if (sl) { sl.value = val; document.getElementById('mobile-proj-end-val').textContent = val; }
+        projection.updateToggleStyle(document.getElementById('toggle-projection-real'));
         projection.run(window.currentData);
     } else if (currentTab === 'burndown') {
         const sl = document.getElementById('input-strategy-dial'); if (sl && window.currentData.burndown?.strategyDial) sl.value = window.currentData.burndown.strategyDial;
+        burndown.updateToggleStyle(document.getElementById('toggle-burndown-real'));
         burndown.run(); updateInsolvencyBanner();
     } else if (currentTab === 'more') {
         renderMobileProfile(); benefits.init(); benefits.load(window.currentData.benefits);
