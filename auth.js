@@ -1,33 +1,32 @@
 
-import { GoogleAuthProvider, signInWithPopup, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { GoogleAuthProvider, signInWithRedirect, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import { auth } from './firebase-config.js';
 
 const provider = new GoogleAuthProvider();
 
-// Force the account selection screen every time the user clicks login.
-// This prevents the browser from automatically using the existing Google session 
-// to sign in without user interaction after they have explicitly logged out.
+// Force account selection screen
 provider.setCustomParameters({
     prompt: 'select_account'
 });
 
 export async function signInWithGoogle() {
     try {
-        // Force local persistence to avoid sessionStorage partitioning issues on mobile/in-app browsers
+        // Redirect is significantly more reliable in Brave and Safari
+        // as it avoids third-party window communication blocks.
         await setPersistence(auth, browserLocalPersistence);
-        const result = await signInWithPopup(auth, provider);
-        return result.user;
+        await signInWithRedirect(auth, provider);
+        // Note: Execution stops here as the browser redirects.
     } catch (error) {
-        console.error('Error signing in with Google:', error);
-        alert("Sign-in failed. If you are in an in-app browser (like Instagram/Facebook), please open in Safari or Chrome.");
-        return null;
+        console.error('Error initiating redirect sign-in:', error);
+        alert("Sign-in failed. If Brave Shields are on 'Aggressive', please set them to 'Standard' or use a direct browser like Safari/Chrome.");
     }
 }
 
 export async function logoutUser() {
     try {
         await signOut(auth);
-        sessionStorage.clear(); // Ensure clean slate on logout
+        sessionStorage.clear();
+        localStorage.removeItem('firecalc_app_version'); // Clear version to force clean state on next visit
     } catch (error) {
         console.error('Error signing out:', error);
     }

@@ -1,5 +1,5 @@
 
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { onAuthStateChanged, getRedirectResult } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { initializeData, autoSave, updateSummaries } from './data.js';
 import { signInWithGoogle, logoutUser } from './auth.js';
@@ -17,7 +17,7 @@ window.debouncedAutoSave = () => {
     if (window.mobileSaveTimeout) clearTimeout(window.mobileSaveTimeout);
     window.mobileSaveTimeout = setTimeout(() => {
         autoSave(false); 
-    }, 1500); // Increased debounce for mobile thread safety
+    }, 1500);
 };
 
 let currentTab = 'assets-debts';
@@ -132,9 +132,21 @@ const ITEM_TEMPLATES = {
 function init() {
     attachGlobal();
     attachSwipeListeners();
+    
+    // Catch redirect results early
+    getRedirectResult(auth).catch(e => console.error("Mobile Redirect Auth Error:", e));
+
     onAuthStateChanged(auth, async (user) => {
-        if (user) { await initializeData(user); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden'); renderTab(); }
-        else { document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-container').classList.add('hidden'); }
+        if (user) { 
+            await initializeData(user); 
+            document.getElementById('login-screen').classList.add('hidden'); 
+            document.getElementById('app-container').classList.remove('hidden'); 
+            renderTab(); 
+        }
+        else { 
+            document.getElementById('login-screen').classList.remove('hidden'); 
+            document.getElementById('app-container').classList.add('hidden'); 
+        }
     });
 }
 
