@@ -28,8 +28,12 @@ async function loadData() {
     if (docSnap.exists()) {
         window.currentData = docSnap.data();
         if (!window.currentData.assumptions) window.currentData.assumptions = { ...assumptions.defaults };
-        
-        // Ensure burndown default exists if not present in legacy data
+        // Merge missing default keys for segmented APY
+        Object.keys(assumptions.defaults).forEach(key => {
+            if (window.currentData.assumptions[key] === undefined) {
+                window.currentData.assumptions[key] = assumptions.defaults[key];
+            }
+        });
         if (!window.currentData.burndown) window.currentData.burndown = { useSEPP: true };
     } else {
         window.currentData = getInitialData();
@@ -95,7 +99,6 @@ export async function autoSave(scrape = true) {
     updateSummaries(window.currentData);
     window.updateSidebarChart(window.currentData);
     
-    // SAFEGUARD: On mobile, these tabs might not exist in the DOM. Check before accessing.
     const projTab = document.getElementById('tab-projection');
     if (projTab && !projTab.classList.contains('hidden')) projection.run(window.currentData);
     
@@ -128,7 +131,7 @@ function scrapeDataFromUI() {
     const filingStatusEl = document.querySelector('[data-id="filingStatus"]');
     if (filingStatusEl) data.assumptions.filingStatus = filingStatusEl.value;
 
-    document.querySelectorAll('#assumptions-container [data-id], #burndown-view-container [data-id], #input-top-retire-age').forEach(i => {
+    document.querySelectorAll('#assumptions-container [data-id]').forEach(i => {
         if (i.tagName !== 'SELECT') {
             const val = parseFloat(i.value);
             data.assumptions[i.dataset.id] = isNaN(val) ? 0 : val;
@@ -243,7 +246,6 @@ export function updateSummaries(data) {
     set('sum-budget-savings', s.totalAnnualSavings);
     set('sum-budget-annual', s.totalAnnualBudget);
     set('sum-budget-total', s.totalAnnualSavings + s.totalAnnualBudget);
-    
     set('sum-gross-income', s.totalGrossIncome);
     set('sum-income-adjusted', s.magiBase);
     

@@ -45,11 +45,18 @@ export const projection = {
             'Other': otherAssets.reduce((s, o) => s + (math.fromCurrency(o.value) - math.fromCurrency(o.loan)), 0)
         };
 
-        const stockGrowth = (assumptions.stockGrowth || 7) / 100, cryptoGrowth = (assumptions.cryptoGrowth || 15) / 100, metalsGrowth = (assumptions.metalsGrowth || 4) / 100, realEstateGrowth = (assumptions.realEstateGrowth || 3) / 100, inflationRate = (assumptions.inflation || 3) / 100;
+        const inflationRate = (assumptions.inflation || 3) / 100;
         const labels = [], datasets = Object.keys(buckets).map(key => ({ label: key, data: [], backgroundColor: assetColors[key] || '#ccc', borderColor: 'transparent', fill: true, pointRadius: 0 })), tableData = [];
 
         for (let i = 0; i <= duration; i++) {
             const age = assumptions.currentAge + i, infFac = Math.pow(1 + inflationRate, i);
+            
+            // Dynamic APY for this year
+            const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
+            const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
+            const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
+            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, assumptions.currentAge, assumptions);
+
             if (age <= chartEndAge) labels.push(`${age} (${currentYear + i})`);
             
             const currentYearBuckets = {};

@@ -67,6 +67,13 @@ function attachGlobalListeners() {
             });
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
+        
+        if (e.target.id === 'btn-toggle-advanced-apy') {
+            const advanced = !window.currentData.assumptions.advancedGrowth;
+            window.currentData.assumptions.advancedGrowth = advanced;
+            window.createAssumptionControls(window.currentData);
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        }
     });
 
     document.body.addEventListener('input', (e) => {
@@ -197,7 +204,6 @@ function attachDynamicRowListeners() {
         const btn = e.target.closest('button'); if (!btn) return;
         if (btn.dataset.addRow) { window.addRow(btn.dataset.addRow, btn.dataset.rowType); if (window.debouncedAutoSave) window.debouncedAutoSave(); }
         else if (btn.dataset.action === 'remove') { 
-            // Fix: Target either table row or the specifically marked card, or fallback to background class.
             const target = btn.closest('tr') || btn.closest('.removable-item') || btn.closest('.bg-slate-800');
             target?.remove(); 
             if (window.debouncedAutoSave) window.debouncedAutoSave(); 
@@ -205,18 +211,11 @@ function attachDynamicRowListeners() {
         else if (btn.dataset.action === 'toggle-freq') {
             const isMon = btn.textContent.trim().toLowerCase() === 'monthly';
             btn.textContent = isMon ? 'Annual' : 'Monthly';
-            
-            // Fix traversal: Input is a sibling of the parent container of the button
             const wrapper = btn.closest('.space-y-1.5');
             const input = wrapper ? wrapper.querySelector('input') : null;
-
             if (input) { 
                 const cur = math.fromCurrency(input.value); 
-                // isMon was 'true' (displayed Monthly), so current value is monthly. 
-                // We are switching to Annual, so x12. Vice versa.
                 input.value = math.toCurrency(isMon ? cur * 12 : cur / 12);
-                
-                // Dispatch input event to ensure data model is updated and saved
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }
             const parent = btn.closest('.bg-slate-800'); if (parent) checkIrsLimits(parent);
@@ -227,8 +226,6 @@ function attachDynamicRowListeners() {
         const target = e.target;
         if (target.dataset.id === 'type' && target.tagName === 'SELECT') {
             if (target.closest('#investment-rows')) updateCostBasisVisibility(target.closest('tr'));
-            
-            // Apply colored text logic without 'text-white' to prevent clash
             const typeClass = templates.helpers.getTypeClass(target.value);
             target.className = `input-base w-full font-bold ${typeClass}`;
             target.style.backgroundColor = '#0f172a';
@@ -302,110 +299,90 @@ window.addRow = (containerId, type, data = {}) => {
 };
 
 window.updateSidebarChart = (data) => {
-    // Canvas has been removed from index.html, so we skip chart generation.
-    // However, we still calculate totals to update the text-based Legend below.
     const totals = {}; let totalSum = 0;
-    
     data.investments?.forEach(i => { const v = math.fromCurrency(i.value); totals[i.type] = (totals[i.type] || 0) + v; totalSum += v; });
     data.realEstate?.forEach(r => { const v = math.fromCurrency(r.value); totals['Real Estate'] = (totals['Real Estate'] || 0) + v; totalSum += v; });
     data.otherAssets?.forEach(o => { const v = math.fromCurrency(o.value); totals['Other'] = (totals['Other'] || 0) + v; totalSum += v; });
-
     if (lastChartSum !== 0 && (Math.abs(totalSum - lastChartSum) / lastChartSum) < 0.005) return;
     lastChartSum = totalSum;
-
-    // --- RENDER DOUBLE COLUMN LIST ---
     const legendContainer = document.getElementById('sidebar-asset-legend');
     if (legendContainer) {
         legendContainer.innerHTML = '';
-        const shortNames = {
-            'Pre-Tax (401k/IRA)': 'Pre-Tax',
-            'Post-Tax (Roth)': 'Roth',
-            'Taxable': 'Brokerage',
-            'Real Estate': 'Real Est',
-            'Crypto': 'Crypto',
-            'Metals': 'Metals',
-            'Cash': 'Cash',
-            'HSA': 'HSA',
-            '529 Plan': '529',
-            'Other': 'Other'
-        };
-
-        Object.entries(totals)
-            .sort(([, a], [, b]) => b - a)
-            .forEach(([type, value]) => {
-                if (value <= 0) return;
-                const percent = Math.round((value / totalSum) * 100);
-                const color = assetColors[type] || assetColors['Taxable'];
-                const shortName = shortNames[type] || type;
-                
-                const item = document.createElement('div');
-                item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
-                item.innerHTML = `
-                    <div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div>
-                    <span class="truncate">${shortName}</span>
-                    <span class="ml-auto text-white">${percent}%</span>
-                `;
-                legendContainer.appendChild(item);
-            });
+        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other' };
+        Object.entries(totals).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
+            if (value <= 0) return;
+            const percent = Math.round((value / totalSum) * 100), color = assetColors[type] || assetColors['Taxable'], shortName = shortNames[type] || type, item = document.createElement('div');
+            item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
+            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div><span class="truncate">${shortName}</span><span class="ml-auto text-white">${percent}%</span>`;
+            legendContainer.appendChild(item);
+        });
     }
-
-    // Chart.js rendering logic removed.
 };
 
 window.createAssumptionControls = (data) => {
     const container = document.getElementById('assumptions-container'); if (!container) return;
+    const a = data.assumptions || assumptions.defaults;
+    const isAdv = !!a.advancedGrowth;
+
+    const renderAPY = (label, id, color, val) => {
+        if (!isAdv) {
+            return `<label class="block"><span class="label-std text-slate-500">${label} APY</span><div class="flex items-center gap-2 mt-1"><input data-id="${id}" type="range" min="0" max="20" step="0.5" value="${val}" class="input-range"><span class="${color} font-bold mono-numbers w-10 text-right">${val}%</span></div></label>`;
+        }
+        const yrs = a[id + 'Years'] || 10;
+        const perp = a[id + 'Perpetual'] || val;
+        return `
+            <div class="p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 space-y-3">
+                <div class="flex justify-between items-center"><span class="label-std ${color}">${label} Growth</span><span class="text-[8px] font-black text-slate-600">ADVANCED</span></div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Initial %</span><input data-id="${id}" type="number" step="0.1" value="${val}" class="input-base w-full text-[10px] font-bold ${color}"></div>
+                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Years</span><input data-id="${id}Years" type="number" value="${yrs}" class="input-base w-full text-[10px] font-bold text-white"></div>
+                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Perpetual %</span><input data-id="${id}Perpetual" type="number" step="0.1" value="${perp}" class="input-base w-full text-[10px] font-bold ${color}"></div>
+                </div>
+            </div>`;
+    };
+
     container.innerHTML = `
         <div class="col-span-full mb-4 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-user-circle text-blue-400"></i><h3 class="label-std text-slate-400">Personal & Strategy</h3></div>
         <div class="space-y-6 lg:border-r lg:border-slate-700/30 lg:pr-8">
             <label class="block"><span class="label-std text-slate-500">Legal State of Residence</span>
                 <select data-id="state" class="input-base w-full mt-1 font-bold bg-slate-900 text-white">
-                    ${Object.keys(stateTaxRates).sort().map(s => `<option ${data.assumptions?.state === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    ${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
                 </select>
             </label>
             <label class="block"><span class="label-std text-slate-500">Filing Status</span>
                 <select data-id="filingStatus" class="input-base w-full mt-1 font-bold bg-slate-900 text-white">
-                    <option ${data.assumptions?.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
-                    <option ${data.assumptions?.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
-                    <option ${data.assumptions?.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
+                    <option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
+                    <option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
+                    <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
                 </select>
             </label>
             <div class="grid grid-cols-2 gap-4">
-                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span><input data-id="currentAge" type="number" value="${data.assumptions?.currentAge}" class="input-base w-full mt-auto font-bold text-white"></label>
-                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span><input data-id="retirementAge" type="number" value="${data.assumptions?.retirementAge}" class="input-base w-full mt-auto font-bold text-blue-400"></label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span><input data-id="currentAge" type="number" value="${a.currentAge}" class="input-base w-full mt-auto font-bold text-white"></label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span><input data-id="retirementAge" type="number" value="${a.retirementAge}" class="input-base w-full mt-auto font-bold text-blue-400"></label>
             </div>
-            <label class="block"><span class="label-std text-slate-500">SS Start Age</span><input data-id="ssStartAge" type="number" value="${data.assumptions?.ssStartAge}" class="input-base w-full mt-1 font-bold text-white"></label>
-            <label class="block"><span class="label-std text-slate-500">SS Monthly Benefit</span><input data-id="ssMonthly" type="number" value="${data.assumptions?.ssMonthly}" class="input-base w-full mt-1 font-bold text-white"></label>
+            <label class="block"><span class="label-std text-slate-500">SS Start Age</span><input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="input-base w-full mt-1 font-bold text-white"></label>
+            <label class="block"><span class="label-std text-slate-500">SS Monthly Benefit</span><input data-id="ssMonthly" type="number" value="${a.ssMonthly}" class="input-base w-full mt-1 font-bold text-white"></label>
             <div class="pt-4 border-t border-slate-700/30"><button id="btn-reset-market" class="w-full py-2 bg-slate-900 border border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all">Reset Market Defaults</button></div>
         </div>
-        <div class="col-span-1 space-y-6">
-            <h3 class="label-std text-slate-400 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-chart-line text-emerald-400"></i> Market Assumptions</h3>
-            <label class="block"><span class="label-std text-slate-500">Stock Growth</span><div class="flex items-center gap-2"><input data-id="stockGrowth" type="range" min="0" max="15" step="0.5" value="${data.assumptions?.stockGrowth}" class="input-range"><span class="text-emerald-400 font-bold mono-numbers w-10 text-right">${data.assumptions?.stockGrowth}%</span></div></label>
-            <label class="block"><span class="label-std text-slate-500">Crypto Growth</span><div class="flex items-center gap-2"><input data-id="cryptoGrowth" type="range" min="0" max="50" step="1" value="${data.assumptions?.cryptoGrowth}" class="input-range"><span class="text-orange-400 font-bold mono-numbers w-10 text-right">${data.assumptions?.cryptoGrowth}%</span></div></label>
-            <label class="block"><span class="label-std text-slate-500">Metals Growth</span><div class="flex items-center gap-2"><input data-id="metalsGrowth" type="range" min="0" max="15" step="0.5" value="${data.assumptions?.metalsGrowth}" class="input-range"><span class="text-yellow-500 font-bold mono-numbers w-10 text-right">${data.assumptions?.metalsGrowth}%</span></div></label>
-            <label class="block"><span class="label-std text-slate-500">Real Estate Growth</span><div class="flex items-center gap-2"><input data-id="realEstateGrowth" type="range" min="0" max="10" step="0.5" value="${data.assumptions?.realEstateGrowth}" class="input-range"><span class="text-indigo-400 font-bold mono-numbers w-10 text-right">${data.assumptions?.realEstateGrowth}%</span></div></label>
-            <label class="block"><span class="label-std text-slate-500">Inflation</span><div class="flex items-center gap-2"><input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${data.assumptions?.inflation}" class="input-range"><span class="text-red-400 font-bold mono-numbers w-10 text-right">${data.assumptions?.inflation}%</span></div></label>
+        <div class="col-span-1 space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-700/50">
+                <h3 class="label-std text-slate-400 flex items-center gap-2"><i class="fas fa-chart-line text-emerald-400"></i> Market APY</h3>
+                <button id="btn-toggle-advanced-apy" class="px-2 py-0.5 bg-slate-700 text-[8px] font-black rounded uppercase tracking-widest text-slate-300 hover:text-white transition-colors">${isAdv ? 'Simple View' : 'Advanced APY'}</button>
+            </div>
+            ${renderAPY('Stock', 'stockGrowth', 'text-emerald-400', a.stockGrowth)}
+            ${renderAPY('Crypto', 'cryptoGrowth', 'text-orange-400', a.cryptoGrowth)}
+            ${renderAPY('Metals', 'metalsGrowth', 'text-yellow-500', a.metalsGrowth)}
+            ${renderAPY('Real Estate', 'realEstateGrowth', 'text-indigo-400', a.realEstateGrowth)}
+            
+            <label class="block pt-2 border-t border-slate-700/30"><span class="label-std text-slate-500">Inflation</span><div class="flex items-center gap-2 mt-1"><input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="input-range"><span class="text-red-400 font-bold mono-numbers w-10 text-right">${a.inflation}%</span></div></label>
         </div>
         <div class="col-span-1 space-y-6 lg:border-l lg:border-slate-700/30 lg:pl-8">
             <h3 class="label-std text-slate-400 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-couch text-pink-400"></i> Retirement Spending</h3>
             <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
-                <label class="block">
-                    <span class="label-std text-slate-500">Slow-Go (Age 55-65)</span>
-                    <div class="flex items-center gap-2 mt-1"><input data-id="slowGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${data.assumptions?.slowGoFactor || 1.1}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round((parseFloat(data.assumptions?.slowGoFactor) || 1.1) * 100)}%</span></div>
-                </label>
-                 <label class="block">
-                    <span class="label-std text-slate-500">Mid-Go (Age 65-80)</span>
-                    <div class="flex items-center gap-2 mt-1"><input data-id="midGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${data.assumptions?.midGoFactor || 1.0}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round((parseFloat(data.assumptions?.midGoFactor) || 1.0) * 100)}%</span></div>
-                </label>
-                 <label class="block">
-                    <span class="label-std text-slate-500">No-Go (Age 80+)</span>
-                    <div class="flex items-center gap-2 mt-1"><input data-id="noGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${data.assumptions?.noGoFactor || 0.85}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round((parseFloat(data.assumptions?.noGoFactor) || 0.85) * 100)}%</span></div>
-                </label>
-                <div class="pt-3 border-t border-slate-700/30">
-                    <p class="text-[9px] text-slate-500 italic leading-relaxed">
-                        <i class="fas fa-info-circle mr-1 text-slate-600"></i>
-                        Adjust your retirement spending up or down relative to your current baseline budget.
-                    </p>
-                </div>
+                <label class="block"><span class="label-std text-slate-500">Slow-Go (Age 55-65)</span><div class="flex items-center gap-2 mt-1"><input data-id="slowGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${a.slowGoFactor}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round(a.slowGoFactor * 100)}%</span></div></label>
+                <label class="block"><span class="label-std text-slate-500">Mid-Go (Age 65-80)</span><div class="flex items-center gap-2 mt-1"><input data-id="midGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${a.midGoFactor}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round(a.midGoFactor * 100)}%</span></div></label>
+                <label class="block"><span class="label-std text-slate-500">No-Go (Age 80+)</span><div class="flex items-center gap-2 mt-1"><input data-id="noGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${a.noGoFactor}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round(a.noGoFactor * 100)}%</span></div></label>
+                <div class="pt-3 border-t border-slate-700/30"><p class="text-[9px] text-slate-500 italic leading-relaxed"><i class="fas fa-info-circle mr-1 text-slate-600"></i>Adjust your retirement spending up or down relative to your current baseline budget.</p></div>
             </div>
         </div>
     `;

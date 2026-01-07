@@ -78,6 +78,30 @@ export const math = {
         if (typeof value === 'number') return value;
         if (!value) return 0;
         return Number(String(value).replace(/[^0-9.-]+/g, "")) || 0;
+    },
+    getGrowthForAge: (type, age, currentAge, assumptions) => {
+        // Growth is stored as percentages (e.g. 8.0)
+        const keyMap = {
+            'Stock': 'stockGrowth',
+            'Crypto': 'cryptoGrowth',
+            'Metals': 'metalsGrowth',
+            'RealEstate': 'realEstateGrowth'
+        };
+        const key = keyMap[type];
+        if (!key) return 0;
+
+        const initial = parseFloat(assumptions[key]) || 0;
+        const isAdvanced = !!assumptions.advancedGrowth;
+        
+        if (!isAdvanced) return initial / 100;
+
+        const years = parseFloat(assumptions[key + 'Years']) || 0;
+        const perpetual = parseFloat(assumptions[key + 'Perpetual']) || initial;
+
+        if (age < currentAge + years) {
+            return initial / 100;
+        }
+        return perpetual / 100;
     }
 };
 
@@ -87,7 +111,12 @@ export const assumptions = {
         stockGrowth: 8, cryptoGrowth: 10, metalsGrowth: 6, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', benefitCeiling: 1.38, 
         helocRate: 7, state: 'Michigan', workYearsAtRetirement: 35,
-        slowGoFactor: 1.1, midGoFactor: 1.0, noGoFactor: 0.85
+        slowGoFactor: 1.1, midGoFactor: 1.0, noGoFactor: 0.85,
+        advancedGrowth: false,
+        stockGrowthYears: 10, stockGrowthPerpetual: 4,
+        cryptoGrowthYears: 5, cryptoGrowthPerpetual: 5,
+        metalsGrowthYears: 10, metalsGrowthPerpetual: 3,
+        realEstateGrowthYears: 15, realEstateGrowthPerpetual: 2
     }
 };
 

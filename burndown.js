@@ -89,11 +89,10 @@ export const burndown = {
             </div>
         `;
         burndown.attachListeners();
-        burndown.run(); // Ensure initial population
+        burndown.run(); 
     },
 
     attachListeners: () => {
-        // Range Inputs and Toggles
         ['input-strategy-dial', 'toggle-rule-72t', 'toggle-budget-sync', 'input-top-retire-age'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
@@ -113,7 +112,6 @@ export const burndown = {
             };
         });
 
-        // Retirement Age Plus/Minus Buttons
         const btnMinus = document.getElementById('btn-retire-minus');
         const btnPlus = document.getElementById('btn-retire-plus');
         const topRetireSlider = document.getElementById('input-top-retire-age');
@@ -122,7 +120,6 @@ export const burndown = {
             btnPlus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) + 1; topRetireSlider.dispatchEvent(new Event('input')); };
         }
 
-        // Die With Zero Toggle
         const dwzBtn = document.getElementById('btn-dwz-toggle');
         if (dwzBtn) {
             dwzBtn.onclick = () => {
@@ -139,7 +136,6 @@ export const burndown = {
             };
         }
 
-        // Real/Nominal Toggle
         const realBtn = document.getElementById('toggle-burndown-real');
         if (realBtn) {
             realBtn.onclick = () => {
@@ -150,7 +146,6 @@ export const burndown = {
             };
         }
 
-        // Manual Budget Input
         const manualInput = document.getElementById('input-manual-budget');
         if (manualInput) {
             manualInput.oninput = () => { burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
@@ -169,7 +164,6 @@ export const burndown = {
         if (data?.priority) burndown.priorityOrder = [...new Set(data.priority)];
         isRealDollars = !!data?.isRealDollars;
         
-        // Populate UI from loaded data
         const sync = (id, val, isCheck = false) => {
             const el = document.getElementById(id);
             if (el) {
@@ -217,7 +211,6 @@ export const burndown = {
         const data = window.currentData;
         if (!data || !data.assumptions) return;
 
-        // Initialize Draggable Priority List (Desktop only)
         const priorityList = document.getElementById('draw-priority-list');
         if (priorityList && !priorityList.innerHTML) {
             burndown.priorityOrder = [...new Set(burndown.priorityOrder)];
@@ -240,7 +233,6 @@ export const burndown = {
         const config = burndown.scrape();
         let results = [];
 
-        // Die With Zero solver
         if (config.dieWithZero) {
             let low = 0, high = 2000000, bestBudget = low;
             for (let i = 0; i < 20; i++) {
@@ -269,7 +261,7 @@ export const burndown = {
     simulateProjection: (data, overrideManualBudget = null) => {
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = [], debts = [] } = data;
         const config = burndown.scrape(); 
-        const inflationRate = (assumptions.inflation || 3) / 100, stockGrowth = (assumptions.stockGrowth || 8) / 100, cryptoGrowth = (assumptions.cryptoGrowth || 10) / 100, metalsGrowth = (assumptions.metalsGrowth || 6) / 100, realEstateGrowth = (assumptions.realEstateGrowth || 3) / 100;
+        const inflationRate = (assumptions.inflation || 3) / 100;
         const filingStatus = assumptions.filingStatus || 'Single', hhSize = benefits.hhSize || 1, currentYear = new Date().getFullYear();
         const dial = config.strategyDial, rAge = config.retirementAge;
 
@@ -297,6 +289,13 @@ export const burndown = {
 
         for (let i = 0; i <= (100 - assumptions.currentAge); i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
+            
+            // Dynamic APY for this year
+            const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
+            const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
+            const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
+            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, assumptions.currentAge, assumptions);
+
             const totalMort = simRE.reduce((s, r) => s + (r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12)), 0);
             const totalOL = simOA.reduce((s, o) => s + (o.loan = Math.max(0, o.loan - (o.principalPayment || 0) * 12)), 0);
             const totalDebt = simDebts.reduce((s, d) => s + (d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12)), 0);
@@ -347,8 +346,13 @@ export const burndown = {
             if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard')));
             results.push(yearRes);
-            ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
-            if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); bal['roth-earnings'] += (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth;
+
+            // Apply APY for next year based on current segmented rates
+            ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
+            bal['crypto'] *= (1 + cryptoGrowth); 
+            bal['metals'] *= (1 + metalsGrowth);
+            if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); 
+            bal['roth-earnings'] += (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth;
         }
         return results;
     },
