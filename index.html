@@ -52,20 +52,17 @@
                     SEND ME A COFFEE <i class="fas fa-coffee ml-1.5 text-amber-500"></i>
                 </a>
             </div>
-            <nav class="flex-grow p-4 pt-2 space-y-2 overflow-y-auto" id="main-nav">
-                <button data-tab="assets-debts" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-wallet w-6 text-orange-400"></i><span>Assets & Debts</span></button>
-                <button data-tab="income" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-money-bill-wave w-6 text-teal-400"></i><span>Income</span></button>
-                <button data-tab="budget" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-chart-pie w-6 text-pink-500"></i><span>Budget</span></button>
-                <button data-tab="benefits" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-hand-holding-heart w-6 text-amber-400"></i><span>Benefits</span></button>
-                <button data-tab="assumptions" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-sliders-h w-6 text-emerald-400"></i><span>Assumptions</span></button>
-                <button data-tab="projection" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-chart-line w-6 text-blue-400"></i><span>Projection</span></button>
-                <button data-tab="burndown" class="tab-btn w-full text-left p-3 rounded-lg flex items-center gap-3"><i class="fas fa-stairs w-6 text-purple-400" style="transform: scaleX(-1);"></i><span>Burndown</span></button>
+            <nav class="flex-grow p-4 pt-2 space-y-1 overflow-y-auto" id="main-nav">
+                <button data-tab="assets-debts" class="tab-btn w-full text-left p-2 rounded-lg flex items-center gap-3"><i class="fas fa-wallet w-6 text-orange-400"></i><span>Assets & Debts</span></button>
+                <button data-tab="income" class="tab-btn w-full text-left p-2 rounded-lg flex items-center gap-3"><i class="fas fa-money-bill-wave w-6 text-teal-400"></i><span>Income</span></button>
+                <button data-tab="budget" class="tab-btn w-full text-left p-2 rounded-lg flex items-center gap-3"><i class="fas fa-chart-pie w-6 text-pink-500"></i><span>Budget</span></button>
+                <button data-tab="benefits" class="tab-btn w-full text-left p-2 rounded-lg flex items-center gap-3"><i class="fas fa-hand-holding-heart w-6 text-amber-400"></i><span>Benefits</span></button>
+                <button data-tab="assumptions" class="tab-btn w-full text-left p-2 rounded-lg flex items-center gap-3"><i class="fas fa-sliders-h w-6 text-emerald-400"></i><span>Assumptions</span></button>
+                <button data-tab="projection" class="tab-btn w-full text-left p-2 rounded-lg flex items-center gap-3"><i class="fas fa-chart-line w-6 text-blue-400"></i><span>Projection</span></button>
+                <button data-tab="burndown" class="tab-btn w-full text-left p-2 rounded-lg flex items-center gap-3"><i class="fas fa-stairs w-6 text-purple-400" style="transform: scaleX(-1);"></i><span>Burndown</span></button>
             </nav>
             <div class="p-4 border-t border-slate-700 bg-slate-800/50">
                 <div class="mb-4 flex flex-col items-center">
-                    <div class="w-24 h-24 mb-2">
-                        <canvas id="sidebar-asset-chart"></canvas>
-                    </div>
                     <div class="text-center mb-4">
                         <p class="label-std">Net Worth</p>
                         <p id="sidebar-networth" class="text-xl font-black text-teal-400 tracking-tighter mono-numbers">$0</p>

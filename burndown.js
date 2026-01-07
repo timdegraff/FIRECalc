@@ -323,13 +323,24 @@ export const burndown = {
         
         const priorityList = document.getElementById('draw-priority-list');
         if (priorityList) {
+            // Dedup before rendering
+            burndown.priorityOrder = [...new Set(burndown.priorityOrder)];
+
             priorityList.innerHTML = burndown.priorityOrder.map(k => {
                 const meta = burndown.assetMeta[k];
                 if (!meta) return ''; 
                 return `<div data-pk="${k}" class="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-xl label-std cursor-move flex items-center gap-2 group hover:border-slate-500 transition-all shadow-lg text-[10px]" style="color: ${meta.color}"><i class="fas fa-grip-vertical opacity-30 group-hover:opacity-100 transition-opacity"></i> ${meta.label}</div>`;
             }).join('');
             if (!burndown.sortable) {
-                burndown.sortable = new Sortable(priorityList, { animation: 150, onEnd: () => { burndown.priorityOrder = Array.from(priorityList.children).map(el => el.dataset.pk); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } });
+                burndown.sortable = new Sortable(priorityList, { 
+                    animation: 150, 
+                    onEnd: () => { 
+                        const newOrder = Array.from(priorityList.children).map(el => el.dataset.pk);
+                        burndown.priorityOrder = [...new Set(newOrder)]; // Ensure dedup on drag end
+                        burndown.run(); 
+                        if (window.debouncedAutoSave) window.debouncedAutoSave(); 
+                    } 
+                });
             }
         }
 

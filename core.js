@@ -285,7 +285,8 @@ window.addRow = (containerId, type, data = {}) => {
 };
 
 window.updateSidebarChart = (data) => {
-    const ctx = document.getElementById('sidebar-asset-chart')?.getContext('2d'); if (!ctx) return;
+    // Canvas has been removed from index.html, so we skip chart generation.
+    // However, we still calculate totals to update the text-based Legend below.
     const totals = {}; let totalSum = 0;
     
     data.investments?.forEach(i => { const v = math.fromCurrency(i.value); totals[i.type] = (totals[i.type] || 0) + v; totalSum += v; });
@@ -331,29 +332,7 @@ window.updateSidebarChart = (data) => {
             });
     }
 
-    if (assetChart) assetChart.destroy();
-    assetChart = new Chart(ctx, {
-        type: 'doughnut', 
-        data: { 
-            labels: Object.keys(totals), 
-            datasets: [{ 
-                data: Object.values(totals), 
-                backgroundColor: Object.keys(totals).map(l => assetColors[l] || assetColors['Taxable']), 
-                borderWidth: 0, 
-                hoverOffset: 0 
-            }] 
-        },
-        options: { 
-            plugins: { 
-                legend: { display: false }, 
-                tooltip: { enabled: false } // Disable tooltips entirely as requested
-            }, 
-            cutout: '85%', 
-            responsive: true, 
-            maintainAspectRatio: false,
-            events: [] // Disable hover events for performance
-        }
-    });
+    // Chart.js rendering logic removed.
 };
 
 window.createAssumptionControls = (data) => {
