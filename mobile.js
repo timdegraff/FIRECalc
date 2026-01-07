@@ -55,6 +55,15 @@ const MOBILE_TEMPLATES = {
             </div>
             <div id="m-re-cards" class="space-y-3"></div>
 
+            <div class="h-8"></div>
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
+                    <i class="fas fa-car text-orange-400"></i> Other Assets
+                </h2>
+                <button data-add-context="otherAsset" class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center active:scale-95 transition-all"><i class="fas fa-plus"></i></button>
+            </div>
+            <div id="m-other-assets-cards" class="space-y-3"></div>
+
              <div class="h-8"></div>
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-2">
@@ -263,6 +272,28 @@ const ITEM_TEMPLATES = {
             </div>
         </div>
     `,
+    otherAsset: (data, idx, arrayName) => `
+        <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
+            <div class="swipe-action-bg">
+                <button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button>
+            </div>
+            <div class="mobile-card relative z-10 bg-slate-800 transition-transform flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}">
+                <div class="flex justify-between items-start">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-full outline-none" placeholder="Asset Name">
+                </div>
+                <div class="flex justify-between items-center gap-4">
+                     <div class="flex-1">
+                        <span class="mobile-label">Value</span>
+                        <input data-id="value" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.value || 0)}" class="block w-full bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none">
+                    </div>
+                    <div class="flex-1 text-right">
+                        <span class="mobile-label">Loan</span>
+                        <input data-id="loan" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.loan || 0)}" class="block w-full text-right bg-transparent text-red-400 font-black text-lg mono-numbers outline-none">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `,
     heloc: (data, idx, arrayName) => `
         <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
             <div class="swipe-action-bg">
@@ -447,6 +478,10 @@ function attachGlobal() {
         else if (context === 'realEstate') {
             if (!window.currentData.realEstate) window.currentData.realEstate = [];
             window.currentData.realEstate.push({ name: '', value: 0, mortgage: 0, principalPayment: 0 });
+        }
+        else if (context === 'otherAsset') {
+            if (!window.currentData.otherAssets) window.currentData.otherAssets = [];
+            window.currentData.otherAssets.push({ name: '', value: 0, loan: 0, principalPayment: 0 });
         }
         else if (context === 'heloc') {
             if (!window.currentData.helocs) window.currentData.helocs = [];
@@ -654,6 +689,7 @@ function renderTab() {
     if (currentTab === 'assets-debts') {
         window.currentData.investments?.forEach((item, i) => addMobileRow('m-investment-cards', 'investment', item, i, 'investments'));
         window.currentData.realEstate?.forEach((item, i) => addMobileRow('m-re-cards', 'realEstate', { ...item, type: 'Real Estate' }, i, 'realEstate'));
+        window.currentData.otherAssets?.forEach((item, i) => addMobileRow('m-other-assets-cards', 'otherAsset', item, i, 'otherAssets'));
         window.currentData.helocs?.forEach((item, i) => addMobileRow('m-heloc-cards', 'heloc', { ...item, type: 'HELOC', value: -item.balance }, i, 'helocs'));
         window.currentData.debts?.forEach((item, i) => addMobileRow('m-debt-cards', 'debt', { ...item, type: 'Debt', value: -item.balance }, i, 'debts'));
     }

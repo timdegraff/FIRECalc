@@ -196,7 +196,12 @@ function attachDynamicRowListeners() {
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button'); if (!btn) return;
         if (btn.dataset.addRow) { window.addRow(btn.dataset.addRow, btn.dataset.rowType); if (window.debouncedAutoSave) window.debouncedAutoSave(); }
-        else if (btn.dataset.action === 'remove') { (btn.closest('tr') || btn.closest('.bg-slate-800'))?.remove(); if (window.debouncedAutoSave) window.debouncedAutoSave(); }
+        else if (btn.dataset.action === 'remove') { 
+            // Fix: Target either table row or the specifically marked card, or fallback to background class.
+            const target = btn.closest('tr') || btn.closest('.removable-item') || btn.closest('.bg-slate-800');
+            target?.remove(); 
+            if (window.debouncedAutoSave) window.debouncedAutoSave(); 
+        }
         else if (btn.dataset.action === 'toggle-freq') {
             const isMon = btn.textContent.trim().toLowerCase() === 'monthly';
             btn.textContent = isMon ? 'Annual' : 'Monthly';

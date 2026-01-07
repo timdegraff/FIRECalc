@@ -8,7 +8,7 @@ import { burndown } from './burndown.js';
 
 // --- VERSION CHECK LOGIC ---
 // Increment this timestamp to force a one-time reload on all devices
-const APP_VERSION = "2026.1.5"; 
+const APP_VERSION = "1.5"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
 if (currentSavedVersion !== APP_VERSION) {

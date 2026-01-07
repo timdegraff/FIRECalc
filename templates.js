@@ -92,7 +92,7 @@ export const templates = {
     },
     
     income: (data) => `
-        <div class="bg-slate-800 rounded-2xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
+        <div class="removable-item bg-slate-800 rounded-2xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/40">
                 <div class="flex items-center gap-3">
                     <i class="fas fa-money-check-alt text-teal-400"></i>
@@ -115,8 +115,8 @@ export const templates = {
                     <div class="space-y-1.5">
                         <div class="h-4 flex items-center">
                             <label class="label-std text-slate-500">Annual Growth %</label>
+                            <input data-id="increase" type="number" step="0.1" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                         </div>
-                        <input data-id="increase" type="number" step="0.1" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                     </div>
                 </div>
 
