@@ -23,6 +23,18 @@ window.debouncedAutoSave = () => {
 let currentTab = 'assets-debts';
 let isRedirecting = sessionStorage.getItem('fc_redirect_active') === 'true';
 
+// SAFETY VALVE: Mobile Safari specific timeout.
+if (isRedirecting) {
+    setTimeout(() => {
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen && !loginScreen.classList.contains('hidden') && loginScreen.innerHTML.includes('Connecting')) {
+            console.warn("Mobile Redirect timeout reached. Resetting.");
+            sessionStorage.removeItem('fc_redirect_active');
+            window.location.reload();
+        }
+    }, 10000);
+}
+
 const ASSET_TYPE_COLORS = {
     'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax',
     'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', '529 Plan': 'text-type-529'

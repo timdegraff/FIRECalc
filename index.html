@@ -329,6 +329,9 @@
         </main>
     </div>
 
-    <script type="module" src="main.js"></script>
+    <!-- Dynamic import with cache busting query string -->
+    <script type="module">
+        import "./main.js?v=2.1"; 
+    </script>
 </body>
 </html>

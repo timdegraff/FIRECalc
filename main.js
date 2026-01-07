@@ -7,12 +7,25 @@ import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 
 // --- VERSION CHECK LOGIC ---
-const APP_VERSION = "2.0"; 
+const APP_VERSION = "2.1"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
 // Handle Redirect Results (Required for Brave/Safari compatibility)
 // We check session storage because getRedirectResult can sometimes take a moment to fire
 let isRedirecting = sessionStorage.getItem('fc_redirect_active') === 'true';
+
+// SAFETY VALVE: If we think we are redirecting but nothing happens for 10 seconds, reset.
+if (isRedirecting) {
+    setTimeout(() => {
+        const loadingEl = document.getElementById('login-screen');
+        // If we are still showing "Authenticating..." after 10s, something went wrong (Safari ITP dropped token).
+        if (loadingEl && !loadingEl.classList.contains('hidden') && loadingEl.innerHTML.includes('Authenticating')) {
+            console.warn("Redirect timeout reached. Resetting auth state.");
+            sessionStorage.removeItem('fc_redirect_active');
+            window.location.reload();
+        }
+    }, 10000);
+}
 
 getRedirectResult(auth).then((result) => {
     // Once getRedirectResult resolves (even if user is null), we are no longer "redirecting"
@@ -68,7 +81,7 @@ onAuthStateChanged(auth, async (user) => {
         
         if (loginScreen) {
             loginScreen.classList.remove('hidden');
-            // If the innerHTML was replaced by the 'Authenticating' message, refresh the login UI
+            // If the innerHTML was replaced by the 'Authenticating' message, refresh the login UI to show buttons again
             if (loginScreen.innerHTML.includes('Authenticating')) {
                  window.location.reload(); 
             }

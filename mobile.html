@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>FIRECalc Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -101,6 +104,9 @@
         <div id="inspector-log" class="p-6 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400"></div>
     </div>
 
-    <script type="module" src="mobile.js"></script>
+    <!-- Dynamic import with cache busting query string -->
+    <script type="module">
+        import "./mobile.js?v=2.1"; 
+    </script>
 </body>
 </html>
