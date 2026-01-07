@@ -42,7 +42,7 @@ export const projection = {
         const { assumptions, investments = [], realEstate = [], otherAssets = [], budget = {} } = data;
         const currentYear = new Date().getFullYear();
         // Chart uses this limit
-        const chartEndAge = parseFloat(document.getElementById('input-projection-end')?.value) || 75;
+        const chartEndAge = parseFloat(document.getElementById('input-projection-end')?.value) || 72;
         // Table always simulates to 100
         const maxSimAge = 100;
         const duration = maxSimAge - assumptions.currentAge;

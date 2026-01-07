@@ -62,7 +62,7 @@ export function loadUserDataIntoUI(data) {
     const projEndInput = document.getElementById('input-projection-end');
     const projEndLabel = document.getElementById('label-projection-end');
     if (projEndInput) {
-        const val = data.projectionEndAge || 75;
+        const val = data.projectionEndAge || 72;
         projEndInput.value = val;
         if (projEndLabel) projEndLabel.textContent = val;
     }
@@ -120,7 +120,7 @@ function scrapeDataFromUI() {
         benefits: benefits.scrape(), 
         burndown: burndown.scrape(),
         projectionSettings: projection.scrape(),
-        projectionEndAge: parseFloat(document.getElementById('input-projection-end')?.value) || 75
+        projectionEndAge: parseFloat(document.getElementById('input-projection-end')?.value) || 72
     };
 
     const stateEl = document.querySelector('[data-id="state"]');
@@ -229,7 +229,7 @@ function getInitialData() {
             priority: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa']
         }, 
         projectionSettings: {}, 
-        projectionEndAge: 90 
+        projectionEndAge: 72 
     };
 }
 

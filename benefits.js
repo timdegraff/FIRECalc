@@ -51,25 +51,25 @@ export const benefits = {
                                 <span id="health-cost-badge" class="px-2 py-0.5 bg-slate-700 text-slate-400 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center">FREE</span>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col gap-6 flex-grow">
-                            <div class="text-center py-2">
-                                <span class="label-std text-slate-500 block mb-1">Plan Status</span>
+                        <div class="p-4 flex flex-col gap-3 flex-grow">
+                            <div class="text-center">
+                                <span class="label-std text-slate-500 block mb-0.5">Plan Status</span>
                                 <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Platinum</div>
-                                <div id="health-sub-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">100% Full Coverage</div>
+                                <div id="health-sub-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">100% Full Coverage</div>
                             </div>
                             <!-- DYNAMIC HEALTH BAR -->
-                            <div class="relative h-2 bg-slate-950 rounded-full border border-slate-700 overflow-hidden flex w-full">
+                            <div class="relative h-2 bg-slate-950 rounded-full border border-slate-700 overflow-hidden flex w-full my-1">
                                 <div id="seg-medicaid" class="bg-emerald-500/80 h-full border-r border-slate-900/50"></div>
                                 <div id="seg-hmp" class="bg-emerald-400/60 h-full border-r border-slate-900/50"></div>
                                 <div id="seg-silver" class="bg-blue-500/60 h-full border-r border-slate-900/50"></div>
                                 <div id="seg-gold" class="bg-amber-500/60 h-full border-r border-slate-900/50"></div>
                                 <div id="health-marker" class="absolute top-0 w-1.5 h-full bg-white shadow-[0_0_10px_white] transition-all z-10 rounded-full"></div>
                             </div>
-                            <div class="mt-auto pt-3 border-t border-slate-700/50">
+                            <div class="mt-auto pt-1">
                                 <table class="w-full text-[10px]">
                                     <tbody>
-                                        <tr><td class="py-1 text-slate-500 font-medium">Est. Monthly Premium</td><td class="py-1 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
-                                        <tr><td class="py-1 text-slate-500 font-medium">Deductible</td><td class="py-1 text-right text-slate-400 mono-numbers" id="detail-deductible">$0</td></tr>
+                                        <tr><td class="py-0.5 text-slate-500 font-medium">Est. Monthly Premium</td><td class="py-0.5 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
+                                        <tr><td class="py-0.5 text-slate-500 font-medium">Deductible</td><td class="py-0.5 text-right text-slate-400 mono-numbers" id="detail-deductible">$0</td></tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -93,13 +93,13 @@ export const benefits = {
                                 </label>
                             </div>
                         </div>
-                        <div class="p-5 flex flex-col gap-6 flex-grow">
-                            <div class="flex-grow flex flex-col items-center justify-center py-4 text-center">
-                                <span class="label-std text-slate-500 mb-1">Monthly Benefit</span>
+                        <div class="p-4 flex flex-col gap-3 flex-grow">
+                            <div class="flex-grow flex flex-col items-center justify-center py-2 text-center">
+                                <span class="label-std text-slate-500 mb-0.5">Monthly Benefit</span>
                                 <div id="snap-result-value" class="text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg">$0</div>
-                                <div id="snap-annual-value" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Annual: $0</div>
+                                <div id="snap-annual-value" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Total Annual: $0</div>
                             </div>
-                            <div class="pt-4 border-t border-slate-700/50 mt-auto">
+                            <div class="pt-1 mt-auto">
                                 <div class="flex justify-between items-center mb-1">
                                     <label class="label-std text-slate-500">Shelter & Utility Cost</label>
                                     <div class="text-xs font-bold text-white mono-numbers" data-label="shelterCosts">$700</div>
@@ -222,11 +222,11 @@ export const benefits = {
         
         if (estimatedBenefit <= 0) {
             snapRes.className = "text-5xl font-black text-slate-700 mono-numbers tracking-tighter transition-all";
-            snapAnnual.className = "text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-1";
+            snapAnnual.className = "text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-0.5";
             snapCard.className = "card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg opacity-80 transition-all flex flex-col";
         } else {
             snapRes.className = "text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg transition-all";
-            snapAnnual.className = "text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1";
+            snapAnnual.className = "text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5";
             snapCard.className = "card-container bg-slate-800 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-lg transition-all flex flex-col";
         }
     },

@@ -146,9 +146,9 @@ const MOBILE_TEMPLATES = {
             <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800">
                 <div class="flex flex-col">
                     <span class="mobile-label">End Age</span>
-                    <span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-sm">75</span>
+                    <span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-sm">72</span>
                 </div>
-                <input type="range" id="input-projection-end" min="50" max="100" value="75" class="flex-grow h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                <input type="range" id="input-projection-end" min="50" max="100" value="72" class="flex-grow h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
             </div>
         </div>
     `,
@@ -382,7 +382,26 @@ const ITEM_TEMPLATES = {
     `},
     savings: (data, idx, arrayName) => {
         const typeColorClass = ASSET_TYPE_COLORS[data.type] || 'text-white';
-        // Note: Hidden inputs are handled by data binding logic, but we ensure defaults are set when adding.
+        
+        // Locked Item (Virtual 401k Row)
+        if (data.isLocked) {
+            return `
+            <div class="mobile-card relative z-10 bg-slate-800 flex flex-col gap-3 mb-3 border-l-4 border-blue-500" data-idx="${idx}" data-array="${arrayName}">
+                 <div class="flex justify-between items-center">
+                     <div class="flex flex-col w-1/2">
+                        <span class="mobile-label mb-1">Source</span>
+                        <div class="text-sm font-bold text-white ${typeColorClass}">Pre-Tax (401k/IRA)</div>
+                    </div>
+                    <div class="text-right">
+                        <span class="mobile-label">Monthly</span>
+                        <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none" readonly>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        // Standard Manual Savings Row
         return `
         <div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3">
             <div class="swipe-action-bg">
@@ -405,7 +424,7 @@ const ITEM_TEMPLATES = {
                     </div>
                     <div class="text-right">
                         <span class="mobile-label">Monthly</span>
-                        <input data-id="monthly" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}>
+                        <input data-id="monthly" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none">
                     </div>
                 </div>
                 <div class="pt-2 border-t border-slate-700/50 mt-2">
@@ -678,6 +697,13 @@ function updateMobileSummaries() {
     
     const budSum = document.getElementById('mobile-sum-budget');
     if (budSum) budSum.textContent = math.toCurrency(s.totalAnnualBudget);
+
+    // Update Virtual 401k Card if it exists
+    const vCard = document.querySelector('.mobile-card[data-array="virtual"]');
+    if (vCard) {
+        const mInput = vCard.querySelector('[data-id="monthly"]');
+        if (mInput) mInput.value = math.toCurrency(s.total401kContribution / 12);
+    }
 }
 
 function renderTab() {
@@ -699,7 +725,22 @@ function renderTab() {
     }
 
     if (currentTab === 'budget') {
-        window.currentData.budget?.savings?.forEach((item, i) => addMobileRow('m-budget-savings', 'savings', { ...item, monthly: item.annual/12 }, i, 'budget.savings'));
+        const s = engine.calculateSummaries(window.currentData);
+        // Virtual 401k Card (Always show at top)
+        addMobileRow('m-budget-savings', 'savings', { 
+            type: 'Pre-Tax (401k/IRA)', 
+            monthly: s.total401kContribution / 12, 
+            annual: s.total401kContribution, 
+            isLocked: true 
+        }, -1, 'virtual');
+
+        // Manual Savings (Skip Locked items to prevent duplication)
+        window.currentData.budget?.savings?.forEach((item, i) => {
+            if (!item.isLocked) {
+                addMobileRow('m-budget-savings', 'savings', { ...item, monthly: item.annual/12 }, i, 'budget.savings');
+            }
+        });
+        
         window.currentData.budget?.expenses?.forEach((item, i) => addMobileRow('m-budget-expenses', 'expense', item, i, 'budget.expenses'));
     }
     
@@ -709,7 +750,7 @@ function renderTab() {
         // Ensure end age slider is synced
         const slider = document.getElementById('input-projection-end');
         if (slider) {
-            const val = window.currentData.projectionEndAge || 75;
+            const val = window.currentData.projectionEndAge || 72;
             slider.value = val;
             const lbl = document.getElementById('mobile-proj-end-val');
             if(lbl) lbl.textContent = val;
