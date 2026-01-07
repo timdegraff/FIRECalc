@@ -191,6 +191,14 @@ export const templates = {
                     </select>
                 </div>
             </td>
+            <td class="px-6 py-3 text-center">
+                 ${data.isLocked ? '' : `
+                 <label class="flex items-center justify-center gap-2 cursor-pointer" title="Contribution stops when you retire">
+                    <span class="text-[8px] uppercase font-bold text-slate-500">Stop</span>
+                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700">
+                </label>
+                 `}
+            </td>
             <td class="px-6 py-3"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400/80 font-bold mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}></td>
             <td class="px-6 py-3"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}></td>
             <td class="px-6 py-3 text-right">${data.isLocked ? '' : '<button data-action="remove" class="text-slate-700 hover:text-red-400 transition-colors"><i class="fas fa-times"></i></button>'}</td>
