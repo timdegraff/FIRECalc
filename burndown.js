@@ -133,13 +133,17 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        const triggers = ['burndown-strategy', 'toggle-rule-72t', 'toggle-budget-sync', 'input-income-utilization'];
+        const triggers = ['burndown-strategy', 'toggle-rule-72t', 'toggle-budget-sync', 'input-income-utilization', 'input-top-retire-age'];
         triggers.forEach(id => {
             const el = document.getElementById(id);
-            if (el) el.oninput = () => {
+            if (el) el.oninput = (e) => {
                 if (id === 'input-income-utilization') {
                     const lbl = document.getElementById('label-income-utilization');
                     if (lbl) lbl.textContent = `${el.value}%`;
+                }
+                if (id === 'input-top-retire-age') {
+                    const lbl = document.getElementById('label-top-retire-age');
+                    if (lbl) lbl.textContent = el.value;
                 }
                 if (id === 'burndown-strategy') {
                     const swrInd = document.getElementById('swr-indicator');
@@ -168,20 +172,19 @@ export const burndown = {
             };
         }
         
-        const topRetireSlider = document.getElementById('input-top-retire-age');
-        if (topRetireSlider) {
-            topRetireSlider.oninput = (e) => {
-                const val = e.target.value;
-                const lbl = document.getElementById('label-top-retire-age');
-                if (lbl) lbl.textContent = val;
-            };
-        }
-
         const btnMinus = document.getElementById('btn-retire-minus');
         const btnPlus = document.getElementById('btn-retire-plus');
+        const topRetireSlider = document.getElementById('input-top-retire-age');
+
         if (btnMinus && btnPlus && topRetireSlider) {
-            btnMinus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) - 1; topRetireSlider.dispatchEvent(new Event('input')); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
-            btnPlus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) + 1; topRetireSlider.dispatchEvent(new Event('input')); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
+            btnMinus.onclick = () => { 
+                topRetireSlider.value = parseInt(topRetireSlider.value) - 1; 
+                topRetireSlider.dispatchEvent(new Event('input')); 
+            };
+            btnPlus.onclick = () => { 
+                topRetireSlider.value = parseInt(topRetireSlider.value) + 1; 
+                topRetireSlider.dispatchEvent(new Event('input')); 
+            };
         }
 
         const dwzBtn = document.getElementById('btn-dwz-toggle');
@@ -239,6 +242,7 @@ export const burndown = {
             {id: 'toggle-rule-72t', key: 'useSEPP', type: 'check'},
             {id: 'toggle-budget-sync', key: 'useSync', type: 'check'},
             {id: 'input-income-utilization', key: 'incomeUtilization', type: 'val'},
+            {id: 'input-top-retire-age', key: 'retirementAge', type: 'val'}
         ];
         config.forEach(c => {
             const el = document.getElementById(c.id);
@@ -249,16 +253,12 @@ export const burndown = {
                     const lbl = document.getElementById('label-income-utilization');
                     if (lbl) lbl.textContent = `${el.value}%`;
                 }
+                if (c.id === 'input-top-retire-age') {
+                    const lbl = document.getElementById('label-top-retire-age');
+                    if (lbl) lbl.textContent = el.value;
+                }
             }
         });
-        
-        const rAge = window.currentData?.assumptions?.retirementAge || 65;
-        const rSlider = document.getElementById('input-top-retire-age');
-        if (rSlider) {
-             rSlider.value = rAge;
-             const lbl = document.getElementById('label-top-retire-age');
-             if (lbl) lbl.textContent = rAge;
-        }
 
         const dwzBtn = document.getElementById('btn-dwz-toggle');
         if (dwzBtn && data?.dieWithZero !== undefined) {
@@ -292,6 +292,7 @@ export const burndown = {
             dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
             manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
             incomeUtilization: parseFloat(document.getElementById('input-income-utilization')?.value || 0),
+            retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
             isRealDollars
         };
     },
@@ -349,7 +350,8 @@ export const burndown = {
 
         if (results.length > 0) {
             // Find the first year of retirement to show SNAP indicator
-            const firstRetYear = results.find(r => r.age >= (data.assumptions.retirementAge || 65)) || results[0];
+            const rAge = parseFloat(document.getElementById('input-top-retire-age')?.value || data.assumptions.retirementAge || 65);
+            const firstRetYear = results.find(r => r.age >= rAge) || results[0];
             const firstYearSnap = (firstRetYear.snapBenefit || 0) / 12;
             const snapInd = document.getElementById('est-snap-indicator');
             if (snapInd) snapInd.textContent = `${formatter.formatCurrency(firstYearSnap, 0)}/mo`;
@@ -371,6 +373,7 @@ export const burndown = {
         const hhSize = benefits.hhSize || 1; 
         const currentYear = new Date().getFullYear();
         const utilizationPct = (stateConfig.incomeUtilization || 0) / 100;
+        const rAge = stateConfig.retirementAge || assumptions.retirementAge || 65;
 
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -396,7 +399,7 @@ export const burndown = {
         let seppAmt = 0, isSepp = false;
 
         for (let i = 0; i <= duration; i++) {
-            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= (assumptions.retirementAge || 65);
+            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge;
             const yearRes = { age, year, draws: {}, seppAmount: 0, rmdAmount: 0, acaPremium: 0, snapBenefit: 0 };
             const infFac = Math.pow(1 + inflationRate, i);
 
@@ -475,7 +478,7 @@ export const burndown = {
                     let targetGainToPull = shortfall > 0 ? shortfall : 0;
                     if (isFirstMagiPhase && (burndown.assetMeta[pk].isMagi || pk === '401k')) {
                         const magiGap = Math.max(0, strategyMagiTarget - ordIter);
-                        targetGainToPull = Math.max(shortfall, magiGap);
+                        targetGainToPull = Math.max(targetGainToPull, magiGap);
                     }
 
                     if (targetGainToPull <= 0.01) return;
@@ -497,9 +500,9 @@ export const burndown = {
 
                     // COST BASIS RATIO MATH
                     let gainRatio = 1.0; 
-                    if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
-                    else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
-                    else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
+                    if (pk === 'taxable' && bal['taxable'] > 0) gainRatio = Math.max(0.001, (bal['taxable'] - bal['taxableBasis']) / bal['taxable']);
+                    else if (pk === 'crypto' && bal['crypto'] > 0) gainRatio = Math.max(0.001, (bal['crypto'] - bal['cryptoBasis']) / bal['crypto']);
+                    else if (pk === 'metals' && bal['metals'] > 0) gainRatio = Math.max(0.001, (bal['metals'] - bal['metalsBasis']) / bal['metals']);
                     else if (!burndown.assetMeta[pk].isMagi) gainRatio = 0.0;
 
                     let takeTotal = 0;
