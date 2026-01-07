@@ -94,8 +94,12 @@ export async function autoSave(scrape = true) {
     if (scrape) window.currentData = scrapeDataFromUI();
     updateSummaries(window.currentData);
     window.updateSidebarChart(window.currentData);
-    if (!document.getElementById('tab-projection').classList.contains('hidden')) projection.run(window.currentData);
-    if (!document.getElementById('tab-burndown').classList.contains('hidden')) burndown.run();
+    
+    const projTab = document.getElementById('tab-projection');
+    if (projTab && !projTab.classList.contains('hidden')) projection.run(window.currentData);
+    
+    const burnTab = document.getElementById('tab-burndown');
+    if (burnTab && !burnTab.classList.contains('hidden')) burndown.run();
     
     if (user && db) {
         try { 

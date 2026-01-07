@@ -172,10 +172,8 @@ const MOBILE_TEMPLATES = {
                 <input type="range" id="input-top-retire-age" class="hidden"> 
             </div>
 
-            <div class="mt-8">
-                <h3 class="mobile-label mb-2">Funding Priority</h3>
-                <div id="m-priority-list" class="space-y-2"></div>
-            </div>
+            <!-- Table Container for Mobile -->
+            <div id="burndown-table-container" class="mt-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50"></div>
         </div>
     `,
     'more': () => `
@@ -708,7 +706,7 @@ function renderTab() {
         }
 
         burndown.run();
-        renderMobilePriority();
+        // REMOVED renderMobilePriority for this view as requested
     }
 
     if (currentTab === 'more') {
@@ -820,39 +818,6 @@ function renderMobileProfile() {
         });
     });
 }
-
-function renderMobilePriority() {
-    const container = document.getElementById('m-priority-list');
-    if (!container) return;
-    const items = burndown.priorityOrder;
-    container.innerHTML = items.map((pk, i) => {
-        const meta = burndown.assetMeta[pk];
-        return `
-            <div class="mobile-card flex justify-between items-center py-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full" style="background-color: ${meta.color}"></div>
-                    <span class="text-xs font-black text-white uppercase">${meta.label}</span>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="reorderPriority(${i}, -1)" class="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-slate-500"><i class="fas fa-chevron-up"></i></button>
-                    <button onclick="reorderPriority(${i}, 1)" class="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-slate-500"><i class="fas fa-chevron-down"></i></button>
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-window.reorderPriority = (index, dir) => {
-    const items = burndown.priorityOrder;
-    const newIndex = index + dir;
-    if (newIndex < 0 || newIndex >= items.length) return;
-    const temp = items[index];
-    items[index] = items[newIndex];
-    items[newIndex] = temp;
-    burndown.run();
-    renderMobilePriority();
-    if (window.debouncedAutoSave) window.debouncedAutoSave();
-};
 
 function openInspector(age) {
     const log = window.simulationTrace?.[age] || ["No calculation trace found for age " + age];

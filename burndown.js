@@ -673,6 +673,20 @@ export const burndown = {
     },
 
     renderTable: (results) => {
+        const isMobile = window.innerWidth < 768;
+        const formatCell = (val) => {
+            if (isMobile) {
+                if (!val || val === 0) return '$0';
+                // Strict integer rounding for compact notation (e.g. $1K, $5K, $100K)
+                return new Intl.NumberFormat('en-US', { 
+                    style: 'currency', currency: 'USD',
+                    notation: 'compact',
+                    maximumFractionDigits: 0 
+                }).format(val);
+            }
+            return formatter.formatCurrency(val, 0);
+        };
+
         const keys = burndown.priorityOrder, infRate = (window.currentData.assumptions.inflation || 3) / 100;
         const headerCells = keys.map(k => `<th class="p-2 text-right text-[9px] min-w-[75px]" style="color: ${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('');
         const rows = results.map((r, i) => {
@@ -680,10 +694,15 @@ export const burndown = {
             const draws = keys.map(k => {
                 const amt = (r.draws[k] || 0) / inf, bal = r.balances[k] / inf, m = burndown.assetMeta[k];
                 const note = k === '401k' ? (r.seppAmount > 0 ? '72t' : (r.rmdAmount > 0 ? 'RMD' : '')) : '';
-                return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${m.color}` : ''}">${formatter.formatCurrency(amt, 0)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40">${formatter.formatCurrency(bal, 0)}</div></td>`;
+                return `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${amt > 0 ? 'font-bold' : 'text-slate-700'}" style="${amt > 0 ? `color: ${m.color}` : ''}">${formatCell(amt)}${note ? `<span class="text-[7px] block opacity-60">${note}</span>` : ''}</div><div class="text-[8px] opacity-40">${formatCell(bal)}</div></td>`;
             }).join('');
             let badge = `<span class="px-2 py-1 rounded text-[9px] font-black uppercase ${r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-700 text-slate-400'))}">${r.status}</span>`;
-            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatter.formatCurrency(r.budget / inf, 0)}</td><td class="p-2 text-right font-black text-white">${formatter.formatCurrency(r.magi / inf, 0)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatter.formatCurrency(r.netWorth / inf, 0)}</td></tr>`;
+            
+            // SHOW DOLLAR VALUE FOR SNAP, NOT TEXT LABEL
+            const snapVal = (r.snapBenefit / inf);
+            const snapDisplay = snapVal > 0 ? `<span class="font-bold text-emerald-500">${formatCell(snapVal)}</span>` : `<span class="text-slate-700">$0</span>`;
+
+            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] cursor-pointer" onclick="document.getElementById('input-debug-age').value=${r.age}; document.getElementById('input-debug-age').dispatchEvent(new Event('input'))"><td class="p-2 text-center font-bold border-r border-slate-700 bg-slate-800/20">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center border-x border-slate-800/50">${badge}</td><td class="p-2 text-right border-r border-slate-800/50">${snapDisplay}</td>${draws}<td class="p-2 text-right font-black border-l border-slate-700 text-teal-400 bg-slate-800/20">${formatCell(r.netWorth / inf)}</td></tr>`;
         }).join('');
         return `<table class="w-full text-left border-collapse table-auto"><thead class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><tr><th class="p-2 border-r border-slate-700 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center border-x border-slate-800/50">Status</th><th class="p-2 text-right border-r border-slate-800/50 text-emerald-500">SNAP</th>${headerCells}<th class="p-2 text-right border-l border-slate-700">Net Worth</th></tr></thead><tbody>${rows}</tbody></table>`;
     }
