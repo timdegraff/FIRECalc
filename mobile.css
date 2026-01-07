@@ -1,0 +1,69 @@
+
+/* Mobile Specific Overrides */
+:root {
+    --safe-bottom: env(safe-area-inset-bottom);
+}
+
+body.safe-bottom {
+    padding-bottom: var(--safe-bottom);
+}
+
+/* 16px font to prevent mobile auto-zoom on focus */
+input, select, textarea {
+    font-size: 16px !important;
+}
+
+.mobile-nav-btn {
+    width: 60px;
+    height: 100%;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.mobile-nav-btn.active {
+    color: #3b82f6;
+}
+
+.mobile-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.mobile-label {
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: 0.1em;
+}
+
+.mono-numbers {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Orientation Logic for Burndown */
+@media screen and (orientation: portrait) {
+    #tab-burndown-mobile .landscape-only {
+        display: none;
+    }
+    #tab-burndown-mobile .portrait-hint {
+        display: flex;
+    }
+}
+
+@media screen and (orientation: landscape) {
+    #tab-burndown-mobile .landscape-only {
+        display: block;
+    }
+    #tab-burndown-mobile .portrait-hint {
+        display: none;
+    }
+}
+
+.pb-safe {
+    padding-bottom: var(--safe-bottom);
+}
