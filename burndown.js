@@ -491,7 +491,15 @@ export const burndown = {
             }
 
             const magi = ordIter;
-            const yearRes = { age, year, budget: targetBudget, magi, netWorth: currentNW, isInsolvent: (netAvail + drawn + snapBen - totalTax - targetBudget) < -1, balances: { ...bal }, draws: yrDraws, snapBenefit: snapBen };
+            const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
+            
+            const yearRes = { 
+                age, year, budget: targetBudget, magi, netWorth: currentNW, 
+                isInsolvent: (netAvail + drawn + snapBen - totalTax - targetBudget) < -1, 
+                balances: { ...bal }, draws: yrDraws, snapBenefit: snapBen,
+                taxes: totalTax,
+                liquid: liquidAssets
+            };
             if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard')));
             
@@ -516,7 +524,7 @@ export const burndown = {
         const formatCell = (v) => isMobile ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 0 }).format(v) : formatter.formatCurrency(v, 0);
         
         const header = isMobile 
-            ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">Net Worth</th></tr>`
+            ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Spend</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">Net Worth</th></tr>`
             : `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Status</th><th class="p-2 text-right">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-right text-[9px]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-right">Net Worth</th></tr>`;
 
         const rows = results.map((r, i) => {
@@ -526,7 +534,23 @@ export const burndown = {
             const retBadge = isRetYear ? `<span class="block text-[7px] text-yellow-400 mt-0.5 tracking-tighter">RET YEAR</span>` : '';
 
             if (isMobile) {
-                return `<tr class="border-b border-slate-800/50 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${badgeClass}">${r.status}</span></td><td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
+                if (r.age > 70 && r.age % 5 !== 0) return '';
+                
+                return `<tr class="border-b border-slate-800/50 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}">
+                    <td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td>
+                    <td class="p-2 text-right">
+                        <div class="text-slate-400">${formatCell(r.budget / inf)}</div>
+                        <div class="text-[8px] text-red-400/70 font-bold">+${formatCell(r.taxes / inf)} Tax</div>
+                    </td>
+                    <td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td>
+                    <td class="p-2 text-center">
+                        <span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${badgeClass}">${r.status}</span>
+                    </td>
+                    <td class="p-2 text-right">
+                        <div class="font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</div>
+                        <div class="text-[8px] text-emerald-600 font-bold">Liq: ${formatCell(r.liquid / inf)}</div>
+                    </td>
+                </tr>`;
             }
             const draws = burndown.priorityOrder.map(k => `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${r.draws?.[k] > 0 ? 'font-bold' : 'text-slate-700'}" style="color:${r.draws?.[k] > 0 ? burndown.assetMeta[k]?.color : ''}">${formatCell((r.draws?.[k] || 0) / inf)}</div><div class="text-[8px] opacity-40">${formatCell(r.balances[k] / inf)}</div></td>`).join('');
             return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : (isRetYear ? 'bg-blue-900/10' : '')}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>${retBadge}</td><td class="p-2 text-right text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;

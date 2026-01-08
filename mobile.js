@@ -32,7 +32,6 @@ function triggerHaptic() {
 }
 
 let currentTab = 'assets-debts';
-let assetChartInstance = null;
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
@@ -85,6 +84,18 @@ window.addMobileItem = (type) => {
 const MOBILE_TEMPLATES = {
     'assets-debts': () => `
         <div class="space-y-8">
+            <!-- Assets Summary Cards -->
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Assets</div>
+                    <div id="val-total-assets" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
+                </div>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Debts</div>
+                    <div id="val-total-debts" class="text-xl font-black text-red-400 mono-numbers">$0</div>
+                </div>
+            </div>
+
             <div>
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-orange-400 mr-2"></i>Investments</h2>
@@ -127,8 +138,8 @@ const MOBILE_TEMPLATES = {
             
             <div class="pt-8 border-t border-slate-800">
                 <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 text-center">Asset Allocation</h3>
-                <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 h-[250px] relative">
-                    <canvas id="mobile-asset-chart"></canvas>
+                <div id="mobile-asset-allocation-list" class="grid grid-cols-2 gap-3">
+                    <!-- Populated by JS -->
                 </div>
             </div>
         </div>
@@ -184,10 +195,7 @@ const MOBILE_TEMPLATES = {
             <div class="flex items-center gap-2">
                 <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
             </div>
-            <div class="mobile-card space-y-6">
-                <h3 class="text-lg font-black text-white uppercase tracking-tighter">Global Parameters</h3>
-                <div id="m-assumptions-container" class="space-y-4"></div>
-            </div>
+            <div id="m-assumptions-container" class="space-y-4"></div>
         </div>
     `,
     'burndown': () => `
@@ -256,7 +264,7 @@ const ITEM_TEMPLATES = {
                     </select>
                 </div>
                 <div class="text-right flex-grow">
-                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-5xl mono-numbers outline-none leading-none">
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-7xl mono-numbers outline-none leading-none tracking-tight">
                 </div>
             </div>
         </div>`;
@@ -570,104 +578,57 @@ function updateMobileSummaries() {
     const budgetSpend = document.getElementById('val-budget-spend');
     if (budgetSavings) budgetSavings.textContent = math.toSmartCompactCurrency(s.totalAnnualSavings);
     if (budgetSpend) budgetSpend.textContent = math.toSmartCompactCurrency(s.totalAnnualBudget);
+    
+    // Assets & Debts Summary
+    const totalAssets = document.getElementById('val-total-assets');
+    const totalDebts = document.getElementById('val-total-debts');
+    if (totalAssets) totalAssets.textContent = math.toSmartCompactCurrency(s.totalAssets);
+    if (totalDebts) totalDebts.textContent = math.toSmartCompactCurrency(s.totalLiabilities);
+    
+    // Re-render asset allocation if in assets tab
+    if (currentTab === 'assets-debts') {
+        renderMobileAssetList();
+    }
 }
 
-function renderMobileAssetChart() {
-    const ctx = document.getElementById('mobile-asset-chart');
-    if (!ctx || !window.currentData) return;
-    if (assetChartInstance) assetChartInstance.destroy();
+function renderMobileAssetList() {
+    const list = document.getElementById('mobile-asset-allocation-list');
+    if (!list || !window.currentData) return;
 
     const inv = window.currentData.investments || [];
     const re = window.currentData.realEstate || [];
     const oa = window.currentData.otherAssets || [];
     
     const buckets = {
-        'Stocks': inv.filter(i => ['Taxable', 'Pre-Tax (401k/IRA)', 'Post-Tax (Roth)', 'HSA', '529 Plan'].includes(i.type)).reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Taxable': inv.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Pre-Tax (401k/IRA)': inv.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Post-Tax (Roth)': inv.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Real Estate': re.reduce((s, r) => s + math.fromCurrency(r.value), 0),
-        'Cash': inv.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Crypto': inv.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Metals': inv.filter(i => i.type === 'Metals').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Cash': inv.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'HSA': inv.filter(i => i.type === 'HSA').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        '529 Plan': inv.filter(i => i.type === '529 Plan').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Other': oa.reduce((s, o) => s + math.fromCurrency(o.value), 0)
     };
 
     const total = Object.values(buckets).reduce((a, b) => a + b, 0);
+    list.innerHTML = '';
+    
     if (total === 0) return;
 
-    const data = [];
-    const labels = [];
-    const colors = [];
-    const bgColors = {
-        'Stocks': assetColors['Taxable'],
-        'Real Estate': assetColors['Real Estate'],
-        'Cash': assetColors['Cash'],
-        'Crypto': assetColors['Crypto'],
-        'Metals': assetColors['Metals'],
-        'Other': assetColors['Other']
-    };
+    const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other' };
 
-    Object.entries(buckets).forEach(([key, val]) => {
-        if (val > 0) {
-            labels.push(key);
-            data.push(val);
-            colors.push(bgColors[key]);
-        }
-    });
-
-    assetChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors,
-                borderWidth: 0,
-                hoverOffset: 10
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '70%',
-            plugins: {
-                legend: { display: false },
-                tooltip: { 
-                    callbacks: {
-                        label: (context) => {
-                            const val = context.raw;
-                            const pct = Math.round((val / total) * 100);
-                            return `${context.label}: ${math.toSmartCompactCurrency(val)} (${pct}%)`;
-                        }
-                    }
-                }
-            }
-        },
-        plugins: [{
-            id: 'customLabels',
-            afterDraw: (chart) => {
-                const ctx = chart.ctx;
-                chart.data.datasets.forEach((dataset, i) => {
-                    chart.getDatasetMeta(i).data.forEach((datapoint, index) => {
-                        const { x, y } = datapoint.tooltipPosition();
-                        const val = dataset.data[index];
-                        const pct = (val / total) * 100;
-                        const label = chart.data.labels[index];
-                        
-                        // Mapping full names to short codes
-                        const shortMap = { 'Stocks': 'STK', 'Real Estate': 'RE', 'Cash': 'CSH', 'Crypto': 'BTC', 'Metals': 'Au', 'Other': 'OTH' };
-                        const shortLabel = shortMap[label] || label.substring(0,3).toUpperCase();
-
-                        // Only draw if > 5% or active (clicked)
-                        if (pct > 5 || datapoint.active) {
-                            ctx.fillStyle = '#fff';
-                            ctx.font = '900 10px Inter';
-                            ctx.textAlign = 'center';
-                            ctx.textBaseline = 'middle';
-                            ctx.fillText(`${shortLabel} ${Math.round(pct)}%`, x, y);
-                        }
-                    });
-                });
-            }
-        }]
+    Object.entries(buckets).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
+        if (value <= 0) return;
+        const percent = Math.round((value / total) * 100);
+        const color = assetColors[type] || assetColors['Taxable'];
+        const shortName = shortNames[type] || type;
+        
+        const item = document.createElement('div');
+        item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400 bg-slate-800 p-2 rounded-lg border border-slate-700/50';
+        item.innerHTML = `<div class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${color}"></div><span class="truncate flex-grow">${shortName}</span><span class="text-white mono-numbers">${percent}%</span>`;
+        list.appendChild(item);
     });
 }
 
@@ -697,7 +658,7 @@ function renderTab() {
         window.currentData.helocs?.forEach((i, idx) => addMobileRow('m-heloc-cards', 'heloc', i, idx, 'helocs'));
         window.currentData.debts?.forEach((d, idx) => addMobileRow('m-debt-cards', 'debt', d, idx, 'debts'));
         
-        renderMobileAssetChart();
+        renderMobileAssetList();
     }
     if (currentTab === 'income') {
         if (!window.currentData.income || window.currentData.income.length === 0) window.addMobileItem('income');
@@ -922,7 +883,6 @@ function renderMobileAssumptions() {
     if (!container) return;
     const a = window.currentData.assumptions || assumptions.defaults;
     
-    // Updated slider template to use .mobile-slider class and blue headers
     const slider = (label, id, min, max, step, val, suffix = '', colorClass = 'text-blue-400') => `
         <label class="block space-y-1">
             <div class="flex justify-between items-center">
@@ -936,56 +896,58 @@ function renderMobileAssumptions() {
     `;
 
     container.innerHTML = `
-        <div class="grid grid-cols-2 gap-4">
+        <div class="mobile-card space-y-4">
+            ${slider("Current Age", "currentAge", 18, 90, 1, a.currentAge, "", "text-white")}
+            ${slider("Retirement Age", "retirementAge", 30, 80, 1, a.retirementAge, "", "text-blue-400")}
             <div class="space-y-1">
-                <span class="mobile-label">Current Age</span>
-                <input data-id="currentAge" type="number" value="${a.currentAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
-            </div>
-            <div class="space-y-1">
-                <span class="mobile-label">Retirement Age</span>
-                <input data-id="retirementAge" type="number" value="${a.retirementAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-blue-400 outline-none">
+                <div class="flex justify-between items-center">
+                    <span class="mobile-label text-white">Family Size</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input data-id="hhSize" type="range" min="1" max="10" step="1" value="${window.currentData.benefits?.hhSize || 1}" class="mobile-slider">
+                    <span class="text-white font-bold mono-numbers w-10 text-right text-xs">${window.currentData.benefits?.hhSize || 1}</span>
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-             <div class="space-y-1">
-                <span class="mobile-label">Family Size</span>
-                <input data-id="hhSize" type="number" min="1" max="10" value="${window.currentData.benefits?.hhSize || 1}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
-            </div>
-             <div class="space-y-1">
+        <div class="mobile-card space-y-3">
+             <div class="flex items-center justify-between gap-4">
                 <span class="mobile-label">State</span>
-                <select data-id="state" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-bold text-[10px] text-white outline-none h-[46px]">
+                <select data-id="state" class="bg-slate-900 border border-slate-700 rounded-lg py-1 px-2 font-bold text-[10px] text-white outline-none w-32">
                     ${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+            </div>
+            <div class="flex items-center justify-between gap-4">
+                <span class="mobile-label">Filing Status</span>
+                <select data-id="filingStatus" class="bg-slate-900 border border-slate-700 rounded-lg py-1 px-2 font-bold text-[10px] text-white outline-none w-32">
+                    <option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
+                    <option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
+                    <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
                 </select>
             </div>
         </div>
 
-        <div class="space-y-1">
-            <span class="mobile-label">Filing Status</span>
-            <select data-id="filingStatus" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-bold text-xs text-white outline-none">
-                <option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
-                <option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
-                <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
-            </select>
-        </div>
-
-        ${slider("Stock Growth", "stockGrowth", 0, 15, 0.5, a.stockGrowth, "%")}
-        ${slider("Crypto Growth", "cryptoGrowth", 0, 15, 0.5, a.cryptoGrowth, "%")}
-        ${slider("Metals Growth", "metalsGrowth", 0, 15, 0.5, a.metalsGrowth, "%")}
-        ${slider("Real Estate Growth", "realEstateGrowth", 0, 15, 0.5, a.realEstateGrowth, "%")}
-        
-        <div class="space-y-2 pt-4 border-t border-slate-700">
+        <div class="mobile-card space-y-3">
+            <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Market Assumptions</h3>
+            ${slider("Stock Growth", "stockGrowth", 0, 15, 0.5, a.stockGrowth, "%")}
+            ${slider("Crypto Growth", "cryptoGrowth", 0, 15, 0.5, a.cryptoGrowth, "%")}
+            ${slider("Metals Growth", "metalsGrowth", 0, 15, 0.5, a.metalsGrowth, "%")}
+            ${slider("Real Estate Growth", "realEstateGrowth", 0, 15, 0.5, a.realEstateGrowth, "%")}
+            <div class="pt-2 border-t border-slate-700">
              ${slider("Inflation", "inflation", 0, 10, 0.1, a.inflation, "%", "text-red-400")}
+            </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
-            <div class="space-y-1">
-                <span class="mobile-label">SS Start Age</span>
-                <input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
-            </div>
-            <div class="space-y-1">
-                <span class="mobile-label">SS Monthly</span>
-                <input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-teal-400 outline-none">
+        <div class="mobile-card space-y-3">
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <span class="mobile-label">SS Start Age</span>
+                    <input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-2 font-black text-white outline-none text-center">
+                </div>
+                <div class="space-y-1">
+                    <span class="mobile-label">SS Monthly</span>
+                    <input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-2 font-black text-teal-400 outline-none text-center">
+                </div>
             </div>
         </div>
     `;
@@ -994,8 +956,10 @@ function renderMobileAssumptions() {
     const hhInput = container.querySelector('[data-id="hhSize"]');
     if (hhInput) {
         hhInput.oninput = (e) => {
+            const val = parseInt(e.target.value);
+            e.target.nextElementSibling.textContent = val;
             if (!window.currentData.benefits) window.currentData.benefits = {};
-            window.currentData.benefits.hhSize = parseInt(e.target.value);
+            window.currentData.benefits.hhSize = val;
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         };
     }

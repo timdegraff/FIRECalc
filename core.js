@@ -323,11 +323,22 @@ window.updateSidebarChart = (data) => {
     if (legendContainer) {
         legendContainer.innerHTML = '';
         const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other' };
+        
+        // Compact Formatter for Legend
+        const compactFormat = (val) => {
+            if (val >= 1000000) return '$' + (val / 1000000).toFixed(2) + 'M';
+            if (val >= 1000) return '$' + (val / 1000).toFixed(0) + 'K';
+            return '$' + val;
+        };
+
         Object.entries(totals).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
             if (value <= 0) return;
-            const percent = Math.round((value / totalSum) * 100), color = assetColors[type] || assetColors['Taxable'], shortName = shortNames[type] || type, item = document.createElement('div');
+            const percent = Math.round((value / totalSum) * 100);
+            const color = assetColors[type] || assetColors['Taxable'];
+            const shortName = shortNames[type] || type;
+            const item = document.createElement('div');
             item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
-            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div><span class="truncate">${shortName}</span><span class="ml-auto text-white">${percent}%</span>`;
+            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div><span class="truncate">${shortName}</span><span class="ml-auto text-slate-500 mr-1">${compactFormat(value)}</span><span class="text-white">${percent}%</span>`;
             legendContainer.appendChild(item);
         });
     }

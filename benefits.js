@@ -8,16 +8,12 @@ export const benefits = {
         
         container.innerHTML = `
             <div class="max-w-7xl mx-auto space-y-4">
-                <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-2xl border border-slate-700">
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center border border-amber-500/20">
-                            <i class="fas fa-hand-holding-heart text-amber-400 text-lg"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-lg font-bold text-white uppercase tracking-tighter">Benefit Optimization</h2>
-                        </div>
-                    </div>
-                    <div class="hidden md:flex items-center gap-4 bg-slate-900 p-1.5 rounded-xl border border-slate-700">
+                <!-- Header -->
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                        <i class="fas fa-hand-holding-heart text-amber-400"></i> Benefit Optimization
+                    </h2>
+                    <div class="hidden md:flex items-center gap-4 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
                          <span class="label-std text-slate-500 pl-2">Household Size</span>
                          <div class="flex items-center gap-2">
                              <input type="range" data-benefit-id="hhSize" min="1" max="10" step="1" value="1" class="w-24 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
@@ -127,7 +123,13 @@ export const benefits = {
         container.querySelectorAll('input').forEach(input => {
             input.oninput = () => {
                 if (input.dataset.benefitId === 'hhSize') {
-                    container.querySelectorAll('[data-benefit-id="hhSize"]').forEach(el => el.value = input.value);
+                    // Update all hhSize inputs (including desktop sidebar if visible)
+                    document.querySelectorAll('[data-benefit-id="hhSize"]').forEach(el => el.value = input.value);
+                    // Also update mobile view manually if needed
+                    const mobileDisplay = document.querySelector('#m-assumptions-container span[class*="text-white"]');
+                    if (mobileDisplay && input.closest('#m-assumptions-container')) {
+                         mobileDisplay.textContent = input.value;
+                    }
                 }
                 benefits.refresh();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
