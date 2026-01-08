@@ -21,26 +21,45 @@ window.debouncedAutoSave = () => {
 };
 
 let currentTab = 'assets-debts';
-let isRedirecting = sessionStorage.getItem('fc_redirect_active') === 'true';
 
-// SAFETY VALVE: Mobile Safari specific timeout.
-if (isRedirecting) {
-    setTimeout(() => {
-        const loginScreen = document.getElementById('login-screen');
-        if (loginScreen && !loginScreen.classList.contains('hidden')) {
-            console.warn("Mobile Redirect timeout reached. Resetting.");
-            sessionStorage.removeItem('fc_redirect_active');
-            window.location.reload();
+// --- AUTH HANDLER ---
+// 1. Check if we just returned from a redirect (Clean up state)
+getRedirectResult(auth).catch(e => {
+    console.error("Mobile Redirect Error:", e);
+    // If redirect failed, we just let onAuthStateChanged show the login button
+});
+
+// 2. Listen for state changes
+onAuthStateChanged(auth, async (user) => {
+    const loginScreen = document.getElementById('login-screen');
+    const appContainer = document.getElementById('app-container');
+
+    if (user) { 
+        // --- LOGGED IN ---
+        await initializeData(user); 
+        if (loginScreen) loginScreen.classList.add('hidden'); 
+        if (appContainer) appContainer.classList.remove('hidden'); 
+        renderTab(); 
+    }
+    else { 
+        // --- LOGGED OUT ---
+        if (appContainer) appContainer.classList.add('hidden'); 
+        
+        if (loginScreen) {
+            loginScreen.classList.remove('hidden'); 
+            // Reset to clean Login Button state
+            loginScreen.innerHTML = `
+                <div class="p-8 text-center w-full">
+                    <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
+                    <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
+                    <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                        Sign in with Google
+                    </button>
+                </div>`;
+            document.getElementById('login-btn').onclick = signInWithGoogle;
         }
-    }, 4000);
-}
-
-// Handle Redirect Result
-getRedirectResult(auth).then(() => {
-    sessionStorage.removeItem('fc_redirect_active');
-}).catch(e => {
-    sessionStorage.removeItem('fc_redirect_active');
-    console.error("Mobile Redirect Auth Error:", e);
+    }
 });
 
 const ASSET_TYPE_COLORS = {
@@ -160,43 +179,26 @@ function init() {
         const appContainer = document.getElementById('app-container');
 
         if (user) { 
-            sessionStorage.removeItem('fc_redirect_active');
             await initializeData(user); 
             if (loginScreen) loginScreen.classList.add('hidden'); 
             if (appContainer) appContainer.classList.remove('hidden'); 
             renderTab(); 
         }
         else { 
-            if (sessionStorage.getItem('fc_redirect_active') === 'true') {
-                if (loginScreen) {
-                    loginScreen.classList.remove('hidden');
-                    loginScreen.innerHTML = `
-                        <div class="p-8 text-center w-full">
-                            <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
-                            <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-12">
-                                <i class="fas fa-circle-notch fa-spin"></i>
-                                Connecting...
-                            </div>
-                        </div>`;
-                }
-            } else {
-                if (loginScreen) {
-                    loginScreen.classList.remove('hidden'); 
-                    if (loginScreen.innerHTML.includes('Connecting')) {
-                        // Restore login button HTML if needed
-                        loginScreen.innerHTML = `
-                            <div class="p-8 text-center w-full">
-                                <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
-                                <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
-                                <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
-                                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
-                                    Sign in with Google
-                                </button>
-                            </div>`;
-                        document.getElementById('login-btn').onclick = (await import('./auth.js')).signInWithGoogle;
-                    }
-                }
-                if (appContainer) appContainer.classList.add('hidden'); 
+            // Standard state: just show the login screen if no user
+            if (appContainer) appContainer.classList.add('hidden'); 
+            if (loginScreen) {
+                loginScreen.classList.remove('hidden'); 
+                loginScreen.innerHTML = `
+                    <div class="p-8 text-center w-full">
+                        <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
+                        <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
+                        <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                            Sign in with Google
+                        </button>
+                    </div>`;
+                document.getElementById('login-btn').onclick = signInWithGoogle;
             }
         }
     });

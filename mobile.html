@@ -29,14 +29,15 @@
 </head>
 <body class="text-slate-300 bg-slate-950 font-inter safe-bottom">
 
+    <!-- Loading State (Initial View) -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-slate-950 z-[100]">
         <div class="p-8 text-center w-full">
             <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
             <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
-            <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
-                Sign in with Google
-            </button>
+            <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-8">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                Authenticating...
+            </div>
         </div>
     </div>
 
@@ -106,7 +107,7 @@
 
     <!-- Dynamic import with cache busting query string -->
     <script type="module">
-        import "./mobile.js?v=2.2"; 
+        import "./mobile.js?v=2.3"; 
     </script>
 </body>
 </html>
