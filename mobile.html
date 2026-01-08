@@ -34,10 +34,16 @@
         <div class="p-8 text-center w-full">
             <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
             <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
+            
             <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg active:scale-95 transition-all">
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
                 Sign in with Google
             </button>
+
+            <button id="guest-btn" class="w-full py-4 mt-4 bg-slate-800 border border-slate-700 text-slate-400 hover:text-white rounded-2xl font-bold uppercase tracking-widest text-xs active:scale-95 transition-all">
+                Continue as Guest
+            </button>
+            <p class="text-[9px] text-slate-600 mt-4">Data saved to device only.</p>
         </div>
     </div>
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">

@@ -6,8 +6,11 @@ import { burndown } from './burndown.js';
 import { projection } from './projection.js';
 
 let db;
-let user;
+let user; // If null, we are in Guest Mode
 let autoSaveTimeout = null;
+
+// Guest Mode LocalStorage Keys
+const GUEST_DATA_KEY = 'firecalc_guest_data';
 
 window.debouncedAutoSave = () => {
     if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
@@ -30,34 +33,34 @@ export async function initializeData(authUser) {
 }
 
 async function loadData() {
-    const docRef = doc(db, "users", user.uid);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-        window.currentData = docSnap.data();
-        if (!window.currentData.assumptions) window.currentData.assumptions = { ...assumptions.defaults };
+    // --- AUTHENTICATED PATH ---
+    if (user) {
+        const docRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(docRef);
         
-        // Merge missing default keys for segmented APY (Advanced Mode Persistence)
-        let needsSave = false;
-        Object.keys(assumptions.defaults).forEach(key => {
-            if (window.currentData.assumptions[key] === undefined) {
-                window.currentData.assumptions[key] = assumptions.defaults[key];
-                needsSave = true;
-            }
-        });
-
-        if (!window.currentData.burndown) {
-            window.currentData.burndown = { useSEPP: true };
-            needsSave = true;
-        }
-
-        // If we patched missing keys, save back to cloud immediately so they stick
-        if (needsSave) {
+        if (docSnap.exists()) {
+            window.currentData = docSnap.data();
+            sanitizeAndPatchData();
+        } else {
+            window.currentData = getInitialData();
             await autoSave(false);
         }
-    } else {
-        window.currentData = getInitialData();
-        await autoSave(false);
+    } 
+    // --- GUEST PATH ---
+    else {
+        const localData = localStorage.getItem(GUEST_DATA_KEY);
+        if (localData) {
+            try {
+                window.currentData = JSON.parse(localData);
+                sanitizeAndPatchData();
+            } catch (e) {
+                console.error("Corrupt guest data, resetting:", e);
+                window.currentData = getInitialData();
+            }
+        } else {
+            window.currentData = getInitialData();
+            // We don't autoSave immediately for guests to keep storage clean until they edit
+        }
     }
     
     loadUserDataIntoUI(window.currentData);
@@ -67,6 +70,21 @@ async function loadData() {
     
     // Set initial synced state
     document.querySelectorAll('#save-indicator').forEach(el => el.className = "text-green-500 transition-colors duration-200");
+}
+
+function sanitizeAndPatchData() {
+    if (!window.currentData.assumptions) window.currentData.assumptions = { ...assumptions.defaults };
+    
+    // Merge missing default keys for segmented APY (Advanced Mode Persistence)
+    Object.keys(assumptions.defaults).forEach(key => {
+        if (window.currentData.assumptions[key] === undefined) {
+            window.currentData.assumptions[key] = assumptions.defaults[key];
+        }
+    });
+
+    if (!window.currentData.burndown) {
+        window.currentData.burndown = { useSEPP: true };
+    }
 }
 
 export function loadUserDataIntoUI(data) {
@@ -129,26 +147,36 @@ export async function autoSave(scrape = true) {
     const burnTab = document.getElementById('tab-burndown');
     if (burnTab && !burnTab.classList.contains('hidden')) burndown.run();
     
+    const sanitizedData = stripUndefined(window.currentData);
+
+    // --- AUTHENTICATED SAVE ---
     if (user && db) {
         try { 
-            const sanitizedData = stripUndefined(window.currentData);
             await setDoc(doc(db, "users", user.uid), sanitizedData, { merge: true }); 
-            
-            // Set "Synced" State (Green)
-            const indicators = document.querySelectorAll('#save-indicator');
-            indicators.forEach(el => {
-                el.className = "text-green-500 transition-colors duration-200"; 
-            });
+            setSaveState('success');
         }
         catch (e) { 
             console.error("Save Error:", e); 
-            // Set "Error" State (Red)
-            const indicators = document.querySelectorAll('#save-indicator');
-            indicators.forEach(el => {
-                el.className = "text-red-500 transition-colors duration-200"; 
-            });
+            setSaveState('error');
+        }
+    } 
+    // --- GUEST SAVE ---
+    else {
+        try {
+            localStorage.setItem(GUEST_DATA_KEY, JSON.stringify(sanitizedData));
+            setSaveState('success');
+        } catch (e) {
+            console.error("Local Save Error:", e);
+            setSaveState('error');
         }
     }
+}
+
+function setSaveState(state) {
+    const indicators = document.querySelectorAll('#save-indicator');
+    indicators.forEach(el => {
+        el.className = state === 'success' ? "text-green-500 transition-colors duration-200" : "text-red-500 transition-colors duration-200";
+    });
 }
 
 function scrapeDataFromUI() {

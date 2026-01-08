@@ -24,10 +24,10 @@ window.debouncedAutoSave = () => {
     }, 1500);
 };
 
-// HAPTIC Helper - Remove this function content if you want to disable vibration
+// HAPTIC Helper
 function triggerHaptic() {
     if (navigator.vibrate) {
-        navigator.vibrate(10); // Light 10ms tap
+        navigator.vibrate(10); 
     }
 }
 
@@ -423,14 +423,38 @@ const ITEM_TEMPLATES = {
 function init() {
     attachGlobal();
     onAuthStateChanged(auth, async (user) => {
+        const guestModeActive = localStorage.getItem('firecalc_guest_mode') === 'true';
+        
+        // 1. Authenticated User
         if (user) {
+            // Clear guest flag if authenticated
+            localStorage.removeItem('firecalc_guest_mode');
             try {
                 await initializeData(user);
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
                 renderTab();
             } catch (e) { console.error(e); }
-        } else {
+        } 
+        // 2. Guest Mode
+        else if (guestModeActive) {
+            try {
+                await initializeData(null); // Initialize with null user
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+                
+                // Guest specific UI updates
+                const saveInd = document.getElementById('save-indicator');
+                if (saveInd) {
+                    saveInd.innerHTML = '<i class="fas fa-hdd"></i>';
+                    saveInd.className = "text-slate-500";
+                }
+                
+                renderTab();
+            } catch (e) { console.error(e); }
+        }
+        // 3. Logged Out
+        else {
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
         }
@@ -447,7 +471,24 @@ function attachGlobal() {
         }
     };
     
-    document.getElementById('logout-btn').onclick = logoutUser;
+    // Add Mobile Guest Button Handler
+    const guestBtn = document.getElementById('guest-btn');
+    if (guestBtn) {
+        guestBtn.onclick = () => {
+            localStorage.setItem('firecalc_guest_mode', 'true');
+            window.location.reload();
+        };
+    }
+    
+    // Handle Logout / Exit Guest
+    document.getElementById('logout-btn').onclick = async () => {
+        if (localStorage.getItem('firecalc_guest_mode') === 'true') {
+            localStorage.removeItem('firecalc_guest_mode');
+            window.location.reload();
+        } else {
+            await logoutUser();
+        }
+    };
     
     // Add Buy Me A Coffee link to header if not present
     const headerActions = document.querySelector('header .flex.items-center.gap-3');
