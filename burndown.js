@@ -167,8 +167,13 @@ export const burndown = {
 
         const manualInput = document.getElementById('input-manual-budget');
         if (manualInput) {
-            manualInput.oninput = () => { burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
-            manualInput.addEventListener('blur', (e) => { e.target.value = math.toCurrency(math.fromCurrency(e.target.value)); });
+            // Apply standard currency behavior (clear on focus if 0, format on blur)
+            formatter.bindCurrencyEventListeners(manualInput);
+            
+            manualInput.oninput = () => { 
+                burndown.run(); 
+                if (window.debouncedAutoSave) window.debouncedAutoSave(); 
+            };
         }
     },
 
