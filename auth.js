@@ -10,30 +10,26 @@ provider.setCustomParameters({
 
 export async function signInWithGoogle() {
     try {
-        // Essential for Safari/Brave: Mark that we are leaving the app for a redirect
+        // Set a flag so we know to show a loading spinner on the next load
         sessionStorage.setItem('fc_redirect_active', 'true');
         
-        // CRITICAL: Force local persistence. This makes the session survive 
-        // browser restarts and tab closures, which is vital for mobile PWA-like behavior.
+        // Ensure the session persists across browser restarts
         await setPersistence(auth, browserLocalPersistence);
         
         await signInWithRedirect(auth, provider);
     } catch (error) {
-        // If the redirect initiation fails, clear the flag immediately
+        // If immediate failure, clear flag and alert
         sessionStorage.removeItem('fc_redirect_active');
         console.error('Error initiating redirect sign-in:', error);
-        alert("Sign-in failed. Please ensure cookies are enabled and you aren't in 'Private' mode.");
+        alert("Sign-in failed. Please ensure cookies are enabled.");
     }
 }
 
 export async function logoutUser() {
     try {
         await signOut(auth);
-        sessionStorage.clear();
-        // Nuclear option: Clear local storage (except maybe version) to ensure clean slate
-        const version = localStorage.getItem('firecalc_app_version');
-        localStorage.clear();
-        if (version) localStorage.setItem('firecalc_app_version', version);
+        sessionStorage.removeItem('fc_redirect_active');
+        localStorage.removeItem('firecalc_app_version'); // Clear version to force fresh load next time
         window.location.reload();
     } catch (error) {
         console.error('Error signing out:', error);

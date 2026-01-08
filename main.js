@@ -7,31 +7,31 @@ import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 
 // --- VERSION CHECK LOGIC ---
-const APP_VERSION = "2.1"; 
+const APP_VERSION = "2.2"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
-// Handle Redirect Results (Required for Brave/Safari compatibility)
-// We check session storage because getRedirectResult can sometimes take a moment to fire
+// Check for redirect flag
 let isRedirecting = sessionStorage.getItem('fc_redirect_active') === 'true';
 
-// SAFETY VALVE: If we think we are redirecting but nothing happens for 10 seconds, reset.
+// SAFETY VALVE: If we are "redirecting" but it takes too long (Safari ITP issue), 
+// clear the flag and reload to show the login button again.
 if (isRedirecting) {
     setTimeout(() => {
-        const loadingEl = document.getElementById('login-screen');
-        // If we are still showing "Authenticating..." after 10s, something went wrong (Safari ITP dropped token).
-        if (loadingEl && !loadingEl.classList.contains('hidden') && loadingEl.innerHTML.includes('Authenticating')) {
-            console.warn("Redirect timeout reached. Resetting auth state.");
+        // If we are still on the loading screen after 4000ms, assume failure.
+        const loginScreen = document.getElementById('login-screen');
+        if (loginScreen && !loginScreen.classList.contains('hidden')) {
+            console.warn("Auth took too long. Resetting state.");
             sessionStorage.removeItem('fc_redirect_active');
             window.location.reload();
         }
-    }, 10000);
+    }, 4000);
 }
 
-getRedirectResult(auth).then((result) => {
-    // Once getRedirectResult resolves (even if user is null), we are no longer "redirecting"
+// Handle the redirect result promise (Standard Firebase Flow)
+getRedirectResult(auth).then(() => {
     sessionStorage.removeItem('fc_redirect_active');
-    isRedirecting = false;
     
+    // Check version update only after auth check settles
     if (currentSavedVersion !== APP_VERSION) {
         localStorage.setItem('firecalc_app_version', APP_VERSION);
         sessionStorage.clear();
@@ -39,7 +39,6 @@ getRedirectResult(auth).then((result) => {
     }
 }).catch((error) => {
     sessionStorage.removeItem('fc_redirect_active');
-    isRedirecting = false;
     console.error("Redirect Error:", error);
 });
 
@@ -52,18 +51,22 @@ onAuthStateChanged(auth, async (user) => {
     const appContainer = document.getElementById('app-container');
 
     if (user) {
-        sessionStorage.removeItem('fc_redirect_active');
+        // User is logged in
+        sessionStorage.removeItem('fc_redirect_active'); // Ensure flag is gone
+        
         const avatar = document.getElementById('user-avatar');
         if (avatar) avatar.src = user.photoURL || '';
         const name = document.getElementById('user-name');
         if (name) name.textContent = user.displayName || '';
         
         await initializeData(user);
+        
         if (loginScreen) loginScreen.classList.add('hidden');
         if (appContainer) appContainer.classList.remove('hidden');
     } else {
-        // If we suspect a redirect is still in progress, STICK to the loading screen
-        if (isRedirecting) {
+        // User is NOT logged in
+        if (sessionStorage.getItem('fc_redirect_active') === 'true') {
+            // We are expecting a redirect result, so show "Authenticating..."
             if (loginScreen) {
                 loginScreen.classList.remove('hidden');
                 loginScreen.innerHTML = `
@@ -73,19 +76,28 @@ onAuthStateChanged(auth, async (user) => {
                             <i class="fas fa-circle-notch fa-spin text-lg"></i>
                             Authenticating...
                         </div>
-                        <p class="text-[9px] text-slate-600 uppercase mt-4">Waiting for Google Handshake</p>
                     </div>`;
             }
-            return;
-        }
-        
-        if (loginScreen) {
-            loginScreen.classList.remove('hidden');
-            // If the innerHTML was replaced by the 'Authenticating' message, refresh the login UI to show buttons again
-            if (loginScreen.innerHTML.includes('Authenticating')) {
-                 window.location.reload(); 
+        } else {
+            // We are NOT expecting a redirect, show normal Login Button
+            if (loginScreen) {
+                loginScreen.classList.remove('hidden');
+                // Restore original HTML if it was overwritten
+                if (loginScreen.innerHTML.includes('Authenticating')) {
+                    loginScreen.innerHTML = `
+                        <div class="bg-slate-800 p-10 rounded-3xl shadow-2xl text-center max-w-sm w-full border border-slate-700">
+                            <h1 class="text-4xl font-black mb-2 text-white tracking-tighter">FIRECalc</h1>
+                            <p class="text-slate-400 mb-8 font-medium">Your retirement planner.</p>
+                            <button id="login-btn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-3">
+                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                                Sign in with Google
+                            </button>
+                        </div>
+                    `;
+                    document.getElementById('login-btn').onclick = (await import('./auth.js')).signInWithGoogle;
+                }
             }
+            if (appContainer) appContainer.classList.add('hidden');
         }
-        if (appContainer) appContainer.classList.add('hidden');
     }
 });
