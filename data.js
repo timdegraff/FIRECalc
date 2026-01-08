@@ -64,7 +64,6 @@ async function loadData() {
             }
         } else {
             window.currentData = getInitialData();
-            // We don't autoSave immediately for guests to keep storage clean until they edit
         }
     }
     
@@ -103,7 +102,6 @@ export function loadUserDataIntoUI(data) {
     clearDynamicContent();
     const populate = (arr, id, type) => {
         if (arr?.length) arr.forEach(item => window.addRow(id, type, item));
-        // Removed stockOption from the exclusion list so it auto-adds a blank row if empty
         else if (!['budget-savings', 'heloc', 'debt'].includes(type)) window.addRow(id, type, {});
     };
     populate(data.investments, 'investment-rows', 'investment');
@@ -200,7 +198,6 @@ function setSaveState(state) {
 }
 
 function scrapeDataFromUI() {
-    // Basic guard to prevent scraping if on mobile (since mobile has its own binding)
     if (window.addMobileItem) return window.currentData;
 
     const prevData = window.currentData || getInitialData();
@@ -329,19 +326,46 @@ function getInitialData() {
 }
 
 export function updateSummaries(data) {
-    // Only run this on desktop where these IDs exist
     const s = engine.calculateSummaries(data);
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = math.toCurrency(v); };
+    const setText = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+    const setRaw = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+    // Assets
     set('sidebar-networth', s.netWorth);
     set('sum-assets', s.totalAssets);
     set('sum-liabilities', s.totalLiabilities);
     set('sum-networth', s.netWorth);
-    set('sum-budget-savings', s.totalAnnualSavings);
-    set('sum-budget-annual', s.totalAnnualBudget);
-    set('sum-budget-total', s.totalAnnualSavings + s.totalAnnualBudget);
+    
+    // Income
     set('sum-gross-income', s.totalGrossIncome);
     set('sum-income-adjusted', s.magiBase);
     
+    // Budget
+    set('sum-budget-savings', s.totalAnnualSavings);
+    set('sum-budget-annual', s.totalAnnualBudget);
+    set('sum-budget-total', s.totalAnnualSavings + s.totalAnnualBudget);
+    
+    // Assumptions
+    const yrsToRetire = Math.max(0, (data.assumptions?.retirementAge || 65) - (data.assumptions?.currentAge || 40));
+    setRaw('sum-yrs-to-retire', `${yrsToRetire} Years`);
+    const lifeExp = engine.getLifeExpectancy(data.assumptions?.currentAge || 40);
+    setRaw('sum-life-exp', `Age ${Math.round((data.assumptions?.currentAge || 40) + lifeExp)}`);
+    
+    // Retirement Budget (from Burndown Simulation)
+    const burnResults = burndown.simulateProjection(data);
+    const rAge = data.assumptions?.retirementAge || 65;
+    const firstRetYear = burnResults.find(r => r.age >= rAge);
+    if (firstRetYear) {
+        set('sum-retire-budget', firstRetYear.budget);
+    }
+
+    // Burndown
+    const insolvAge = burndown.getInsolvencyAge();
+    setText('sum-solvency-age', insolvAge ? `Age ${insolvAge}` : "Age 100+");
+    const dial = data.burndown?.strategyDial || 33;
+    setText('sum-draw-strategy', dial <= 33 ? "Platinum Max" : (dial <= 66 ? "Silver CSR" : "Balanced"));
+
     const r401k = Array.from(document.querySelectorAll('#budget-savings-rows tr')).find(r => r.querySelector('[data-id="monthly"]')?.readOnly);
     if (r401k) {
         const monthly = r401k.querySelector('[data-id="monthly"]');
