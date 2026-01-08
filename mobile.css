@@ -63,7 +63,7 @@ input, select, textarea {
 .mobile-nav-btn.active[data-tab="budget"] { color: #ec4899; } /* Pink */
 .mobile-nav-btn.active[data-tab="projection"] { color: #3b82f6; } /* Blue */
 .mobile-nav-btn.active[data-tab="burndown"] { color: #a855f7; } /* Purple */
-.mobile-nav-btn.active[data-tab="more"] { color: #10b981; } /* Emerald */
+.mobile-nav-btn.active[data-tab="assumptions"] { color: #10b981; } /* Emerald */
 
 .mobile-card {
     background: #1e293b;
@@ -73,25 +73,53 @@ input, select, textarea {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     position: relative;
     z-index: 10;
+    width: 100%;
 }
 
-.swipe-wrapper {
+/* Swipe to Delete Styles */
+.swipe-outer {
     position: relative;
-    margin-bottom: 0.75rem;
+    width: 100%;
     overflow: hidden;
     border-radius: 20px;
+    margin-bottom: 0.75rem; /* space-y-3 equivalent */
 }
 
-.swipe-action-bg {
+.swipe-bg {
     position: absolute;
-    inset: 0;
-    background-color: #dc2626; /* Red-600 */
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    background-color: #dc2626; /* red-600 */
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     padding-right: 24px;
-    z-index: 0;
-    border-radius: 20px;
+    z-index: 1;
+}
+
+.swipe-bg i {
+    color: white;
+    font-size: 1.25rem;
+}
+
+.swipe-front {
+    position: relative;
+    z-index: 10;
+    background: #1e293b; /* Match card bg */
+    transition: transform 0.1s linear; /* Smooth drag */
+    touch-action: pan-y; /* Allow vertical scroll, handle horizontal in JS */
+}
+
+.swipe-front.snapping {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.swipe-front.deleting {
+    transition: transform 0.3s ease-out;
+    transform: translateX(-100%) !important;
 }
 
 .mobile-label {
@@ -115,25 +143,6 @@ input, select, textarea {
 .text-type-crypto { color: #f59e0b; }
 .text-type-metals { color: #eab308; }
 .text-type-hsa { color: #2dd4bf; }
-
-/* Orientation Logic for Burndown */
-@media screen and (orientation: portrait) {
-    #tab-burndown-mobile .landscape-only {
-        display: none;
-    }
-    #tab-burndown-mobile .portrait-hint {
-        display: flex;
-    }
-}
-
-@media screen and (orientation: landscape) {
-    #tab-burndown-mobile .landscape-only {
-        display: block;
-    }
-    #tab-burndown-mobile .portrait-hint {
-        display: none;
-    }
-}
 
 .pb-safe {
     padding-bottom: var(--safe-bottom);

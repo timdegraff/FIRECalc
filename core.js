@@ -4,6 +4,7 @@ import { templates } from './templates.js';
 import { autoSave, updateSummaries } from './data.js';
 import { math, engine, assetColors, assumptions, stateTaxRates } from './utils.js';
 import { formatter } from './formatter.js';
+import { projection } from './projection.js';
 
 let assetChart = null;
 let lastChartSum = 0;
@@ -75,6 +76,14 @@ function attachGlobalListeners() {
             // FIX: Force immediate save (scrape=false) to persist boolean state without waiting for debounce
             autoSave(false);
         }
+
+        const projToggle = e.target.closest('#toggle-projection-real');
+        if (projToggle) {
+            projection.toggleRealDollars();
+            projection.updateToggleStyle(projToggle);
+            if (window.currentData) projection.run(window.currentData);
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        }
     });
 
     document.body.addEventListener('input', (e) => {
@@ -124,22 +133,26 @@ function syncAllInputs(id, val) {
         document.querySelectorAll(sel).forEach(el => {
             if (el.value != val) el.value = val;
             
-            let lbl = null;
-            if (el.id === 'input-top-retire-age') {
-                lbl = document.getElementById('label-top-retire-age');
-            } else {
-                lbl = el.parentElement.querySelector('span:not(.label-std)');
-                if (!lbl) {
-                    lbl = el.previousElementSibling?.querySelector('span');
+            // Only update the display label if this is a slider (range input).
+            // Number inputs display their own value and their labels are static headers.
+            if (el.type === 'range') {
+                let lbl = null;
+                if (el.id === 'input-top-retire-age') {
+                    lbl = document.getElementById('label-top-retire-age');
+                } else {
+                    lbl = el.parentElement.querySelector('span:not(.label-std)');
+                    if (!lbl) {
+                        lbl = el.previousElementSibling?.querySelector('span');
+                    }
                 }
-            }
 
-            if (lbl) {
-                const numericVal = parseFloat(val);
-                if (id === 'ssMonthly') lbl.textContent = math.toCurrency(numericVal);
-                else if (id.toLowerCase().includes('growth') || id === 'inflation') lbl.textContent = `${val}%`;
-                else if (id.toLowerCase().includes('factor')) lbl.textContent = `${Math.round(numericVal * 100)}%`;
-                else lbl.textContent = val;
+                if (lbl) {
+                    const numericVal = parseFloat(val);
+                    if (id === 'ssMonthly') lbl.textContent = math.toCurrency(numericVal);
+                    else if (id.toLowerCase().includes('growth') || id === 'inflation') lbl.textContent = `${val}%`;
+                    else if (id.toLowerCase().includes('factor')) lbl.textContent = `${Math.round(numericVal * 100)}%`;
+                    else lbl.textContent = val;
+                }
             }
         });
     });

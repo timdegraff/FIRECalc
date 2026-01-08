@@ -145,11 +145,16 @@ const MOBILE_TEMPLATES = {
              <div class="flex items-center gap-2 mb-4">
                 <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
             </div>
-            <div id="burndown-view-container" class="space-y-4"></div>
-            <div class="mt-8">
-                <h3 class="mobile-label mb-2">Funding Priority</h3>
-                <div id="m-priority-list" class="space-y-2"></div>
+            
+            <div class="mobile-card mb-6">
+                <div class="flex justify-between items-center mb-2">
+                    <label class="mobile-label text-slate-500">Income Strategy Dial</label>
+                    <span id="mobile-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
+                </div>
+                <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500">
             </div>
+
+            <div id="burndown-view-container" class="space-y-4"></div>
             <div id="burndown-table-container" class="mt-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50"></div>
         </div>
     `,
@@ -186,7 +191,6 @@ const ITEM_TEMPLATES = {
         <div class="mobile-card flex flex-col gap-3">
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Account Name">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
             </div>
             <div class="flex justify-between items-end">
                 <div class="flex flex-col">
@@ -212,7 +216,6 @@ const ITEM_TEMPLATES = {
         <div class="mobile-card space-y-3">
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Property Name">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -234,7 +237,6 @@ const ITEM_TEMPLATES = {
         <div class="mobile-card space-y-3">
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Asset Name">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -256,7 +258,6 @@ const ITEM_TEMPLATES = {
         <div class="mobile-card space-y-3">
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="HELOC Name">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
             </div>
             <div class="grid grid-cols-3 gap-2">
                 <div>
@@ -278,7 +279,6 @@ const ITEM_TEMPLATES = {
         <div class="mobile-card space-y-3">
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Debt Name">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
             </div>
             <div class="grid grid-cols-2 gap-4">
                  <div>
@@ -296,7 +296,6 @@ const ITEM_TEMPLATES = {
         <div class="mobile-card space-y-4">
              <div class="flex justify-between items-center">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Source">
-                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
@@ -356,7 +355,6 @@ const ITEM_TEMPLATES = {
                 <span class="mobile-label">Monthly</span>
                 <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-pink-400 font-black text-lg mono-numbers outline-none">
             </div>
-            <button data-action="remove" class="ml-3 text-slate-600"><i class="fas fa-times"></i></button>
         </div>
     `
 };
@@ -410,6 +408,18 @@ function attachGlobal() {
         if (input.dataset.id && document.getElementById('m-assumptions-container') && input.closest('#m-assumptions-container')) {
             (window.currentData.assumptions = window.currentData.assumptions || {})[input.dataset.id] = parseFloat(input.value) || 0;
         }
+
+        // Handle Burndown Dial
+        if (input.id === 'input-strategy-dial') {
+            if (!window.currentData.burndown) window.currentData.burndown = {};
+            window.currentData.burndown.strategyDial = parseInt(input.value);
+            const lbl = document.getElementById('mobile-strategy-status');
+            if (lbl) {
+                const val = parseInt(input.value);
+                lbl.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Standard");
+            }
+            burndown.run(); // Re-run calc if dial changes
+        }
         
         // Handle Card Data Binding
         const card = input.closest('.mobile-card');
@@ -443,25 +453,6 @@ function attachGlobal() {
 
         if (window.debouncedAutoSave) window.debouncedAutoSave();
         updateMobileNW();
-    });
-
-    // Handle Deletes
-    document.body.addEventListener('click', (e) => {
-        const btn = e.target.closest('button');
-        if (btn && btn.dataset.action === 'remove') {
-            const card = btn.closest('.mobile-card');
-            if (card && card.dataset.array && card.dataset.index !== undefined) {
-                const arrName = card.dataset.array;
-                const idx = parseInt(card.dataset.index);
-                
-                if (arrName === 'budget.savings') window.currentData.budget.savings.splice(idx, 1);
-                else if (arrName === 'budget.expenses') window.currentData.budget.expenses.splice(idx, 1);
-                else if (window.currentData[arrName]) window.currentData[arrName].splice(idx, 1);
-                
-                renderTab(); // Re-render to update indices
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            }
-        }
     });
 
     document.getElementById('close-inspector').onclick = () => {
@@ -501,9 +492,17 @@ function renderTab() {
         window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
     if (currentTab === 'burndown') {
+        // Sync dial from data
+        const dial = document.getElementById('input-strategy-dial');
+        const dialStatus = document.getElementById('mobile-strategy-status');
+        if (dial && window.currentData.burndown?.strategyDial !== undefined) {
+             dial.value = window.currentData.burndown.strategyDial;
+             const val = parseInt(dial.value);
+             if (dialStatus) dialStatus.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Standard");
+        }
+
         burndown.init();
         burndown.run();
-        renderMobilePriority();
         setTimeout(() => {
             const container = document.getElementById('burndown-table-container');
             if (container) container.onclick = (e) => {
@@ -526,40 +525,82 @@ function renderTab() {
     }
     
     updateMobileNW();
+    initSwipeHandlers();
 }
 
-function renderMobilePriority() {
-    const container = document.getElementById('m-priority-list');
-    if (!container) return;
-    const items = burndown.priorityOrder;
-    container.innerHTML = items.map((pk, i) => {
-        const meta = burndown.assetMeta[pk];
-        return `
-            <div class="mobile-card flex justify-between items-center py-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-2 h-2 rounded-full" style="background-color: ${meta.color}"></div>
-                    <span class="text-xs font-black text-white uppercase">${meta.label}</span>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="window.reorderPriority(${i}, -1)" class="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-slate-500"><i class="fas fa-chevron-up"></i></button>
-                    <button onclick="window.reorderPriority(${i}, 1)" class="w-8 h-8 flex items-center justify-center bg-slate-800 rounded text-slate-500"><i class="fas fa-chevron-down"></i></button>
-                </div>
-            </div>
-        `;
-    }).join('');
+// Swipe to Delete Logic
+function initSwipeHandlers() {
+    let startX = 0;
+    let currentX = 0;
+    let isSwiping = false;
+    let activeCard = null;
+
+    const cards = document.querySelectorAll('.swipe-front');
+
+    cards.forEach(card => {
+        card.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            currentX = startX;
+            isSwiping = true;
+            activeCard = card;
+            card.classList.remove('snapping');
+        }, { passive: true });
+
+        card.addEventListener('touchmove', (e) => {
+            if (!isSwiping || activeCard !== card) return;
+            
+            const touchX = e.touches[0].clientX;
+            const diffX = touchX - startX;
+
+            // Only allow swiping left
+            if (diffX < 0) {
+                // Determine if we should prevent scroll (if mostly horizontal)
+                // This is tricky with passive listeners, so we mostly rely on CSS touch-action: pan-y
+                card.style.transform = `translateX(${diffX}px)`;
+                currentX = touchX;
+            }
+        }, { passive: true });
+
+        card.addEventListener('touchend', (e) => {
+            if (!isSwiping || activeCard !== card) return;
+            isSwiping = false;
+            activeCard = null;
+
+            const diffX = currentX - startX;
+            const threshold = -100; // px to trigger delete
+
+            if (diffX < threshold) {
+                // Trigger Delete
+                card.classList.add('deleting');
+                setTimeout(() => {
+                    performDelete(card);
+                }, 300); // Match CSS transition
+            } else {
+                // Snap Back
+                card.classList.add('snapping');
+                card.style.transform = 'translateX(0)';
+            }
+        });
+    });
 }
 
-window.reorderPriority = (index, dir) => {
-    const items = burndown.priorityOrder;
-    const newIndex = index + dir;
-    if (newIndex < 0 || newIndex >= items.length) return;
-    const temp = items[index];
-    items[index] = items[newIndex];
-    items[newIndex] = temp;
-    burndown.run();
-    renderMobilePriority();
-    if (window.debouncedAutoSave) window.debouncedAutoSave();
-};
+function performDelete(cardElement) {
+    const card = cardElement.closest('.mobile-card'); // The wrapper actually has the data attributes now, wait.
+    // The structure is swipe-outer > swipe-front > mobile-card.
+    // Actually, in addMobileRow, I put the data-array/index on the swipe-front (the mobile-card itself).
+    
+    if (cardElement && cardElement.dataset.array && cardElement.dataset.index !== undefined) {
+        const arrName = cardElement.dataset.array;
+        const idx = parseInt(cardElement.dataset.index);
+
+        if (arrName === 'budget.savings') window.currentData.budget.savings.splice(idx, 1);
+        else if (arrName === 'budget.expenses') window.currentData.budget.expenses.splice(idx, 1);
+        else if (window.currentData[arrName]) window.currentData[arrName].splice(idx, 1);
+
+        renderTab(); // Re-render
+        if (window.debouncedAutoSave) window.debouncedAutoSave();
+    }
+}
 
 function openInspector(age) {
     const log = document.getElementById('inspector-log');
@@ -572,15 +613,46 @@ function openInspector(age) {
 function addMobileRow(containerId, type, data = {}, index = null, arrayName = null) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    const el = document.createElement('div');
-    el.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : `<div class="mobile-card">...</div>`;
-    const card = el.firstElementChild;
+
+    // Create the outer swipe wrapper
+    const outer = document.createElement('div');
+    outer.className = 'swipe-outer';
+
+    // The Background (Red/Trash)
+    const bg = document.createElement('div');
+    bg.className = 'swipe-bg';
+    bg.innerHTML = '<i class="fas fa-trash"></i>';
+    outer.appendChild(bg);
+
+    // The Front (Card Content)
+    const front = document.createElement('div');
+    front.className = 'swipe-front'; // This is what we animate
+    
+    // Generate content
+    front.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : `<div class="mobile-card">...</div>`;
+    
+    // The ITEM_TEMPLATES return a <div class="mobile-card">...</div>
+    // We need to move the data attributes to the 'front' element so our swipe handler can read them,
+    // OR just put the attributes on the inner card and have the handler find them.
+    // Let's attach data to the 'front' element for the handler to use easily.
     if (index !== null && arrayName) {
-        card.dataset.index = index;
-        card.dataset.array = arrayName;
+        front.dataset.index = index;
+        front.dataset.array = arrayName;
     }
-    container.appendChild(card);
-    card.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
+    
+    // The template returns a string that IS a div.mobile-card. 
+    // We want that div to BE the front, or inside it?
+    // The CSS logic .swipe-front needs to be on the element that transforms.
+    // Let's make .swipe-front wrap the content.
+    
+    outer.appendChild(front);
+    container.appendChild(outer);
+    
+    // Important: The ITEM_TEMPLATE returns a string with class 'mobile-card'. 
+    // This inner div will have the background color. 
+    // The .swipe-front handles the motion.
+    
+    outer.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
 }
 
 function renderMobileAssumptions() {
