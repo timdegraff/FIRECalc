@@ -1,5 +1,5 @@
 
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { math, engine, assumptions } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';

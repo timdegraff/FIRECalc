@@ -1,5 +1,5 @@
 
-import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { initializeData, autoSave } from './data.js';
 import { logoutUser } from './auth.js';
@@ -464,10 +464,12 @@ function attachGlobal() {
             const val = parseFloat(input.value) || 0;
             const id = input.dataset.id;
             
-            // Override advanced growth settings if user touches basic sliders on mobile
+            // Sync Perpetual if specific growth slider is touched (Reset bucket to flat rate)
             if (['stockGrowth', 'cryptoGrowth', 'metalsGrowth', 'realEstateGrowth'].includes(id)) {
                 if (window.currentData.assumptions) {
-                    window.currentData.assumptions.advancedGrowth = false;
+                    // Ensure perpetual matches initial to flatten the curve, satisfying "reset bucket"
+                    // We do NOT disable advancedGrowth flag, so desktop UI remains in advanced mode but with flat data.
+                    window.currentData.assumptions[id + 'Perpetual'] = val;
                 }
             }
 

@@ -1,5 +1,5 @@
 
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { signInWithGooglePopup } from './auth.js';
 import { initializeUI } from './core.js';
