@@ -10,14 +10,17 @@ import { projection } from './projection.js';
 import { formatter } from './formatter.js';
 
 // --- POLYFILLS FOR DATA.JS COMPATIBILITY ---
-// These ensure data.js can call window.addRow without crashing the mobile app
-window.addRow = (id, type, data) => addMobileRow(id, type, data);
+window.addRow = (id, type, data) => {
+    // When data.js calls addRow during load, we just want to ensure it doesn't crash.
+    // However, data.js uses specific IDs like 'investment-rows' which don't exist here.
+    // We do nothing here because renderTab handles the initial render for mobile.
+};
 window.updateSidebarChart = () => {};
 window.createAssumptionControls = () => {};
 window.debouncedAutoSave = () => {
     if (window.mobileSaveTimeout) clearTimeout(window.mobileSaveTimeout);
     window.mobileSaveTimeout = setTimeout(() => {
-        autoSave(false); 
+        autoSave(false); // Save from memory (window.currentData)
     }, 1500);
 };
 
@@ -57,9 +60,7 @@ const MOBILE_TEMPLATES = {
     `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
-            <div id="burndown-view-container" class="space-y-4">
-                <!-- burndown.js will inject Strategy UI here -->
-            </div>
+            <div id="burndown-view-container" class="space-y-4"></div>
             <div class="mt-8">
                 <h3 class="mobile-label mb-2">Funding Priority</h3>
                 <div id="m-priority-list" class="space-y-2"></div>
@@ -91,8 +92,12 @@ const MOBILE_TEMPLATES = {
 
 const ITEM_TEMPLATES = {
     investment: (data) => {
-        const ASSET_TYPE_COLORS = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa' };
+        const ASSET_TYPE_COLORS = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400' };
         const tc = ASSET_TYPE_COLORS[data.type] || 'text-white';
+        // For Real Estate and Debt, we lock the select or just show text? 
+        // To keep it simple, we use the same select but select the correct option if it exists, or just fallback.
+        // Actually, for debts/RE mapped to investment template, we might want to be careful.
+        // Let's just render the select.
         return `
         <div class="mobile-card flex flex-col gap-3">
             <div class="flex justify-between items-start">
@@ -110,6 +115,7 @@ const ITEM_TEMPLATES = {
                         <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
                         <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
+                        <option value="Real Estate" ${data.type === 'Real Estate' ? 'selected' : ''}>Real Estate</option>
                     </select>
                 </div>
                 <div class="text-right">
@@ -173,7 +179,6 @@ function init() {
 }
 
 function attachGlobal() {
-    // FIX: Use signInWithPopup directly here instead of import to avoid auth.js loops
     document.getElementById('login-btn').onclick = async () => {
         try {
             await setPersistence(auth, browserLocalPersistence);
@@ -196,24 +201,60 @@ function attachGlobal() {
     
     const fab = document.getElementById('mobile-fab');
     fab.onclick = () => {
-        if (currentTab === 'assets-debts') addMobileRow('m-investment-cards', 'investment', { type: 'Taxable', value: 0 });
-        if (currentTab === 'income') addMobileRow('m-income-cards', 'income', { amount: 0, increase: 0 });
-        if (currentTab === 'budget') addMobileRow('m-budget-expenses', 'expense', { monthly: 0 });
+        if(!window.currentData) return;
+        if (currentTab === 'assets-debts') {
+            window.currentData.investments = window.currentData.investments || [];
+            window.currentData.investments.push({ type: 'Taxable', value: 0 });
+        }
+        if (currentTab === 'income') {
+            window.currentData.income = window.currentData.income || [];
+            window.currentData.income.push({ amount: 0, increase: 0 });
+        }
+        if (currentTab === 'budget') {
+            window.currentData.budget = window.currentData.budget || {};
+            window.currentData.budget.expenses = window.currentData.budget.expenses || [];
+            window.currentData.budget.expenses.push({ monthly: 0 });
+        }
+        renderTab();
         if (window.debouncedAutoSave) window.debouncedAutoSave();
     };
     
     document.body.addEventListener('input', (e) => {
         const input = e.target;
-        // Handle Global Assumptions Update
+        
+        // Handle Global Assumptions
         if (input.dataset.id && document.getElementById('m-assumptions-container') && input.closest('#m-assumptions-container')) {
             (window.currentData.assumptions = window.currentData.assumptions || {})[input.dataset.id] = parseFloat(input.value) || 0;
         }
         
-        // Handle Mobile Card Update via simple scraping
+        // Handle Card Data Binding
         const card = input.closest('.mobile-card');
-        if (card) {
-           // Data binding is handled by autoSave scraping data from memory or UI
-           // This basic listener triggers the save
+        if (card && card.dataset.array && card.dataset.index !== undefined) {
+            const arrName = card.dataset.array;
+            const idx = parseInt(card.dataset.index);
+            const key = input.dataset.id;
+            let val = input.value;
+            
+            if (input.type === 'checkbox') val = input.checked;
+            else if (input.dataset.type === 'currency') val = math.fromCurrency(val);
+            else if (input.type === 'number') val = parseFloat(val);
+
+            // Nested budget handling
+            if (arrName === 'budget.savings') {
+                if (window.currentData.budget?.savings?.[idx]) {
+                    window.currentData.budget.savings[idx][key] = val;
+                    if (key === 'monthly') window.currentData.budget.savings[idx].annual = val * 12;
+                    if (key === 'annual') window.currentData.budget.savings[idx].monthly = val / 12;
+                }
+            } else if (arrName === 'budget.expenses') {
+                if (window.currentData.budget?.expenses?.[idx]) {
+                    window.currentData.budget.expenses[idx][key] = val;
+                    if (key === 'monthly') window.currentData.budget.expenses[idx].annual = val * 12;
+                    if (key === 'annual') window.currentData.budget.expenses[idx].monthly = val / 12;
+                }
+            } else if (window.currentData[arrName] && window.currentData[arrName][idx]) {
+                window.currentData[arrName][idx][key] = val;
+            }
         }
 
         if (window.debouncedAutoSave) window.debouncedAutoSave();
@@ -224,8 +265,18 @@ function attachGlobal() {
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (btn && btn.dataset.action === 'remove') {
-            btn.closest('.mobile-card')?.remove();
-            if (window.debouncedAutoSave) window.debouncedAutoSave();
+            const card = btn.closest('.mobile-card');
+            if (card && card.dataset.array && card.dataset.index !== undefined) {
+                const arrName = card.dataset.array;
+                const idx = parseInt(card.dataset.index);
+                
+                if (arrName === 'budget.savings') window.currentData.budget.savings.splice(idx, 1);
+                else if (arrName === 'budget.expenses') window.currentData.budget.expenses.splice(idx, 1);
+                else if (window.currentData[arrName]) window.currentData[arrName].splice(idx, 1);
+                
+                renderTab(); // Re-render to update indices
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            }
         }
     });
 
@@ -251,16 +302,16 @@ function renderTab() {
     if(!window.currentData) return;
 
     if (currentTab === 'assets-debts') {
-        window.currentData.investments?.forEach(i => addMobileRow('m-investment-cards', 'investment', i));
-        window.currentData.realEstate?.forEach(i => addMobileRow('m-re-cards', 'investment', { ...i, type: 'Real Estate' }));
-        window.currentData.debts?.forEach(d => addMobileRow('m-debt-cards', 'investment', { ...d, type: 'Debt', value: -d.balance }));
+        window.currentData.investments?.forEach((i, idx) => addMobileRow('m-investment-cards', 'investment', i, idx, 'investments'));
+        window.currentData.realEstate?.forEach((i, idx) => addMobileRow('m-re-cards', 'investment', { ...i, type: 'Real Estate' }, idx, 'realEstate'));
+        window.currentData.debts?.forEach((d, idx) => addMobileRow('m-debt-cards', 'investment', { ...d, type: 'Debt', value: -d.balance }, idx, 'debts'));
     }
     if (currentTab === 'income') {
-        window.currentData.income?.forEach(i => addMobileRow('m-income-cards', 'income', i));
+        window.currentData.income?.forEach((i, idx) => addMobileRow('m-income-cards', 'income', i, idx, 'income'));
     }
     if (currentTab === 'budget') {
-        window.currentData.budget?.savings?.forEach(i => addMobileRow('m-budget-savings', 'expense', { ...i, monthly: i.annual/12 }));
-        window.currentData.budget?.expenses?.forEach(i => addMobileRow('m-budget-expenses', 'expense', i));
+        window.currentData.budget?.savings?.forEach((i, idx) => addMobileRow('m-budget-savings', 'expense', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
+        window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
     if (currentTab === 'burndown') {
         burndown.init();
@@ -331,13 +382,18 @@ function openInspector(age) {
     document.getElementById('inspector-overlay').classList.remove('hidden');
 }
 
-function addMobileRow(containerId, type, data = {}) {
+function addMobileRow(containerId, type, data = {}, index = null, arrayName = null) {
     const container = document.getElementById(containerId);
     if (!container) return;
     const el = document.createElement('div');
     el.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : `<div class="mobile-card">...</div>`;
-    container.appendChild(el.firstElementChild);
-    el.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
+    const card = el.firstElementChild;
+    if (index !== null && arrayName) {
+        card.dataset.index = index;
+        card.dataset.array = arrayName;
+    }
+    container.appendChild(card);
+    card.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
 }
 
 function renderMobileAssumptions() {
