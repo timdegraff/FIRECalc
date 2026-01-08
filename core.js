@@ -333,12 +333,12 @@ window.updateSidebarChart = (data) => {
 
         Object.entries(totals).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
             if (value <= 0) return;
-            const percent = Math.round((value / totalSum) * 100);
             const color = assetColors[type] || assetColors['Taxable'];
             const shortName = shortNames[type] || type;
             const item = document.createElement('div');
             item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
-            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div><span class="truncate">${shortName}</span><span class="ml-auto text-slate-500 mr-1">${compactFormat(value)}</span><span class="text-white">${percent}%</span>`;
+            // Removed percentage, kept only Type and Compact Amount
+            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div><span class="truncate">${shortName}</span><span class="ml-auto text-slate-400 font-bold mono-numbers">${compactFormat(value)}</span>`;
             legendContainer.appendChild(item);
         });
     }

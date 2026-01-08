@@ -46,6 +46,31 @@
         </div>
     </div>
 
+    <!-- Guest Warning Modal -->
+    <div id="guest-modal" class="fixed inset-0 flex items-center justify-center bg-slate-900/95 z-[60] hidden backdrop-blur-sm">
+        <div class="bg-slate-800 p-8 rounded-3xl shadow-2xl border border-slate-700 max-w-md text-center mx-4 relative">
+            <div class="w-16 h-16 bg-slate-700/50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-slate-600/50">
+                <i class="fas fa-hdd text-3xl text-blue-400"></i>
+            </div>
+            <h2 class="text-2xl font-black text-white mb-2 tracking-tight">Guest Mode Active</h2>
+            <p class="text-slate-400 text-sm leading-relaxed mb-8">
+                Your financial data is currently stored <strong class="text-white">on this device only</strong>. <br>
+                If you clear your browser cache, your data will be lost.
+            </p>
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 mb-8 flex items-center gap-4 text-left">
+                <div class="w-10 h-10 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-400 shadow-md">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+                <div class="text-[10px] text-slate-500 font-medium leading-relaxed">
+                    To sync data across devices, click <span class="text-slate-300 font-bold uppercase tracking-wide">Logout / Exit Guest</span> in the sidebar to sign in with Google.
+                </div>
+            </div>
+            <button id="ack-guest-btn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-900/20 uppercase tracking-widest text-xs">
+                I Understand
+            </button>
+        </div>
+    </div>
+
     <div id="app-container" class="hidden flex h-screen overflow-hidden relative">
         <aside class="sidebar w-64 flex flex-col flex-shrink-0 bg-slate-800 border-r border-slate-700">
             <div class="p-6 pb-2">
@@ -90,9 +115,6 @@
                     <button id="logout-btn" class="w-full py-1.5 bg-slate-700 hover:bg-red-900/40 text-slate-300 rounded-lg text-[10px] transition-colors">
                         Logout
                     </button>
-                    <a href="mobile.html?force=true" class="block w-full text-center py-1 text-[9px] text-slate-600 hover:text-slate-400 font-bold uppercase tracking-widest transition-colors">
-                        Test Mobile View
-                    </a>
                 </div>
             </div>
         </aside>

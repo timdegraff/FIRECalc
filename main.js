@@ -50,6 +50,19 @@ onAuthStateChanged(auth, async (user) => {
         }
         
         showApp();
+
+        // 2a. Check for Guest Acknowledgement
+        if (!localStorage.getItem('firecalc_guest_acknowledged')) {
+            const modal = document.getElementById('guest-modal');
+            const btn = document.getElementById('ack-guest-btn');
+            if (modal && btn) {
+                modal.classList.remove('hidden');
+                btn.onclick = () => {
+                    localStorage.setItem('firecalc_guest_acknowledged', 'true');
+                    modal.classList.add('hidden');
+                };
+            }
+        }
     }
     // 3. Logged Out / Initial State
     else {

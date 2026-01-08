@@ -63,6 +63,31 @@
             <p class="text-[9px] text-slate-600 mt-4">Data saved to device only.</p>
         </div>
     </div>
+
+    <!-- Guest Warning Modal Mobile -->
+    <div id="guest-modal" class="fixed inset-0 flex items-center justify-center bg-slate-950/95 z-[200] hidden backdrop-blur-sm px-6">
+        <div class="bg-slate-900 p-6 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-sm text-center">
+            <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-hdd text-xl text-slate-400"></i>
+            </div>
+            <h2 class="text-xl font-black text-white mb-2 tracking-tight">Local Storage Only</h2>
+            <p class="text-slate-400 text-xs leading-relaxed mb-6">
+                Your data stays on this phone. It is not backed up to the cloud.
+            </p>
+            <div class="bg-black/20 p-3 rounded-xl border border-slate-800 mb-6 flex items-center gap-3 text-left">
+                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-500">
+                    <i class="fas fa-sign-out-alt text-xs"></i>
+                </div>
+                <p class="text-[9px] text-slate-500 font-medium leading-tight">
+                    Tap the logout icon in the top right to sign in and sync your data.
+                </p>
+            </div>
+            <button id="ack-guest-btn" class="w-full py-3 bg-slate-800 border border-slate-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all">
+                Got it
+            </button>
+        </div>
+    </div>
+
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">
         
         <!-- Mobile Header -->
