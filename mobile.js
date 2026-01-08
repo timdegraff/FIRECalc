@@ -1,14 +1,22 @@
 
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { 
+    onAuthStateChanged, 
+    getRedirectResult, 
+    GoogleAuthProvider, 
+    signInWithRedirect, 
+    setPersistence, 
+    browserLocalPersistence 
+} from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import { auth } from './firebase-config.js';
-import { initializeData, autoSave, updateSummaries } from './data.js';
-import { signInWithGoogle, logoutUser } from './auth.js';
-import { math, engine, assetColors, assumptions, stateTaxRates } from './utils.js';
+import { initializeData, autoSave } from './data.js';
+import { logoutUser } from './auth.js';
+import { math, engine, stateTaxRates } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
 import { formatter } from './formatter.js';
 
+// --- MOCK DESKTOP GLOBAL REQUIREMENTS ---
 window.addRow = () => {}; 
 window.updateSidebarChart = () => {};
 window.createAssumptionControls = () => {};
@@ -22,56 +30,92 @@ window.debouncedAutoSave = () => {
 
 let currentTab = 'assets-debts';
 
-// --- AUTH SAFETY NET ---
-// If onAuthStateChanged fails to fire within 4 seconds, force the login button to appear.
-// This prevents the "Authenticating..." spinner of death.
-const authSafetyTimeout = setTimeout(() => {
-    const loginScreen = document.getElementById('login-screen');
-    // Only intervene if we are still stuck on the spinner
-    if (loginScreen && !loginScreen.classList.contains('hidden') && loginScreen.innerHTML.includes('Authenticating')) {
-        console.warn("Auth timed out, forcing login button.");
-        showLoginButton(loginScreen);
-    }
-}, 4000);
+// --- AUTH LOGIC REBOOT (v3.1) ---
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
 
-function showLoginButton(loginScreen) {
-    if (!loginScreen) return;
-    loginScreen.classList.remove('hidden'); 
-    loginScreen.innerHTML = `
-        <div class="p-8 text-center w-full">
-            <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
-            <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
-            <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
-                Sign in with Google
-            </button>
-        </div>
-        <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v2.9</div>`;
-    
-    const btn = document.getElementById('login-btn');
-    if (btn) btn.onclick = signInWithGoogle; // Uses auth.js redirect method
-}
-
-// 2. Listen for state changes
-onAuthStateChanged(auth, async (user) => {
-    clearTimeout(authSafetyTimeout); // We got a response, cancel safety net
-    
+/**
+ * Show the Login Screen button explicitly
+ */
+function showLoginUI() {
     const loginScreen = document.getElementById('login-screen');
     const appContainer = document.getElementById('app-container');
+    
+    if (appContainer) appContainer.classList.add('hidden');
+    if (loginScreen) {
+        loginScreen.classList.remove('hidden');
+        loginScreen.innerHTML = `
+            <div class="p-8 text-center w-full relative">
+                <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
+                <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
+                
+                <button id="mobile-login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg active:scale-95 transition-all">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                    Sign in with Google
+                </button>
 
-    if (user) { 
-        // --- LOGGED IN ---
-        await initializeData(user); 
-        if (loginScreen) loginScreen.classList.add('hidden'); 
-        if (appContainer) appContainer.classList.remove('hidden'); 
-        renderTab(); 
+                <div class="mt-8">
+                   <a href="?desktop=true" class="text-[9px] font-black text-slate-700 uppercase tracking-widest border-b border-slate-800 pb-1">Switch to Desktop Version</a>
+                </div>
+            </div>
+            <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v3.1</div>
+        `;
+
+        document.getElementById('mobile-login-btn').onclick = async () => {
+            try {
+                document.getElementById('mobile-login-btn').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Redirecting...';
+                await setPersistence(auth, browserLocalPersistence);
+                await signInWithRedirect(auth, provider);
+            } catch (err) {
+                console.error("Manual Login Click Error:", err);
+                alert("Login Error: " + err.message);
+                showLoginUI();
+            }
+        };
     }
-    else { 
-        // --- LOGGED OUT ---
-        if (appContainer) appContainer.classList.add('hidden'); 
-        showLoginButton(loginScreen);
+}
+
+/**
+ * Robust App Start
+ */
+async function startApp() {
+    // 1. Immediately handle any incoming redirect
+    try {
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
+            console.log("Found redirect user:", result.user.uid);
+            // App state usually updates via onAuthStateChanged automatically
+        }
+    } catch (e) {
+        console.error("Redirect handler caught error:", e);
     }
-});
+
+    // 2. Main state listener
+    onAuthStateChanged(auth, async (user) => {
+        const loginScreen = document.getElementById('login-screen');
+        const appContainer = document.getElementById('app-container');
+
+        if (user) {
+            console.log("Auth State: User Active", user.uid);
+            await initializeData(user);
+            if (loginScreen) loginScreen.classList.add('hidden');
+            if (appContainer) appContainer.classList.remove('hidden');
+            renderTab();
+        } else {
+            console.log("Auth State: No User");
+            showLoginUI();
+        }
+    });
+
+    // 3. Fallback: If Firebase is totally unresponsive (network/ISP blocks), show the login button after 3s
+    setTimeout(() => {
+        const screen = document.getElementById('login-screen');
+        if (screen && !screen.classList.contains('hidden') && screen.innerText.includes('Authenticating')) {
+            console.warn("Firebase unresponsive. Showing manual button.");
+            showLoginUI();
+        }
+    }, 3000);
+}
 
 const ASSET_TYPE_COLORS = {
     'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax',
@@ -181,25 +225,22 @@ const ITEM_TEMPLATES = {
     expense: (data, idx, arrayName) => `<div class="swipe-wrapper relative overflow-hidden rounded-2xl mb-3"><div class="swipe-action-bg"><button data-action="remove-swipe" data-idx="${idx}" data-array="${arrayName}" class="text-white"><i class="fas fa-trash text-lg"></i></button></div><div class="mobile-card relative z-10 bg-slate-800 transition-transform flex flex-col gap-3" data-idx="${idx}" data-array="${arrayName}"><div class="flex justify-between items-center"><div class="flex flex-col w-1/2"><input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-xs outline-none" placeholder="Item Name"></div><div class="text-right"><span class="mobile-label">Monthly</span><input data-id="monthly" data-type="currency" inputmode="decimal" value="${math.toCurrency(data.monthly || 0)}" class="block w-full text-right bg-transparent text-pink-400 font-black text-lg mono-numbers outline-none"></div></div></div>`
 };
 
-function init() {
-    attachGlobal();
-    attachSwipeListeners();
-    
-    // Auth Listener attached above at global scope to ensure it catches early events
-}
-
-function attachGlobal() {
-    const lb = document.getElementById('login-btn'); if(lb) lb.onclick = signInWithGoogle;
-    const lob = document.getElementById('logout-btn'); if(lob) lob.onclick = logoutUser;
-    
+function attachUIListeners() {
+    // Nav
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
-        btn.onclick = () => { currentTab = btn.dataset.tab; document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderTab(); };
+        btn.onclick = () => { 
+            currentTab = btn.dataset.tab; 
+            document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active')); 
+            btn.classList.add('active'); 
+            renderTab(); 
+        };
     });
+
+    document.getElementById('logout-btn').onclick = logoutUser;
 
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button'); if (!btn) return;
         
-        // Handle Nominal/Real Dollar Toggles
         if (btn.id === 'toggle-projection-real') {
             projection.toggleRealDollars();
             projection.updateToggleStyle(btn);
@@ -228,13 +269,33 @@ function attachGlobal() {
             else if (ctx === 'spending') (window.currentData.budget.expenses = window.currentData.budget.expenses || []).push({ name: '', monthly: 0, annual: 0, removedInRetirement: false, isFixed: false });
             renderTab(); if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
+
+        if (btn.dataset.action === 'remove-swipe') {
+            const idx = parseInt(btn.dataset.idx), arrName = btn.dataset.array;
+            const target = (arrName === 'budget.expenses' ? window.currentData.budget.expenses : (arrName === 'budget.savings' ? window.currentData.budget.savings : window.currentData[arrName]));
+            if (target && idx >= 0) {
+                target.splice(idx, 1);
+                renderTab();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            }
+        }
     });
 
     document.body.addEventListener('input', (e) => {
         const input = e.target, card = input.closest('.mobile-card');
-        if (input.id === 'input-projection-end') { window.currentData.projectionEndAge = parseInt(input.value); document.getElementById('mobile-proj-end-val').textContent = input.value; projection.run(window.currentData); if (window.debouncedAutoSave) window.debouncedAutoSave(); return; }
+        if (input.id === 'input-projection-end') { 
+            window.currentData.projectionEndAge = parseInt(input.value); 
+            document.getElementById('mobile-proj-end-val').textContent = input.value; 
+            projection.run(window.currentData); 
+            if (window.debouncedAutoSave) window.debouncedAutoSave(); 
+            return; 
+        }
+        
         if (card && card.dataset.array && card.dataset.idx !== undefined) {
-            const arr = card.dataset.array, idx = parseInt(card.dataset.idx), key = input.dataset.id, target = (arr === 'budget.expenses' ? window.currentData.budget.expenses : (arr === 'budget.savings' ? window.currentData.budget.savings : window.currentData[arr]));
+            const arr = card.dataset.array, idx = parseInt(card.dataset.idx);
+            const key = input.dataset.id;
+            const target = (arr === 'budget.expenses' ? window.currentData.budget.expenses : (arr === 'budget.savings' ? window.currentData.budget.savings : window.currentData[arr]));
+            
             if (target?.[idx]) {
                 let val = input.type === 'checkbox' ? input.checked : (input.dataset.type === 'currency' ? math.fromCurrency(input.value) : (input.type === 'number' ? parseFloat(input.value) || 0 : input.value));
                 if (arr === 'income' && key === 'amount') target[idx]['isMonthly'] = false;
@@ -313,7 +374,7 @@ function renderTab() {
 function renderMobileProfile() {
     const pC = document.getElementById('m-profile-container'), mC = document.getElementById('m-market-container'), sC = document.getElementById('m-ss-container');
     if (!pC || !window.currentData) return;
-    const a = window.currentData.assumptions || assumptions.defaults, hh = window.currentData.benefits?.hhSize || 1;
+    const a = window.currentData.assumptions || assumptions.defaults;
     pC.innerHTML = `<div class="grid grid-cols-2 gap-4"><div><span class="mobile-label">Current Age</span><input data-id="currentAge" type="number" inputmode="decimal" value="${a.currentAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none"></div><div><span class="mobile-label">Retire Age</span><input data-id="retirementAge" type="number" inputmode="decimal" value="${a.retirementAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-blue-400 outline-none"></div></div><div><span class="mobile-label">Legal State</span><select data-id="state" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-bold text-white outline-none mt-1">${Object.keys(stateTaxRates).sort().map(s => `<option value="${s}" ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
     mC.innerHTML = ['stockGrowth', 'cryptoGrowth', 'metalsGrowth', 'realEstateGrowth', 'inflation'].map(k => `<div class="space-y-2"><div class="flex justify-between"><span class="mobile-label text-blue-400">${k}</span><span id="val-${k}" class="text-white font-bold text-xs">${a[k]}%</span></div><input data-id="${k}" type="range" min="0" max="20" step="0.5" value="${a[k]}" class="w-full h-4 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-emerald-500"></div>`).join('');
     sC.innerHTML = `<div class="grid grid-cols-2 gap-4"><div><span class="mobile-label">Start Age</span><input data-id="ssStartAge" type="number" inputmode="decimal" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none"></div><div><span class="mobile-label">Monthly Benefit</span><input data-id="ssMonthly" type="number" inputmode="decimal" value="${a.ssMonthly}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-teal-400 outline-none"></div></div>`;
@@ -326,4 +387,7 @@ function addMobileRow(id, type, data, idx, array) {
     card.querySelectorAll('[data-type="currency"]').forEach(i => { formatter.bindCurrencyEventListeners(i); i.addEventListener('click', (e) => { if (math.fromCurrency(e.target.value) === 0) e.target.value = ''; }); });
 }
 
-init();
+// Start sequence
+startApp();
+attachUIListeners();
+attachSwipeListeners();

@@ -34,12 +34,12 @@
         <div class="p-8 text-center w-full">
             <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
             <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
-            <div class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-8">
+            <div id="loading-spinner" class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-8">
                 <i class="fas fa-circle-notch fa-spin"></i>
                 Authenticating...
             </div>
         </div>
-        <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v2.9</div>
+        <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v3.1</div>
     </div>
 
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">
@@ -108,7 +108,7 @@
 
     <!-- Dynamic import with cache busting query string -->
     <script type="module">
-        import "./mobile.js?v=2.9"; 
+        import "./mobile.js?v=3.1"; 
     </script>
 </body>
 </html>
