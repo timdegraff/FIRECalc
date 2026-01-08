@@ -86,9 +86,14 @@
                     <img id="user-avatar" class="w-8 h-8 rounded-full border border-slate-600" src="" alt="">
                     <p id="user-name" class="font-bold text-white text-[10px]"></p>
                 </div>
-                <button id="logout-btn" class="w-full py-1.5 bg-slate-700 hover:bg-red-900/40 text-slate-300 rounded-lg text-[10px] transition-colors">
-                    Logout
-                </button>
+                <div class="space-y-2">
+                    <button id="logout-btn" class="w-full py-1.5 bg-slate-700 hover:bg-red-900/40 text-slate-300 rounded-lg text-[10px] transition-colors">
+                        Logout
+                    </button>
+                    <a href="mobile.html?force=true" class="block w-full text-center py-1 text-[9px] text-slate-600 hover:text-slate-400 font-bold uppercase tracking-widest transition-colors">
+                        Test Mobile View
+                    </a>
+                </div>
             </div>
         </aside>
 
@@ -337,7 +342,7 @@
 
     <!-- Dynamic import with cache busting query string -->
     <script type="module">
-        import "./main.js?v=2.4"; 
+        import "./main.js?v=2.5"; 
     </script>
 </body>
 </html>

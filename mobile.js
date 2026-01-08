@@ -9,6 +9,18 @@ import { burndown } from './burndown.js';
 import { projection } from './projection.js';
 import { formatter } from './formatter.js';
 
+// --- SAFE VERSION CHECK LOGIC ---
+// We simply update the local version so it doesn't conflict with Desktop.
+// We DO NOT clear sessionStorage here to avoid Firebase Auth redirect loops.
+const APP_VERSION = "2.4"; 
+const currentSavedVersion = localStorage.getItem('firecalc_app_version');
+
+if (currentSavedVersion !== APP_VERSION) {
+    localStorage.setItem('firecalc_app_version', APP_VERSION);
+    // Note: We rely on the ?v=3.5 in HTML to bust the code cache.
+    // We do NOT clear session data here.
+}
+
 // --- POLYFILLS FOR DATA.JS COMPATIBILITY ---
 window.addRow = (id, type, data) => {};
 window.updateSidebarChart = () => {};
@@ -18,7 +30,9 @@ window.debouncedAutoSave = () => {
     window.mobileSaveTimeout = setTimeout(() => {
         // Trigger Save Indicator State locally for Mobile logic
         const indicators = document.querySelectorAll('#save-indicator');
-        indicators.forEach(el => el.className = "text-orange-500 transition-colors duration-200");
+        indicators.forEach(el => {
+            el.className = "text-orange-500 transition-colors duration-200"; 
+        });
         
         autoSave(false); // Save from memory (window.currentData)
     }, 1500);
