@@ -32,7 +32,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>">
     <link rel="shortcut icon" href="#">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="mobile.css">
 <script type="importmap">
@@ -46,8 +46,8 @@
 }
 </script>
 </head>
-<body class="text-slate-300 bg-slate-950 font-inter safe-bottom">
-    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-slate-950 z-[100]">
+<body class="text-slate-300 bg-[#0B0F19] font-inter safe-bottom">
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#0B0F19] z-[100]">
         <div class="p-8 text-center w-full">
             <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
             <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
@@ -57,7 +57,7 @@
                 Sign in with Google
             </button>
 
-            <button id="guest-btn" class="w-full py-4 mt-4 bg-slate-800 border border-slate-700 text-slate-400 hover:text-white rounded-2xl font-bold uppercase tracking-widest text-xs active:scale-95 transition-all">
+            <button id="guest-btn" class="w-full py-4 mt-4 bg-slate-800/50 border border-white/10 text-slate-400 hover:text-white rounded-2xl font-bold uppercase tracking-widest text-xs active:scale-95 transition-all backdrop-blur-md">
                 Continue as Guest
             </button>
             <p class="text-[9px] text-slate-600 mt-4">Data saved to device only.</p>
@@ -65,16 +65,16 @@
     </div>
 
     <!-- Guest Warning Modal Mobile -->
-    <div id="guest-modal" class="fixed inset-0 flex items-center justify-center bg-slate-950/95 z-[200] hidden backdrop-blur-sm px-6">
-        <div class="bg-slate-900 p-6 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-sm text-center">
-            <div class="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center mx-auto mb-4">
+    <div id="guest-modal" class="fixed inset-0 flex items-center justify-center bg-black/90 z-[200] hidden backdrop-blur-sm px-6">
+        <div class="mobile-card w-full max-w-sm text-center">
+            <div class="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/10">
                 <i class="fas fa-hdd text-xl text-slate-400"></i>
             </div>
             <h2 class="text-xl font-black text-white mb-2 tracking-tight">Local Storage Only</h2>
             <p class="text-slate-400 text-xs leading-relaxed mb-6">
                 Your data stays on this phone. It is not backed up to the cloud.
             </p>
-            <div class="bg-black/20 p-3 rounded-xl border border-slate-800 mb-6 flex items-center gap-3 text-left">
+            <div class="bg-black/20 p-3 rounded-xl border border-white/5 mb-6 flex items-center gap-3 text-left">
                 <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-500">
                     <i class="fas fa-sign-out-alt text-xs"></i>
                 </div>
@@ -82,7 +82,7 @@
                     Tap the logout icon in the top right to sign in and sync your data.
                 </p>
             </div>
-            <button id="ack-guest-btn" class="w-full py-3 bg-slate-800 border border-slate-700 text-white rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all">
+            <button id="ack-guest-btn" class="w-full py-3 bg-white/5 border border-white/10 text-white rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all">
                 Got it
             </button>
         </div>
@@ -91,7 +91,7 @@
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">
         
         <!-- Mobile Header -->
-        <header class="p-5 flex justify-between items-center bg-slate-900 border-b border-slate-800 flex-shrink-0">
+        <header class="p-5 flex justify-between items-center bg-[#0B0F19]/80 backdrop-blur-md border-b border-white/5 flex-shrink-0 z-30">
              <div class="flex flex-col">
                 <h1 class="text-xl font-black text-white tracking-tighter uppercase">FIRECalc</h1>
                 <p id="mobile-nw-label" class="text-[10px] font-black text-teal-400 mono-numbers">$0 Net Worth</p>
@@ -101,7 +101,7 @@
                 <div id="save-indicator" class="text-slate-600 transition-colors duration-200" title="Data Sync Status">
                     <i class="fas fa-cloud"></i>
                 </div>
-                <button id="logout-btn" class="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center text-slate-500 active:scale-95 transition-all">
+                <button id="logout-btn" class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-slate-500 active:scale-95 transition-all bg-white/5">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
              </div>
@@ -115,7 +115,7 @@
             <i class="fas fa-plus"></i>
         </button>
         <!-- Bottom Navigation -->
-        <nav class="fixed bottom-0 left-0 right-0 h-20 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-50 pb-safe">
+        <nav class="fixed bottom-0 left-0 right-0 h-20 bg-[#0B0F19]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around z-50 pb-safe">
             <button data-tab="assets-debts" class="mobile-nav-btn active flex flex-col items-center gap-1">
                 <i class="fas fa-wallet text-xl"></i>
                 <span class="text-[8px] uppercase font-black">Assets</span>
@@ -130,7 +130,7 @@
             </button>
             <button data-tab="assumptions" class="mobile-nav-btn flex flex-col items-center gap-1">
                 <i class="fas fa-sliders-h text-xl"></i>
-                <span class="text-[8px] uppercase font-black">Assumptions</span>
+                <span class="text-[8px] uppercase font-black">Config</span>
             </button>
             <button data-tab="benefits" class="mobile-nav-btn flex flex-col items-center gap-1">
                 <i class="fas fa-hand-holding-heart text-xl"></i>
@@ -138,13 +138,13 @@
             </button>
             <button data-tab="burndown" class="mobile-nav-btn flex flex-col items-center gap-1">
                 <i class="fas fa-stairs text-xl" style="transform: scaleX(-1);"></i>
-                <span class="text-[8px] uppercase font-black">Burndown</span>
+                <span class="text-[8px] uppercase font-black">Burn</span>
             </button>
         </nav>
     </div>
     <!-- Inspector Overlay (Advanced Breakdown) -->
-    <div id="inspector-overlay" class="fixed inset-0 bg-slate-950/90 z-[60] hidden flex flex-col">
-        <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+    <div id="inspector-overlay" class="fixed inset-0 bg-black/90 z-[60] hidden flex flex-col backdrop-blur-sm">
+        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#0B0F19]">
             <h3 class="text-white font-black uppercase tracking-widest text-sm">Logic Inspector</h3>
             <button id="close-inspector" class="w-10 h-10 flex items-center justify-center text-slate-500"><i class="fas fa-times text-xl"></i></button>
         </div>

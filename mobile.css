@@ -10,10 +10,11 @@ html, body {
     overflow: hidden; /* Prevent body scroll */
     overscroll-behavior: none; /* Prevent browser bounce */
     position: fixed; /* Lock content in place */
+    background-color: #0B0F19 !important; /* Match Desktop Deep Dark */
 }
 
 body.safe-bottom {
-    padding-bottom: 0; /* Handled by flex layout */
+    padding-bottom: 0; 
 }
 
 /* 16px font to prevent mobile auto-zoom on focus */
@@ -34,18 +35,18 @@ input, select, textarea {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
+    -webkit-overflow-scrolling: touch; 
     overscroll-behavior-y: contain;
-    padding-bottom: calc(80px + var(--safe-bottom)); /* Clear nav bar */
+    padding-bottom: calc(80px + var(--safe-bottom)); 
 }
 
 .mobile-nav-btn {
-    width: 16.66%; /* 6 items = ~16.6% */
+    width: 16.66%; 
     min-width: 45px;
     height: 100%;
-    color: #64748b; /* Default slate color */
+    color: #64748b; 
     transition: all 0.2s;
-    border-radius: 8px; /* Slightly tighter radius */
+    border-radius: 12px; /* Smoother Pill */
     margin: 4px 1px;
     display: flex;
     flex-direction: column;
@@ -54,27 +55,36 @@ input, select, textarea {
 }
 
 .mobile-nav-btn.active {
-    background-color: rgba(30, 41, 59, 0.5); /* slate-800/50 */
+    background-color: rgba(255, 255, 255, 0.05); /* Subtle Highlight */
+    backdrop-filter: blur(4px);
 }
 
 /* Specific Tab Active Colors */
-.mobile-nav-btn.active[data-tab="assets-debts"] { color: #fb923c; } /* Orange */
-.mobile-nav-btn.active[data-tab="income"] { color: #2dd4bf; } /* Teal */
-.mobile-nav-btn.active[data-tab="budget"] { color: #ec4899; } /* Pink */
-.mobile-nav-btn.active[data-tab="projection"] { color: #3b82f6; } /* Blue */
-.mobile-nav-btn.active[data-tab="burndown"] { color: #a855f7; } /* Purple */
-.mobile-nav-btn.active[data-tab="assumptions"] { color: #10b981; } /* Emerald */
-.mobile-nav-btn.active[data-tab="benefits"] { color: #f59e0b; } /* Amber */
+.mobile-nav-btn.active[data-tab="assets-debts"] { color: #fb923c; } 
+.mobile-nav-btn.active[data-tab="income"] { color: #2dd4bf; } 
+.mobile-nav-btn.active[data-tab="budget"] { color: #ec4899; } 
+.mobile-nav-btn.active[data-tab="projection"] { color: #3b82f6; } 
+.mobile-nav-btn.active[data-tab="burndown"] { color: #a855f7; } 
+.mobile-nav-btn.active[data-tab="assumptions"] { color: #10b981; } 
+.mobile-nav-btn.active[data-tab="benefits"] { color: #f59e0b; } 
 
 .mobile-card {
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 20px;
-    padding: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    background: rgba(30, 41, 59, 0.4); /* Glassy matching desktop */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px; /* Consistent with Desktop */
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     position: relative;
     z-index: 10;
     width: 100%;
+}
+
+/* Inputs on mobile cards need to look touchable but minimal */
+.mobile-card input, .mobile-card select {
+    background: transparent;
+    border-radius: 0;
 }
 
 /* Swipe to Delete Styles */
@@ -83,7 +93,7 @@ input, select, textarea {
     width: 100%;
     overflow: hidden;
     border-radius: 20px;
-    margin-bottom: 0.75rem; /* space-y-3 equivalent */
+    margin-bottom: 0.75rem; 
 }
 
 .swipe-bg {
@@ -92,7 +102,7 @@ input, select, textarea {
     bottom: 0;
     right: 0;
     width: 100%;
-    background-color: #dc2626; /* red-600 */
+    background-color: #dc2626; 
     border-radius: 20px;
     display: flex;
     align-items: center;
@@ -109,9 +119,12 @@ input, select, textarea {
 .swipe-front {
     position: relative;
     z-index: 10;
-    background: #1e293b; /* Match card bg */
-    transition: transform 0.1s linear; /* Smooth drag */
-    touch-action: pan-y; /* Allow vertical scroll, handle horizontal in JS */
+    background: rgba(30, 41, 59, 0.6); /* Slightly more opaque for swipe cards */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.1s linear; 
+    touch-action: pan-y; 
 }
 
 .swipe-front.snapping {
@@ -125,31 +138,31 @@ input, select, textarea {
 
 .mobile-label {
     font-size: 9px;
-    font-weight: 900;
+    font-weight: 800;
     text-transform: uppercase;
     color: #64748b;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.08em;
 }
 
 .mono-numbers {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Inter', sans-serif !important;
     font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
 }
 
 /* Asset Type Text Colors */
 .text-type-cash { color: #f472b6; }
-.text-type-taxable { color: #10b981; }
-.text-type-pretax { color: #3b82f6; }
-.text-type-posttax { color: #a855f7; }
-.text-type-crypto { color: #f59e0b; }
-.text-type-metals { color: #eab308; }
+.text-type-taxable { color: #34d399; }
+.text-type-pretax { color: #60a5fa; }
+.text-type-posttax { color: #c084fc; }
+.text-type-crypto { color: #fbbf24; }
+.text-type-metals { color: #facc15; }
 .text-type-hsa { color: #2dd4bf; }
 
 .pb-safe {
     padding-bottom: var(--safe-bottom);
 }
 
-/* Hide desktop Burndown controls if injected */
 .burndown-desktop-controls {
     display: none !important;
 }
@@ -160,7 +173,7 @@ input, select, textarea {
     appearance: none;
     width: 100%;
     height: 6px;
-    background: #334155; /* Slate-700 track */
+    background: #334155; 
     border-radius: 99px;
     outline: none;
     margin: 10px 0;
@@ -171,19 +184,8 @@ input, select, textarea {
     appearance: none;
     width: 24px;
     height: 24px;
-    background: #3b82f6; /* Blue-500 */
-    border: 3px solid #1e293b; /* Slate-800 border */
+    background: #fff; 
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
-}
-
-.mobile-slider::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-    background: #3b82f6;
-    border: 3px solid #1e293b;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }

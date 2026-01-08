@@ -9,11 +9,11 @@ export const templates = {
             const stateRate = (stateTaxRates[state] || {}).rate || 0;
             
             if (type === '529 Plan' || type === 'Post-Tax (Roth)') {
-                return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest border border-current mono-numbers" title="100% Efficient">100%</div>`;
+                return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="100% Efficient">100%</div>`;
             }
 
             if (v > 0 && b >= v) {
-                 return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-widest border border-current mono-numbers" title="100% Efficient (No Gains)">100%</div>`;
+                 return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="100% Efficient (No Gains)">100%</div>`;
             }
 
             const styles = {
@@ -44,7 +44,7 @@ export const templates = {
                 label = '100%';
             }
 
-            return `<div class="efficiency-badge inline-flex items-center px-1.5 py-0.5 rounded ${s.bg} ${s.color} text-[9px] font-black uppercase tracking-widest border border-current opacity-80 mono-numbers">${label}</div>`;
+            return `<div class="inline-flex items-center px-2 py-1 rounded-md ${s.bg} ${s.color} text-[9px] font-black uppercase tracking-wider border border-white/5 opacity-90 mono-numbers">${label}</div>`;
         },
         getTypeClass: (type) => {
             const map = {
@@ -66,14 +66,14 @@ export const templates = {
         const state = window.currentData?.assumptions?.state || 'Michigan';
         const type = data.type || 'Taxable';
         return `
-            <td class="w-8"><i class="fas fa-bars drag-handle text-slate-700"></i></td>
-            <td><input data-id="name" type="text" placeholder="Account" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
+            <td class="w-10 pl-6"><i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500"></i></td>
+            <td><input data-id="name" type="text" placeholder="Account" class="input-base text-white uppercase tracking-wider text-xs"></td>
             <td>
-                <div class="flex items-center">
-                    <select data-id="type" class="input-base w-full font-black uppercase tracking-widest text-[11px] bg-slate-900 text-white ${templates.helpers.getTypeClass(type)}">
+                <div class="relative">
+                    <select data-id="type" class="input-base uppercase tracking-wider text-[10px] ${templates.helpers.getTypeClass(type)}">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
-                        <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
-                        <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
+                        <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
+                        <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
                         <option value="Cash" ${type === 'Cash' ? 'selected' : ''}>Cash</option>
                         <option value="Crypto" ${type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${type === 'Metals' ? 'selected' : ''}>Metals</option>
@@ -82,115 +82,117 @@ export const templates = {
                     </select>
                 </div>
             </td>
-            <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-bold mono-numbers"></td>
-            <td><input data-id="costBasis" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-blue-400 opacity-60 mono-numbers"></td>
-            <td class="text-center w-20">
+            <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-bold mono-numbers"></td>
+            <td><input data-id="costBasis" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-blue-400/70 mono-numbers"></td>
+            <td class="text-center w-24">
                 <div data-id="efficiency-container">
                     ${templates.helpers.getEfficiencyBadge(type, data.value, data.costBasis, state)}
                 </div>
             </td>
-            <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
+            <td class="text-right pr-6"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
         `;
     },
     
     stockOption: (data) => `
-        <td><input data-id="name" type="text" placeholder="Company / Grant" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
-        <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base w-full text-right text-white font-bold mono-numbers"></td>
-        <td><input data-id="strikePrice" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-emerald-500 font-bold mono-numbers"></td>
-        <td><input data-id="currentPrice" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
-        <td><input data-id="growth" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base w-full text-center text-blue-400 font-bold mono-numbers"></td>
+        <td class="pl-6"><input data-id="name" type="text" placeholder="Grant" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base text-right text-white font-bold mono-numbers"></td>
+        <td><input data-id="strikePrice" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-emerald-500 font-bold mono-numbers"></td>
+        <td><input data-id="currentPrice" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
+        <td><input data-id="growth" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base text-center text-blue-400 font-bold mono-numbers"></td>
         <td class="text-center">
             <label class="cursor-pointer group inline-flex items-center justify-center relative">
                 <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg !== false ? 'checked' : ''}>
-                <div class="w-12 py-1 rounded text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
+                <div class="w-12 py-1 rounded-md text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
                     bg-blue-500/10 border-blue-500/20 text-blue-400 
                     peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400
-                    hover:border-opacity-50">
+                    hover:border-white/20">
                     <span class="inline-block peer-checked:hidden">ORD</span>
                     <span class="hidden peer-checked:inline-block">LTCG</span>
                 </div>
             </label>
         </td>
-        <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-teal-400 font-black mono-numbers text-sm pr-4">$0</div></td>
-        <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
+        <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-teal-400 font-black mono-numbers text-sm pr-2">$0</div></td>
+        <td class="text-right pr-6"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
 
     income: (data) => `
-        <div class="removable-item bg-slate-800 rounded-xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
-            <div class="px-4 py-2.5 border-b border-slate-700 flex justify-between items-center bg-slate-900/40">
-                <div class="flex items-center gap-3">
-                    <i class="fas fa-money-check-alt text-teal-400 text-xs"></i>
-                    <input data-id="name" type="text" placeholder="Source Name" class="bg-transparent border-none outline-none text-white font-black uppercase tracking-widest text-sm placeholder:text-slate-600">
+        <div class="removable-item card-container flex flex-col relative group shadow-lg overflow-hidden h-full">
+            <div class="px-5 py-3 border-b border-white/5 flex justify-between items-center bg-black/20">
+                <div class="flex items-center gap-3 w-full">
+                    <div class="w-6 h-6 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400 flex-shrink-0">
+                        <i class="fas fa-money-check-alt text-[10px]"></i>
+                    </div>
+                    <input data-id="name" type="text" placeholder="SOURCE NAME" class="bg-transparent border-none outline-none text-white font-black uppercase tracking-widest text-xs placeholder:text-slate-600 w-full">
                 </div>
                 <button data-action="remove" class="text-slate-600 hover:text-red-400 transition-all">
                     <i class="fas fa-times text-xs"></i>
                 </button>
             </div>
             
-            <div class="p-4 space-y-3.5">
-                <div class="grid grid-cols-2 gap-6 items-start">
-                    <div class="space-y-0.5">
+            <div class="p-5 space-y-4">
+                <div class="grid grid-cols-2 gap-4 items-start">
+                    <div class="space-y-1">
                         <div class="flex justify-between items-center h-4">
-                            <label class="label-std text-slate-500">Gross Amount</label>
-                            <button data-action="toggle-freq" data-id="isMonthly" class="text-blue-500 hover:text-blue-400 label-std">Annual</button>
+                            <label class="label-std">Gross Amount</label>
+                            <button data-action="toggle-freq" data-id="isMonthly" class="text-blue-500 hover:text-blue-400 label-std text-[9px]">Annual</button>
                         </div>
-                        <input data-id="amount" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-teal-400 font-bold mono-numbers">
+                        <input data-id="amount" data-type="currency" type="text" placeholder="$0" class="input-base text-teal-400 font-bold mono-numbers text-lg">
                     </div>
-                    <div class="space-y-0.5">
+                    <div class="space-y-1">
                         <div class="h-4 flex items-center">
-                            <label class="label-std text-slate-500">Annual Growth %</label>
+                            <label class="label-std">Growth %</label>
                         </div>
-                        <input data-id="increase" type="number" step="0.1" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                        <input data-id="increase" type="number" step="0.1" placeholder="0" class="input-base text-white font-bold mono-numbers text-lg">
                     </div>
                 </div>
 
-                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-700/30 space-y-2">
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="space-y-0.5 relative">
-                            <label class="label-std text-slate-500">401k %</label>
-                            <input data-id="contribution" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
-                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds Annual IRS Contribution Limit">
+                <div class="p-3 bg-black/20 rounded-xl border border-white/5 space-y-3">
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="space-y-1 relative">
+                            <label class="label-std">401k %</label>
+                            <input data-id="contribution" type="number" placeholder="0" class="input-base text-white font-bold mono-numbers text-center">
+                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds Limit">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
                         </div>
-                        <div class="space-y-0.5">
-                            <label class="label-std text-slate-500">Match %</label>
-                            <input data-id="match" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                        <div class="space-y-1">
+                            <label class="label-std">Match %</label>
+                            <input data-id="match" type="number" placeholder="0" class="input-base text-white font-bold mono-numbers text-center">
                         </div>
-                        <div class="space-y-0.5">
-                            <label class="label-std text-slate-500">Bonus %</label>
-                            <input data-id="bonusPct" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
+                        <div class="space-y-1">
+                            <label class="label-std">Bonus %</label>
+                            <input data-id="bonusPct" type="number" placeholder="0" class="input-base text-white font-bold mono-numbers text-center">
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-4 pt-1 border-t border-slate-700/20">
-                         <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input data-id="contribOnBonus" type="checkbox" class="w-2.5 h-2.5 accent-blue-500 rounded bg-slate-900 border-slate-600">
-                            <span class="text-[8px] font-bold text-slate-500 uppercase">On Bonus</span>
+                    <div class="flex items-center gap-4 pt-2 border-t border-white/5">
+                         <label class="flex items-center gap-2 cursor-pointer group">
+                            <input data-id="contribOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Contrib Bonus</span>
                          </label>
-                         <label class="flex items-center gap-1.5 cursor-pointer">
-                            <input data-id="matchOnBonus" type="checkbox" class="w-2.5 h-2.5 accent-blue-500 rounded bg-slate-900 border-slate-600">
-                            <span class="text-[8px] font-bold text-slate-500 uppercase">Match on Bonus</span>
+                         <label class="flex items-center gap-2 cursor-pointer group">
+                            <input data-id="matchOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Match Bonus</span>
                          </label>
                     </div>
                 </div>
 
-                <div class="space-y-0.5">
+                <div class="space-y-1">
                     <div class="flex justify-between items-center h-4">
-                        <label class="label-std text-slate-500">Direct Deductions</label>
-                        <button data-action="toggle-freq" data-id="incomeExpensesMonthly" class="text-blue-500 hover:text-blue-400 label-std">Annual</button>
+                        <label class="label-std text-slate-500">Deductions</label>
+                        <button data-action="toggle-freq" data-id="incomeExpensesMonthly" class="text-blue-500 hover:text-blue-400 label-std text-[9px]">Annual</button>
                     </div>
-                    <input data-id="incomeExpenses" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-pink-400 font-bold mono-numbers">
+                    <input data-id="incomeExpenses" data-type="currency" type="text" placeholder="$0" class="input-base text-pink-400 font-bold mono-numbers">
                 </div>
 
-                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-700/20">
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
                     <div class="flex items-center gap-2">
                         <label class="label-std text-slate-500">NT Until:</label>
-                        <input data-id="nonTaxableUntil" type="number" placeholder="2026" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-teal-400 font-bold mono-numbers text-[11px] w-14 outline-none">
+                        <input data-id="nonTaxableUntil" type="number" placeholder="2026" class="input-base w-16 text-center text-teal-400 font-bold mono-numbers px-1 py-0.5 h-6 text-[10px]">
                     </div>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input data-id="remainsInRetirement" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-700">
-                        <span class="text-[9px] font-black text-slate-500 uppercase hover:text-blue-400 transition-colors">Retirement Income?</span>
+                    <label class="flex items-center gap-2 cursor-pointer group">
+                        <input data-id="remainsInRetirement" type="checkbox" class="w-3.5 h-3.5 accent-blue-500 rounded bg-slate-900 border-white/20">
+                        <span class="text-[9px] font-black text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Retirement Income</span>
                     </label>
                 </div>
             </div>
@@ -200,8 +202,8 @@ export const templates = {
         const type = data.type || 'Taxable';
         const typeClass = templates.helpers.getTypeClass(type);
         const selectorHtml = data.isLocked 
-            ? `<div class="input-base bg-slate-900 border-none w-full font-black uppercase tracking-widest text-[11px] text-blue-400 flex items-center h-full">401k from Income</div><input type="hidden" data-id="type" value="Pre-Tax (401k/IRA)">` 
-            : `<select data-id="type" class="input-base bg-slate-900 text-white border-none w-full font-black uppercase tracking-widest text-[11px] ${typeClass} cursor-pointer outline-none">
+            ? `<div class="flex items-center gap-2 w-full"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span class="font-black uppercase tracking-wider text-[10px] text-blue-400">401k from Income</span></div><input type="hidden" data-id="type" value="Pre-Tax (401k/IRA)">` 
+            : `<select data-id="type" class="input-base uppercase tracking-wider text-[10px] ${typeClass} cursor-pointer">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
                         <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
@@ -213,68 +215,68 @@ export const templates = {
                     </select>`;
 
         return `
-            <td class="px-8 py-5 border-l-4 ${typeClass.replace('text-', 'border-')}">
+            <td class="pl-8 py-3 border-l-4 ${typeClass.replace('text-', 'border-')}">
                 <div class="flex items-center gap-3">
                     ${selectorHtml}
                 </div>
             </td>
-            <td class="px-6 py-5 text-center">
+            <td class="text-center">
                  ${data.isLocked ? '' : `
-                 <label class="inline-flex items-center px-3 py-1 bg-slate-900 rounded-full border border-slate-700 cursor-pointer hover:border-pink-500/50 transition-all" title="Contribution stops when you retire">
-                    <span class="text-[9px] uppercase font-black text-slate-500 mr-2">Stop</span>
+                 <label class="inline-flex items-center px-3 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Contribution stops when you retire">
+                    <span class="text-[9px] uppercase font-black text-slate-500 mr-2 group-hover:text-pink-400">Stop</span>
                     <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700">
                 </label>
                  `}
             </td>
-            <td class="px-6 py-5"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400/80 font-bold mono-numbers outline-none border-b border-slate-700/50 focus:border-teal-500" ${data.isLocked ? 'readonly' : ''}></td>
-            <td class="px-6 py-5"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers outline-none border-b border-slate-700/50 focus:border-teal-500" ${data.isLocked ? 'readonly' : ''}></td>
-            <td class="px-8 py-5 text-right">${data.isLocked ? '' : '<button data-action="remove" class="text-slate-600 hover:text-red-400 transition-colors"><i class="fas fa-times-circle"></i></button>'}</td>
+            <td class="text-right"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400/80 font-bold mono-numbers" ${data.isLocked ? 'readonly disabled' : ''}></td>
+            <td class="text-right"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers" ${data.isLocked ? 'readonly disabled' : ''}></td>
+            <td class="pr-8 text-right">${data.isLocked ? '' : '<button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button>'}</td>
         `;
     },
     "budget-expense": (data) => `
-        <td class="px-8 py-5 border-l-4 border-slate-700 group-hover:border-pink-500 transition-all">
-            <input data-id="name" type="text" placeholder="Expense Item" class="input-base bg-transparent border-none w-full font-black text-white uppercase tracking-wider text-sm outline-none placeholder:text-slate-600">
+        <td class="pl-8 py-3 border-l-4 border-slate-700 hover:border-pink-500 transition-colors">
+            <input data-id="name" type="text" placeholder="Item Name" class="input-base font-black uppercase tracking-wider text-xs">
         </td>
-        <td class="px-6 py-5">
-            <div class="flex items-center justify-center gap-3">
-                <label class="flex items-center px-2 py-1 bg-slate-900 rounded-lg border border-slate-700 cursor-pointer hover:border-pink-500/50 transition-all" title="Expense stops when you retire">
-                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5">Stop</span>
-                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700" ${data.removedInRetirement ? 'checked' : ''}>
+        <td class="text-center">
+            <div class="flex items-center justify-center gap-2">
+                <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Stop in Retirement">
+                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-pink-400">Stop</span>
+                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500" ${data.removedInRetirement ? 'checked' : ''}>
                 </label>
-                <label class="flex items-center px-2 py-1 bg-slate-900 rounded-lg border border-slate-700 cursor-pointer hover:border-blue-500/50 transition-all" title="Fixed cost (does not inflate)">
-                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5">Fixed</span>
-                    <input data-id="isFixed" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-700" ${data.isFixed ? 'checked' : ''}>
+                <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-blue-500/50 transition-all group" title="Fixed (No Inflation)">
+                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-blue-400">Fixed</span>
+                    <input data-id="isFixed" type="checkbox" class="w-3 h-3 accent-blue-500" ${data.isFixed ? 'checked' : ''}>
                 </label>
             </div>
         </td>
-        <td class="px-6 py-5"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-pink-400/80 font-bold mono-numbers outline-none border-b border-slate-700/50 focus:border-pink-500"></td>
-        <td class="px-6 py-5"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-pink-500 font-black mono-numbers outline-none border-b border-slate-700/50 focus:border-pink-500"></td>
-        <td class="px-8 py-5 text-right"><button data-action="remove" class="text-slate-600 hover:text-red-400 transition-colors"><i class="fas fa-times-circle"></i></button></td>
+        <td class="text-right"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-pink-400/80 font-bold mono-numbers"></td>
+        <td class="text-right"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-pink-500 font-black mono-numbers"></td>
+        <td class="pr-8 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     realEstate: () => `
-        <td><input data-id="name" type="text" placeholder="Property" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
-        <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
-        <td><input data-id="mortgage" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-bold mono-numbers"></td>
-        <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" title="Monthly Principal Payment" class="input-base w-full text-right text-blue-400 font-bold mono-numbers opacity-60"></td>
-        <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
+        <td class="pl-6"><input data-id="name" type="text" placeholder="Property" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
+        <td><input data-id="mortgage" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-bold mono-numbers"></td>
+        <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-blue-400 font-bold mono-numbers opacity-60" title="Monthly Principal"></td>
+        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     otherAsset: () => `
-        <td><input data-id="name" type="text" placeholder="Asset" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
-        <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
-        <td><input data-id="loan" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-bold mono-numbers"></td>
-        <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
+        <td class="pl-6"><input data-id="name" type="text" placeholder="Asset" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
+        <td><input data-id="loan" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-bold mono-numbers"></td>
+        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     heloc: (data) => `
-        <td><input data-id="name" type="text" placeholder="HELOC" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
-        <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-black mono-numbers"></td>
-        <td><input data-id="rate" type="number" step="0.1" placeholder="7.0" value="${data.rate || 7.0}" class="input-base w-full text-center text-red-400 font-bold mono-numbers"></td>
-        <td><input data-id="limit" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right font-bold mono-numbers"></td>
-        <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
+        <td class="pl-6"><input data-id="name" type="text" placeholder="HELOC" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-black mono-numbers"></td>
+        <td><input data-id="rate" type="number" step="0.1" placeholder="7.0" value="${data.rate || 7.0}" class="input-base text-center text-red-400 font-bold mono-numbers"></td>
+        <td><input data-id="limit" data-type="currency" type="text" placeholder="$0" class="input-base text-right font-bold mono-numbers"></td>
+        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     debt: () => `
-        <td><input data-id="name" type="text" placeholder="Debt" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
-        <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-black mono-numbers"></td>
-        <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" title="Monthly Principal Payment" class="input-base w-full text-right text-blue-400 font-bold mono-numbers opacity-60"></td>
-        <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
+        <td class="pl-6"><input data-id="name" type="text" placeholder="Debt" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-black mono-numbers"></td>
+        <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-blue-400 font-bold mono-numbers opacity-60" title="Monthly Payment"></td>
+        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `
 };
