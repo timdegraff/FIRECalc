@@ -9,14 +9,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>FIRECalc Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
@@ -33,75 +27,62 @@
 </script>
 </head>
 <body class="text-slate-300 bg-slate-950 font-inter safe-bottom">
-
-    <!-- Loading State (Initial View) -->
     <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-slate-950 z-[100]">
         <div class="p-8 text-center w-full">
             <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
             <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
-            <div id="loading-spinner" class="flex items-center justify-center gap-3 text-blue-500 font-bold uppercase tracking-widest text-[10px] mt-8">
-                <i class="fas fa-circle-notch fa-spin"></i>
-                Authenticating...
-            </div>
+            <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg active:scale-95 transition-all">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                Sign in with Google
+            </button>
         </div>
-        <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v3.2</div>
     </div>
-
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">
         
         <!-- Mobile Header -->
-        <header class="px-5 py-4 flex justify-between items-center bg-slate-900 border-b border-slate-800 flex-shrink-0">
+        <header class="p-5 flex justify-between items-center bg-slate-900 border-b border-slate-800 flex-shrink-0">
              <div class="flex flex-col">
-                <h1 class="text-xl font-black text-white tracking-tighter">FIRECalc</h1>
+                <h1 class="text-xl font-black text-white tracking-tighter uppercase">FIRECalc</h1>
                 <p id="mobile-nw-label" class="text-[10px] font-black text-teal-400 mono-numbers">$0 Net Worth</p>
              </div>
-             <div class="flex items-center gap-2">
-                <!-- Coffee Link -->
-                <a href="https://buymeacoffee.com/timdegraff" target="_blank" rel="noreferrer" class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-500 active:scale-95 transition-all">
-                    <i class="fas fa-coffee"></i>
-                </a>
-
-                <!-- Logout -->
-                <button id="logout-btn" class="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 active:scale-95 transition-all">
+             <div class="flex items-center gap-3">
+                <button id="logout-btn" class="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center text-slate-500 active:scale-95 transition-all">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
              </div>
         </header>
-
         <!-- Dynamic Content Area -->
-        <main id="mobile-content" class="flex-grow overflow-y-auto p-4 space-y-6 pb-20">
+        <main id="mobile-content" class="flex-grow overflow-y-auto p-4 space-y-6 pb-24">
             <!-- Tabs are injected here by mobile.js -->
         </main>
-
-        <!-- Bottom Navigation (Condensed) -->
-        <nav class="fixed bottom-0 left-0 right-0 h-16 bg-slate-900 border-t border-slate-800 flex items-center justify-between z-50 pb-safe px-2">
-            <button data-tab="assets-debts" class="mobile-nav-btn active">
-                <i class="fas fa-wallet text-lg mb-0.5"></i>
+        <!-- Floating Action Button -->
+        <button id="mobile-fab" class="fixed bottom-24 right-6 w-14 h-14 bg-teal-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-40 hidden active:scale-95 transition-transform">
+            <i class="fas fa-plus"></i>
+        </button>
+        <!-- Bottom Navigation -->
+        <nav class="fixed bottom-0 left-0 right-0 h-20 bg-slate-900 border-t border-slate-800 flex items-center justify-around z-50 pb-safe">
+            <button data-tab="assets-debts" class="mobile-nav-btn active flex flex-col items-center gap-1">
+                <i class="fas fa-wallet text-xl"></i>
                 <span class="text-[8px] uppercase font-black">Assets</span>
             </button>
-            <button data-tab="income" class="mobile-nav-btn">
-                <i class="fas fa-money-bill-wave text-lg mb-0.5"></i>
+            <button data-tab="income" class="mobile-nav-btn flex flex-col items-center gap-1">
+                <i class="fas fa-money-bill-wave text-xl"></i>
                 <span class="text-[8px] uppercase font-black">Income</span>
             </button>
-            <button data-tab="budget" class="mobile-nav-btn">
-                <i class="fas fa-chart-pie text-lg mb-0.5"></i>
+            <button data-tab="budget" class="mobile-nav-btn flex flex-col items-center gap-1">
+                <i class="fas fa-chart-pie text-xl"></i>
                 <span class="text-[8px] uppercase font-black">Budget</span>
             </button>
-            <button data-tab="more" class="mobile-nav-btn">
-                <i class="fas fa-sliders-h text-lg mb-0.5"></i>
+            <button data-tab="burndown" class="mobile-nav-btn flex flex-col items-center gap-1">
+                <i class="fas fa-stairs text-xl" style="transform: scaleX(-1);"></i>
+                <span class="text-[8px] uppercase font-black">Strategy</span>
+            </button>
+            <button data-tab="more" class="mobile-nav-btn flex flex-col items-center gap-1">
+                <i class="fas fa-ellipsis-h text-xl"></i>
                 <span class="text-[8px] uppercase font-black">More</span>
-            </button>
-            <button data-tab="burndown" class="mobile-nav-btn">
-                <i class="fas fa-stairs text-lg mb-0.5" style="transform: scaleX(-1);"></i>
-                <span class="text-[8px] uppercase font-black">Burndown</span>
-            </button>
-             <button data-tab="projection" class="mobile-nav-btn">
-                <i class="fas fa-chart-line text-lg mb-0.5"></i>
-                <span class="text-[8px] uppercase font-black">Chart</span>
             </button>
         </nav>
     </div>
-
     <!-- Inspector Overlay (Advanced Breakdown) -->
     <div id="inspector-overlay" class="fixed inset-0 bg-slate-950/90 z-[60] hidden flex flex-col">
         <div class="p-6 border-b border-slate-800 flex justify-between items-center">
@@ -110,7 +91,7 @@
         </div>
         <div id="inspector-log" class="p-6 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400"></div>
     </div>
-
+    
     <!-- Dynamic import with cache busting query string -->
     <script type="module">
         import "./mobile.js?v=3.2"; 
