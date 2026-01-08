@@ -11,6 +11,7 @@
     
     <title>FIRECalc Mobile</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>">
     <link rel="shortcut icon" href="#">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -48,6 +49,10 @@
                 <p id="mobile-nw-label" class="text-[10px] font-black text-teal-400 mono-numbers">$0 Net Worth</p>
              </div>
              <div class="flex items-center gap-3">
+                <!-- Mobile Save Indicator -->
+                <div id="save-indicator" class="text-slate-600 transition-colors duration-200" title="Data Sync Status">
+                    <i class="fas fa-cloud"></i>
+                </div>
                 <button id="logout-btn" class="w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center text-slate-500 active:scale-95 transition-all">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>

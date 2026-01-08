@@ -11,6 +11,13 @@ let autoSaveTimeout = null;
 
 window.debouncedAutoSave = () => {
     if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+    
+    // Trigger "Saving" State (Orange Flash)
+    const indicators = document.querySelectorAll('#save-indicator');
+    indicators.forEach(el => {
+        el.className = "text-orange-500 transition-colors duration-200"; 
+    });
+
     autoSaveTimeout = setTimeout(() => {
         autoSave();
     }, 1000);
@@ -57,6 +64,9 @@ async function loadData() {
     benefits.load(window.currentData.benefits);
     burndown.load(window.currentData.burndown);
     projection.load(window.currentData.projectionSettings);
+    
+    // Set initial synced state
+    document.querySelectorAll('#save-indicator').forEach(el => el.className = "text-green-500 transition-colors duration-200");
 }
 
 export function loadUserDataIntoUI(data) {
@@ -123,12 +133,31 @@ export async function autoSave(scrape = true) {
         try { 
             const sanitizedData = stripUndefined(window.currentData);
             await setDoc(doc(db, "users", user.uid), sanitizedData, { merge: true }); 
+            
+            // Set "Synced" State (Green)
+            const indicators = document.querySelectorAll('#save-indicator');
+            indicators.forEach(el => {
+                el.className = "text-green-500 transition-colors duration-200"; 
+            });
         }
-        catch (e) { console.error("Save Error:", e); }
+        catch (e) { 
+            console.error("Save Error:", e); 
+            // Set "Error" State (Red)
+            const indicators = document.querySelectorAll('#save-indicator');
+            indicators.forEach(el => {
+                el.className = "text-red-500 transition-colors duration-200"; 
+            });
+        }
     }
 }
 
 function scrapeDataFromUI() {
+    // Basic guard to prevent scraping if on mobile (since mobile has its own binding)
+    // However, data.js is shared. Mobile updates window.currentData directly via binding.
+    // Desktop updates via scrape. 
+    // If window.addMobileItem exists, we are likely on mobile and shouldn't scrape DOM that doesn't exist.
+    if (window.addMobileItem) return window.currentData;
+
     const prevData = window.currentData || getInitialData();
     const data = { 
         assumptions: { ...prevData.assumptions }, 
@@ -251,6 +280,7 @@ function getInitialData() {
 }
 
 export function updateSummaries(data) {
+    // Only run this on desktop where these IDs exist
     const s = engine.calculateSummaries(data);
     const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = math.toCurrency(v); };
     set('sidebar-networth', s.netWorth);

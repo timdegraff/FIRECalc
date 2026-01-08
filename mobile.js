@@ -3,7 +3,7 @@ import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence
 import { auth } from './firebase-config.js';
 import { initializeData, autoSave } from './data.js';
 import { logoutUser } from './auth.js';
-import { math, engine, assumptions, stateTaxRates } from './utils.js';
+import { math, engine, assumptions, stateTaxRates, assetColors } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
@@ -16,11 +16,23 @@ window.createAssumptionControls = () => {};
 window.debouncedAutoSave = () => {
     if (window.mobileSaveTimeout) clearTimeout(window.mobileSaveTimeout);
     window.mobileSaveTimeout = setTimeout(() => {
+        // Trigger Save Indicator State locally for Mobile logic
+        const indicators = document.querySelectorAll('#save-indicator');
+        indicators.forEach(el => el.className = "text-orange-500 transition-colors duration-200");
+        
         autoSave(false); // Save from memory (window.currentData)
     }, 1500);
 };
 
+// HAPTIC Helper - Remove this function content if you want to disable vibration
+function triggerHaptic() {
+    if (navigator.vibrate) {
+        navigator.vibrate(10); // Light 10ms tap
+    }
+}
+
 let currentTab = 'assets-debts';
+let assetChartInstance = null;
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
@@ -112,10 +124,21 @@ const MOBILE_TEMPLATES = {
                 </div>
                 <div id="m-debt-cards" class="space-y-2"></div>
             </div>
+            
+            <div class="pt-8 border-t border-slate-800">
+                <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 text-center">Asset Allocation</h3>
+                <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 h-[250px] relative">
+                    <canvas id="mobile-asset-chart"></canvas>
+                </div>
+            </div>
         </div>
     `,
     'income': () => `
         <div class="space-y-6">
+            <div id="mobile-income-summary" class="text-center py-2 border-b border-slate-800 mb-2">
+                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">2026 Gross Income</span>
+                <div id="val-income-total" class="text-3xl font-black text-teal-400 mono-numbers tracking-tighter">$0</div>
+            </div>
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-money-bill-wave text-teal-400 mr-2"></i>Income Sources</h2>
                 <button onclick="window.addMobileItem('income')" class="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus"></i></button>
@@ -125,6 +148,17 @@ const MOBILE_TEMPLATES = {
     `,
     'budget': () => `
         <div class="space-y-8">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Annual Savings</div>
+                    <div id="val-budget-savings" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
+                </div>
+                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Annual Spend</div>
+                    <div id="val-budget-spend" class="text-xl font-black text-pink-500 mono-numbers">$0</div>
+                </div>
+            </div>
+
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-piggy-bank text-emerald-400 mr-2"></i>ANNUAL SAVINGS</h2>
@@ -409,6 +443,7 @@ function attachGlobal() {
     
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
         btn.onclick = () => {
+            triggerHaptic(); // HAPTIC
             currentTab = btn.dataset.tab;
             document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -421,6 +456,7 @@ function attachGlobal() {
     if(fab) fab.classList.add('hidden');
     
     document.body.addEventListener('input', (e) => {
+        triggerHaptic(); // HAPTIC (on slider/input change)
         const input = e.target;
         
         // Handle Global Assumptions
@@ -490,6 +526,7 @@ function attachGlobal() {
         }
 
         if (window.debouncedAutoSave) window.debouncedAutoSave();
+        updateMobileSummaries(); // Update summaries on input
         updateMobileNW();
     });
 
@@ -505,6 +542,120 @@ function updateMobileNW() {
     if (lbl) lbl.textContent = `${math.toSmartCompactCurrency(s.netWorth)} Net Worth`;
 }
 
+function updateMobileSummaries() {
+    if (!window.currentData) return;
+    const s = engine.calculateSummaries(window.currentData);
+    
+    // Income Summary
+    const incomeTotal = document.getElementById('val-income-total');
+    if (incomeTotal) incomeTotal.textContent = math.toCurrency(s.totalGrossIncome);
+    
+    // Budget Summary
+    const budgetSavings = document.getElementById('val-budget-savings');
+    const budgetSpend = document.getElementById('val-budget-spend');
+    if (budgetSavings) budgetSavings.textContent = math.toSmartCompactCurrency(s.totalAnnualSavings);
+    if (budgetSpend) budgetSpend.textContent = math.toSmartCompactCurrency(s.totalAnnualBudget);
+}
+
+function renderMobileAssetChart() {
+    const ctx = document.getElementById('mobile-asset-chart');
+    if (!ctx || !window.currentData) return;
+    if (assetChartInstance) assetChartInstance.destroy();
+
+    const inv = window.currentData.investments || [];
+    const re = window.currentData.realEstate || [];
+    const oa = window.currentData.otherAssets || [];
+    
+    const buckets = {
+        'Stocks': inv.filter(i => ['Taxable', 'Pre-Tax (401k/IRA)', 'Post-Tax (Roth)', 'HSA', '529 Plan'].includes(i.type)).reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Real Estate': re.reduce((s, r) => s + math.fromCurrency(r.value), 0),
+        'Cash': inv.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Crypto': inv.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Metals': inv.filter(i => i.type === 'Metals').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Other': oa.reduce((s, o) => s + math.fromCurrency(o.value), 0)
+    };
+
+    const total = Object.values(buckets).reduce((a, b) => a + b, 0);
+    if (total === 0) return;
+
+    const data = [];
+    const labels = [];
+    const colors = [];
+    const bgColors = {
+        'Stocks': assetColors['Taxable'],
+        'Real Estate': assetColors['Real Estate'],
+        'Cash': assetColors['Cash'],
+        'Crypto': assetColors['Crypto'],
+        'Metals': assetColors['Metals'],
+        'Other': assetColors['Other']
+    };
+
+    Object.entries(buckets).forEach(([key, val]) => {
+        if (val > 0) {
+            labels.push(key);
+            data.push(val);
+            colors.push(bgColors[key]);
+        }
+    });
+
+    assetChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { 
+                    callbacks: {
+                        label: (context) => {
+                            const val = context.raw;
+                            const pct = Math.round((val / total) * 100);
+                            return `${context.label}: ${math.toSmartCompactCurrency(val)} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        },
+        plugins: [{
+            id: 'customLabels',
+            afterDraw: (chart) => {
+                const ctx = chart.ctx;
+                chart.data.datasets.forEach((dataset, i) => {
+                    chart.getDatasetMeta(i).data.forEach((datapoint, index) => {
+                        const { x, y } = datapoint.tooltipPosition();
+                        const val = dataset.data[index];
+                        const pct = (val / total) * 100;
+                        const label = chart.data.labels[index];
+                        
+                        // Mapping full names to short codes
+                        const shortMap = { 'Stocks': 'STK', 'Real Estate': 'RE', 'Cash': 'CSH', 'Crypto': 'BTC', 'Metals': 'Au', 'Other': 'OTH' };
+                        const shortLabel = shortMap[label] || label.substring(0,3).toUpperCase();
+
+                        // Only draw if > 5% or active (clicked)
+                        if (pct > 5 || datapoint.active) {
+                            ctx.fillStyle = '#fff';
+                            ctx.font = '900 10px Inter';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(`${shortLabel} ${Math.round(pct)}%`, x, y);
+                        }
+                    });
+                });
+            }
+        }]
+    });
+}
+
 function renderTab() {
     const main = document.getElementById('mobile-content');
     main.innerHTML = MOBILE_TEMPLATES[currentTab]();
@@ -516,13 +667,25 @@ function renderTab() {
     if(!window.currentData) return;
 
     if (currentTab === 'assets-debts') {
+        const checkEmpty = (arr, type) => { if (!arr || arr.length === 0) window.addMobileItem(type); };
+        
+        // Auto-add empty rows if empty (Pre-population Logic)
+        checkEmpty(window.currentData.investments, 'investments');
+        checkEmpty(window.currentData.realEstate, 'realEstate');
+        checkEmpty(window.currentData.otherAssets, 'otherAssets');
+        checkEmpty(window.currentData.helocs, 'helocs');
+        checkEmpty(window.currentData.debts, 'debts');
+
         window.currentData.investments?.forEach((i, idx) => addMobileRow('m-investment-cards', 'investment', i, idx, 'investments'));
         window.currentData.realEstate?.forEach((i, idx) => addMobileRow('m-re-cards', 'realEstate', i, idx, 'realEstate'));
         window.currentData.otherAssets?.forEach((i, idx) => addMobileRow('m-other-asset-cards', 'otherAsset', i, idx, 'otherAssets'));
         window.currentData.helocs?.forEach((i, idx) => addMobileRow('m-heloc-cards', 'heloc', i, idx, 'helocs'));
         window.currentData.debts?.forEach((d, idx) => addMobileRow('m-debt-cards', 'debt', d, idx, 'debts'));
+        
+        renderMobileAssetChart();
     }
     if (currentTab === 'income') {
+        if (!window.currentData.income || window.currentData.income.length === 0) window.addMobileItem('income');
         window.currentData.income?.forEach((i, idx) => addMobileRow('m-income-cards', 'income', i, idx, 'income'));
     }
     if (currentTab === 'budget') {
@@ -534,6 +697,9 @@ function renderTab() {
             isLocked: true 
         });
         
+        if (!window.currentData.budget?.savings || window.currentData.budget.savings.length === 0) window.addMobileItem('budget.savings');
+        if (!window.currentData.budget?.expenses || window.currentData.budget.expenses.length === 0) window.addMobileItem('budget.expenses');
+
         window.currentData.budget?.savings?.forEach((i, idx) => addMobileRow('m-budget-savings', 'savings', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
         window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
@@ -582,6 +748,7 @@ function renderTab() {
         renderMobileAssumptions();
     }
     
+    updateMobileSummaries();
     updateMobileNW();
     initSwipeHandlers();
 }
@@ -636,6 +803,7 @@ function initSwipeHandlers() {
             card.classList.add('snapping');
 
             if (currentTransformX < threshold) {
+                triggerHaptic(); // HAPTIC on snap open
                 // Snap Open (Reveal Trash)
                 card.style.transform = 'translateX(-80px)';
             } else {
@@ -647,6 +815,7 @@ function initSwipeHandlers() {
 }
 
 function performDelete(cardElement) {
+    triggerHaptic(); // HAPTIC on delete
     const card = cardElement.closest('.mobile-card');
     
     // Check dataset on the wrapper or the card itself (due to how we structure it in addMobileRow)
