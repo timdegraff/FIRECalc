@@ -163,19 +163,23 @@ const MOBILE_TEMPLATES = {
             </div>
             
             <div class="mobile-card mb-4 space-y-4">
-                <div>
-                    <div class="flex justify-between items-center mb-2">
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
                         <label class="mobile-label text-slate-500">Income Strategy Dial</label>
                         <span id="mobile-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
                     </div>
-                    <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    <div class="flex items-center gap-2">
+                        <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="mobile-slider">
+                    </div>
                 </div>
-                <div>
-                    <div class="flex justify-between items-center mb-2">
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
                          <label class="mobile-label text-slate-500">Retirement Age</label>
                          <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm">65</span>
                     </div>
-                    <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" value="65" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    <div class="flex items-center gap-2">
+                        <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" value="65" class="mobile-slider">
+                    </div>
                 </div>
             </div>
 
@@ -329,13 +333,11 @@ const ITEM_TEMPLATES = {
         if (data.isLocked) {
              return `
              <div class="mobile-card border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)] bg-slate-800/80 flex justify-between items-center gap-3">
-                <div class="flex flex-col w-1/2">
-                    <span class="mobile-label text-blue-400">Source</span>
-                    <div class="text-white font-black text-sm uppercase tracking-widest mt-1">401k from Income</div>
+                <div class="flex flex-col w-1/3">
+                    <div class="text-blue-400 font-black text-xs uppercase tracking-widest leading-tight">401k from Income</div>
                 </div>
-                <div class="text-right">
-                    <span class="mobile-label text-blue-400">Annual Amount</span>
-                    <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block w-full text-right bg-transparent text-blue-400 font-black text-lg mono-numbers outline-none" readonly>
+                <div class="text-right flex-grow">
+                    <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block w-full text-right bg-transparent text-blue-400 font-black text-3xl mono-numbers outline-none" readonly>
                 </div>
             </div>`;
         }
@@ -344,38 +346,33 @@ const ITEM_TEMPLATES = {
         const tc = ASSET_TYPE_COLORS[data.type] || 'text-white';
         return `
         <div class="mobile-card flex justify-between items-center gap-3">
-            <div class="flex flex-col w-1/2">
-                <div class="flex flex-col">
-                    <span class="mobile-label">Asset Type</span>
-                    <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 mt-1 outline-none ${tc}">
-                        <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
-                        <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
-                        <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
-                        <option value="Cash" ${data.type === 'Cash' ? 'selected' : ''}>Cash</option>
-                        <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
-                        <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
-                        <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
-                    </select>
-                </div>
+            <div class="flex flex-col w-5/12">
+                <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 outline-none ${tc} w-full">
+                    <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
+                    <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
+                    <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
+                    <option value="Cash" ${data.type === 'Cash' ? 'selected' : ''}>Cash</option>
+                    <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
+                    <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
+                    <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
+                </select>
                 <div class="flex gap-3 mt-2">
                     <label class="flex items-center gap-1"><input type="checkbox" data-id="removedInRetirement" ${data.removedInRetirement ? 'checked' : ''} class="w-3 h-3"><span class="text-[7px] uppercase font-black text-slate-500">Stop in Retire</span></label>
                 </div>
             </div>
-            <div class="text-right">
-                <span class="mobile-label">Annual Amount</span>
-                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400 font-black text-lg mono-numbers outline-none">
+            <div class="text-right flex-grow">
+                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400 font-black text-3xl mono-numbers outline-none">
             </div>
         </div>
         `;
     },
     expense: (data) => `
-        <div class="mobile-card flex justify-between items-center">
+        <div class="mobile-card py-2 flex justify-between items-center gap-2">
             <div class="flex flex-col w-1/2">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-xs outline-none" placeholder="Item Name">
             </div>
-            <div class="text-right">
-                <span class="mobile-label">Monthly</span>
-                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-pink-400 font-black text-lg mono-numbers outline-none">
+            <div class="text-right flex-grow">
+                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-center bg-transparent text-pink-400 font-black text-3xl mono-numbers outline-none">
             </div>
         </div>
     `
@@ -428,7 +425,26 @@ function attachGlobal() {
         
         // Handle Global Assumptions
         if (input.dataset.id && document.getElementById('m-assumptions-container') && input.closest('#m-assumptions-container')) {
-            (window.currentData.assumptions = window.currentData.assumptions || {})[input.dataset.id] = parseFloat(input.value) || 0;
+            const val = parseFloat(input.value) || 0;
+            const id = input.dataset.id;
+            
+            // Override advanced growth settings if user touches basic sliders on mobile
+            if (['stockGrowth', 'cryptoGrowth', 'metalsGrowth', 'realEstateGrowth'].includes(id)) {
+                if (window.currentData.assumptions) {
+                    window.currentData.assumptions.advancedGrowth = false;
+                }
+            }
+
+            // Also update the value display next to slider if it exists
+            const display = input.parentElement.querySelector('.mono-numbers');
+            if (display) {
+                if (id.includes('Growth') || id === 'inflation') display.textContent = val + '%';
+                else if (id === 'ssMonthly') display.textContent = math.toCurrency(val);
+                else display.textContent = val;
+            }
+            if (window.currentData.assumptions) {
+               window.currentData.assumptions[id] = val;
+            }
         }
 
         // Handle Burndown Dial
@@ -543,8 +559,10 @@ function renderTab() {
             if (retireLbl) retireLbl.textContent = window.currentData.assumptions.retirementAge;
         }
 
-        burndown.init();
+        // Do NOT call burndown.init() to avoid overwriting mobile controls
+        // Just run logic
         burndown.run();
+        
         setTimeout(() => {
             const container = document.getElementById('burndown-table-container');
             if (container) container.onclick = (e) => {
@@ -710,23 +728,26 @@ function renderMobileAssumptions() {
     if (!container) return;
     const a = window.currentData.assumptions || assumptions.defaults;
     
-    const slider = (label, id, min, max, step, val, suffix = '') => `
-        <div class="space-y-2">
+    // Updated slider template to use .mobile-slider class and blue headers
+    const slider = (label, id, min, max, step, val, suffix = '', colorClass = 'text-blue-400') => `
+        <label class="block space-y-1">
             <div class="flex justify-between items-center">
-                <span class="mobile-label">${label}</span>
-                <span class="text-white font-black mono-numbers text-xs">${val}${suffix}</span>
+                <span class="mobile-label ${colorClass}">${label}</span>
             </div>
-            <input data-id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
-        </div>
+            <div class="flex items-center gap-2">
+                <input data-id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}" class="mobile-slider">
+                <span class="${colorClass} font-bold mono-numbers w-10 text-right text-xs">${val}${suffix}</span>
+            </div>
+        </label>
     `;
 
     container.innerHTML = `
         <div class="grid grid-cols-2 gap-4">
-            <div>
+            <div class="space-y-1">
                 <span class="mobile-label">Current Age</span>
                 <input data-id="currentAge" type="number" value="${a.currentAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
             </div>
-            <div>
+            <div class="space-y-1">
                 <span class="mobile-label">Retirement Age</span>
                 <input data-id="retirementAge" type="number" value="${a.retirementAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-blue-400 outline-none">
             </div>
@@ -739,7 +760,7 @@ function renderMobileAssumptions() {
             </div>
              <div class="space-y-1">
                 <span class="mobile-label">State</span>
-                <select data-id="state" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-bold text-[10px] text-white outline-none">
+                <select data-id="state" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-bold text-[10px] text-white outline-none h-[46px]">
                     ${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
                 </select>
             </div>
@@ -760,19 +781,15 @@ function renderMobileAssumptions() {
         ${slider("Real Estate Growth", "realEstateGrowth", 0, 15, 0.5, a.realEstateGrowth, "%")}
         
         <div class="space-y-2 pt-4 border-t border-slate-700">
-             <div class="flex justify-between items-center">
-                <span class="mobile-label text-red-400">Inflation</span>
-                <span class="text-red-400 font-black mono-numbers text-xs">${a.inflation}%</span>
-            </div>
-            <input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
+             ${slider("Inflation", "inflation", 0, 10, 0.1, a.inflation, "%", "text-red-400")}
         </div>
 
         <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
-            <div>
+            <div class="space-y-1">
                 <span class="mobile-label">SS Start Age</span>
                 <input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
             </div>
-            <div>
+            <div class="space-y-1">
                 <span class="mobile-label">SS Monthly</span>
                 <input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-teal-400 outline-none">
             </div>
@@ -787,6 +804,12 @@ function renderMobileAssumptions() {
             window.currentData.benefits.hhSize = parseInt(e.target.value);
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         };
+    }
+    
+    // Bind currency formatting for SS Monthly
+    const ssInput = container.querySelector('[data-id="ssMonthly"]');
+    if (ssInput) {
+        formatter.bindCurrencyEventListeners(ssInput);
     }
 }
 
