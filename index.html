@@ -10,10 +10,9 @@
     
     <title>FIRECalc - Your Retirement Planner</title>
     <script>
-        // Surgical Mobile Detection with Cache Busting
+        // Surgical Mobile Detection
         if (window.innerWidth < 768 && !window.location.search.includes('desktop')) {
-            // Append timestamp to force fresh load on iPhone
-            window.location.href = 'mobile.html?t=' + new Date().getTime();
+            window.location.href = 'mobile.html';
         }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>

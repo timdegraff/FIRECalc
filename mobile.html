@@ -4,6 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA Persistence Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -39,7 +44,7 @@
                 Authenticating...
             </div>
         </div>
-        <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v3.1</div>
+        <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v3.2</div>
     </div>
 
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">
@@ -108,7 +113,7 @@
 
     <!-- Dynamic import with cache busting query string -->
     <script type="module">
-        import "./mobile.js?v=3.1"; 
+        import "./mobile.js?v=3.2"; 
     </script>
 </body>
 </html>

@@ -1,9 +1,8 @@
 
 import { 
     onAuthStateChanged, 
-    getRedirectResult, 
     GoogleAuthProvider, 
-    signInWithRedirect, 
+    signInWithPopup, 
     setPersistence, 
     browserLocalPersistence 
 } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
@@ -58,17 +57,23 @@ function showLoginUI() {
                    <a href="?desktop=true" class="text-[9px] font-black text-slate-700 uppercase tracking-widest border-b border-slate-800 pb-1">Switch to Desktop Version</a>
                 </div>
             </div>
-            <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v3.1</div>
+            <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v3.2</div>
         `;
 
         document.getElementById('mobile-login-btn').onclick = async () => {
             try {
-                document.getElementById('mobile-login-btn').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Redirecting...';
+                // Use Popup on mobile to avoid the index.html -> mobile.html redirect loop
+                // which strips OAuth parameters.
                 await setPersistence(auth, browserLocalPersistence);
-                await signInWithRedirect(auth, provider);
+                await signInWithPopup(auth, provider);
+                // The onAuthStateChanged listener will handle the UI update
             } catch (err) {
                 console.error("Manual Login Click Error:", err);
-                alert("Login Error: " + err.message);
+                if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+                     alert("Popup blocked. Please check browser settings.");
+                } else {
+                     alert("Login Error: " + err.message);
+                }
                 showLoginUI();
             }
         };
@@ -79,18 +84,7 @@ function showLoginUI() {
  * Robust App Start
  */
 async function startApp() {
-    // 1. Immediately handle any incoming redirect
-    try {
-        const result = await getRedirectResult(auth);
-        if (result?.user) {
-            console.log("Found redirect user:", result.user.uid);
-            // App state usually updates via onAuthStateChanged automatically
-        }
-    } catch (e) {
-        console.error("Redirect handler caught error:", e);
-    }
-
-    // 2. Main state listener
+    // 1. Main state listener
     onAuthStateChanged(auth, async (user) => {
         const loginScreen = document.getElementById('login-screen');
         const appContainer = document.getElementById('app-container');
@@ -107,7 +101,7 @@ async function startApp() {
         }
     });
 
-    // 3. Fallback: If Firebase is totally unresponsive (network/ISP blocks), show the login button after 3s
+    // 2. Fallback: If Firebase is totally unresponsive (network/ISP blocks), show the login button after 3s
     setTimeout(() => {
         const screen = document.getElementById('login-screen');
         if (screen && !screen.classList.contains('hidden') && screen.innerText.includes('Authenticating')) {
