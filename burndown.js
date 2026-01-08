@@ -203,7 +203,10 @@ export const burndown = {
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-top-retire-age', data.retirementAge || 65);
             if (data.dieWithZero) document.getElementById('btn-dwz-toggle')?.classList.add('active');
-            if (data.manualBudget) document.getElementById('input-manual-budget').value = math.toCurrency(data.manualBudget);
+            
+            // Fix: Add null check for input-manual-budget
+            const manualInput = document.getElementById('input-manual-budget');
+            if (data.manualBudget && manualInput) manualInput.value = math.toCurrency(data.manualBudget);
         }
 
         burndown.run();
