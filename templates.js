@@ -18,6 +18,7 @@ export const templates = {
 
             const styles = {
                 'Taxable': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                'Stock Options': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 'Pre-Tax (401k/IRA)': { color: 'text-amber-500', bg: 'bg-amber-500/10' },
                 'Post-Tax (Roth)': { color: 'text-purple-400', bg: 'bg-purple-400/10' },
                 'Cash': { color: 'text-pink-400', bg: 'bg-pink-400/10' },
@@ -33,7 +34,7 @@ export const templates = {
             if (type === 'Pre-Tax (401k/IRA)') {
                 const combinedRate = 0.22 + stateRate;
                 label = Math.round((1 - combinedRate) * 100) + '%';
-            } else if (['Taxable', 'Crypto', 'Metals'].includes(type)) {
+            } else if (['Taxable', 'Crypto', 'Metals', 'Stock Options'].includes(type)) {
                 const fedRate = (type === 'Metals') ? 0.28 : 0.15;
                 const combinedCapGainsRate = fedRate + stateRate;
                 const gainRatio = v > 0 ? Math.max(0, (v - b) / v) : 0;
@@ -54,7 +55,8 @@ export const templates = {
                 'Crypto': 'text-type-crypto',
                 'Metals': 'text-type-metals',
                 'HSA': 'text-type-hsa',
-                '529 Plan': 'text-type-529'
+                '529 Plan': 'text-type-529',
+                'Stock Options': 'text-type-taxable'
             };
             return map[type] || 'text-type-taxable';
         }
@@ -91,6 +93,15 @@ export const templates = {
         `;
     },
     
+    stockOption: (data) => `
+        <td><input data-id="name" type="text" placeholder="Company / Grant" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
+        <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base w-full text-right text-white font-bold mono-numbers"></td>
+        <td><input data-id="strikePrice" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-emerald-500 font-bold mono-numbers"></td>
+        <td><input data-id="currentPrice" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
+        <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-teal-400 font-black mono-numbers text-sm pr-4">$0</div></td>
+        <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
+    `,
+
     income: (data) => `
         <div class="removable-item bg-slate-800 rounded-2xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
             <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/40">

@@ -91,9 +91,10 @@ export function loadUserDataIntoUI(data) {
     clearDynamicContent();
     const populate = (arr, id, type) => {
         if (arr?.length) arr.forEach(item => window.addRow(id, type, item));
-        else if (!['budget-savings', 'heloc', 'debt'].includes(type)) window.addRow(id, type, {});
+        else if (!['budget-savings', 'heloc', 'debt', 'stockOption'].includes(type)) window.addRow(id, type, {});
     };
     populate(data.investments, 'investment-rows', 'investment');
+    populate(data.stockOptions, 'stock-option-rows', 'stockOption');
     populate(data.realEstate, 'real-estate-rows', 'realEstate');
     populate(data.otherAssets, 'other-assets-rows', 'otherAsset');
     populate(data.helocs, 'heloc-rows', 'heloc');
@@ -119,7 +120,7 @@ export function loadUserDataIntoUI(data) {
 }
 
 function clearDynamicContent() {
-    ['investment-rows', 'real-estate-rows', 'other-assets-rows', 'heloc-rows', 'debt-rows', 'income-cards', 'budget-savings-rows', 'budget-expenses-rows']
+    ['investment-rows', 'stock-option-rows', 'real-estate-rows', 'other-assets-rows', 'heloc-rows', 'debt-rows', 'income-cards', 'budget-savings-rows', 'budget-expenses-rows']
     .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
 }
 
@@ -181,15 +182,12 @@ function setSaveState(state) {
 
 function scrapeDataFromUI() {
     // Basic guard to prevent scraping if on mobile (since mobile has its own binding)
-    // However, data.js is shared. Mobile updates window.currentData directly via binding.
-    // Desktop updates via scrape. 
-    // If window.addMobileItem exists, we are likely on mobile and shouldn't scrape DOM that doesn't exist.
     if (window.addMobileItem) return window.currentData;
 
     const prevData = window.currentData || getInitialData();
     const data = { 
         assumptions: { ...prevData.assumptions }, 
-        investments: [], realEstate: [], otherAssets: [], helocs: [], debts: [], income: [], 
+        investments: [], stockOptions: [], realEstate: [], otherAssets: [], helocs: [], debts: [], income: [], 
         budget: { savings: [], expenses: [] }, 
         benefits: benefits.scrape(), 
         burndown: burndown.scrape(),
@@ -210,6 +208,7 @@ function scrapeDataFromUI() {
     });
 
     document.querySelectorAll('#investment-rows tr').forEach(r => data.investments.push(scrapeRow(r)));
+    document.querySelectorAll('#stock-option-rows tr').forEach(r => data.stockOptions.push(scrapeRow(r)));
     document.querySelectorAll('#real-estate-rows tr').forEach(r => data.realEstate.push(scrapeRow(r)));
     document.querySelectorAll('#other-assets-rows tr').forEach(r => data.otherAssets.push(scrapeRow(r)));
     document.querySelectorAll('#heloc-rows tr').forEach(r => data.helocs.push(scrapeRow(r, 'heloc')));
@@ -232,7 +231,7 @@ function scrapeDataFromUI() {
 function scrapeRow(row, rowType = null) {
     const d = {};
     row.querySelectorAll('[data-id]').forEach(i => {
-        if (i.tagName === 'BUTTON' || i.dataset.id === 'capWarning') return;
+        if (i.tagName === 'BUTTON' || i.dataset.id === 'capWarning' || i.dataset.id === 'netEquityDisplay') return;
         const k = i.dataset.id;
         if (i.type === 'checkbox') d[k] = i.checked;
         else if (i.dataset.type === 'currency') {
@@ -270,6 +269,7 @@ function getInitialData() {
             { name: "Vanguard 401k", type: "Pre-Tax (401k/IRA)", value: 300000, costBasis: 200000 },
             { name: "Roth IRA", type: "Post-Tax (Roth)", value: 200000, costBasis: 150000 }
         ], 
+        stockOptions: [],
         realEstate: [
             { name: "Primary Home", value: 450000, mortgage: 250000, principalPayment: 900 }
         ], 

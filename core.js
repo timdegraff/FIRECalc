@@ -90,6 +90,18 @@ function attachGlobalListeners() {
         const target = e.target;
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
             handleLinkedBudgetValues(target);
+            
+            // Handle Stock Options Net Equity Display
+            const optRow = target.closest('#stock-option-rows tr');
+            if (optRow) {
+                const shares = parseFloat(optRow.querySelector('[data-id="shares"]')?.value) || 0;
+                const strike = math.fromCurrency(optRow.querySelector('[data-id="strikePrice"]')?.value || "0");
+                const fmv = math.fromCurrency(optRow.querySelector('[data-id="currentPrice"]')?.value || "0");
+                const equity = Math.max(0, (fmv - strike) * shares);
+                const display = optRow.querySelector('[data-id="netEquityDisplay"]');
+                if (display) display.textContent = math.toCurrency(equity);
+            }
+
             const invRow = target.closest('#investment-rows tr');
             if (invRow) {
                 const valueEl = invRow.querySelector('[data-id="value"]'), basisEl = invRow.querySelector('[data-id="costBasis"]'), typeEl = invRow.querySelector('[data-id="type"]'), container = invRow.querySelector('[data-id="efficiency-container"]');
@@ -303,6 +315,17 @@ window.addRow = (containerId, type, data = {}) => {
             else input.value = val;
         }
     });
+
+    // Trigger update for Stock Option row
+    if (type === 'stockOption') {
+        const shares = parseFloat(element.querySelector('[data-id="shares"]')?.value) || 0;
+        const strike = math.fromCurrency(element.querySelector('[data-id="strikePrice"]')?.value || "0");
+        const fmv = math.fromCurrency(element.querySelector('[data-id="currentPrice"]')?.value || "0");
+        const equity = Math.max(0, (fmv - strike) * shares);
+        const display = element.querySelector('[data-id="netEquityDisplay"]');
+        if (display) display.textContent = math.toCurrency(equity);
+    }
+
     if (type === 'income') {
         const amtBtn = element.querySelector('[data-id="isMonthly"]'); if (amtBtn) amtBtn.textContent = data.isMonthly ? 'Monthly' : 'Annual';
         const expBtn = element.querySelector('[data-id="incomeExpensesMonthly"]'); if (expBtn) expBtn.textContent = data.incomeExpensesMonthly ? 'Monthly' : 'Annual';
@@ -322,6 +345,18 @@ window.updateSidebarChart = (data) => {
         totalSum += v; 
     });
 
+    // Stock Options (Net Equity)
+    const optionsEquity = (data.stockOptions || []).reduce((s, x) => {
+        const shares = parseFloat(x.shares) || 0;
+        const strike = math.fromCurrency(x.strikePrice);
+        const fmv = math.fromCurrency(x.currentPrice);
+        return s + Math.max(0, (fmv - strike) * shares);
+    }, 0);
+    if (optionsEquity > 0) {
+        totals['Stock Options'] = optionsEquity;
+        totalSum += optionsEquity;
+    }
+
     // Calculate HELOC Total (Secured Debt against RE)
     const helocTotal = data.helocs?.reduce((s, h) => s + math.fromCurrency(h.balance), 0) || 0;
 
@@ -329,9 +364,6 @@ window.updateSidebarChart = (data) => {
     data.realEstate?.forEach(r => { 
         const v = math.fromCurrency(r.value); 
         const m = math.fromCurrency(r.mortgage);
-        // We subtract the HELOC total from the Real Estate equity bucket
-        // (Assuming HELOCs are on the RE). 
-        // Note: If multiple properties, we just lump equity.
         const equity = v - m;
         totals['Real Estate'] = (totals['Real Estate'] || 0) + equity; 
         totalSum += equity; 
@@ -368,7 +400,7 @@ window.updateSidebarChart = (data) => {
     const legendContainer = document.getElementById('sidebar-asset-legend');
     if (legendContainer) {
         legendContainer.innerHTML = '';
-        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other', 'Debt': 'Debt' };
+        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Stock Options': 'Options', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other', 'Debt': 'Debt' };
         
         // Compact Formatter for Legend
         const compactFormat = (val) => {
@@ -382,13 +414,11 @@ window.updateSidebarChart = (data) => {
 
         Object.entries(totals).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
             if (value === 0) return; // Skip 0 items
-            // Allow negative values for Debt
             
             const color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']);
             const shortName = shortNames[type] || type;
             const item = document.createElement('div');
             item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
-            // Removed percentage, kept only Type and Compact Amount
             item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div><span class="truncate">${shortName}</span><span class="ml-auto text-slate-400 font-bold mono-numbers">${compactFormat(value)}</span>`;
             legendContainer.appendChild(item);
         });

@@ -5,6 +5,7 @@ export const assetColors = {
     'Cash': '#f472b6',
     'Taxable': '#10b981',
     'Brokerage': '#10b981',
+    'Stock Options': '#14b8a6',
     'Pre-Tax (401k/IRA)': '#3b82f6',
     'Pre-Tax': '#3b82f6',
     'Post-Tax (Roth)': '#a855f7',
@@ -43,7 +44,7 @@ export const stateTaxRates = {
     'Connecticut': { rate: 0.06, taxesSS: true },
     'Minnesota': { rate: 0.07, taxesSS: true },
     'Montana': { rate: 0.05, taxesSS: true },
-    'New Mexico': { rate: 0.049, taxesSS: true },
+    'New Mexico': { role: 0.049, taxesSS: true },
     'Rhode Island': { rate: 0.04, taxesSS: true },
     'Utah': { rate: 0.0465, taxesSS: true },
     'Vermont': { rate: 0.06, taxesSS: true },
@@ -83,6 +84,7 @@ export const math = {
         // Growth is stored as percentages (e.g. 8.0)
         const keyMap = {
             'Stock': 'stockGrowth',
+            'Stock Options': 'stockGrowth',
             'Crypto': 'cryptoGrowth',
             'Metals': 'metalsGrowth',
             'RealEstate': 'realEstateGrowth'
@@ -203,8 +205,16 @@ export const engine = {
         return Math.floor(Math.max(0, maxBenefit - (Math.max(0, adjIncome - finalShelterDeduction) * 0.3)));
     },
     calculateSummaries: (data) => {
-        const inv = data.investments || [], re = data.realEstate || [], oa = data.otherAssets || [], helocs = data.helocs || [], debts = data.debts || [], inc = data.income || [], budget = data.budget || { savings: [], expenses: [] };
-        const totalAssets = inv.reduce((s, x) => s + math.fromCurrency(x.value), 0) + re.reduce((s, x) => s + math.fromCurrency(x.value), 0) + oa.reduce((s, x) => s + math.fromCurrency(x.value), 0);
+        const inv = data.investments || [], options = data.stockOptions || [], re = data.realEstate || [], oa = data.otherAssets || [], helocs = data.helocs || [], debts = data.debts || [], inc = data.income || [], budget = data.budget || { savings: [], expenses: [] };
+        
+        const optionsEquity = options.reduce((s, x) => {
+            const shares = parseFloat(x.shares) || 0;
+            const strike = math.fromCurrency(x.strikePrice);
+            const fmv = math.fromCurrency(x.currentPrice);
+            return s + Math.max(0, (fmv - strike) * shares);
+        }, 0);
+
+        const totalAssets = inv.reduce((s, x) => s + math.fromCurrency(x.value), 0) + optionsEquity + re.reduce((s, x) => s + math.fromCurrency(x.value), 0) + oa.reduce((s, x) => s + math.fromCurrency(x.value), 0);
         const totalLiabilities = re.reduce((s, x) => s + math.fromCurrency(x.mortgage), 0) + oa.reduce((s, x) => s + math.fromCurrency(x.loan), 0) + helocs.reduce((s, h) => s + math.fromCurrency(h.balance), 0) + debts.reduce((s, x) => s + math.fromCurrency(x.balance), 0);
         let total401kContribution = 0, totalGrossIncome = 0; 
         inc.forEach(x => {

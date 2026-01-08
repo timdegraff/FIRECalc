@@ -41,12 +41,20 @@ export const projection = {
 
     run: (data) => {
         if (typeof Chart === 'undefined') return;
-        const { assumptions, investments = [], realEstate = [], otherAssets = [], budget = {} } = data;
+        const { assumptions, investments = [], stockOptions = [], realEstate = [], otherAssets = [], budget = {} } = data;
         const currentYear = new Date().getFullYear(), chartEndAge = parseFloat(document.getElementById('input-projection-end')?.value) || 72, maxSimAge = 100, duration = maxSimAge - assumptions.currentAge;
+
+        const optionsEquity = stockOptions.reduce((s, x) => {
+            const shares = parseFloat(x.shares) || 0;
+            const strike = math.fromCurrency(x.strikePrice);
+            const fmv = math.fromCurrency(x.currentPrice);
+            return s + Math.max(0, (fmv - strike) * shares);
+        }, 0);
 
         let buckets = {
             'Cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'Brokerage': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+            'Stock Options': optionsEquity,
             'Pre-Tax': investments.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'Post-Tax': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'Crypto': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -75,7 +83,7 @@ export const projection = {
                 let disp = isRealDollars ? (buckets[key] / infFac) : buckets[key];
                 if (age <= chartEndAge) datasets[idx].data.push(disp);
                 currentYearBuckets[key] = disp;
-                if (['Brokerage', 'Pre-Tax', 'Post-Tax', 'HSA'].includes(key)) buckets[key] *= (1 + stockGrowth);
+                if (['Brokerage', 'Pre-Tax', 'Post-Tax', 'HSA', 'Stock Options'].includes(key)) buckets[key] *= (1 + stockGrowth);
                 else if (key === 'Crypto') buckets[key] *= (1 + cryptoGrowth);
                 else if (key === 'Metals') buckets[key] *= (1 + metalsGrowth);
                 else if (key === 'Real Estate') buckets[key] *= (1 + realEstateGrowth);
