@@ -326,6 +326,20 @@ const ITEM_TEMPLATES = {
         </div>
     `,
     savings: (data) => {
+        if (data.isLocked) {
+             return `
+             <div class="mobile-card border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)] bg-slate-800/80 flex justify-between items-center gap-3">
+                <div class="flex flex-col w-1/2">
+                    <span class="mobile-label text-blue-400">Source</span>
+                    <div class="text-white font-black text-sm uppercase tracking-widest mt-1">401k from Income</div>
+                </div>
+                <div class="text-right">
+                    <span class="mobile-label text-blue-400">Annual Amount</span>
+                    <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block w-full text-right bg-transparent text-blue-400 font-black text-lg mono-numbers outline-none" readonly>
+                </div>
+            </div>`;
+        }
+        
         const ASSET_TYPE_COLORS = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400' };
         const tc = ASSET_TYPE_COLORS[data.type] || 'text-white';
         return `
@@ -496,6 +510,14 @@ function renderTab() {
         window.currentData.income?.forEach((i, idx) => addMobileRow('m-income-cards', 'income', i, idx, 'income'));
     }
     if (currentTab === 'budget') {
+        const s = engine.calculateSummaries(window.currentData);
+        // Add the calculated locked 401k row first
+        addMobileRow('m-budget-savings', 'savings', { 
+            type: 'Pre-Tax (401k/IRA)', 
+            annual: s.total401kContribution, 
+            isLocked: true 
+        });
+        
         window.currentData.budget?.savings?.forEach((i, idx) => addMobileRow('m-budget-savings', 'savings', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
         window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
@@ -635,6 +657,17 @@ function openInspector(age) {
 function addMobileRow(containerId, type, data = {}, index = null, arrayName = null) {
     const container = document.getElementById(containerId);
     if (!container) return;
+
+    if (data.isLocked) {
+        // Render simple container without swipe logic
+        const simpleContainer = document.createElement('div');
+        simpleContainer.className = 'mb-3';
+        simpleContainer.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : '';
+        // Add currency binding just in case
+        simpleContainer.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
+        container.appendChild(simpleContainer);
+        return;
+    }
 
     // Create the outer swipe wrapper
     const outer = document.createElement('div');

@@ -175,11 +175,9 @@ export const templates = {
     `,
     "budget-savings": (data) => {
         const type = data.type || 'Taxable';
-        return `
-            <td class="px-6 py-3">
-                <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-6 rounded-full ${templates.helpers.getTypeClass(type).replace('text-', 'bg-')}"></div>
-                    <select data-id="type" class="input-base bg-slate-900 text-white border-none w-full font-black uppercase tracking-widest text-[11px] ${templates.helpers.getTypeClass(type)} cursor-pointer outline-none">
+        const selectorHtml = data.isLocked 
+            ? `<div class="input-base bg-slate-900 border-none w-full font-black uppercase tracking-widest text-[11px] text-blue-400 flex items-center h-full">401k from Income</div><input type="hidden" data-id="type" value="Pre-Tax (401k/IRA)">` 
+            : `<select data-id="type" class="input-base bg-slate-900 text-white border-none w-full font-black uppercase tracking-widest text-[11px] ${templates.helpers.getTypeClass(type)} cursor-pointer outline-none">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
                         <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
@@ -188,7 +186,13 @@ export const templates = {
                         <option value="Metals" ${type === 'Metals' ? 'selected' : ''}>Metals</option>
                         <option value="HSA" ${type === 'HSA' ? 'selected' : ''}>HSA</option>
                         <option value="529 Plan" ${type === '529 Plan' ? 'selected' : ''}>529 Plan</option>
-                    </select>
+                    </select>`;
+
+        return `
+            <td class="px-6 py-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-1.5 h-6 rounded-full ${templates.helpers.getTypeClass(type).replace('text-', 'bg-')}"></div>
+                    ${selectorHtml}
                 </div>
             </td>
             <td class="px-6 py-3 text-center">
