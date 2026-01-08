@@ -262,7 +262,6 @@ export const templates = {
         <td><input data-id="name" type="text" placeholder="Asset" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
         <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="loan" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-red-400 font-bold mono-numbers"></td>
-        <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" title="Monthly Principal Payment" class="input-base w-full text-right text-blue-400 font-bold mono-numbers opacity-60"></td>
         <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
     `,
     heloc: (data) => `

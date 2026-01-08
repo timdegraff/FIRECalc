@@ -357,7 +357,7 @@ export function updateSummaries(data) {
     
     // Assumptions
     const yrsToRetire = Math.max(0, (data.assumptions?.retirementAge || 65) - (data.assumptions?.currentAge || 40));
-    setRaw('sum-yrs-to-retire', `${yrsToRetire} Years`);
+    setRaw('sum-yrs-to-retire', `${yrsToRetire} ${yrsToRetire === 1 ? 'Year' : 'Years'}`);
     const lifeExp = engine.getLifeExpectancy(data.assumptions?.currentAge || 40);
     setRaw('sum-life-exp', `Age ${Math.round((data.assumptions?.currentAge || 40) + lifeExp)}`);
     
