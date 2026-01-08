@@ -8,12 +8,12 @@ export const benefits = {
         
         container.innerHTML = `
             <div class="max-w-7xl mx-auto space-y-4">
-                <!-- Header -->
-                <div class="flex items-center justify-between mb-4 px-1">
+                <!-- Mobile Summary Replacement logic handled in mobile.js if on mobile -->
+                <div class="md:flex items-center justify-between mb-4 px-1 hidden">
                     <h2 class="text-xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
                         <i class="fas fa-hand-holding-heart text-amber-400"></i> Benefit Optimization
                     </h2>
-                    <div class="hidden md:flex items-center gap-4 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
+                    <div class="flex items-center gap-4 bg-slate-800 p-1.5 rounded-xl border border-slate-700">
                          <span class="label-std text-slate-500 pl-2">Household Size</span>
                          <div class="flex items-center gap-2">
                              <input type="range" data-benefit-id="hhSize" min="1" max="10" step="1" value="1" class="w-24 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
@@ -22,13 +22,14 @@ export const benefits = {
                     </div>
                 </div>
 
+                <!-- TEST ANNUAL MAGI (Fixed Mobile Layout) -->
                 <div class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-lg p-4">
-                    <div class="flex justify-between items-center">
-                        <div class="space-y-0.5">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-end">
                              <label class="label-std text-slate-500">Test Annual MAGI</label>
-                             <div class="text-2xl font-black text-white mono-numbers" data-label="unifiedIncome">$0</div>
+                             <div class="text-2xl font-black text-white mono-numbers leading-none" data-label="unifiedIncome">$0</div>
                         </div>
-                        <input type="range" data-benefit-id="unifiedIncome" min="0" max="150000" step="1000" value="40000" class="w-2/3 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                        <input type="range" data-benefit-id="unifiedIncome" min="0" max="150000" step="1000" value="40000" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500">
                     </div>
                 </div>
 
@@ -48,12 +49,11 @@ export const benefits = {
                             </div>
                         </div>
                         <div class="p-4 flex flex-col gap-3 flex-grow">
-                            <div class="text-center hidden md:block">
+                            <div class="text-center">
                                 <span class="label-std text-slate-500 block mb-0.5">Plan Status</span>
                                 <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Platinum</div>
                                 <div id="health-sub-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">100% Full Coverage</div>
                             </div>
-                            <!-- DYNAMIC HEALTH BAR -->
                             <div class="relative h-2 bg-slate-950 rounded-full border border-slate-700 overflow-hidden flex w-full my-1">
                                 <div id="seg-medicaid" class="bg-emerald-500/80 h-full border-r border-slate-900/50"></div>
                                 <div id="seg-hmp" class="bg-emerald-400/60 h-full border-r border-slate-900/50"></div>
@@ -61,7 +61,7 @@ export const benefits = {
                                 <div id="seg-gold" class="bg-amber-500/60 h-full border-r border-slate-900/50"></div>
                                 <div id="health-marker" class="absolute top-0 w-1.5 h-full bg-white shadow-[0_0_10px_white] transition-all z-10 rounded-full"></div>
                             </div>
-                            <div class="mt-auto pt-1 hidden md:block">
+                            <div class="mt-auto pt-1">
                                 <table class="w-full text-[10px]">
                                     <tbody>
                                         <tr><td class="py-0.5 text-slate-500 font-medium">Est. Monthly Premium</td><td class="py-0.5 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
@@ -90,7 +90,7 @@ export const benefits = {
                             </div>
                         </div>
                         <div class="p-2 md:p-4 flex flex-col gap-1 md:gap-3 flex-grow">
-                            <div class="flex-grow flex flex-col items-center justify-center py-0 md:py-2 text-center">
+                            <div class="flex-grow flex flex-col items-center justify-center py-2 text-center">
                                 <span class="label-std text-slate-500 mb-0.5">Monthly Benefit</span>
                                 <div id="snap-result-value" class="text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg">$0</div>
                                 <div id="snap-annual-value" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Total Annual: $0</div>
@@ -123,13 +123,7 @@ export const benefits = {
         container.querySelectorAll('input').forEach(input => {
             input.oninput = () => {
                 if (input.dataset.benefitId === 'hhSize') {
-                    // Update all hhSize inputs (including desktop sidebar if visible)
                     document.querySelectorAll('[data-benefit-id="hhSize"]').forEach(el => el.value = input.value);
-                    // Also update mobile view manually if needed
-                    const mobileDisplay = document.querySelector('#m-assumptions-container span[class*="text-white"]');
-                    if (mobileDisplay && input.closest('#m-assumptions-container')) {
-                         mobileDisplay.textContent = input.value;
-                    }
                 }
                 benefits.refresh();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
@@ -197,6 +191,10 @@ export const benefits = {
             document.getElementById('card-healthcare').className = `card-container bg-slate-800 rounded-2xl border overflow-hidden shadow-lg transition-all duration-300 ${borderColor} flex flex-col`;
             document.getElementById('health-cost-badge').textContent = prem === "$0" ? "FREE" : `${prem} / mo`;
             document.getElementById('health-cost-badge').className = `px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest min-w-[60px] text-center ${prem === "$0" ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`;
+            
+            // Sync with Mobile Summary
+            const mobStatus = document.getElementById('mobile-val-health-plan');
+            if (mobStatus) mobStatus.textContent = main;
         };
 
         if (ratio <= medRatio) {
@@ -211,7 +209,7 @@ export const benefits = {
              setHealth("Gold Plan", "ACA Subsidy Cap", formattedPrem, "$1500", "text-amber-400", "border-amber-500/30");
         } else {
              const formattedPrem = math.toCurrency(dynamicPremium);
-             setHealth("Standard", "Subsidy Phase-out", formattedPrem, "$4000+", "text-slate-500", "border-slate-700");
+             setHealth("Private", "Subsidy Phase-out", formattedPrem, "$4000+", "text-slate-500", "border-slate-700");
         }
 
         const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled);
@@ -222,6 +220,9 @@ export const benefits = {
         snapRes.textContent = math.toCurrency(estimatedBenefit);
         snapAnnual.textContent = `Total Annual: ${math.toCurrency(estimatedBenefit * 12)}`;
         
+        const mobSnap = document.getElementById('mobile-val-snap-amt');
+        if (mobSnap) mobSnap.textContent = math.toCurrency(estimatedBenefit);
+
         if (estimatedBenefit <= 0) {
             snapRes.className = "text-5xl font-black text-slate-700 mono-numbers tracking-tighter transition-all";
             snapAnnual.className = "text-[10px] font-bold text-slate-600 uppercase tracking-widest mt-0.5";

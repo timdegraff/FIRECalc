@@ -96,13 +96,13 @@ window.addMobileItem = (type) => {
 const MOBILE_TEMPLATES = {
     'assets-debts': () => `
         <div class="space-y-8">
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
-                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Assets</div>
+            <div id="mobile-assets-summary" class="text-center py-2 border-b border-slate-800 mb-2 grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Assets</span>
                     <div id="val-total-assets" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
                 </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
-                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Debts</div>
+                <div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Debts</span>
                     <div id="val-total-debts" class="text-xl font-black text-red-400 mono-numbers">$0</div>
                 </div>
             </div>
@@ -167,29 +167,31 @@ const MOBILE_TEMPLATES = {
                 <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">2026 Gross Income</span>
                 <div id="val-income-total" class="text-3xl font-black text-teal-400 mono-numbers tracking-tighter">$0</div>
             </div>
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-money-bill-wave text-teal-400 mr-2"></i>Income Sources</h2>
-                <button onclick="window.addMobileItem('income')" class="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus"></i></button>
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-money-bill-wave text-teal-400 mr-2"></i>Income Sources</h2>
+                    <button onclick="window.addMobileItem('income')" class="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-income-cards" class="space-y-3"></div>
             </div>
-            <div id="m-income-cards" class="space-y-3"></div>
         </div>
     `,
     'budget': () => `
         <div class="space-y-8">
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
-                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Annual Savings</div>
+            <div id="mobile-budget-summary" class="text-center py-2 border-b border-slate-800 mb-2 grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Annual Savings</span>
                     <div id="val-budget-savings" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
                 </div>
-                <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
-                    <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Annual Spend</div>
+                <div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Annual Spend</span>
                     <div id="val-budget-spend" class="text-xl font-black text-pink-500 mono-numbers">$0</div>
                 </div>
             </div>
 
             <div>
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-piggy-bank text-emerald-400 mr-2"></i>ANNUAL SAVINGS</h2>
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-piggy-bank text-emerald-400 mr-2"></i>ANNUAL SAVINGS</h2>
                     <button onclick="window.addMobileItem('budget.savings')" class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-emerald-900/20"><i class="fas fa-plus"></i></button>
                 </div>
                 <div id="m-budget-savings" class="space-y-2"></div>
@@ -197,26 +199,47 @@ const MOBILE_TEMPLATES = {
             
             <div>
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-pie text-pink-500 mr-2"></i>MONTHLY SPENDING</h2>
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-pie text-pink-500 mr-2"></i>MONTHLY SPENDING</h2>
                     <button onclick="window.addMobileItem('budget.expenses')" class="w-10 h-10 bg-pink-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-pink-900/20"><i class="fas fa-plus"></i></button>
                 </div>
                 <div id="m-budget-expenses" class="space-y-2"></div>
             </div>
         </div>
     `,
-    'benefits': () => `<div id="benefits-module" class="space-y-6"></div>`,
+    'benefits': () => `
+        <div class="space-y-6">
+            <div id="mobile-benefits-summary" class="text-center py-2 border-b border-slate-800 mb-2 grid grid-cols-2 gap-4">
+                <div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Health Plan</span>
+                    <div id="mobile-val-health-plan" class="text-xl font-black text-blue-400 uppercase tracking-tight truncate">Platinum</div>
+                </div>
+                <div>
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Est. SNAP</span>
+                    <div id="mobile-val-snap-amt" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
+                </div>
+            </div>
+            <div id="benefits-module" class="space-y-6"></div>
+        </div>
+    `,
     'assumptions': () => `
         <div class="space-y-8">
-            <div class="flex items-center gap-2">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
+            <div id="mobile-assumptions-summary" class="text-center py-2 border-b border-slate-800 mb-2">
+                <button id="btn-reset-defaults-mobile" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest active:scale-95 active:bg-slate-700 transition-all">
+                    <i class="fas fa-undo-alt mr-2"></i> Reset to Defaults
+                </button>
             </div>
-            <div id="m-assumptions-container" class="space-y-4"></div>
+            <div>
+                <div class="flex items-center gap-2 mb-4">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
+                </div>
+                <div id="m-assumptions-container" class="space-y-4"></div>
+            </div>
         </div>
     `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
              <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
+                <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
             </div>
             
             <div class="mobile-card mb-4 space-y-4">
@@ -618,7 +641,7 @@ function attachGlobal() {
             const lbl = document.getElementById('mobile-strategy-status');
             if (lbl) {
                 const val = parseInt(input.value);
-                lbl.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Standard");
+                lbl.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Private");
             }
             burndown.run(); 
         }
@@ -796,7 +819,7 @@ function renderTab() {
         if (dial && window.currentData.burndown?.strategyDial !== undefined) {
              dial.value = window.currentData.burndown.strategyDial;
              const val = parseInt(dial.value);
-             if (dialStatus) dialStatus.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Standard");
+             if (dialStatus) dialStatus.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Private");
         }
         
         const retireInp = document.getElementById('input-top-retire-age');
@@ -833,6 +856,23 @@ function renderTab() {
     }
     if (currentTab === 'assumptions') {
         renderMobileAssumptions();
+        const resetBtn = document.getElementById('btn-reset-defaults-mobile');
+        if (resetBtn) {
+            resetBtn.onclick = () => {
+                triggerHaptic();
+                if (confirm('Reset all market assumptions to default?')) {
+                    const marketDefaults = { stockGrowth: 8, cryptoGrowth: 10, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 };
+                    Object.entries(marketDefaults).forEach(([id, val]) => {
+                        if (window.currentData.assumptions) {
+                            window.currentData.assumptions[id] = val;
+                            window.currentData.assumptions[id + 'Perpetual'] = val;
+                        }
+                    });
+                    renderMobileAssumptions();
+                    if (window.debouncedAutoSave) window.debouncedAutoSave();
+                }
+            };
+        }
     }
     
     updateMobileSummaries();

@@ -128,7 +128,7 @@ export const burndown = {
                 if (id === 'input-strategy-dial') {
                     const lbl = document.getElementById('label-strategy-status');
                     const val = parseInt(el.value);
-                    lbl.textContent = val <= 33 ? "Platinum Zone" : (val <= 66 ? "Silver CSR Zone" : "Standard / Budget Focus");
+                    lbl.textContent = val <= 33 ? "Platinum Zone" : (val <= 66 ? "Silver CSR Zone" : "Budget Strategy");
                 }
                 if (id === 'input-top-retire-age') {
                     document.getElementById('label-top-retire-age').textContent = el.value;
@@ -377,7 +377,6 @@ export const burndown = {
             let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
             
             // Adjusted Go-Go (30-50), Slow-Go (50-80), No-Go (80+) spending logic
-            // Using assumptions factors: slowGoFactor (GO-GO), midGoFactor (SLOW-GO), noGoFactor (NO-GO)
             let factor = 1.0;
             if (isRet) {
                 if (age < 50) factor = assumptions.slowGoFactor || 1.1; // GO-GO
@@ -409,20 +408,13 @@ export const burndown = {
             const hsaCont = budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
             ordInc -= (pretaxDed + hsaCont);
             
-            // --- AUTOMATED 72T BRIDGE LOGIC ---
-            // Triggers if: 1) Retired 2) Under 59.5 3) Cash is low
             if (isRet && age < 59.5) {
                 const projectedShortfall = targetBudget - (netAvail + bal['cash'] + bal['taxable']);
-                // Only trigger if we actually need the money or if the user is 100% relying on 401k
                 if (projectedShortfall > 0 && bal['401k'] > 0) {
                     const seppMax = engine.calculateMaxSepp(bal['401k'], age);
-                    // Take only what we need or the max allowed
                     const seppTake = Math.min(seppMax, projectedShortfall); 
-                    
                     if (seppTake > 0) {
-                        bal['401k'] -= seppTake;
-                        ordInc += seppTake;
-                        netAvail += seppTake;
+                        bal['401k'] -= seppTake; ordInc += seppTake; netAvail += seppTake;
                         trace.push(`<span class="text-amber-400">⚠️ 72t Bridge Triggered: Withdrew ${math.toCurrency(seppTake)} (Max: ${math.toCurrency(seppMax)}) to cover shortfall.</span>`);
                     }
                 }
@@ -440,7 +432,6 @@ export const burndown = {
                 const meta = burndown.assetMeta[pk];
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
                 
-                // Buffer increased to 25% to avoid undershooting MAGI due to tax estimation errors
                 const estimatedCashCap = (targetBudget + (ordIter * 0.25)) - (netAvail + drawn);
                 if (estimatedCashCap <= 0.01) {
                     trace.push(`[Optimization] MAGI Harvesting capped for ${pk} - cash already covers needs.`);
@@ -449,10 +440,7 @@ export const burndown = {
 
                 const gr = pk === 'taxable' ? Math.max(0.01, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
                 let take = Math.min(bal[pk], (magiTarget - ordIter) / gr);
-                
-                // Don't sell more total assets than the cash needed for the budget
                 take = Math.min(take, estimatedCashCap);
-
                 if (take <= 0.01) return;
 
                 bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); 
@@ -463,7 +451,6 @@ export const burndown = {
             // --- LOOP 2: COVER CASH SHORTFALL ---
             let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
             const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
-            
             let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
             
             if (snapBen > 0) trace.push(`<span class="text-emerald-400">SNAP Benefit covering: ${math.toCurrency(snapBen)}</span>`);
@@ -472,18 +459,9 @@ export const burndown = {
                 trace.push(`Cash Shortfall detected: ${math.toCurrency(shortfall)}`);
                 burndown.priorityOrder.forEach(pk => {
                     if (shortfall <= 0.01) return;
-                    
-                    // FIXED: Ensure we don't take negative amounts if HELOC balance > limit
-                    let availableLiquidity = 0;
-                    if (pk === 'heloc') {
-                        availableLiquidity = Math.max(0, helocLimit - bal['heloc']);
-                    } else {
-                        availableLiquidity = bal[pk] || 0;
-                    }
-
+                    let availableLiquidity = pk === 'heloc' ? Math.max(0, helocLimit - bal['heloc']) : (bal[pk] || 0);
                     const take = Math.min(availableLiquidity, shortfall);
                     if (take <= 0) return;
-
                     if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
                     drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
                     trace.push(`Shortfall pull from ${pk}: ${math.toCurrency(take)}`);
@@ -501,7 +479,7 @@ export const burndown = {
                 liquid: liquidAssets
             };
             if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
-            yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Standard')));
+            yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Private')));
             
             trace.push(`<span class="text-white">Year End MAGI: ${math.toCurrency(magi)}</span>`);
             trace.push(`<span class="text-red-400">Year End Taxes: ${math.toCurrency(totalTax)}</span>`);
@@ -511,8 +489,7 @@ export const burndown = {
             results.push(yearRes);
 
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
-            bal['crypto'] *= (1 + cryptoGrowth); 
-            bal['metals'] *= (1 + metalsGrowth);
+            bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
             if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); 
             bal['roth-earnings'] += (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth;
         }
@@ -529,13 +506,12 @@ export const burndown = {
 
         const rows = results.map((r, i) => {
             const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
-            const badgeClass = r.status === 'INSOLVENT' ? 'bg-red-600 text-white' : (r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'));
+            const badgeClass = r.status === 'INSOLVENT' ? 'bg-red-600 text-white' : (r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-500 text-white')));
             const isRetYear = r.age === lastUsedRetirementAge;
             const retBadge = isRetYear ? `<span class="block text-[7px] text-yellow-400 mt-0.5 tracking-tighter">RET YEAR</span>` : '';
 
             if (isMobile) {
                 if (r.age > 70 && r.age % 5 !== 0) return '';
-                
                 return `<tr class="border-b border-slate-800/50 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}">
                     <td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td>
                     <td class="p-2 text-right">
