@@ -205,10 +205,9 @@ const ITEM_TEMPLATES = {
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Account Name">
             </div>
-            <div class="flex justify-between items-end">
+            <div class="flex justify-between items-end mt-1">
                 <div class="flex flex-col">
-                    <span class="mobile-label">Asset Class</span>
-                    <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 mt-1 outline-none ${tc}">
+                    <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 outline-none ${tc}">
                         <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
                         <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
@@ -218,9 +217,8 @@ const ITEM_TEMPLATES = {
                         <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
                     </select>
                 </div>
-                <div class="text-right">
-                    <span class="mobile-label">Balance</span>
-                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-2xl mono-numbers outline-none">
+                <div class="text-right flex-grow">
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-4xl mono-numbers outline-none leading-none">
                 </div>
             </div>
         </div>`;
@@ -431,11 +429,11 @@ function attachGlobal() {
             burndown.run(); // Re-run calc if dial changes
         }
         
-        // Handle Card Data Binding
-        const card = input.closest('.mobile-card');
-        if (card && card.dataset.array && card.dataset.index !== undefined) {
-            const arrName = card.dataset.array;
-            const idx = parseInt(card.dataset.index);
+        // Handle Card Data Binding - Fix: Use closest('[data-array]') to find the wrapper
+        const wrapper = input.closest('[data-array]');
+        if (wrapper && wrapper.dataset.index !== undefined) {
+            const arrName = wrapper.dataset.array;
+            const idx = parseInt(wrapper.dataset.index);
             const key = input.dataset.id;
             let val = input.value;
             
