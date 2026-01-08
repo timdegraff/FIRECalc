@@ -1,8 +1,8 @@
 
-import { onAuthStateChanged, getRedirectResult, GoogleAuthProvider, signInWithRedirect, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { initializeData, autoSave, updateSummaries } from './data.js';
-import { logoutUser } from './auth.js';
+import { signInWithGoogle, logoutUser } from './auth.js';
 import { math, engine, assetColors, assumptions, stateTaxRates } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
@@ -22,33 +22,40 @@ window.debouncedAutoSave = () => {
 
 let currentTab = 'assets-debts';
 
-// --- MOBILE AUTH STRATEGY (REDIRECT ONLY) ---
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: 'select_account' });
-
-async function performMobileLogin() {
-    try {
-        await setPersistence(auth, browserLocalPersistence);
-        await signInWithRedirect(auth, provider);
-    } catch (error) {
-        console.error("Mobile Login Error:", error);
-        alert("Login failed. Please try again.");
+// --- AUTH SAFETY NET ---
+// If onAuthStateChanged fails to fire within 4 seconds, force the login button to appear.
+// This prevents the "Authenticating..." spinner of death.
+const authSafetyTimeout = setTimeout(() => {
+    const loginScreen = document.getElementById('login-screen');
+    // Only intervene if we are still stuck on the spinner
+    if (loginScreen && !loginScreen.classList.contains('hidden') && loginScreen.innerHTML.includes('Authenticating')) {
+        console.warn("Auth timed out, forcing login button.");
+        showLoginButton(loginScreen);
     }
-}
+}, 4000);
 
-// Handle Redirect Result (Essential for Mobile Flow)
-getRedirectResult(auth)
-    .then((result) => {
-        if (result) {
-            console.log("Mobile redirect successful", result.user?.uid);
-        }
-    })
-    .catch(e => {
-        console.error("Mobile Redirect Catch:", e);
-    });
+function showLoginButton(loginScreen) {
+    if (!loginScreen) return;
+    loginScreen.classList.remove('hidden'); 
+    loginScreen.innerHTML = `
+        <div class="p-8 text-center w-full">
+            <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
+            <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
+            <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
+                Sign in with Google
+            </button>
+        </div>
+        <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v2.9</div>`;
+    
+    const btn = document.getElementById('login-btn');
+    if (btn) btn.onclick = signInWithGoogle; // Uses auth.js redirect method
+}
 
 // 2. Listen for state changes
 onAuthStateChanged(auth, async (user) => {
+    clearTimeout(authSafetyTimeout); // We got a response, cancel safety net
+    
     const loginScreen = document.getElementById('login-screen');
     const appContainer = document.getElementById('app-container');
 
@@ -62,22 +69,7 @@ onAuthStateChanged(auth, async (user) => {
     else { 
         // --- LOGGED OUT ---
         if (appContainer) appContainer.classList.add('hidden'); 
-        
-        if (loginScreen) {
-            loginScreen.classList.remove('hidden'); 
-            // Reset to clean Login Button state
-            loginScreen.innerHTML = `
-                <div class="p-8 text-center w-full">
-                    <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
-                    <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
-                    <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
-                        Sign in with Google
-                    </button>
-                </div>
-                <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v2.8</div>`;
-            document.getElementById('login-btn').onclick = performMobileLogin;
-        }
+        showLoginButton(loginScreen);
     }
 });
 
@@ -193,39 +185,11 @@ function init() {
     attachGlobal();
     attachSwipeListeners();
     
-    onAuthStateChanged(auth, async (user) => {
-        const loginScreen = document.getElementById('login-screen');
-        const appContainer = document.getElementById('app-container');
-
-        if (user) { 
-            await initializeData(user); 
-            if (loginScreen) loginScreen.classList.add('hidden'); 
-            if (appContainer) appContainer.classList.remove('hidden'); 
-            renderTab(); 
-        }
-        else { 
-            // Standard state: just show the login screen if no user
-            if (appContainer) appContainer.classList.add('hidden'); 
-            if (loginScreen) {
-                loginScreen.classList.remove('hidden'); 
-                loginScreen.innerHTML = `
-                    <div class="p-8 text-center w-full">
-                        <h1 class="text-5xl font-black mb-1 text-white tracking-tighter">FIRECalc</h1>
-                        <p class="text-slate-500 mb-12 font-bold uppercase tracking-widest text-[10px]">Mobile Retirement Engine</p>
-                        <button id="login-btn" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black shadow-xl flex items-center justify-center gap-3 text-lg">
-                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
-                            Sign in with Google
-                        </button>
-                    </div>
-                    <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v2.8</div>`;
-                document.getElementById('login-btn').onclick = performMobileLogin;
-            }
-        }
-    });
+    // Auth Listener attached above at global scope to ensure it catches early events
 }
 
 function attachGlobal() {
-    const lb = document.getElementById('login-btn'); if(lb) lb.onclick = performMobileLogin;
+    const lb = document.getElementById('login-btn'); if(lb) lb.onclick = signInWithGoogle;
     const lob = document.getElementById('logout-btn'); if(lob) lob.onclick = logoutUser;
     
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
