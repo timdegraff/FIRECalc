@@ -22,75 +22,98 @@ export const burndown = {
 
         viewContainer.innerHTML = `
             <div class="flex flex-col gap-4">
-                <div class="card-container p-6 bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl">
-                    <div class="flex flex-wrap items-center justify-between gap-8 mb-6">
-                        <div class="flex flex-col">
-                            <h3 class="text-2xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
-                                <i class="fas fa-microchip text-purple-400"></i> Burndown Engine
-                            </h3>
-                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">Decumulation Logic Orchestrator</span>
+                <!-- Top Bar: Title + Primary Inputs -->
+                <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4 border-b border-slate-800 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                            <i class="fas fa-microchip text-purple-400 text-lg"></i>
                         </div>
-                        <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
-                             <div class="flex flex-col gap-1">
-                                <label class="label-std text-slate-500 text-[9px]">Retirement Age <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers">65</span></label>
-                                <div class="flex items-center gap-2">
-                                    <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-[10px] font-black transition-all">-</button>
-                                    <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="input-range w-24">
-                                    <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-lg text-white text-[10px] font-black transition-all">+</button>
-                                </div>
-                             </div>
-                             <div class="w-[1px] h-8 bg-slate-700"></div>
-                             <div class="flex flex-col gap-1">
-                                <label class="label-std text-slate-500 text-[9px]">Budget Logic</label>
-                                <div class="flex items-center gap-2">
-                                    <label class="flex items-center gap-2 cursor-pointer">
-                                        <input type="checkbox" id="toggle-budget-sync" checked class="w-3 h-3 accent-blue-500 rounded bg-slate-800 border-slate-600">
-                                        <span class="text-[9px] text-slate-300 font-bold uppercase">Sync</span>
-                                    </label>
-                                    <div id="manual-budget-container" class="hidden">
-                                        <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-0.5 text-[10px] text-teal-400 font-black outline-none w-20 mono-numbers">
-                                    </div>
-                                </div>
-                             </div>
-                        </div>
-                        <div class="h-10 w-[1px] bg-slate-700 mx-2 hidden lg:block"></div>
-                        <div class="flex items-center gap-6 bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
-                            <div class="flex flex-col gap-1.5 min-w-[280px]">
-                                <div class="flex justify-between items-center w-full">
-                                    <label class="label-std text-slate-500 text-[9px]">Burndown Dial (MAGI Target)</label>
-                                    <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
-                                </div>
-                                <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full">
-                            </div>
-                            <div class="w-[1px] h-10 bg-slate-700"></div>
-                            <div class="flex flex-col items-center justify-center min-w-[90px]">
-                                <span class="label-std text-slate-500 text-[8px]">Est. SNAP</span>
-                                <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-xs text-center w-full transition-all duration-300">$0/mo</span>
-                            </div>
+                        <div>
+                            <h3 class="text-lg font-black text-white uppercase tracking-tighter leading-none">Burndown Engine</h3>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Decumulation Logic</span>
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-4 border-t border-slate-700/50 pt-4">
-                        <label class="flex items-center gap-4 px-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700 cursor-pointer group transition-all hover:bg-slate-900">
-                            <input type="checkbox" id="toggle-rule-72t" class="w-4 h-4 accent-blue-500">
-                            <div class="flex flex-col"><span class="label-std text-slate-300">Allow 72t Bridge</span><span class="text-[8px] text-slate-600 uppercase font-black">Auto-trigger</span></div>
-                        </label>
-                        <button id="btn-dwz-toggle" class="px-4 py-2 bg-slate-900/50 rounded-xl border border-slate-700 text-left transition-all hover:bg-slate-900 flex items-center gap-3 group min-w-[160px]">
-                            <div class="w-4 h-4 rounded-full border-2 border-slate-700 flex items-center justify-center group-[.active]:border-rose-500 group-[.active]:bg-rose-500/20"><div class="w-1.5 h-1.5 rounded-full bg-slate-700 group-[.active]:bg-rose-500"></div></div>
-                            <div class="flex flex-col"><span id="dwz-label" class="label-std text-slate-500 group-[.active]:text-rose-400">Die With Zero</span><span id="dwz-sub" class="text-[8px] text-slate-600 uppercase font-black">Target $0</span></div>
-                        </button>
-                        <button id="toggle-burndown-real" class="ml-auto px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-xl label-std font-black text-slate-400 hover:text-white transition-all flex items-center gap-2">
-                            <i class="fas fa-calendar-alt"></i> Nominal Dollars
-                        </button>
+                    
+                    <!-- Primary Controls moved to header -->
+                    <div class="flex items-center gap-6">
+                         <!-- Retirement Age -->
+                         <div class="flex flex-col items-end gap-1">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Retirement Age</label>
+                            <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-lg border border-slate-700">
+                                <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
+                                <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm w-6 text-center">65</span>
+                                <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
+                                <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="hidden"> 
+                            </div>
+                         </div>
+                         
+                         <!-- Budget -->
+                         <div class="flex flex-col items-end gap-1">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Annual Spend</label>
+                            <div class="flex items-center gap-2">
+                                <div id="manual-budget-container" class="hidden">
+                                    <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-teal-400 font-bold text-right w-24 mono-numbers outline-none focus:border-blue-500">
+                                </div>
+                                <label class="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2 py-1 rounded-lg hover:border-slate-600 transition-all">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase">Sync Budget</span>
+                                    <input type="checkbox" id="toggle-budget-sync" checked class="w-3 h-3 accent-blue-500 rounded bg-slate-800 border-slate-600">
+                                </label>
+                            </div>
+                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-slate-700/50">
-                        <div class="flex flex-wrap items-center gap-3">
-                            <span class="label-std text-slate-500 font-black">Draw Order Priority:</span>
-                            <div id="draw-priority-list" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- Strategy Dashboard -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    
+                    <!-- Card 1: MAGI Strategy -->
+                    <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-center">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">MAGI Strategy Target</label>
+                            <div class="flex items-center gap-2">
+                                <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[10px] uppercase tracking-widest bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20">Platinum Zone</span>
+                            </div>
+                        </div>
+                        <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full mb-2">
+                        <div class="flex justify-between items-center mt-1">
+                            <span class="text-[8px] font-bold text-slate-600 uppercase">Min (Medicaid)</span>
+                            <span class="text-[8px] font-bold text-slate-600 uppercase">Max (Uncapped)</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Configuration & Feedback -->
+                    <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex items-center justify-between gap-4">
+                        
+                        <!-- SNAP Badge -->
+                        <div class="flex flex-col items-center justify-center border-r border-slate-800 pr-4 min-w-[80px]">
+                            <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Est. SNAP</span>
+                            <span id="est-snap-indicator" class="text-lg font-black text-emerald-400 mono-numbers leading-none">$0</span>
+                            <span class="text-[8px] font-bold text-slate-600">per month</span>
+                        </div>
+
+                        <!-- Toggles -->
+                        <div class="flex gap-2 flex-wrap justify-end flex-grow">
+                             <button id="btn-dwz-toggle" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl flex items-center gap-2 group hover:bg-slate-700 transition-all">
+                                <div class="w-3 h-3 rounded-full border border-slate-500 group-[.active]:bg-rose-500 group-[.active]:border-rose-500"></div>
+                                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest group-[.active]:text-white">Die With Zero</span>
+                             </button>
+                             
+                             <button id="toggle-burndown-real" class="px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-all">
+                                Nominal $
+                             </button>
                         </div>
                     </div>
                 </div>
-                <div class="card-container p-6 bg-slate-900/50 rounded-3xl border border-slate-800 overflow-hidden shadow-inner">
-                    <div id="burndown-table-container" class="max-h-[75vh] overflow-auto rounded-2xl border border-slate-800 mono-numbers"></div>
+
+                <!-- Priority List -->
+                <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-wrap items-center gap-3">
+                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">Draw Order:</span>
+                    <div id="draw-priority-list" class="flex flex-wrap items-center gap-2"></div>
+                </div>
+
+                <!-- Table -->
+                <div class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl mt-2">
+                    <div id="burndown-table-container" class="max-h-[60vh] overflow-auto mono-numbers"></div>
                 </div>
             </div>
         `;
@@ -99,7 +122,7 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        ['input-strategy-dial', 'toggle-rule-72t', 'toggle-budget-sync', 'input-top-retire-age'].forEach(id => {
+        ['input-strategy-dial', 'toggle-budget-sync', 'input-top-retire-age'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
                 if (id === 'input-strategy-dial') {
@@ -204,7 +227,6 @@ export const burndown = {
 
         if (data) {
             sync('input-strategy-dial', data.strategyDial || 33);
-            sync('toggle-rule-72t', data.useSEPP || false, true);
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-top-retire-age', data.retirementAge || 65);
             if (data.dieWithZero) document.getElementById('btn-dwz-toggle')?.classList.add('active');
@@ -221,7 +243,6 @@ export const burndown = {
         priority: burndown.priorityOrder,
         strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
         useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
-        useSEPP: document.getElementById('toggle-rule-72t')?.checked ?? false,
         dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
         retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
@@ -247,16 +268,22 @@ export const burndown = {
         const priorityList = document.getElementById('draw-priority-list');
         if (priorityList && !priorityList.innerHTML) {
             burndown.priorityOrder = [...new Set(burndown.priorityOrder)];
-            priorityList.innerHTML = burndown.priorityOrder.map(k => {
+            priorityList.innerHTML = burndown.priorityOrder.map((k, idx) => {
                 const meta = burndown.assetMeta[k];
-                return `<div data-pk="${k}" class="px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-[9px] font-bold cursor-move hover:border-slate-500" style="color: ${meta.color}">${meta.short}</div>`;
+                const arrow = idx < burndown.priorityOrder.length - 1 ? `<i class="fas fa-chevron-right text-slate-700 text-[8px] mx-1"></i>` : '';
+                return `<div data-pk="${k}" class="px-2 py-1 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-lg text-[9px] font-bold cursor-move transition-colors flex items-center gap-2" style="color: ${meta.color}"><i class="fas fa-grip-vertical text-slate-700 mr-1"></i>${meta.short}</div>${arrow}`;
             }).join('');
+            
             if (typeof Sortable !== 'undefined' && !burndown.sortable) {
                 burndown.sortable = new Sortable(priorityList, {
                     animation: 150,
+                    filter: '.fa-chevron-right', // Ignore arrows
                     onEnd: () => {
-                        burndown.priorityOrder = Array.from(priorityList.children).map(el => el.dataset.pk);
-                        burndown.run();
+                        // Re-scrape ignoring arrows
+                        burndown.priorityOrder = Array.from(priorityList.children)
+                            .filter(el => el.dataset && el.dataset.pk)
+                            .map(el => el.dataset.pk);
+                        burndown.run(); // Re-render to fix arrow positions
                         if (window.debouncedAutoSave) window.debouncedAutoSave();
                     }
                 });
@@ -285,7 +312,7 @@ export const burndown = {
         if (results.length > 0) {
             const firstRetYear = results.find(r => r.age >= config.retirementAge) || results[0];
             const snapInd = document.getElementById('est-snap-indicator');
-            if (snapInd) snapInd.textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}/mo`;
+            if (snapInd) snapInd.textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}`;
         }
 
         const tableContainer = document.getElementById('burndown-table-container');
@@ -381,6 +408,26 @@ export const burndown = {
             
             const hsaCont = budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
             ordInc -= (pretaxDed + hsaCont);
+            
+            // --- AUTOMATED 72T BRIDGE LOGIC ---
+            // Triggers if: 1) Retired 2) Under 59.5 3) Cash is low
+            if (isRet && age < 59.5) {
+                const projectedShortfall = targetBudget - (netAvail + bal['cash'] + bal['taxable']);
+                // Only trigger if we actually need the money or if the user is 100% relying on 401k
+                if (projectedShortfall > 0 && bal['401k'] > 0) {
+                    const seppMax = engine.calculateMaxSepp(bal['401k'], age);
+                    // Take only what we need or the max allowed
+                    const seppTake = Math.min(seppMax, projectedShortfall); 
+                    
+                    if (seppTake > 0) {
+                        bal['401k'] -= seppTake;
+                        ordInc += seppTake;
+                        netAvail += seppTake;
+                        trace.push(`<span class="text-amber-400">⚠️ 72t Bridge Triggered: Withdrew ${math.toCurrency(seppTake)} (Max: ${math.toCurrency(seppMax)}) to cover shortfall.</span>`);
+                    }
+                }
+            }
+
             trace.push(`Fixed Income & Deductions: ${math.toCurrency(netAvail)} cash, ${math.toCurrency(ordInc)} MAGI base`);
             
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
