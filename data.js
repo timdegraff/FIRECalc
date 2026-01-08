@@ -91,7 +91,8 @@ export function loadUserDataIntoUI(data) {
     clearDynamicContent();
     const populate = (arr, id, type) => {
         if (arr?.length) arr.forEach(item => window.addRow(id, type, item));
-        else if (!['budget-savings', 'heloc', 'debt', 'stockOption'].includes(type)) window.addRow(id, type, {});
+        // Removed stockOption from the exclusion list so it auto-adds a blank row if empty
+        else if (!['budget-savings', 'heloc', 'debt'].includes(type)) window.addRow(id, type, {});
     };
     populate(data.investments, 'investment-rows', 'investment');
     populate(data.stockOptions, 'stock-option-rows', 'stockOption');
@@ -269,7 +270,9 @@ function getInitialData() {
             { name: "Vanguard 401k", type: "Pre-Tax (401k/IRA)", value: 300000, costBasis: 200000 },
             { name: "Roth IRA", type: "Post-Tax (Roth)", value: 200000, costBasis: 150000 }
         ], 
-        stockOptions: [],
+        stockOptions: [
+            { name: "Startup Grant (Example)", shares: 5000, strikePrice: 1.00, currentPrice: 5.00, growth: 15, isLtcg: true }
+        ],
         realEstate: [
             { name: "Primary Home", value: 450000, mortgage: 250000, principalPayment: 900 }
         ], 
