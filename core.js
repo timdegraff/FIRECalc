@@ -314,9 +314,32 @@ window.addRow = (containerId, type, data = {}) => {
 
 window.updateSidebarChart = (data) => {
     const totals = {}; let totalSum = 0;
-    data.investments?.forEach(i => { const v = math.fromCurrency(i.value); totals[i.type] = (totals[i.type] || 0) + v; totalSum += v; });
-    data.realEstate?.forEach(r => { const v = math.fromCurrency(r.value); totals['Real Estate'] = (totals['Real Estate'] || 0) + v; totalSum += v; });
-    data.otherAssets?.forEach(o => { const v = math.fromCurrency(o.value); totals['Other'] = (totals['Other'] || 0) + v; totalSum += v; });
+    
+    // Investments
+    data.investments?.forEach(i => { 
+        const v = math.fromCurrency(i.value); 
+        totals[i.type] = (totals[i.type] || 0) + v; 
+        totalSum += v; 
+    });
+
+    // Real Estate: Show Equity (Value - Mortgage)
+    data.realEstate?.forEach(r => { 
+        const v = math.fromCurrency(r.value); 
+        const m = math.fromCurrency(r.mortgage);
+        const equity = v - m;
+        totals['Real Estate'] = (totals['Real Estate'] || 0) + equity; 
+        totalSum += equity; 
+    });
+
+    // Other Assets: Show Equity (Value - Loan)
+    data.otherAssets?.forEach(o => { 
+        const v = math.fromCurrency(o.value); 
+        const l = math.fromCurrency(o.loan);
+        const equity = v - l;
+        totals['Other'] = (totals['Other'] || 0) + equity; 
+        totalSum += equity; 
+    });
+
     if (lastChartSum !== 0 && (Math.abs(totalSum - lastChartSum) / lastChartSum) < 0.005) return;
     lastChartSum = totalSum;
     const legendContainer = document.getElementById('sidebar-asset-legend');
