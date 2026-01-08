@@ -5,6 +5,7 @@ import { math, engine, assetColors, stateTaxRates } from './utils.js';
 let isRealDollars = false;
 let simulationTrace = {}; 
 let firstInsolvencyAge = null; 
+let lastUsedRetirementAge = 65;
 
 export const burndown = {
     getIsRealDollars: () => isRealDollars,
@@ -64,7 +65,7 @@ export const burndown = {
                             <div class="w-[1px] h-10 bg-slate-700"></div>
                             <div class="flex flex-col items-center justify-center min-w-[90px]">
                                 <span class="label-std text-slate-500 text-[8px]">Est. SNAP</span>
-                                <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-xs text-center w-full">$0/mo</span>
+                                <span id="est-snap-indicator" class="text-emerald-400 font-black mono-numbers text-xs text-center w-full transition-all duration-300">$0/mo</span>
                             </div>
                         </div>
                     </div>
@@ -255,6 +256,7 @@ export const burndown = {
         }
 
         const config = burndown.scrape();
+        lastUsedRetirementAge = config.retirementAge; 
         let results = [];
 
         if (config.dieWithZero) {
@@ -291,10 +293,13 @@ export const burndown = {
     },
 
     simulateProjection: (data, overrideManualBudget = null) => {
-        const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = [], debts = [] } = data;
+        // Safe Destructuring with defaults
+        const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = {}, debts = [] } = data;
         const config = burndown.scrape(); 
         const inflationRate = (assumptions.inflation || 3) / 100;
-        const filingStatus = assumptions.filingStatus || 'Single', hhSize = benefits.hhSize || 1, currentYear = new Date().getFullYear();
+        const filingStatus = assumptions.filingStatus || 'Single';
+        const hhSize = benefits.hhSize || 1; 
+        const currentYear = new Date().getFullYear();
         const dial = config.strategyDial, rAge = config.retirementAge;
 
         simulationTrace = {};
@@ -371,8 +376,8 @@ export const burndown = {
                 const meta = burndown.assetMeta[pk];
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
                 
-                // CRITICAL FIX: Estimate total needed cash to prevent selling $143k for $26k gain.
-                const estimatedCashCap = (targetBudget + (ordIter * 0.15)) - (netAvail + drawn);
+                // Buffer increased to 25% to avoid undershooting MAGI due to tax estimation errors
+                const estimatedCashCap = (targetBudget + (ordIter * 0.25)) - (netAvail + drawn);
                 if (estimatedCashCap <= 0.01) {
                     trace.push(`[Optimization] MAGI Harvesting capped for ${pk} - cash already covers needs.`);
                     return;
@@ -442,12 +447,14 @@ export const burndown = {
         const rows = results.map((r, i) => {
             const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
             const badgeClass = r.status === 'INSOLVENT' ? 'bg-red-600 text-white' : (r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'));
-            
+            const isRetYear = r.age === lastUsedRetirementAge;
+            const retBadge = isRetYear ? `<span class="block text-[7px] text-yellow-400 mt-0.5 tracking-tighter">RET YEAR</span>` : '';
+
             if (isMobile) {
                 return `<tr class="border-b border-slate-800/50 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${badgeClass}">${r.status}</span></td><td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
             }
             const draws = burndown.priorityOrder.map(k => `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${r.draws?.[k] > 0 ? 'font-bold' : 'text-slate-700'}" style="color:${r.draws?.[k] > 0 ? burndown.assetMeta[k]?.color : ''}">${formatCell((r.draws?.[k] || 0) / inf)}</div><div class="text-[8px] opacity-40">${formatCell(r.balances[k] / inf)}</div></td>`).join('');
-            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span></td><td class="p-2 text-right text-emerald-500">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
+            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : (isRetYear ? 'bg-blue-900/10' : '')}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>${retBadge}</td><td class="p-2 text-right text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
         }).join('');
 
         return `<table class="w-full text-left border-collapse table-auto">${header}<tbody>${rows}</tbody></table>`;

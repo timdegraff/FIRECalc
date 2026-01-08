@@ -5,7 +5,7 @@ import { auth } from './firebase-config.js';
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
-// Mobile / Default: Use Redirect
+// Mobile Redirect (Legacy/Fallback)
 export async function signInWithGoogle() {
     try {
         await setPersistence(auth, browserLocalPersistence);
@@ -16,18 +16,17 @@ export async function signInWithGoogle() {
     }
 }
 
-// Desktop: Use Popup (Prevents redirect loops completely)
+// Universal Popup (Preferred for Desktop & Mobile Safari ITP)
 export async function signInWithGooglePopup() {
     try {
         await setPersistence(auth, browserLocalPersistence);
         await signInWithPopup(auth, provider);
     } catch (error) {
         console.error('Error initiating popup sign-in:', error);
-        // Fallback to redirect if popup is blocked
         if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
-             await signInWithGoogle();
+             alert("Popup blocked. Please check your browser settings or try 'Private' mode.");
         } else {
-             alert("Sign-in failed. Please retry.");
+             alert(`Sign-in failed (${error.code}).`);
         }
     }
 }

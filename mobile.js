@@ -2,7 +2,7 @@
 import { onAuthStateChanged, getRedirectResult } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { initializeData, autoSave, updateSummaries } from './data.js';
-import { signInWithGoogle, logoutUser } from './auth.js';
+import { signInWithGooglePopup, logoutUser } from './auth.js';
 import { math, engine, assetColors, assumptions, stateTaxRates } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
@@ -23,10 +23,9 @@ window.debouncedAutoSave = () => {
 let currentTab = 'assets-debts';
 
 // --- AUTH HANDLER ---
-// 1. Check if we just returned from a redirect (Clean up state)
+// We don't need getRedirectResult anymore as we are using Popup, but keeping it harmlessly just in case.
 getRedirectResult(auth).catch(e => {
     console.error("Mobile Redirect Error:", e);
-    // If redirect failed, we just let onAuthStateChanged show the login button
 });
 
 // 2. Listen for state changes
@@ -57,7 +56,7 @@ onAuthStateChanged(auth, async (user) => {
                         Sign in with Google
                     </button>
                 </div>`;
-            document.getElementById('login-btn').onclick = signInWithGoogle;
+            document.getElementById('login-btn').onclick = signInWithGooglePopup;
         }
     }
 });
@@ -198,14 +197,14 @@ function init() {
                             Sign in with Google
                         </button>
                     </div>`;
-                document.getElementById('login-btn').onclick = signInWithGoogle;
+                document.getElementById('login-btn').onclick = signInWithGooglePopup;
             }
         }
     });
 }
 
 function attachGlobal() {
-    const lb = document.getElementById('login-btn'); if(lb) lb.onclick = signInWithGoogle;
+    const lb = document.getElementById('login-btn'); if(lb) lb.onclick = signInWithGooglePopup;
     const lob = document.getElementById('logout-btn'); if(lob) lob.onclick = logoutUser;
     
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
