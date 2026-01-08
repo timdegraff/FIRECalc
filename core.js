@@ -322,14 +322,30 @@ window.updateSidebarChart = (data) => {
         totalSum += v; 
     });
 
-    // Real Estate: Show Equity (Value - Mortgage)
+    // Calculate HELOC Total (Secured Debt against RE)
+    const helocTotal = data.helocs?.reduce((s, h) => s + math.fromCurrency(h.balance), 0) || 0;
+
+    // Real Estate: Value - Mortgage - HELOCs
     data.realEstate?.forEach(r => { 
         const v = math.fromCurrency(r.value); 
         const m = math.fromCurrency(r.mortgage);
+        // We subtract the HELOC total from the Real Estate equity bucket
+        // (Assuming HELOCs are on the RE). 
+        // Note: If multiple properties, we just lump equity.
         const equity = v - m;
         totals['Real Estate'] = (totals['Real Estate'] || 0) + equity; 
         totalSum += equity; 
     });
+    
+    // Apply HELOC deduction to Real Estate bucket
+    if (totals['Real Estate']) {
+        totals['Real Estate'] -= helocTotal;
+        totalSum -= helocTotal;
+    } else {
+        // Fallback if no RE exists but HELOC does (unlikely but possible in data entry)
+        totals['Real Estate'] = -helocTotal;
+        totalSum -= helocTotal;
+    }
 
     // Other Assets: Show Equity (Value - Loan)
     data.otherAssets?.forEach(o => { 
@@ -340,23 +356,35 @@ window.updateSidebarChart = (data) => {
         totalSum += equity; 
     });
 
+    // Unsecured Debt (Credit Cards, Personal Loans, etc)
+    const unsecuredDebt = data.debts?.reduce((s, d) => s + math.fromCurrency(d.balance), 0) || 0;
+    if (unsecuredDebt > 0) {
+        totals['Debt'] = -unsecuredDebt; // Display as negative in list
+        totalSum -= unsecuredDebt;
+    }
+
     if (lastChartSum !== 0 && (Math.abs(totalSum - lastChartSum) / lastChartSum) < 0.005) return;
     lastChartSum = totalSum;
     const legendContainer = document.getElementById('sidebar-asset-legend');
     if (legendContainer) {
         legendContainer.innerHTML = '';
-        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other' };
+        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other', 'Debt': 'Debt' };
         
         // Compact Formatter for Legend
         const compactFormat = (val) => {
-            if (val >= 1000000) return '$' + (val / 1000000).toFixed(2) + 'M';
-            if (val >= 1000) return '$' + (val / 1000).toFixed(0) + 'K';
-            return '$' + val;
+            const absVal = Math.abs(val);
+            let str = '';
+            if (absVal >= 1000000) str = '$' + (absVal / 1000000).toFixed(2) + 'M';
+            else if (absVal >= 1000) str = '$' + (absVal / 1000).toFixed(0) + 'K';
+            else str = '$' + absVal;
+            return val < 0 ? '-' + str : str;
         };
 
         Object.entries(totals).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
-            if (value <= 0) return;
-            const color = assetColors[type] || assetColors['Taxable'];
+            if (value === 0) return; // Skip 0 items
+            // Allow negative values for Debt
+            
+            const color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']);
             const shortName = shortNames[type] || type;
             const item = document.createElement('div');
             item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
