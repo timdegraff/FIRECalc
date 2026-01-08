@@ -1,8 +1,8 @@
 
-import { onAuthStateChanged, getRedirectResult } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { onAuthStateChanged, getRedirectResult, GoogleAuthProvider, signInWithRedirect, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { initializeData, autoSave, updateSummaries } from './data.js';
-import { signInWithGoogle, logoutUser } from './auth.js';
+import { logoutUser } from './auth.js';
 import { math, engine, assetColors, assumptions, stateTaxRates } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
@@ -22,11 +22,31 @@ window.debouncedAutoSave = () => {
 
 let currentTab = 'assets-debts';
 
-// --- AUTH HANDLER ---
-// Handle redirect result for mobile flow
-getRedirectResult(auth).catch(e => {
-    console.error("Mobile Redirect Error:", e);
-});
+// --- MOBILE AUTH STRATEGY (REDIRECT ONLY) ---
+const provider = new GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
+
+async function performMobileLogin() {
+    try {
+        // Force Redirect Mode (Old Strategy) to avoid COOP/Popup blocking
+        await setPersistence(auth, browserLocalPersistence);
+        await signInWithRedirect(auth, provider);
+    } catch (error) {
+        console.error("Mobile Login Error:", error);
+        alert("Login failed. Please try again.");
+    }
+}
+
+// Handle Redirect Result (Essential for Mobile Flow)
+getRedirectResult(auth)
+    .then((result) => {
+        if (result) {
+            console.log("Mobile redirect successful", result.user?.uid);
+        }
+    })
+    .catch(e => {
+        console.error("Mobile Redirect Catch:", e);
+    });
 
 // 2. Listen for state changes
 onAuthStateChanged(auth, async (user) => {
@@ -56,7 +76,7 @@ onAuthStateChanged(auth, async (user) => {
                         Sign in with Google
                     </button>
                 </div>`;
-            document.getElementById('login-btn').onclick = signInWithGoogle;
+            document.getElementById('login-btn').onclick = performMobileLogin;
         }
     }
 });
@@ -197,14 +217,14 @@ function init() {
                             Sign in with Google
                         </button>
                     </div>`;
-                document.getElementById('login-btn').onclick = signInWithGoogle;
+                document.getElementById('login-btn').onclick = performMobileLogin;
             }
         }
     });
 }
 
 function attachGlobal() {
-    const lb = document.getElementById('login-btn'); if(lb) lb.onclick = signInWithGoogle;
+    const lb = document.getElementById('login-btn'); if(lb) lb.onclick = performMobileLogin;
     const lob = document.getElementById('logout-btn'); if(lob) lob.onclick = logoutUser;
     
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
