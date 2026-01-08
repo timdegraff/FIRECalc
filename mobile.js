@@ -142,18 +142,41 @@ const MOBILE_TEMPLATES = {
             </div>
         </div>
     `,
+    'benefits': () => `
+        <div id="benefits-module" class="space-y-6"></div>
+    `,
+    'assumptions': () => `
+        <div class="space-y-8">
+            <div class="flex items-center gap-2">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
+            </div>
+            <div class="mobile-card space-y-6">
+                <h3 class="text-lg font-black text-white uppercase tracking-tighter">Global Parameters</h3>
+                <div id="m-assumptions-container" class="space-y-4"></div>
+            </div>
+        </div>
+    `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
              <div class="flex items-center gap-2 mb-4">
                 <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
             </div>
             
-            <div class="mobile-card mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <label class="mobile-label text-slate-500">Income Strategy Dial</label>
-                    <span id="mobile-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
+            <div class="mobile-card mb-4 space-y-4">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="mobile-label text-slate-500">Income Strategy Dial</label>
+                        <span id="mobile-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
+                    </div>
+                    <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500">
                 </div>
-                <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                         <label class="mobile-label text-slate-500">Retirement Age</label>
+                         <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm">65</span>
+                    </div>
+                    <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" value="65" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                </div>
             </div>
 
             <div id="burndown-view-container" class="space-y-4"></div>
@@ -168,18 +191,6 @@ const MOBILE_TEMPLATES = {
             <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-inner">
                 <div class="flex flex-col"><span class="mobile-label">End Age</span><span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-sm">72</span></div>
                 <input type="range" id="input-projection-end" min="50" max="100" value="72" class="flex-grow h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
-            </div>
-        </div>
-    `,
-    'assumptions': () => `
-        <div class="space-y-8">
-            <div class="flex items-center gap-2">
-                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
-            </div>
-            <div id="benefits-module"></div>
-            <div class="mobile-card space-y-6">
-                <h3 class="text-lg font-black text-white uppercase tracking-tighter">Global Parameters</h3>
-                <div id="m-assumptions-container" class="space-y-4"></div>
             </div>
         </div>
     `
@@ -490,6 +501,10 @@ function renderTab() {
         window.currentData.budget?.savings?.forEach((i, idx) => addMobileRow('m-budget-savings', 'savings', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
         window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
+    if (currentTab === 'benefits') {
+        benefits.init();
+        benefits.load(window.currentData.benefits);
+    }
     if (currentTab === 'burndown') {
         // Sync dial from data
         const dial = document.getElementById('input-strategy-dial');
@@ -498,6 +513,14 @@ function renderTab() {
              dial.value = window.currentData.burndown.strategyDial;
              const val = parseInt(dial.value);
              if (dialStatus) dialStatus.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Standard");
+        }
+        
+        // Sync retire age from data
+        const retireInp = document.getElementById('input-top-retire-age');
+        const retireLbl = document.getElementById('label-top-retire-age');
+        if (retireInp && window.currentData.assumptions?.retirementAge) {
+            retireInp.value = window.currentData.assumptions.retirementAge;
+            if (retireLbl) retireLbl.textContent = window.currentData.assumptions.retirementAge;
         }
 
         burndown.init();
@@ -518,8 +541,6 @@ function renderTab() {
         projection.run(window.currentData);
     }
     if (currentTab === 'assumptions') {
-        benefits.init();
-        benefits.load(window.currentData.benefits);
         renderMobileAssumptions();
     }
     
@@ -527,7 +548,7 @@ function renderTab() {
     initSwipeHandlers();
 }
 
-// Swipe to Delete Logic
+// Swipe to Reveal Delete Logic
 function initSwipeHandlers() {
     let startX = 0;
     let currentX = 0;
@@ -538,6 +559,11 @@ function initSwipeHandlers() {
 
     cards.forEach(card => {
         card.addEventListener('touchstart', (e) => {
+            // Close other open cards
+            document.querySelectorAll('.swipe-front').forEach(c => {
+                if (c !== card) c.style.transform = 'translateX(0)';
+            });
+
             startX = e.touches[0].clientX;
             currentX = startX;
             isSwiping = true;
@@ -553,10 +579,7 @@ function initSwipeHandlers() {
 
             // Only allow swiping left
             if (diffX < 0) {
-                // Determine if we should prevent scroll (if mostly horizontal)
-                // This is tricky with passive listeners, so we mostly rely on CSS touch-action: pan-y
                 card.style.transform = `translateX(${diffX}px)`;
-                currentX = touchX;
             }
         }, { passive: true });
 
@@ -565,18 +588,20 @@ function initSwipeHandlers() {
             isSwiping = false;
             activeCard = null;
 
-            const diffX = currentX - startX;
-            const threshold = -100; // px to trigger delete
+            // Get current transform value to determine snap position
+            const style = window.getComputedStyle(card);
+            const matrix = new WebKitCSSMatrix(style.transform);
+            const currentTransformX = matrix.m41;
 
-            if (diffX < threshold) {
-                // Trigger Delete
-                card.classList.add('deleting');
-                setTimeout(() => {
-                    performDelete(card);
-                }, 300); // Match CSS transition
+            const threshold = -60; // Distance to snap open
+
+            card.classList.add('snapping');
+
+            if (currentTransformX < threshold) {
+                // Snap Open (Reveal Trash)
+                card.style.transform = 'translateX(-80px)';
             } else {
-                // Snap Back
-                card.classList.add('snapping');
+                // Snap Close
                 card.style.transform = 'translateX(0)';
             }
         });
@@ -584,10 +609,10 @@ function initSwipeHandlers() {
 }
 
 function performDelete(cardElement) {
-    const card = cardElement.closest('.mobile-card'); // The wrapper actually has the data attributes now, wait.
-    // The structure is swipe-outer > swipe-front > mobile-card.
-    // Actually, in addMobileRow, I put the data-array/index on the swipe-front (the mobile-card itself).
+    const card = cardElement.closest('.mobile-card');
     
+    // Check dataset on the wrapper or the card itself (due to how we structure it in addMobileRow)
+    // In addMobileRow, we put data-index/array on the .swipe-front (which is cardElement here)
     if (cardElement && cardElement.dataset.array && cardElement.dataset.index !== undefined) {
         const arrName = cardElement.dataset.array;
         const idx = parseInt(cardElement.dataset.index);
@@ -617,39 +642,34 @@ function addMobileRow(containerId, type, data = {}, index = null, arrayName = nu
     const outer = document.createElement('div');
     outer.className = 'swipe-outer';
 
-    // The Background (Red/Trash)
+    // The Background (Red/Trash) - Clickable Area
     const bg = document.createElement('div');
-    bg.className = 'swipe-bg';
+    bg.className = 'swipe-bg cursor-pointer'; // Added cursor-pointer
     bg.innerHTML = '<i class="fas fa-trash"></i>';
-    outer.appendChild(bg);
-
+    
     // The Front (Card Content)
     const front = document.createElement('div');
-    front.className = 'swipe-front'; // This is what we animate
-    
-    // Generate content
+    front.className = 'swipe-front'; 
     front.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : `<div class="mobile-card">...</div>`;
-    
-    // The ITEM_TEMPLATES return a <div class="mobile-card">...</div>
-    // We need to move the data attributes to the 'front' element so our swipe handler can read them,
-    // OR just put the attributes on the inner card and have the handler find them.
-    // Let's attach data to the 'front' element for the handler to use easily.
+
+    // Attach data to front for logic identification
     if (index !== null && arrayName) {
         front.dataset.index = index;
         front.dataset.array = arrayName;
     }
-    
-    // The template returns a string that IS a div.mobile-card. 
-    // We want that div to BE the front, or inside it?
-    // The CSS logic .swipe-front needs to be on the element that transforms.
-    // Let's make .swipe-front wrap the content.
-    
+
+    // Explicit Click Listener for Delete
+    bg.onclick = (e) => {
+        e.stopPropagation(); // Prevent bubbling issues
+        front.classList.add('deleting'); // Trigger CSS slide-out
+        setTimeout(() => {
+            performDelete(front);
+        }, 300);
+    };
+
+    outer.appendChild(bg);
     outer.appendChild(front);
     container.appendChild(outer);
-    
-    // Important: The ITEM_TEMPLATE returns a string with class 'mobile-card'. 
-    // This inner div will have the background color. 
-    // The .swipe-front handles the motion.
     
     outer.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
 }
@@ -658,26 +678,85 @@ function renderMobileAssumptions() {
     const container = document.getElementById('m-assumptions-container');
     if (!container) return;
     const a = window.currentData.assumptions || assumptions.defaults;
+    
+    const slider = (label, id, min, max, step, val, suffix = '') => `
+        <div class="space-y-2">
+            <div class="flex justify-between items-center">
+                <span class="mobile-label">${label}</span>
+                <span class="text-white font-black mono-numbers text-xs">${val}${suffix}</span>
+            </div>
+            <input data-id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+        </div>
+    `;
+
     container.innerHTML = `
         <div class="grid grid-cols-2 gap-4">
-            <div>
-                <span class="mobile-label">Retirement Age</span>
-                <input data-id="retirementAge" type="number" value="${a.retirementAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-blue-400 outline-none">
-            </div>
             <div>
                 <span class="mobile-label">Current Age</span>
                 <input data-id="currentAge" type="number" value="${a.currentAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
             </div>
+            <div>
+                <span class="mobile-label">Retirement Age</span>
+                <input data-id="retirementAge" type="number" value="${a.retirementAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-blue-400 outline-none">
+            </div>
         </div>
-        <div class="space-y-2">
-            <span class="mobile-label">Stock Growth: <span class="text-white">${a.stockGrowth}%</span></span>
-            <input data-id="stockGrowth" type="range" min="0" max="15" step="0.5" value="${a.stockGrowth}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500">
+
+        <div class="grid grid-cols-2 gap-4">
+             <div class="space-y-1">
+                <span class="mobile-label">Family Size</span>
+                <input data-id="hhSize" type="number" min="1" max="10" value="${window.currentData.benefits?.hhSize || 1}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
+            </div>
+             <div class="space-y-1">
+                <span class="mobile-label">State</span>
+                <select data-id="state" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-bold text-[10px] text-white outline-none">
+                    ${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
+                </select>
+            </div>
         </div>
-        <div class="space-y-2">
-            <span class="mobile-label">Inflation: <span class="text-white">${a.inflation}%</span></span>
+
+        <div class="space-y-1">
+            <span class="mobile-label">Filing Status</span>
+            <select data-id="filingStatus" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-bold text-xs text-white outline-none">
+                <option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
+                <option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
+                <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
+            </select>
+        </div>
+
+        ${slider("Stock Growth", "stockGrowth", 0, 15, 0.5, a.stockGrowth, "%")}
+        ${slider("Crypto Growth", "cryptoGrowth", 0, 15, 0.5, a.cryptoGrowth, "%")}
+        ${slider("Metals Growth", "metalsGrowth", 0, 15, 0.5, a.metalsGrowth, "%")}
+        ${slider("Real Estate Growth", "realEstateGrowth", 0, 15, 0.5, a.realEstateGrowth, "%")}
+        
+        <div class="space-y-2 pt-4 border-t border-slate-700">
+             <div class="flex justify-between items-center">
+                <span class="mobile-label text-red-400">Inflation</span>
+                <span class="text-red-400 font-black mono-numbers text-xs">${a.inflation}%</span>
+            </div>
             <input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="w-full h-4 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500">
         </div>
+
+        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
+            <div>
+                <span class="mobile-label">SS Start Age</span>
+                <input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-white outline-none">
+            </div>
+            <div>
+                <span class="mobile-label">SS Monthly</span>
+                <input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-black text-teal-400 outline-none">
+            </div>
+        </div>
     `;
+
+    // Handle HH Size Binding manually since it's in benefits
+    const hhInput = container.querySelector('[data-id="hhSize"]');
+    if (hhInput) {
+        hhInput.oninput = (e) => {
+            if (!window.currentData.benefits) window.currentData.benefits = {};
+            window.currentData.benefits.hhSize = parseInt(e.target.value);
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        };
+    }
 }
 
 init();
