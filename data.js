@@ -347,8 +347,26 @@ export function updateSummaries(data) {
         const base = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1);
         return sum + base;
     }, 0);
+    
+    // Fix: SS only counts for "Year 1" floor if your retirement age is >= SS start age
+    const rAge = data.assumptions?.retirementAge || 65;
+    const ssStart = data.assumptions?.ssStartAge || 67;
+    const ssEligibleInYear1 = rAge >= ssStart;
+    
     const ssAnnual = engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, 1);
-    set('sum-retirement-income-floor', persistentIncome + ssAnnual);
+    const floorTotal = persistentIncome + (ssEligibleInYear1 ? ssAnnual : 0);
+    
+    set('sum-retirement-income-floor', floorTotal);
+    
+    const breakdownEl = document.getElementById('sum-floor-breakdown');
+    if (breakdownEl) {
+        const parts = [];
+        if (persistentIncome > 0) parts.push(`$${Math.round(persistentIncome/1000)}k Persistent`);
+        if (ssEligibleInYear1 && ssAnnual > 0) parts.push(`$${Math.round(ssAnnual/1000)}k Social Security`);
+        else if (ssAnnual > 0) parts.push(`<span class="text-slate-600">($${Math.round(ssAnnual/1000)}k SS starts @ age ${ssStart})</span>`);
+        
+        breakdownEl.innerHTML = parts.join(' + ') || 'No persistent floor sources';
+    }
     
     // Budget
     set('sum-budget-savings', s.totalAnnualSavings);
@@ -363,7 +381,6 @@ export function updateSummaries(data) {
     
     // Retirement Year 1 Budget (Target Spending)
     const burnResults = burndown.simulateProjection(data);
-    const rAge = data.assumptions?.retirementAge || 65;
     const firstRetYear = burnResults.find(r => r.age >= rAge);
     if (firstRetYear) {
         set('sum-retire-budget', firstRetYear.budget);

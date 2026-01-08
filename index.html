@@ -153,7 +153,7 @@
                                     <p class="text-xs text-slate-500 font-medium">Manage properties and mortgage balances</p>
                                 </div>
                             </div>
-                            <button data-add-row="real-estate-rows" data-row-type="realEstate" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-900/20"><i class="fas fa-plus mr-1"></i> Add Home</button>
+                            <button data-add-row="real-estate-rows" data-row-type="realEstate" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-900/20"><i class="fas fa-plus mr-1"></i> Add Home</button>
                         </div>
                         <div class="card-container bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
                             <table class="w-full text-xs">
@@ -173,7 +173,7 @@
                                     <p class="text-xs text-slate-500 font-medium">Physical items, vehicles, and other equity</p>
                                 </div>
                             </div>
-                            <button data-add-row="other-assets-rows" data-row-type="otherAsset" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-900/20"><i class="fas fa-plus mr-1"></i> Add Asset</button>
+                            <button data-add-row="other-assets-rows" data-row-type="otherAsset" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-teal-900/20"><i class="fas fa-plus mr-1"></i> Add Asset</button>
                         </div>
                         <div class="card-container bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
                             <table class="w-full text-xs">
@@ -216,7 +216,7 @@
                                     <p class="text-xs text-slate-500 font-medium">Unsecured liabilities like credit cards or loans</p>
                                 </div>
                             </div>
-                            <button data-add-row="debt-rows" data-row-type="debt" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-900/20"><i class="fas fa-plus mr-1"></i> Add Debt</button>
+                            <button data-add-row="debt-rows" data-row-type="debt" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-red-900/20"><i class="fas fa-plus mr-1"></i> Add Debt</button>
                         </div>
                         <div class="card-container bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
                             <table class="w-full text-xs">
@@ -264,7 +264,10 @@
                     </div>
                     <div class="bg-slate-800/80 p-6 rounded-3xl border border-slate-700 text-center shadow-xl">
                         <p class="label-std mb-2 text-slate-500">Year 1 Retirement Floor</p>
-                        <p id="sum-retirement-income-floor" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tighter">$0</p>
+                        <div>
+                            <p id="sum-retirement-income-floor" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tighter leading-none">$0</p>
+                            <p id="sum-floor-breakdown" class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2"></p>
+                        </div>
                     </div>
                 </div>
 
@@ -386,7 +389,10 @@
                     </div>
                     <div class="bg-slate-800/80 p-6 rounded-3xl border border-slate-700 text-center shadow-xl">
                         <p class="label-std mb-2 text-slate-500">Estimated Life Expectancy</p>
-                        <p id="sum-life-exp" class="text-4xl font-black text-teal-400 mono-numbers tracking-tighter">0</p>
+                        <div>
+                            <p id="sum-life-exp" class="text-4xl font-black text-teal-400 mono-numbers tracking-tighter leading-none">0</p>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1">SSA Estimate</p>
+                        </div>
                     </div>
                 </div>
 
