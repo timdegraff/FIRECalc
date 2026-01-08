@@ -332,7 +332,11 @@ export function updateSummaries(data) {
     const setRaw = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
 
     // Assets
-    set('sidebar-networth', s.netWorth);
+    const nwEl = document.getElementById('sidebar-networth');
+    if (nwEl) {
+        nwEl.textContent = math.toCurrency(s.netWorth);
+        nwEl.className = `text-lg font-black tracking-tight mono-numbers ${s.netWorth >= 0 ? 'text-teal-400' : 'text-red-400'}`;
+    }
     set('sum-assets', s.totalAssets);
     set('sum-liabilities', s.totalLiabilities);
     set('sum-networth', s.netWorth);
@@ -363,7 +367,7 @@ export function updateSummaries(data) {
         const parts = [];
         if (persistentIncome > 0) parts.push(`$${Math.round(persistentIncome/1000)}k Persistent`);
         if (ssEligibleInYear1 && ssAnnual > 0) parts.push(`$${Math.round(ssAnnual/1000)}k Social Security`);
-        else if (ssAnnual > 0) parts.push(`<span class="text-slate-600">($${Math.round(ssAnnual/1000)}k SS starts @ age ${ssStart})</span>`);
+        else if (ssAnnual > 0) parts.push(`<span class="text-slate-600">($${Math.round(ssAnnual/1000)}k SS @ age ${ssStart})</span>`);
         
         breakdownEl.innerHTML = parts.join(' + ') || 'No persistent floor sources';
     }
