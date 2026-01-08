@@ -106,8 +106,8 @@ export const templates = {
                     bg-blue-500/10 border-blue-500/20 text-blue-400 
                     peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400
                     hover:border-opacity-50">
-                    <span class="block peer-checked:hidden">ORD</span>
-                    <span class="hidden peer-checked:block">LTCG</span>
+                    <span class="inline-block peer-checked:hidden">ORD</span>
+                    <span class="hidden peer-checked:inline-block">LTCG</span>
                 </div>
             </label>
         </td>
@@ -149,7 +149,6 @@ export const templates = {
                         <div class="space-y-1 relative">
                             <label class="label-std text-slate-500">401k %</label>
                             <input data-id="contribution" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
-                            <!-- Warning Icon -->
                             <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds Annual IRS Contribution Limit">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>

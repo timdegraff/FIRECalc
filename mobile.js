@@ -10,15 +10,11 @@ import { projection } from './projection.js';
 import { formatter } from './formatter.js';
 
 // --- SAFE VERSION CHECK LOGIC ---
-// We simply update the local version so it doesn't conflict with Desktop.
-// We DO NOT clear sessionStorage here to avoid Firebase Auth redirect loops.
 const APP_VERSION = "2.5"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
 if (currentSavedVersion !== APP_VERSION) {
     localStorage.setItem('firecalc_app_version', APP_VERSION);
-    // Note: We rely on the ?v=3.5 in HTML to bust the code cache.
-    // We do NOT clear session data here.
 }
 
 // --- POLYFILLS FOR DATA.JS COMPATIBILITY ---
@@ -28,22 +24,19 @@ window.createAssumptionControls = () => {};
 window.debouncedAutoSave = () => {
     if (window.mobileSaveTimeout) clearTimeout(window.mobileSaveTimeout);
     window.mobileSaveTimeout = setTimeout(() => {
-        // Trigger Save Indicator State locally for Mobile logic
         const indicators = document.querySelectorAll('#save-indicator');
         const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
         
         indicators.forEach(el => {
-            // Only flash indicator if not in guest mode
             if (!isGuest) {
                 el.className = "text-orange-500 transition-colors duration-200"; 
             }
         });
         
-        autoSave(false); // Save from memory (window.currentData)
+        autoSave(false);
     }, 1500);
 };
 
-// HAPTIC Helper
 function triggerHaptic() {
     if (navigator.vibrate) {
         navigator.vibrate(10); 
@@ -54,7 +47,6 @@ let currentTab = 'assets-debts';
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
-// --- CONTEXTUAL ADD HANDLER ---
 window.addMobileItem = (type) => {
     if (!window.currentData) return;
     
@@ -89,13 +81,11 @@ window.addMobileItem = (type) => {
     else if (type === 'budget.savings') {
         window.currentData.budget = window.currentData.budget || {};
         window.currentData.budget.savings = window.currentData.budget.savings || [];
-        // Default stop in retire: TRUE, Fixed: FALSE
         window.currentData.budget.savings.push({ monthly: 0, annual: 0, type: 'Taxable', removedInRetirement: true, isFixed: false });
     }
     else if (type === 'budget.expenses') {
         window.currentData.budget = window.currentData.budget || {};
         window.currentData.budget.expenses = window.currentData.budget.expenses || [];
-        // Default stop in retire: FALSE, Fixed: FALSE
         window.currentData.budget.expenses.push({ monthly: 0, annual: 0, removedInRetirement: false, isFixed: false });
     }
     
@@ -103,11 +93,9 @@ window.addMobileItem = (type) => {
     if (window.debouncedAutoSave) window.debouncedAutoSave();
 };
 
-// --- TEMPLATES ---
 const MOBILE_TEMPLATES = {
     'assets-debts': () => `
         <div class="space-y-8">
-            <!-- Assets Summary Cards -->
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
                     <div class="text-[8px] font-black text-slate-500 uppercase tracking-widest mb-1">Total Assets</div>
@@ -169,9 +157,7 @@ const MOBILE_TEMPLATES = {
             
             <div class="pt-8 border-t border-slate-800">
                 <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 text-center">Asset Allocation</h3>
-                <div id="mobile-asset-allocation-list" class="grid grid-cols-2 gap-3">
-                    <!-- Populated by JS -->
-                </div>
+                <div id="mobile-asset-allocation-list" class="grid grid-cols-2 gap-3"></div>
             </div>
         </div>
     `,
@@ -218,9 +204,7 @@ const MOBILE_TEMPLATES = {
             </div>
         </div>
     `,
-    'benefits': () => `
-        <div id="benefits-module" class="space-y-6"></div>
-    `,
+    'benefits': () => `<div id="benefits-module" class="space-y-6"></div>`,
     'assumptions': () => `
         <div class="space-y-8">
             <div class="flex items-center gap-2">
@@ -348,9 +332,15 @@ const ITEM_TEMPLATES = {
                     <span class="mobile-label">APY %</span>
                     <input data-id="growth" type="number" step="0.1" value="${data.growth !== undefined ? data.growth : 10}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
                 </div>
-                <label class="flex items-center gap-2 bg-slate-900 px-2 py-1 rounded border border-slate-700">
-                    <span class="text-[8px] font-bold text-slate-500 uppercase">LTCG?</span>
-                    <input type="checkbox" data-id="isLtcg" ${data.isLtcg !== false ? 'checked' : ''} class="w-3 h-3 bg-slate-800 border-slate-600 rounded accent-emerald-500">
+                <label class="cursor-pointer group inline-flex items-center justify-center relative">
+                    <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg !== false ? 'checked' : ''}>
+                    <div class="w-12 py-1 rounded text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
+                        bg-blue-500/10 border-blue-500/20 text-blue-400 
+                        peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400
+                        hover:border-opacity-50">
+                        <span class="inline-block peer-checked:hidden">ORD</span>
+                        <span class="hidden peer-checked:inline-block">LTCG</span>
+                    </div>
                 </label>
            </div>
        </div>
@@ -495,9 +485,7 @@ function init() {
     onAuthStateChanged(auth, async (user) => {
         const guestModeActive = localStorage.getItem('firecalc_guest_mode') === 'true';
         
-        // 1. Authenticated User
         if (user) {
-            // Clear guest flag if authenticated
             localStorage.removeItem('firecalc_guest_mode');
             try {
                 await initializeData(user);
@@ -506,14 +494,12 @@ function init() {
                 renderTab();
             } catch (e) { console.error(e); }
         } 
-        // 2. Guest Mode
         else if (guestModeActive) {
             try {
-                await initializeData(null); // Initialize with null user
+                await initializeData(null); 
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('app-container').classList.remove('hidden');
                 
-                // Guest specific UI updates
                 const headerActions = document.querySelector('header .flex.items-center.gap-3');
                 if (headerActions && !document.getElementById('login-to-save-mobile')) {
                     const btn = document.createElement('button');
@@ -531,7 +517,6 @@ function init() {
                 
                 renderTab();
 
-                // 2a. Check for Guest Acknowledgement
                 if (!localStorage.getItem('firecalc_guest_acknowledged')) {
                     const modal = document.getElementById('guest-modal');
                     const btn = document.getElementById('ack-guest-btn');
@@ -545,7 +530,6 @@ function init() {
                 }
             } catch (e) { console.error(e); }
         }
-        // 3. Logged Out
         else {
             document.getElementById('login-screen').classList.remove('hidden');
             document.getElementById('app-container').classList.add('hidden');
@@ -563,7 +547,6 @@ function attachGlobal() {
         }
     };
     
-    // Add Mobile Guest Button Handler
     const guestBtn = document.getElementById('guest-btn');
     if (guestBtn) {
         guestBtn.onclick = () => {
@@ -572,7 +555,6 @@ function attachGlobal() {
         };
     }
     
-    // Handle Logout / Exit Guest
     document.getElementById('logout-btn').onclick = async () => {
         if (localStorage.getItem('firecalc_guest_mode') === 'true') {
             localStorage.removeItem('firecalc_guest_mode');
@@ -582,7 +564,6 @@ function attachGlobal() {
         }
     };
     
-    // Add Buy Me A Coffee link to header if not present
     const headerActions = document.querySelector('header .flex.items-center.gap-3');
     if (headerActions && !document.getElementById('coffee-link-mobile')) {
         const link = document.createElement('a');
@@ -597,7 +578,7 @@ function attachGlobal() {
     
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
         btn.onclick = () => {
-            triggerHaptic(); // HAPTIC
+            triggerHaptic(); 
             currentTab = btn.dataset.tab;
             document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -605,29 +586,21 @@ function attachGlobal() {
         };
     });
     
-    // Hide global FAB logic since we moved to contextual buttons
     const fab = document.getElementById('mobile-fab');
     if(fab) fab.classList.add('hidden');
     
     document.body.addEventListener('input', (e) => {
-        triggerHaptic(); // HAPTIC (on slider/input change)
+        triggerHaptic(); 
         const input = e.target;
         
-        // Handle Global Assumptions
         if (input.dataset.id && document.getElementById('m-assumptions-container') && input.closest('#m-assumptions-container')) {
             const val = parseFloat(input.value) || 0;
             const id = input.dataset.id;
-            
-            // Sync Perpetual if specific growth slider is touched (Reset bucket to flat rate)
             if (['stockGrowth', 'cryptoGrowth', 'metalsGrowth', 'realEstateGrowth'].includes(id)) {
                 if (window.currentData.assumptions) {
-                    // Ensure perpetual matches initial to flatten the curve, satisfying "reset bucket"
-                    // We do NOT disable advancedGrowth flag, so desktop UI remains in advanced mode but with flat data.
                     window.currentData.assumptions[id + 'Perpetual'] = val;
                 }
             }
-
-            // Also update the value display next to slider if it exists
             const display = input.parentElement.querySelector('.mono-numbers');
             if (display) {
                 if (id.includes('Growth') || id === 'inflation') display.textContent = val + '%';
@@ -639,7 +612,6 @@ function attachGlobal() {
             }
         }
 
-        // Handle Burndown Dial
         if (input.id === 'input-strategy-dial') {
             if (!window.currentData.burndown) window.currentData.burndown = {};
             window.currentData.burndown.strategyDial = parseInt(input.value);
@@ -648,10 +620,9 @@ function attachGlobal() {
                 const val = parseInt(input.value);
                 lbl.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Standard");
             }
-            burndown.run(); // Re-run calc if dial changes
+            burndown.run(); 
         }
         
-        // Handle Card Data Binding - Fix: Use closest('[data-array]') to find the wrapper
         const wrapper = input.closest('[data-array]');
         if (wrapper && wrapper.dataset.index !== undefined) {
             const arrName = wrapper.dataset.array;
@@ -663,7 +634,6 @@ function attachGlobal() {
             else if (input.dataset.type === 'currency') val = math.fromCurrency(val);
             else if (input.type === 'number') val = parseFloat(val);
 
-            // Nested budget handling
             if (arrName === 'budget.savings') {
                 if (window.currentData.budget?.savings?.[idx]) {
                     window.currentData.budget.savings[idx][key] = val;
@@ -682,7 +652,7 @@ function attachGlobal() {
         }
 
         if (window.debouncedAutoSave) window.debouncedAutoSave();
-        updateMobileSummaries(); // Update summaries on input
+        updateMobileSummaries(); 
         updateMobileNW();
     });
 
@@ -702,23 +672,19 @@ function updateMobileSummaries() {
     if (!window.currentData) return;
     const s = engine.calculateSummaries(window.currentData);
     
-    // Income Summary
     const incomeTotal = document.getElementById('val-income-total');
     if (incomeTotal) incomeTotal.textContent = math.toCurrency(s.totalGrossIncome);
     
-    // Budget Summary
     const budgetSavings = document.getElementById('val-budget-savings');
     const budgetSpend = document.getElementById('val-budget-spend');
     if (budgetSavings) budgetSavings.textContent = math.toSmartCompactCurrency(s.totalAnnualSavings);
     if (budgetSpend) budgetSpend.textContent = math.toSmartCompactCurrency(s.totalAnnualBudget);
     
-    // Assets & Debts Summary
     const totalAssets = document.getElementById('val-total-assets');
     const totalDebts = document.getElementById('val-total-debts');
     if (totalAssets) totalAssets.textContent = math.toSmartCompactCurrency(s.totalAssets);
     if (totalDebts) totalDebts.textContent = math.toSmartCompactCurrency(s.totalLiabilities);
     
-    // Re-render asset allocation if in assets tab
     if (currentTab === 'assets-debts') {
         renderMobileAssetList();
     }
@@ -728,47 +694,49 @@ function renderMobileAssetList() {
     const list = document.getElementById('mobile-asset-allocation-list');
     if (!list || !window.currentData) return;
 
-    const inv = window.currentData.investments || [];
-    const re = window.currentData.realEstate || [];
-    const oa = window.currentData.otherAssets || [];
-    const opts = window.currentData.stockOptions || [];
+    const data = window.currentData;
+    const inv = data.investments || [];
+    const re = data.realEstate || [];
+    const oa = data.otherAssets || [];
+    const opts = data.stockOptions || [];
+    const debts = data.debts || [];
+    const helocs = data.helocs || [];
     
+    const helocTotal = helocs.reduce((s, h) => s + math.fromCurrency(h.balance), 0);
+
     const buckets = {
         'Taxable': inv.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Pre-Tax (401k/IRA)': inv.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Post-Tax (Roth)': inv.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
-        'Real Estate': re.reduce((s, r) => s + math.fromCurrency(r.value), 0),
+        'Real Estate': re.reduce((s, r) => s + (math.fromCurrency(r.value) - math.fromCurrency(r.mortgage)), 0) - helocTotal,
         'Crypto': inv.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Metals': inv.filter(i => i.type === 'Metals').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Cash': inv.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'HSA': inv.filter(i => i.type === 'HSA').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         '529 Plan': inv.filter(i => i.type === '529 Plan').reduce((s, i) => s + math.fromCurrency(i.value), 0),
-        'Other': oa.reduce((s, o) => s + math.fromCurrency(o.value), 0),
+        'Other': oa.reduce((s, o) => s + (math.fromCurrency(o.value) - math.fromCurrency(o.loan)), 0),
         'Options': opts.reduce((s, x) => {
             const shares = parseFloat(x.shares) || 0;
             const strike = math.fromCurrency(x.strikePrice);
             const fmv = math.fromCurrency(x.currentPrice);
             return s + Math.max(0, (fmv - strike) * shares);
-        }, 0)
+        }, 0),
+        'Debt': -debts.reduce((s, d) => s + math.fromCurrency(d.balance), 0)
     };
 
-    const total = Object.values(buckets).reduce((a, b) => a + b, 0);
     list.innerHTML = '';
     
-    if (total === 0) return;
+    const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other', 'Options': 'Options', 'Debt': 'Debt' };
 
-    const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other', 'Options': 'Options' };
-
-    Object.entries(buckets).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
-        if (value <= 0) return;
-        const percent = Math.round((value / total) * 100);
-        let color = assetColors[type] || assetColors['Taxable'];
-        if (type === 'Options') color = '#14b8a6'; // Teal for Options
+    Object.entries(buckets).sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)).forEach(([type, value]) => {
+        if (value === 0) return;
+        let color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']);
+        if (type === 'Options') color = '#14b8a6'; 
         const shortName = shortNames[type] || type;
         
         const item = document.createElement('div');
         item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400 bg-slate-800 p-2 rounded-lg border border-slate-700/50';
-        item.innerHTML = `<div class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${color}"></div><span class="truncate flex-grow">${shortName}</span><span class="text-white mono-numbers">${percent}%</span>`;
+        item.innerHTML = `<div class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${color}"></div><span class="truncate flex-grow">${shortName}</span><span class="text-white mono-numbers">${math.toSmartCompactCurrency(value)}</span>`;
         list.appendChild(item);
     });
 }
@@ -777,7 +745,6 @@ function renderTab() {
     const main = document.getElementById('mobile-content');
     main.innerHTML = MOBILE_TEMPLATES[currentTab]();
     
-    // Ensure FAB is hidden if it exists
     const fab = document.getElementById('mobile-fab');
     if(fab) fab.classList.add('hidden');
     
@@ -785,8 +752,6 @@ function renderTab() {
 
     if (currentTab === 'assets-debts') {
         const checkEmpty = (arr, type) => { if (!arr || arr.length === 0) window.addMobileItem(type); };
-        
-        // Auto-add empty rows if empty (Pre-population Logic)
         checkEmpty(window.currentData.investments, 'investments');
         checkEmpty(window.currentData.stockOptions, 'stockOptions');
         checkEmpty(window.currentData.realEstate, 'realEstate');
@@ -809,7 +774,6 @@ function renderTab() {
     }
     if (currentTab === 'budget') {
         const s = engine.calculateSummaries(window.currentData);
-        // Add the calculated locked 401k row first
         addMobileRow('m-budget-savings', 'savings', { 
             type: 'Pre-Tax (401k/IRA)', 
             annual: s.total401kContribution, 
@@ -819,7 +783,6 @@ function renderTab() {
         if (!window.currentData.budget?.savings || window.currentData.budget.savings.length === 0) window.addMobileItem('budget.savings');
         if (!window.currentData.budget?.expenses || window.currentData.budget.expenses.length === 0) window.addMobileItem('budget.expenses');
 
-        // Filter out locked items to prevent duplicates (since we added the locked one manually above)
         window.currentData.budget?.savings?.filter(i => !i.isLocked).forEach((i, idx) => addMobileRow('m-budget-savings', 'savings', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
         window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
@@ -828,7 +791,6 @@ function renderTab() {
         benefits.load(window.currentData.benefits);
     }
     if (currentTab === 'burndown') {
-        // Sync dial from data
         const dial = document.getElementById('input-strategy-dial');
         const dialStatus = document.getElementById('mobile-strategy-status');
         if (dial && window.currentData.burndown?.strategyDial !== undefined) {
@@ -837,14 +799,12 @@ function renderTab() {
              if (dialStatus) dialStatus.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Standard");
         }
         
-        // Sync retire age from data
         const retireInp = document.getElementById('input-top-retire-age');
         const retireLbl = document.getElementById('label-top-retire-age');
         if (retireInp && window.currentData.assumptions?.retirementAge) {
             retireInp.value = window.currentData.assumptions.retirementAge;
             if (retireLbl) retireLbl.textContent = window.currentData.assumptions.retirementAge;
             
-            // Wire up listener here for Mobile-specific burndown slider
             retireInp.oninput = (e) => {
                 const val = parseInt(e.target.value);
                 window.currentData.assumptions.retirementAge = val;
@@ -854,8 +814,6 @@ function renderTab() {
             }
         }
 
-        // Do NOT call burndown.init() to avoid overwriting mobile controls
-        // Just run logic
         burndown.run();
         
         setTimeout(() => {
@@ -882,7 +840,6 @@ function renderTab() {
     initSwipeHandlers();
 }
 
-// Swipe to Reveal Delete Logic
 function initSwipeHandlers() {
     let startX = 0;
     let currentX = 0;
@@ -893,7 +850,6 @@ function initSwipeHandlers() {
 
     cards.forEach(card => {
         card.addEventListener('touchstart', (e) => {
-            // Close other open cards
             document.querySelectorAll('.swipe-front').forEach(c => {
                 if (c !== card) c.style.transform = 'translateX(0)';
             });
@@ -907,11 +863,8 @@ function initSwipeHandlers() {
 
         card.addEventListener('touchmove', (e) => {
             if (!isSwiping || activeCard !== card) return;
-            
             const touchX = e.touches[0].clientX;
             const diffX = touchX - startX;
-
-            // Only allow swiping left
             if (diffX < 0) {
                 card.style.transform = `translateX(${diffX}px)`;
             }
@@ -922,21 +875,16 @@ function initSwipeHandlers() {
             isSwiping = false;
             activeCard = null;
 
-            // Get current transform value to determine snap position
             const style = window.getComputedStyle(card);
             const matrix = new WebKitCSSMatrix(style.transform);
             const currentTransformX = matrix.m41;
-
-            const threshold = -60; // Distance to snap open
+            const threshold = -60; 
 
             card.classList.add('snapping');
-
             if (currentTransformX < threshold) {
-                triggerHaptic(); // HAPTIC on snap open
-                // Snap Open (Reveal Trash)
+                triggerHaptic(); 
                 card.style.transform = 'translateX(-80px)';
             } else {
-                // Snap Close
                 card.style.transform = 'translateX(0)';
             }
         });
@@ -944,11 +892,9 @@ function initSwipeHandlers() {
 }
 
 function performDelete(cardElement) {
-    triggerHaptic(); // HAPTIC on delete
+    triggerHaptic(); 
     const card = cardElement.closest('.mobile-card');
     
-    // Check dataset on the wrapper or the card itself (due to how we structure it in addMobileRow)
-    // In addMobileRow, we put data-index/array on the .swipe-front (which is cardElement here)
     if (cardElement && cardElement.dataset.array && cardElement.dataset.index !== undefined) {
         const arrName = cardElement.dataset.array;
         const idx = parseInt(cardElement.dataset.index);
@@ -957,7 +903,7 @@ function performDelete(cardElement) {
         else if (arrName === 'budget.expenses') window.currentData.budget.expenses.splice(idx, 1);
         else if (window.currentData[arrName]) window.currentData[arrName].splice(idx, 1);
 
-        renderTab(); // Re-render
+        renderTab(); 
         if (window.debouncedAutoSave) window.debouncedAutoSave();
     }
 }
@@ -975,40 +921,33 @@ function addMobileRow(containerId, type, data = {}, index = null, arrayName = nu
     if (!container) return;
 
     if (data.isLocked) {
-        // Render simple container without swipe logic
         const simpleContainer = document.createElement('div');
         simpleContainer.className = 'mb-3';
         simpleContainer.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : '';
-        // Add currency binding just in case
         simpleContainer.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
         container.appendChild(simpleContainer);
         return;
     }
 
-    // Create the outer swipe wrapper
     const outer = document.createElement('div');
     outer.className = 'swipe-outer';
 
-    // The Background (Red/Trash) - Clickable Area
     const bg = document.createElement('div');
-    bg.className = 'swipe-bg cursor-pointer'; // Added cursor-pointer
+    bg.className = 'swipe-bg cursor-pointer'; 
     bg.innerHTML = '<i class="fas fa-trash"></i>';
     
-    // The Front (Card Content)
     const front = document.createElement('div');
     front.className = 'swipe-front'; 
     front.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : `<div class="mobile-card">...</div>`;
 
-    // Attach data to front for logic identification
     if (index !== null && arrayName) {
         front.dataset.index = index;
         front.dataset.array = arrayName;
     }
 
-    // Explicit Click Listener for Delete
     bg.onclick = (e) => {
-        e.stopPropagation(); // Prevent bubbling issues
-        front.classList.add('deleting'); // Trigger CSS slide-out
+        e.stopPropagation(); 
+        front.classList.add('deleting'); 
         setTimeout(() => {
             performDelete(front);
         }, 300);
@@ -1095,7 +1034,6 @@ function renderMobileAssumptions() {
         </div>
     `;
 
-    // Handle HH Size Binding manually since it's in benefits
     const hhInput = container.querySelector('[data-id="hhSize"]');
     if (hhInput) {
         hhInput.oninput = (e) => {
@@ -1107,7 +1045,6 @@ function renderMobileAssumptions() {
         };
     }
     
-    // Bind currency formatting for SS Monthly
     const ssInput = container.querySelector('[data-id="ssMonthly"]');
     if (ssInput) {
         formatter.bindCurrencyEventListeners(ssInput);
