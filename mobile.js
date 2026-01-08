@@ -90,7 +90,7 @@ const MOBILE_TEMPLATES = {
                     <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-orange-400 mr-2"></i>Investments</h2>
                     <button onclick="window.addMobileItem('investments')" class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-blue-900/20"><i class="fas fa-plus"></i></button>
                 </div>
-                <div id="m-investment-cards" class="space-y-2"></div>
+                <div id="m-investment-cards" class="space-y-3"></div>
             </div>
 
             <div>
@@ -241,7 +241,7 @@ const ITEM_TEMPLATES = {
         return `
         <div class="mobile-card flex flex-col gap-2">
             <div class="flex justify-between items-start">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Account Name">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-lg w-2/3 outline-none" placeholder="Account Name">
             </div>
             <div class="flex justify-between items-end mt-1">
                 <div class="flex flex-col">
@@ -256,7 +256,7 @@ const ITEM_TEMPLATES = {
                     </select>
                 </div>
                 <div class="text-right flex-grow">
-                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-4xl mono-numbers outline-none leading-none">
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-5xl mono-numbers outline-none leading-none">
                 </div>
             </div>
         </div>`;
@@ -332,10 +332,10 @@ const ITEM_TEMPLATES = {
              <div class="flex justify-between items-center">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Source">
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4 items-end">
                 <div>
                     <span class="mobile-label">Gross Amount</span>
-                    <input data-id="amount" data-type="currency" value="${math.toCurrency(data.amount || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="amount" data-type="currency" value="${math.toCurrency(data.amount || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700 text-4xl">
                 </div>
                 <div>
                     <span class="mobile-label">Growth %</span>
@@ -367,7 +367,7 @@ const ITEM_TEMPLATES = {
         if (data.isLocked) {
              return `
              <div class="mobile-card border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)] bg-slate-800/80 flex justify-between items-center gap-3">
-                <div class="flex flex-col w-1/3">
+                <div class="flex flex-col w-auto whitespace-nowrap">
                     <div class="text-blue-400 font-black text-xs uppercase tracking-widest leading-tight">401k from Income</div>
                 </div>
                 <div class="text-right flex-grow">
@@ -440,6 +440,19 @@ function attachGlobal() {
     };
     
     document.getElementById('logout-btn').onclick = logoutUser;
+    
+    // Add Buy Me A Coffee link to header if not present
+    const headerActions = document.querySelector('header .flex.items-center.gap-3');
+    if (headerActions && !document.getElementById('coffee-link-mobile')) {
+        const link = document.createElement('a');
+        link.id = 'coffee-link-mobile';
+        link.href = "https://buymeacoffee.com/timdegraff";
+        link.target = "_blank";
+        link.rel = "noreferrer";
+        link.className = "w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center text-amber-500 active:scale-95 transition-all bg-slate-800";
+        link.innerHTML = '<i class="fas fa-coffee"></i>';
+        headerActions.insertBefore(link, document.getElementById('logout-btn'));
+    }
     
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
         btn.onclick = () => {
@@ -702,7 +715,8 @@ function renderTab() {
         if (!window.currentData.budget?.savings || window.currentData.budget.savings.length === 0) window.addMobileItem('budget.savings');
         if (!window.currentData.budget?.expenses || window.currentData.budget.expenses.length === 0) window.addMobileItem('budget.expenses');
 
-        window.currentData.budget?.savings?.forEach((i, idx) => addMobileRow('m-budget-savings', 'savings', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
+        // Filter out locked items to prevent duplicates (since we added the locked one manually above)
+        window.currentData.budget?.savings?.filter(i => !i.isLocked).forEach((i, idx) => addMobileRow('m-budget-savings', 'savings', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
         window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
     if (currentTab === 'benefits') {
@@ -725,6 +739,15 @@ function renderTab() {
         if (retireInp && window.currentData.assumptions?.retirementAge) {
             retireInp.value = window.currentData.assumptions.retirementAge;
             if (retireLbl) retireLbl.textContent = window.currentData.assumptions.retirementAge;
+            
+            // Wire up listener here for Mobile-specific burndown slider
+            retireInp.oninput = (e) => {
+                const val = parseInt(e.target.value);
+                window.currentData.assumptions.retirementAge = val;
+                document.getElementById('label-top-retire-age').textContent = val;
+                burndown.run();
+                if(window.debouncedAutoSave) window.debouncedAutoSave();
+            }
         }
 
         // Do NOT call burndown.init() to avoid overwriting mobile controls

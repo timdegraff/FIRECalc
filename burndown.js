@@ -348,8 +348,17 @@ export const burndown = {
             const totalDebt = simDebts.reduce((s, d) => s + (d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12)), 0);
 
             let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
-            let targetBudget = isRet ? baseBudget * (age < 65 ? (assumptions.slowGoFactor || 1.1) : (age < 80 ? (assumptions.midGoFactor || 1.0) : (assumptions.noGoFactor || 0.85))) : baseBudget;
-            trace.push(`Target Spending: ${math.toCurrency(targetBudget)}`);
+            
+            // Adjusted Go-Go (30-50), Slow-Go (50-80), No-Go (80+) spending logic
+            // Using assumptions factors: slowGoFactor (GO-GO), midGoFactor (SLOW-GO), noGoFactor (NO-GO)
+            let factor = 1.0;
+            if (isRet) {
+                if (age < 50) factor = assumptions.slowGoFactor || 1.1; // GO-GO
+                else if (age < 80) factor = assumptions.midGoFactor || 1.0; // SLOW-GO
+                else factor = assumptions.noGoFactor || 0.8; // NO-GO
+            }
+            let targetBudget = isRet ? baseBudget * factor : baseBudget;
+            trace.push(`Target Spending: ${math.toCurrency(targetBudget)} (Factor: ${Math.round(factor * 100)}%)`);
 
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const currentNW = (bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0) + (currentREVal - totalMort)) - bal['heloc'] - totalOL - totalDebt;
