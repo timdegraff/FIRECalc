@@ -341,6 +341,15 @@ export function updateSummaries(data) {
     set('sum-gross-income', s.totalGrossIncome);
     set('sum-income-adjusted', s.magiBase);
     
+    // Calculate Retirement Income Floor (Persistent Income + SS in today's $)
+    const persistentIncome = (data.income || []).reduce((sum, inc) => {
+        if (!inc.remainsInRetirement) return sum;
+        const base = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1);
+        return sum + base;
+    }, 0);
+    const ssAnnual = engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, 1);
+    set('sum-retirement-income-floor', persistentIncome + ssAnnual);
+    
     // Budget
     set('sum-budget-savings', s.totalAnnualSavings);
     set('sum-budget-annual', s.totalAnnualBudget);
@@ -352,7 +361,7 @@ export function updateSummaries(data) {
     const lifeExp = engine.getLifeExpectancy(data.assumptions?.currentAge || 40);
     setRaw('sum-life-exp', `Age ${Math.round((data.assumptions?.currentAge || 40) + lifeExp)}`);
     
-    // Retirement Budget (from Burndown Simulation)
+    // Retirement Year 1 Budget (Target Spending)
     const burnResults = burndown.simulateProjection(data);
     const rAge = data.assumptions?.retirementAge || 65;
     const firstRetYear = burnResults.find(r => r.age >= rAge);
@@ -360,11 +369,24 @@ export function updateSummaries(data) {
         set('sum-retire-budget', firstRetYear.budget);
     }
 
-    // Burndown
+    // Sync Health Plan color and text consistently across tabs
+    const dial = data.burndown?.strategyDial || 33;
+    const planName = dial <= 33 ? "Platinum" : (dial <= 66 ? "Silver CSR" : "Private");
+    
+    const updateHealthDisplay = (id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.textContent = planName;
+            el.className = "text-4xl font-black uppercase tracking-tighter transition-colors " + 
+                (planName === "Platinum" ? "text-emerald-400" : (planName === "Silver CSR" ? "text-blue-400" : "text-slate-400"));
+        }
+    };
+    updateHealthDisplay('sum-health-plan');
+    updateHealthDisplay('sum-draw-strategy');
+
+    // Insolvency
     const insolvAge = burndown.getInsolvencyAge();
     setText('sum-solvency-age', insolvAge ? `Age ${insolvAge}` : "Age 100+");
-    const dial = data.burndown?.strategyDial || 33;
-    setText('sum-draw-strategy', dial <= 33 ? "Platinum Max" : (dial <= 66 ? "Silver CSR" : "Balanced"));
 
     const r401k = Array.from(document.querySelectorAll('#budget-savings-rows tr')).find(r => r.querySelector('[data-id="monthly"]')?.readOnly);
     if (r401k) {

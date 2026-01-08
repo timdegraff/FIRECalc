@@ -418,8 +418,8 @@ window.updateSidebarChart = (data) => {
             const color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']);
             const shortName = shortNames[type] || type;
             const item = document.createElement('div');
-            item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400';
-            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full" style="background-color: ${color}"></div><span class="truncate">${shortName}</span><span class="ml-auto text-slate-400 font-bold mono-numbers">${compactFormat(value)}</span>`;
+            item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400 overflow-hidden';
+            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${color}"></div><span class="truncate pr-1">${shortName}</span><span class="ml-auto text-slate-400 font-bold mono-numbers pr-1">${compactFormat(value)}</span>`;
             legendContainer.appendChild(item);
         });
     }

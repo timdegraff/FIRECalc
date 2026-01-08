@@ -117,65 +117,65 @@ export const templates = {
 
     income: (data) => `
         <div class="removable-item bg-slate-800 rounded-2xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
-            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-900/40">
+            <div class="px-4 py-2.5 border-b border-slate-700 flex justify-between items-center bg-slate-900/40">
                 <div class="flex items-center gap-3">
-                    <i class="fas fa-money-check-alt text-teal-400"></i>
+                    <i class="fas fa-money-check-alt text-teal-400 text-xs"></i>
                     <input data-id="name" type="text" placeholder="Source Name" class="bg-transparent border-none outline-none text-white font-black uppercase tracking-widest text-sm placeholder:text-slate-600">
                 </div>
                 <button data-action="remove" class="text-slate-600 hover:text-red-400 transition-all">
-                    <i class="fas fa-times"></i>
+                    <i class="fas fa-times text-xs"></i>
                 </button>
             </div>
             
-            <div class="p-5 space-y-6">
+            <div class="p-4 space-y-3.5">
                 <div class="grid grid-cols-2 gap-6 items-start">
-                    <div class="space-y-1.5">
+                    <div class="space-y-0.5">
                         <div class="flex justify-between items-center h-4">
                             <label class="label-std text-slate-500">Gross Amount</label>
                             <button data-action="toggle-freq" data-id="isMonthly" class="text-blue-500 hover:text-blue-400 label-std">Annual</button>
                         </div>
                         <input data-id="amount" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-teal-400 font-bold mono-numbers">
                     </div>
-                    <div class="space-y-1.5">
+                    <div class="space-y-0.5">
                         <div class="h-4 flex items-center">
                             <label class="label-std text-slate-500">Annual Growth %</label>
-                            <input data-id="increase" type="number" step="0.1" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                         </div>
+                        <input data-id="increase" type="number" step="0.1" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                     </div>
                 </div>
 
-                <div class="p-4 bg-slate-900/40 rounded-xl border border-slate-700/30 space-y-3">
+                <div class="p-3 bg-slate-900/40 rounded-xl border border-slate-700/30 space-y-2">
                     <div class="grid grid-cols-3 gap-4">
-                        <div class="space-y-1 relative">
+                        <div class="space-y-0.5 relative">
                             <label class="label-std text-slate-500">401k %</label>
                             <input data-id="contribution" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                             <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds Annual IRS Contribution Limit">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
                         </div>
-                        <div class="space-y-1">
+                        <div class="space-y-0.5">
                             <label class="label-std text-slate-500">Match %</label>
                             <input data-id="match" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                         </div>
-                        <div class="space-y-1">
+                        <div class="space-y-0.5">
                             <label class="label-std text-slate-500">Bonus %</label>
                             <input data-id="bonusPct" type="number" placeholder="0" class="input-base w-full text-white font-bold mono-numbers">
                         </div>
                     </div>
                     
-                    <div class="flex items-center gap-4 pt-1 border-t border-slate-700/30">
-                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input data-id="contribOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
-                            <span class="text-[9px] font-bold text-slate-500 uppercase">Contrib on Bonus</span>
+                    <div class="flex items-center gap-4 pt-1 border-t border-slate-700/20">
+                         <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input data-id="contribOnBonus" type="checkbox" class="w-2.5 h-2.5 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <span class="text-[8px] font-bold text-slate-500 uppercase">On Bonus</span>
                          </label>
-                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input data-id="matchOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
-                            <span class="text-[9px] font-bold text-slate-500 uppercase">Match on Bonus</span>
+                         <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input data-id="matchOnBonus" type="checkbox" class="w-2.5 h-2.5 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <span class="text-[8px] font-bold text-slate-500 uppercase">Match on Bonus</span>
                          </label>
                     </div>
                 </div>
 
-                <div class="space-y-1.5">
+                <div class="space-y-0.5">
                     <div class="flex justify-between items-center h-4">
                         <label class="label-std text-slate-500">Direct Deductions</label>
                         <button data-action="toggle-freq" data-id="incomeExpensesMonthly" class="text-blue-500 hover:text-blue-400 label-std">Annual</button>
@@ -183,14 +183,14 @@ export const templates = {
                     <input data-id="incomeExpenses" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-pink-400 font-bold mono-numbers">
                 </div>
 
-                <div class="flex flex-wrap items-end justify-between gap-6 pt-2 border-t border-slate-700/30">
-                    <div class="flex flex-col gap-1.5">
-                        <label class="label-std text-slate-500">Non-Taxable Until (Year)</label>
-                        <input data-id="nonTaxableUntil" type="number" placeholder="2026" class="input-base w-24 text-teal-400 font-bold mono-numbers">
+                <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-700/20">
+                    <div class="flex items-center gap-2">
+                        <label class="label-std text-slate-500">NT Until:</label>
+                        <input data-id="nonTaxableUntil" type="number" placeholder="2026" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-teal-400 font-bold mono-numbers text-[11px] w-14 outline-none">
                     </div>
-                    <label class="flex items-center gap-3 cursor-pointer h-10">
-                        <input data-id="remainsInRetirement" type="checkbox" class="w-4 h-4 accent-blue-500 rounded bg-slate-900 border-slate-700">
-                        <span class="label-std text-slate-500 hover:text-blue-400 transition-colors">Retirement Income?</span>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input data-id="remainsInRetirement" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-700">
+                        <span class="text-[9px] font-black text-slate-500 uppercase hover:text-blue-400 transition-colors">Retirement Income?</span>
                     </label>
                 </div>
             </div>
@@ -198,12 +198,13 @@ export const templates = {
     `,
     "budget-savings": (data) => {
         const type = data.type || 'Taxable';
+        const typeClass = templates.helpers.getTypeClass(type);
         const selectorHtml = data.isLocked 
             ? `<div class="input-base bg-slate-900 border-none w-full font-black uppercase tracking-widest text-[11px] text-blue-400 flex items-center h-full">401k from Income</div><input type="hidden" data-id="type" value="Pre-Tax (401k/IRA)">` 
-            : `<select data-id="type" class="input-base bg-slate-900 text-white border-none w-full font-black uppercase tracking-widest text-[11px] ${templates.helpers.getTypeClass(type)} cursor-pointer outline-none">
+            : `<select data-id="type" class="input-base bg-slate-900 text-white border-none w-full font-black uppercase tracking-widest text-[11px] ${typeClass} cursor-pointer outline-none">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
-                        <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax (401k/IRA)</option>
-                        <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Post-Tax (Roth)</option>
+                        <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
+                        <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
                         <option value="Cash" ${type === 'Cash' ? 'selected' : ''}>Cash</option>
                         <option value="Crypto" ${type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${type === 'Metals' ? 'selected' : ''}>Metals</option>
@@ -212,42 +213,43 @@ export const templates = {
                     </select>`;
 
         return `
-            <td class="px-6 py-3">
+            <td class="px-8 py-5 border-l-4 ${typeClass.replace('text-', 'border-')}">
                 <div class="flex items-center gap-3">
-                    <div class="w-1.5 h-6 rounded-full ${templates.helpers.getTypeClass(type).replace('text-', 'bg-')}"></div>
                     ${selectorHtml}
                 </div>
             </td>
-            <td class="px-6 py-3 text-center">
+            <td class="px-6 py-5 text-center">
                  ${data.isLocked ? '' : `
-                 <label class="flex items-center justify-center gap-2 cursor-pointer" title="Contribution stops when you retire">
-                    <span class="text-[8px] uppercase font-bold text-slate-500">Stop</span>
+                 <label class="inline-flex items-center px-3 py-1 bg-slate-900 rounded-full border border-slate-700 cursor-pointer hover:border-pink-500/50 transition-all" title="Contribution stops when you retire">
+                    <span class="text-[9px] uppercase font-black text-slate-500 mr-2">Stop</span>
                     <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700">
                 </label>
                  `}
             </td>
-            <td class="px-6 py-3"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400/80 font-bold mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}></td>
-            <td class="px-6 py-3"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers outline-none" ${data.isLocked ? 'readonly' : ''}></td>
-            <td class="px-6 py-3 text-right">${data.isLocked ? '' : '<button data-action="remove" class="text-slate-700 hover:text-red-400 transition-colors"><i class="fas fa-times"></i></button>'}</td>
+            <td class="px-6 py-5"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400/80 font-bold mono-numbers outline-none border-b border-slate-700/50 focus:border-teal-500" ${data.isLocked ? 'readonly' : ''}></td>
+            <td class="px-6 py-5"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers outline-none border-b border-slate-700/50 focus:border-teal-500" ${data.isLocked ? 'readonly' : ''}></td>
+            <td class="px-8 py-5 text-right">${data.isLocked ? '' : '<button data-action="remove" class="text-slate-600 hover:text-red-400 transition-colors"><i class="fas fa-times-circle"></i></button>'}</td>
         `;
     },
     "budget-expense": (data) => `
-        <td class="px-6 py-3"><input data-id="name" type="text" placeholder="Expense Item" class="input-base bg-transparent border-none w-full font-bold text-white outline-none"></td>
-        <td class="px-6 py-3 text-center">
-            <div class="flex items-center justify-center gap-4">
-                <label class="flex items-center gap-2 cursor-pointer" title="Expense stops when you retire">
-                    <span class="text-[8px] uppercase font-bold text-slate-500">Stop</span>
-                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700">
+        <td class="px-8 py-5 border-l-4 border-slate-700 group-hover:border-pink-500 transition-all">
+            <input data-id="name" type="text" placeholder="Expense Item" class="input-base bg-transparent border-none w-full font-black text-white uppercase tracking-wider text-sm outline-none placeholder:text-slate-600">
+        </td>
+        <td class="px-6 py-5">
+            <div class="flex items-center justify-center gap-3">
+                <label class="flex items-center px-2 py-1 bg-slate-900 rounded-lg border border-slate-700 cursor-pointer hover:border-pink-500/50 transition-all" title="Expense stops when you retire">
+                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5">Stop</span>
+                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700" ${data.removedInRetirement ? 'checked' : ''}>
                 </label>
-                <label class="flex items-center gap-2 cursor-pointer" title="Fixed cost (does not inflate)">
-                    <span class="text-[8px] uppercase font-bold text-slate-500">Fixed</span>
-                    <input data-id="isFixed" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-700">
+                <label class="flex items-center px-2 py-1 bg-slate-900 rounded-lg border border-slate-700 cursor-pointer hover:border-blue-500/50 transition-all" title="Fixed cost (does not inflate)">
+                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5">Fixed</span>
+                    <input data-id="isFixed" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-700" ${data.isFixed ? 'checked' : ''}>
                 </label>
             </div>
         </td>
-        <td class="px-6 py-3"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-pink-400/80 font-bold mono-numbers outline-none"></td>
-        <td class="px-6 py-3"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-pink-500 font-black mono-numbers outline-none"></td>
-        <td class="px-6 py-3 text-right"><button data-action="remove" class="text-slate-700 hover:text-red-400 transition-colors"><i class="fas fa-times"></i></button></td>
+        <td class="px-6 py-5"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-pink-400/80 font-bold mono-numbers outline-none border-b border-slate-700/50 focus:border-pink-500"></td>
+        <td class="px-6 py-5"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-pink-500 font-black mono-numbers outline-none border-b border-slate-700/50 focus:border-pink-500"></td>
+        <td class="px-8 py-5 text-right"><button data-action="remove" class="text-slate-600 hover:text-red-400 transition-colors"><i class="fas fa-times-circle"></i></button></td>
     `,
     realEstate: () => `
         <td><input data-id="name" type="text" placeholder="Property" class="input-base w-full font-black uppercase tracking-widest text-sm text-white"></td>
