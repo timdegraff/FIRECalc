@@ -227,10 +227,6 @@ const ITEM_TEMPLATES = {
                     <input data-id="mortgage" data-type="currency" value="${math.toCurrency(data.mortgage || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
                 </div>
             </div>
-            <div>
-                 <span class="mobile-label">Principal / mo</span>
-                 <input data-id="principalPayment" data-type="currency" value="${math.toCurrency(data.principalPayment || 0)}" inputmode="decimal" class="block w-full bg-transparent text-blue-400 opacity-60 font-black text-lg mono-numbers outline-none border-b border-slate-700">
-            </div>
         </div>
     `,
     otherAsset: (data) => `
@@ -247,10 +243,6 @@ const ITEM_TEMPLATES = {
                     <span class="mobile-label">Loan</span>
                     <input data-id="loan" data-type="currency" value="${math.toCurrency(data.loan || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
                 </div>
-            </div>
-            <div>
-                 <span class="mobile-label">Principal / mo</span>
-                 <input data-id="principalPayment" data-type="currency" value="${math.toCurrency(data.principalPayment || 0)}" inputmode="decimal" class="block w-full bg-transparent text-blue-400 opacity-60 font-black text-lg mono-numbers outline-none border-b border-slate-700">
             </div>
         </div>
     `,
@@ -280,15 +272,9 @@ const ITEM_TEMPLATES = {
             <div class="flex justify-between items-start">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Debt Name">
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                 <div>
-                    <span class="mobile-label">Balance</span>
-                    <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
-                </div>
-                <div>
-                     <span class="mobile-label">Principal / mo</span>
-                     <input data-id="principalPayment" data-type="currency" value="${math.toCurrency(data.principalPayment || 0)}" inputmode="decimal" class="block w-full bg-transparent text-blue-400 opacity-60 font-black text-lg mono-numbers outline-none border-b border-slate-700">
-                </div>
+            <div>
+                <span class="mobile-label">Balance</span>
+                <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
             </div>
         </div>
     `,
@@ -323,22 +309,8 @@ const ITEM_TEMPLATES = {
                         <input data-id="bonusPct" type="number" value="${data.bonusPct || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
                     </div>
                 </div>
-                <div class="flex gap-4">
-                     <label class="flex items-center gap-1.5"><input type="checkbox" data-id="contribOnBonus" ${data.contribOnBonus ? 'checked' : ''} class="w-3 h-3 bg-slate-800 border-slate-600 rounded"><span class="text-[8px] font-bold text-slate-500 uppercase">Contrib Bonus</span></label>
-                     <label class="flex items-center gap-1.5"><input type="checkbox" data-id="matchOnBonus" ${data.matchOnBonus ? 'checked' : ''} class="w-3 h-3 bg-slate-800 border-slate-600 rounded"><span class="text-[8px] font-bold text-slate-500 uppercase">Match Bonus</span></label>
-                </div>
             </div>
 
-            <div class="flex items-end gap-4">
-                 <div class="flex-grow">
-                    <span class="mobile-label">Deductions (Annual)</span>
-                    <input data-id="incomeExpenses" data-type="currency" value="${math.toCurrency(data.incomeExpenses || 0)}" class="block w-full bg-transparent text-pink-400 font-bold mono-numbers outline-none border-b border-slate-700">
-                 </div>
-                 <div class="flex-grow">
-                    <span class="mobile-label">Tax Free Until</span>
-                    <input data-id="nonTaxableUntil" type="number" value="${data.nonTaxableUntil || 2026}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
-                 </div>
-            </div>
              <label class="flex items-center gap-2 mt-2"><input type="checkbox" data-id="remainsInRetirement" ${data.remainsInRetirement ? 'checked' : ''} class="w-4 h-4 bg-slate-800 border-slate-600 rounded"><span class="text-[9px] font-bold text-slate-400 uppercase">Continue in Retirement</span></label>
         </div>
     `,
