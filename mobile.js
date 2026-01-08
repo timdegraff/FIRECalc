@@ -74,7 +74,8 @@ onAuthStateChanged(auth, async (user) => {
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
                         Sign in with Google
                     </button>
-                </div>`;
+                </div>
+                <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v2.8</div>`;
             document.getElementById('login-btn').onclick = performMobileLogin;
         }
     }
@@ -215,7 +216,8 @@ function init() {
                             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
                             Sign in with Google
                         </button>
-                    </div>`;
+                    </div>
+                    <div class="absolute bottom-5 right-5 text-slate-600 text-[10px] font-black font-mono opacity-50 pointer-events-none">v2.8</div>`;
                 document.getElementById('login-btn').onclick = performMobileLogin;
             }
         }
