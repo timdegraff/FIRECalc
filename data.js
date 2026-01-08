@@ -25,20 +25,34 @@ export async function initializeData(authUser) {
 async function loadData() {
     const docRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(docRef);
+    
     if (docSnap.exists()) {
         window.currentData = docSnap.data();
         if (!window.currentData.assumptions) window.currentData.assumptions = { ...assumptions.defaults };
-        // Merge missing default keys for segmented APY
+        
+        // Merge missing default keys for segmented APY (Advanced Mode Persistence)
+        let needsSave = false;
         Object.keys(assumptions.defaults).forEach(key => {
             if (window.currentData.assumptions[key] === undefined) {
                 window.currentData.assumptions[key] = assumptions.defaults[key];
+                needsSave = true;
             }
         });
-        if (!window.currentData.burndown) window.currentData.burndown = { useSEPP: true };
+
+        if (!window.currentData.burndown) {
+            window.currentData.burndown = { useSEPP: true };
+            needsSave = true;
+        }
+
+        // If we patched missing keys, save back to cloud immediately so they stick
+        if (needsSave) {
+            await autoSave(false);
+        }
     } else {
         window.currentData = getInitialData();
         await autoSave(false);
     }
+    
     loadUserDataIntoUI(window.currentData);
     benefits.load(window.currentData.benefits);
     burndown.load(window.currentData.burndown);

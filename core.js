@@ -72,7 +72,8 @@ function attachGlobalListeners() {
             const advanced = !window.currentData.assumptions.advancedGrowth;
             window.currentData.assumptions.advancedGrowth = advanced;
             window.createAssumptionControls(window.currentData);
-            if (window.debouncedAutoSave) window.debouncedAutoSave();
+            // FIX: Force immediate save (scrape=false) to persist boolean state without waiting for debounce
+            autoSave(false);
         }
     });
 
