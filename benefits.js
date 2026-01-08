@@ -17,7 +17,7 @@ export const benefits = {
                             <h2 class="text-lg font-bold text-white uppercase tracking-tighter">Benefit Optimization</h2>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4 bg-slate-900 p-1.5 rounded-xl border border-slate-700">
+                    <div class="hidden md:flex items-center gap-4 bg-slate-900 p-1.5 rounded-xl border border-slate-700">
                          <span class="label-std text-slate-500 pl-2">Household Size</span>
                          <div class="flex items-center gap-2">
                              <input type="range" data-benefit-id="hhSize" min="1" max="10" step="1" value="1" class="w-24 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
@@ -52,7 +52,7 @@ export const benefits = {
                             </div>
                         </div>
                         <div class="p-4 flex flex-col gap-3 flex-grow">
-                            <div class="text-center">
+                            <div class="text-center hidden md:block">
                                 <span class="label-std text-slate-500 block mb-0.5">Plan Status</span>
                                 <div id="health-main-display" class="text-3xl font-black text-white tracking-tighter">Platinum</div>
                                 <div id="health-sub-display" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">100% Full Coverage</div>
@@ -65,7 +65,7 @@ export const benefits = {
                                 <div id="seg-gold" class="bg-amber-500/60 h-full border-r border-slate-900/50"></div>
                                 <div id="health-marker" class="absolute top-0 w-1.5 h-full bg-white shadow-[0_0_10px_white] transition-all z-10 rounded-full"></div>
                             </div>
-                            <div class="mt-auto pt-1">
+                            <div class="mt-auto pt-1 hidden md:block">
                                 <table class="w-full text-[10px]">
                                     <tbody>
                                         <tr><td class="py-0.5 text-slate-500 font-medium">Est. Monthly Premium</td><td class="py-0.5 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
@@ -93,8 +93,8 @@ export const benefits = {
                                 </label>
                             </div>
                         </div>
-                        <div class="p-4 flex flex-col gap-3 flex-grow">
-                            <div class="flex-grow flex flex-col items-center justify-center py-2 text-center">
+                        <div class="p-2 md:p-4 flex flex-col gap-1 md:gap-3 flex-grow">
+                            <div class="flex-grow flex flex-col items-center justify-center py-0 md:py-2 text-center">
                                 <span class="label-std text-slate-500 mb-0.5">Monthly Benefit</span>
                                 <div id="snap-result-value" class="text-5xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg">$0</div>
                                 <div id="snap-annual-value" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Total Annual: $0</div>
