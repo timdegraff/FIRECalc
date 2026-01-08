@@ -408,7 +408,18 @@ export const burndown = {
                 trace.push(`Cash Shortfall detected: ${math.toCurrency(shortfall)}`);
                 burndown.priorityOrder.forEach(pk => {
                     if (shortfall <= 0.01) return;
-                    const take = Math.min((pk === 'heloc' ? helocLimit - bal['heloc'] : bal[pk] || 0), shortfall);
+                    
+                    // FIXED: Ensure we don't take negative amounts if HELOC balance > limit
+                    let availableLiquidity = 0;
+                    if (pk === 'heloc') {
+                        availableLiquidity = Math.max(0, helocLimit - bal['heloc']);
+                    } else {
+                        availableLiquidity = bal[pk] || 0;
+                    }
+
+                    const take = Math.min(availableLiquidity, shortfall);
+                    if (take <= 0) return;
+
                     if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
                     drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
                     trace.push(`Shortfall pull from ${pk}: ${math.toCurrency(take)}`);
