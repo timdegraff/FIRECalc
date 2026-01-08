@@ -12,7 +12,7 @@ import { formatter } from './formatter.js';
 // --- SAFE VERSION CHECK LOGIC ---
 // We simply update the local version so it doesn't conflict with Desktop.
 // We DO NOT clear sessionStorage here to avoid Firebase Auth redirect loops.
-const APP_VERSION = "2.4"; 
+const APP_VERSION = "2.5"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
 if (currentSavedVersion !== APP_VERSION) {
@@ -64,6 +64,10 @@ window.addMobileItem = (type) => {
     else if (type === 'otherAssets') {
         window.currentData.otherAssets = window.currentData.otherAssets || [];
         window.currentData.otherAssets.push({ name: '', value: 0, loan: 0, principalPayment: 0 });
+    }
+    else if (type === 'stockOptions') {
+        window.currentData.stockOptions = window.currentData.stockOptions || [];
+        window.currentData.stockOptions.push({ name: '', shares: 0, strikePrice: 0, currentPrice: 0, growth: 10, isLtcg: true });
     }
     else if (type === 'helocs') {
         window.currentData.helocs = window.currentData.helocs || [];
@@ -148,6 +152,14 @@ const MOBILE_TEMPLATES = {
                     <button onclick="window.addMobileItem('debts')" class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-red-900/20"><i class="fas fa-plus"></i></button>
                 </div>
                 <div id="m-debt-cards" class="space-y-2"></div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-briefcase text-blue-400 mr-2"></i>Private Equity</h2>
+                    <button onclick="window.addMobileItem('stockOptions')" class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-blue-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-stock-option-cards" class="space-y-2"></div>
             </div>
             
             <div class="pt-8 border-t border-slate-800">
@@ -300,6 +312,45 @@ const ITEM_TEMPLATES = {
             </div>
         </div>
     `,
+    stockOption: (data) => {
+       const shares = parseFloat(data.shares) || 0;
+       const strike = math.fromCurrency(data.strikePrice);
+       const fmv = math.fromCurrency(data.currentPrice);
+       const equity = Math.max(0, (fmv - strike) * shares);
+
+       return `
+       <div class="mobile-card space-y-3">
+           <div class="flex justify-between items-center">
+               <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Grant Name">
+               <div class="text-xs font-black text-teal-400 mono-numbers">${math.toCurrency(equity)}</div>
+           </div>
+           <div class="grid grid-cols-3 gap-2">
+               <div>
+                   <span class="mobile-label">Shares</span>
+                   <input data-id="shares" type="number" value="${data.shares || 0}" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-700">
+               </div>
+               <div>
+                   <span class="mobile-label">Strike</span>
+                   <input data-id="strikePrice" data-type="currency" value="${math.toCurrency(data.strikePrice || 0)}" inputmode="decimal" class="block w-full bg-transparent text-emerald-500 font-bold mono-numbers outline-none border-b border-slate-700">
+               </div>
+               <div>
+                   <span class="mobile-label">FMV</span>
+                   <input data-id="currentPrice" data-type="currency" value="${math.toCurrency(data.currentPrice || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
+               </div>
+           </div>
+           <div class="flex justify-between items-center pt-1">
+                <div class="w-1/3">
+                    <span class="mobile-label">APY %</span>
+                    <input data-id="growth" type="number" step="0.1" value="${data.growth !== undefined ? data.growth : 10}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                </div>
+                <label class="flex items-center gap-2 bg-slate-900 px-2 py-1 rounded border border-slate-700">
+                    <span class="text-[8px] font-bold text-slate-500 uppercase">LTCG?</span>
+                    <input type="checkbox" data-id="isLtcg" ${data.isLtcg !== false ? 'checked' : ''} class="w-3 h-3 bg-slate-800 border-slate-600 rounded accent-emerald-500">
+                </label>
+           </div>
+       </div>
+       `;
+    },
     otherAsset: (data) => `
         <div class="mobile-card space-y-2">
             <div class="flex justify-between items-start">
@@ -666,6 +717,7 @@ function renderMobileAssetList() {
     const inv = window.currentData.investments || [];
     const re = window.currentData.realEstate || [];
     const oa = window.currentData.otherAssets || [];
+    const opts = window.currentData.stockOptions || [];
     
     const buckets = {
         'Taxable': inv.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -677,7 +729,13 @@ function renderMobileAssetList() {
         'Cash': inv.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'HSA': inv.filter(i => i.type === 'HSA').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         '529 Plan': inv.filter(i => i.type === '529 Plan').reduce((s, i) => s + math.fromCurrency(i.value), 0),
-        'Other': oa.reduce((s, o) => s + math.fromCurrency(o.value), 0)
+        'Other': oa.reduce((s, o) => s + math.fromCurrency(o.value), 0),
+        'Options': opts.reduce((s, x) => {
+            const shares = parseFloat(x.shares) || 0;
+            const strike = math.fromCurrency(x.strikePrice);
+            const fmv = math.fromCurrency(x.currentPrice);
+            return s + Math.max(0, (fmv - strike) * shares);
+        }, 0)
     };
 
     const total = Object.values(buckets).reduce((a, b) => a + b, 0);
@@ -685,12 +743,13 @@ function renderMobileAssetList() {
     
     if (total === 0) return;
 
-    const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other' };
+    const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other', 'Options': 'Options' };
 
     Object.entries(buckets).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
         if (value <= 0) return;
         const percent = Math.round((value / total) * 100);
-        const color = assetColors[type] || assetColors['Taxable'];
+        let color = assetColors[type] || assetColors['Taxable'];
+        if (type === 'Options') color = '#14b8a6'; // Teal for Options
         const shortName = shortNames[type] || type;
         
         const item = document.createElement('div');
@@ -715,12 +774,14 @@ function renderTab() {
         
         // Auto-add empty rows if empty (Pre-population Logic)
         checkEmpty(window.currentData.investments, 'investments');
+        checkEmpty(window.currentData.stockOptions, 'stockOptions');
         checkEmpty(window.currentData.realEstate, 'realEstate');
         checkEmpty(window.currentData.otherAssets, 'otherAssets');
         checkEmpty(window.currentData.helocs, 'helocs');
         checkEmpty(window.currentData.debts, 'debts');
 
         window.currentData.investments?.forEach((i, idx) => addMobileRow('m-investment-cards', 'investment', i, idx, 'investments'));
+        window.currentData.stockOptions?.forEach((i, idx) => addMobileRow('m-stock-option-cards', 'stockOption', i, idx, 'stockOptions'));
         window.currentData.realEstate?.forEach((i, idx) => addMobileRow('m-re-cards', 'realEstate', i, idx, 'realEstate'));
         window.currentData.otherAssets?.forEach((i, idx) => addMobileRow('m-other-asset-cards', 'otherAsset', i, idx, 'otherAssets'));
         window.currentData.helocs?.forEach((i, idx) => addMobileRow('m-heloc-cards', 'heloc', i, idx, 'helocs'));
