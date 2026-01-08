@@ -39,14 +39,13 @@ onAuthStateChanged(auth, async (user) => {
     } 
     // 2. Guest Mode Active
     else if (guestModeActive) {
-        setupAppHeader(null, "Guest User", "Exit Guest Mode");
+        setupAppHeader(null, null, "Exit Guest Mode");
         await initializeData(null); // Initialize with null user -> triggers LocalStorage path
         
-        // Visual indicator for guest mode
+        // Hide the discrete indicator on desktop if guest
         const indicator = document.getElementById('save-indicator');
         if (indicator) {
-            indicator.innerHTML = '<i class="fas fa-hdd"></i>';
-            indicator.title = "Saved to this device only";
+            indicator.classList.add('hidden');
         }
         
         showApp();
@@ -87,7 +86,15 @@ function setupAppHeader(avatarUrl, userName, logoutText) {
         avatar.src = avatarUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
     }
     const name = document.getElementById('user-name');
-    if (name) name.textContent = userName || 'Guest';
+    if (name) {
+        if (userName === null) {
+            // Guest mode: show LOGIN TO SAVE button
+            name.innerHTML = `<button id="sidebar-login-btn" class="text-blue-400 hover:text-white transition-colors font-black uppercase tracking-widest text-[9px] border border-blue-500/30 px-2 py-1 rounded bg-blue-500/10">LOGIN TO SAVE</button>`;
+            document.getElementById('sidebar-login-btn').onclick = signInWithGooglePopup;
+        } else {
+            name.textContent = userName;
+        }
+    }
     
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {

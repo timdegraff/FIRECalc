@@ -30,8 +30,13 @@ window.debouncedAutoSave = () => {
     window.mobileSaveTimeout = setTimeout(() => {
         // Trigger Save Indicator State locally for Mobile logic
         const indicators = document.querySelectorAll('#save-indicator');
+        const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
+        
         indicators.forEach(el => {
-            el.className = "text-orange-500 transition-colors duration-200"; 
+            // Only flash indicator if not in guest mode
+            if (!isGuest) {
+                el.className = "text-orange-500 transition-colors duration-200"; 
+            }
         });
         
         autoSave(false); // Save from memory (window.currentData)
@@ -509,10 +514,19 @@ function init() {
                 document.getElementById('app-container').classList.remove('hidden');
                 
                 // Guest specific UI updates
+                const headerActions = document.querySelector('header .flex.items-center.gap-3');
+                if (headerActions && !document.getElementById('login-to-save-mobile')) {
+                    const btn = document.createElement('button');
+                    btn.id = 'login-to-save-mobile';
+                    btn.className = "px-2 py-1.5 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-[8px] font-black uppercase tracking-tight active:scale-95 transition-all";
+                    btn.textContent = "LOGIN TO SAVE";
+                    btn.onclick = () => document.getElementById('login-btn').click();
+                    headerActions.insertBefore(btn, document.getElementById('save-indicator'));
+                }
+                
                 const saveInd = document.getElementById('save-indicator');
                 if (saveInd) {
-                    saveInd.innerHTML = '<i class="fas fa-hdd"></i>';
-                    saveInd.className = "text-slate-500";
+                    saveInd.classList.add('hidden');
                 }
                 
                 renderTab();
@@ -578,7 +592,7 @@ function attachGlobal() {
         link.rel = "noreferrer";
         link.className = "w-10 h-10 rounded-full border border-slate-700 flex items-center justify-center text-amber-500 active:scale-95 transition-all bg-slate-800";
         link.innerHTML = '<i class="fas fa-coffee"></i>';
-        headerActions.insertBefore(link, document.getElementById('logout-btn'));
+        headerActions.insertBefore(link, document.getElementById('save-indicator'));
     }
     
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => {

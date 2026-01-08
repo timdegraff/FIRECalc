@@ -17,8 +17,13 @@ window.debouncedAutoSave = () => {
     
     // Trigger "Saving" State (Orange Flash)
     const indicators = document.querySelectorAll('#save-indicator');
+    const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
+
     indicators.forEach(el => {
-        el.className = "text-orange-500 transition-colors duration-200"; 
+        // Only flash indicator if not in guest mode
+        if (!isGuest) {
+            el.className = "text-orange-500 transition-colors duration-200"; 
+        }
     });
 
     autoSaveTimeout = setTimeout(() => {
@@ -69,7 +74,14 @@ async function loadData() {
     projection.load(window.currentData.projectionSettings);
     
     // Set initial synced state
-    document.querySelectorAll('#save-indicator').forEach(el => el.className = "text-green-500 transition-colors duration-200");
+    document.querySelectorAll('#save-indicator').forEach(el => {
+        const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
+        if (isGuest) {
+            el.classList.add('hidden');
+        } else {
+            el.className = "text-green-500 transition-colors duration-200";
+        }
+    });
 }
 
 function sanitizeAndPatchData() {
@@ -176,8 +188,14 @@ export async function autoSave(scrape = true) {
 
 function setSaveState(state) {
     const indicators = document.querySelectorAll('#save-indicator');
+    const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
+
     indicators.forEach(el => {
-        el.className = state === 'success' ? "text-green-500 transition-colors duration-200" : "text-red-500 transition-colors duration-200";
+        if (isGuest) {
+            el.classList.add('hidden');
+        } else {
+            el.className = state === 'success' ? "text-green-500 transition-colors duration-200" : "text-red-500 transition-colors duration-200";
+        }
     });
 }
 
