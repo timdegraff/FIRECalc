@@ -116,7 +116,7 @@ export const templates = {
     `,
 
     income: (data) => `
-        <div class="removable-item bg-slate-800 rounded-2xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
+        <div class="removable-item bg-slate-800 rounded-xl border border-slate-700/50 flex flex-col relative group shadow-lg overflow-hidden">
             <div class="px-4 py-2.5 border-b border-slate-700 flex justify-between items-center bg-slate-900/40">
                 <div class="flex items-center gap-3">
                     <i class="fas fa-money-check-alt text-teal-400 text-xs"></i>
