@@ -10,11 +10,7 @@ import { projection } from './projection.js';
 import { formatter } from './formatter.js';
 
 // --- POLYFILLS FOR DATA.JS COMPATIBILITY ---
-window.addRow = (id, type, data) => {
-    // When data.js calls addRow during load, we just want to ensure it doesn't crash.
-    // However, data.js uses specific IDs like 'investment-rows' which don't exist here.
-    // We do nothing here because renderTab handles the initial render for mobile.
-};
+window.addRow = (id, type, data) => {};
 window.updateSidebarChart = () => {};
 window.createAssumptionControls = () => {};
 window.debouncedAutoSave = () => {
@@ -28,38 +24,127 @@ let currentTab = 'assets-debts';
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
+// --- CONTEXTUAL ADD HANDLER ---
+window.addMobileItem = (type) => {
+    if (!window.currentData) return;
+    
+    if (type === 'investments') {
+        window.currentData.investments = window.currentData.investments || [];
+        window.currentData.investments.push({ type: 'Taxable', value: 0 });
+    }
+    else if (type === 'realEstate') {
+        window.currentData.realEstate = window.currentData.realEstate || [];
+        window.currentData.realEstate.push({ name: '', value: 0, mortgage: 0, principalPayment: 0 });
+    }
+    else if (type === 'otherAssets') {
+        window.currentData.otherAssets = window.currentData.otherAssets || [];
+        window.currentData.otherAssets.push({ name: '', value: 0, loan: 0, principalPayment: 0 });
+    }
+    else if (type === 'helocs') {
+        window.currentData.helocs = window.currentData.helocs || [];
+        window.currentData.helocs.push({ name: '', balance: 0, rate: 7, limit: 0 });
+    }
+    else if (type === 'debts') {
+        window.currentData.debts = window.currentData.debts || [];
+        window.currentData.debts.push({ name: '', balance: 0, principalPayment: 0 });
+    }
+    else if (type === 'income') {
+        window.currentData.income = window.currentData.income || [];
+        window.currentData.income.push({ amount: 0, increase: 0, contribution: 0, match: 0, bonusPct: 0 });
+    }
+    else if (type === 'budget.savings') {
+        window.currentData.budget = window.currentData.budget || {};
+        window.currentData.budget.savings = window.currentData.budget.savings || [];
+        window.currentData.budget.savings.push({ monthly: 0, annual: 0, type: 'Taxable' });
+    }
+    else if (type === 'budget.expenses') {
+        window.currentData.budget = window.currentData.budget || {};
+        window.currentData.budget.expenses = window.currentData.budget.expenses || [];
+        window.currentData.budget.expenses.push({ monthly: 0, annual: 0 });
+    }
+    
+    renderTab();
+    if (window.debouncedAutoSave) window.debouncedAutoSave();
+};
+
 // --- TEMPLATES ---
 const MOBILE_TEMPLATES = {
     'assets-debts': () => `
-        <div class="space-y-4">
-            <h2 class="text-xl font-black text-white uppercase tracking-tighter">Investments</h2>
-            <div id="m-investment-cards" class="space-y-3"></div>
-            
-            <div class="h-8"></div>
-            <h2 class="text-xl font-black text-white uppercase tracking-tighter">Real Estate & Assets</h2>
-            <div id="m-re-cards" class="space-y-3"></div>
-            <div class="h-8"></div>
-            <h2 class="text-xl font-black text-white uppercase tracking-tighter">Liabilities</h2>
-            <div id="m-debt-cards" class="space-y-3"></div>
+        <div class="space-y-8">
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-orange-400 mr-2"></i>Investments</h2>
+                    <button onclick="window.addMobileItem('investments')" class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-blue-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-investment-cards" class="space-y-3"></div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-home text-indigo-400 mr-2"></i>Real Estate</h2>
+                    <button onclick="window.addMobileItem('realEstate')" class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-indigo-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-re-cards" class="space-y-3"></div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-car text-teal-400 mr-2"></i>Other Assets</h2>
+                    <button onclick="window.addMobileItem('otherAssets')" class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-other-asset-cards" class="space-y-3"></div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-university text-orange-400 mr-2"></i>HELOCs</h2>
+                    <button onclick="window.addMobileItem('helocs')" class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-orange-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-heloc-cards" class="space-y-3"></div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-credit-card text-red-500 mr-2"></i>Other Debts</h2>
+                    <button onclick="window.addMobileItem('debts')" class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-red-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-debt-cards" class="space-y-3"></div>
+            </div>
         </div>
     `,
     'income': () => `
         <div class="space-y-6">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Income Sources</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-money-bill-wave text-teal-400 mr-2"></i>Income Sources</h2>
+                <button onclick="window.addMobileItem('income')" class="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus"></i></button>
+            </div>
             <div id="m-income-cards" class="space-y-4"></div>
         </div>
     `,
     'budget': () => `
         <div class="space-y-8">
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Asset Funding</h2>
-            <div id="m-budget-savings" class="space-y-3"></div>
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-piggy-bank text-emerald-400 mr-2"></i>Asset Funding</h2>
+                    <button onclick="window.addMobileItem('budget.savings')" class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-emerald-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-budget-savings" class="space-y-3"></div>
+            </div>
             
-            <h2 class="text-2xl font-black text-white uppercase tracking-tighter">Monthly Spending</h2>
-            <div id="m-budget-expenses" class="space-y-3"></div>
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-pie text-pink-500 mr-2"></i>Monthly Spending</h2>
+                    <button onclick="window.addMobileItem('budget.expenses')" class="w-10 h-10 bg-pink-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-pink-900/20"><i class="fas fa-plus"></i></button>
+                </div>
+                <div id="m-budget-expenses" class="space-y-3"></div>
+            </div>
         </div>
     `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
+             <div class="flex items-center gap-2 mb-4">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
+            </div>
             <div id="burndown-view-container" class="space-y-4"></div>
             <div class="mt-8">
                 <h3 class="mobile-label mb-2">Funding Priority</h3>
@@ -70,7 +155,7 @@ const MOBILE_TEMPLATES = {
     `,
     'projection': () => `
         <div class="space-y-6 pb-4">
-            <div class="flex items-center justify-between"><h2 class="text-xl font-black text-white uppercase tracking-tighter">Visual Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal $</button></div>
+            <div class="flex items-center justify-between"><h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-blue-400 mr-2"></i>Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal $</button></div>
             <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 h-[300px] relative"><canvas id="projection-chart"></canvas></div>
             
             <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-inner">
@@ -79,11 +164,14 @@ const MOBILE_TEMPLATES = {
             </div>
         </div>
     `,
-    'more': () => `
+    'assumptions': () => `
         <div class="space-y-8">
+            <div class="flex items-center gap-2">
+                <h2 class="text-2xl font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
+            </div>
             <div id="benefits-module"></div>
             <div class="mobile-card space-y-6">
-                <h3 class="text-lg font-black text-white uppercase tracking-tighter">Global Assumptions</h3>
+                <h3 class="text-lg font-black text-white uppercase tracking-tighter">Global Parameters</h3>
                 <div id="m-assumptions-container" class="space-y-4"></div>
             </div>
         </div>
@@ -94,10 +182,6 @@ const ITEM_TEMPLATES = {
     investment: (data) => {
         const ASSET_TYPE_COLORS = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400' };
         const tc = ASSET_TYPE_COLORS[data.type] || 'text-white';
-        // For Real Estate and Debt, we lock the select or just show text? 
-        // To keep it simple, we use the same select but select the correct option if it exists, or just fallback.
-        // Actually, for debts/RE mapped to investment template, we might want to be careful.
-        // Let's just render the select.
         return `
         <div class="mobile-card flex flex-col gap-3">
             <div class="flex justify-between items-start">
@@ -115,7 +199,6 @@ const ITEM_TEMPLATES = {
                         <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
                         <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
-                        <option value="Real Estate" ${data.type === 'Real Estate' ? 'selected' : ''}>Real Estate</option>
                     </select>
                 </div>
                 <div class="text-right">
@@ -125,6 +208,90 @@ const ITEM_TEMPLATES = {
             </div>
         </div>`;
     },
+    realEstate: (data) => `
+        <div class="mobile-card space-y-3">
+            <div class="flex justify-between items-start">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Property Name">
+                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="mobile-label">Value</span>
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+                <div>
+                    <span class="mobile-label">Mortgage</span>
+                    <input data-id="mortgage" data-type="currency" value="${math.toCurrency(data.mortgage || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+            </div>
+            <div>
+                 <span class="mobile-label">Principal / mo</span>
+                 <input data-id="principalPayment" data-type="currency" value="${math.toCurrency(data.principalPayment || 0)}" inputmode="decimal" class="block w-full bg-transparent text-blue-400 opacity-60 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+            </div>
+        </div>
+    `,
+    otherAsset: (data) => `
+        <div class="mobile-card space-y-3">
+            <div class="flex justify-between items-start">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Asset Name">
+                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <span class="mobile-label">Value</span>
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+                <div>
+                    <span class="mobile-label">Loan</span>
+                    <input data-id="loan" data-type="currency" value="${math.toCurrency(data.loan || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+            </div>
+            <div>
+                 <span class="mobile-label">Principal / mo</span>
+                 <input data-id="principalPayment" data-type="currency" value="${math.toCurrency(data.principalPayment || 0)}" inputmode="decimal" class="block w-full bg-transparent text-blue-400 opacity-60 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+            </div>
+        </div>
+    `,
+    heloc: (data) => `
+        <div class="mobile-card space-y-3">
+            <div class="flex justify-between items-start">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="HELOC Name">
+                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <span class="mobile-label">Balance</span>
+                    <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+                <div>
+                    <span class="mobile-label">Rate %</span>
+                    <input data-id="rate" type="number" step="0.1" value="${data.rate || 0}" inputmode="decimal" class="block w-full bg-transparent text-white font-bold text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+                <div>
+                    <span class="mobile-label">Limit</span>
+                    <input data-id="limit" data-type="currency" value="${math.toCurrency(data.limit || 0)}" inputmode="decimal" class="block w-full bg-transparent text-slate-400 font-bold text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+            </div>
+        </div>
+    `,
+    debt: (data) => `
+        <div class="mobile-card space-y-3">
+            <div class="flex justify-between items-start">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Debt Name">
+                <button data-action="remove" class="text-slate-600"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                 <div>
+                    <span class="mobile-label">Balance</span>
+                    <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+                <div>
+                     <span class="mobile-label">Principal / mo</span>
+                     <input data-id="principalPayment" data-type="currency" value="${math.toCurrency(data.principalPayment || 0)}" inputmode="decimal" class="block w-full bg-transparent text-blue-400 opacity-60 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+            </div>
+        </div>
+    `,
     income: (data) => `
         <div class="mobile-card space-y-4">
              <div class="flex justify-between items-center">
@@ -141,6 +308,39 @@ const ITEM_TEMPLATES = {
                     <input data-id="increase" type="number" value="${data.increase || 0}" inputmode="decimal" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-700">
                 </div>
             </div>
+            
+            <div class="p-3 bg-slate-900/50 rounded-xl space-y-3 border border-slate-800">
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <span class="mobile-label">401k %</span>
+                        <input data-id="contribution" type="number" value="${data.contribution || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                    </div>
+                    <div>
+                        <span class="mobile-label">Match %</span>
+                        <input data-id="match" type="number" value="${data.match || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                    </div>
+                    <div>
+                        <span class="mobile-label">Bonus %</span>
+                        <input data-id="bonusPct" type="number" value="${data.bonusPct || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                     <label class="flex items-center gap-1.5"><input type="checkbox" data-id="contribOnBonus" ${data.contribOnBonus ? 'checked' : ''} class="w-3 h-3 bg-slate-800 border-slate-600 rounded"><span class="text-[8px] font-bold text-slate-500 uppercase">Contrib Bonus</span></label>
+                     <label class="flex items-center gap-1.5"><input type="checkbox" data-id="matchOnBonus" ${data.matchOnBonus ? 'checked' : ''} class="w-3 h-3 bg-slate-800 border-slate-600 rounded"><span class="text-[8px] font-bold text-slate-500 uppercase">Match Bonus</span></label>
+                </div>
+            </div>
+
+            <div class="flex items-end gap-4">
+                 <div class="flex-grow">
+                    <span class="mobile-label">Deductions (Annual)</span>
+                    <input data-id="incomeExpenses" data-type="currency" value="${math.toCurrency(data.incomeExpenses || 0)}" class="block w-full bg-transparent text-pink-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                 </div>
+                 <div class="flex-grow">
+                    <span class="mobile-label">Tax Free Until</span>
+                    <input data-id="nonTaxableUntil" type="number" value="${data.nonTaxableUntil || 2026}" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                 </div>
+            </div>
+             <label class="flex items-center gap-2 mt-2"><input type="checkbox" data-id="remainsInRetirement" ${data.remainsInRetirement ? 'checked' : ''} class="w-4 h-4 bg-slate-800 border-slate-600 rounded"><span class="text-[9px] font-bold text-slate-400 uppercase">Continue in Retirement</span></label>
         </div>
     `,
     expense: (data) => `
@@ -199,25 +399,9 @@ function attachGlobal() {
         };
     });
     
+    // Hide global FAB logic since we moved to contextual buttons
     const fab = document.getElementById('mobile-fab');
-    fab.onclick = () => {
-        if(!window.currentData) return;
-        if (currentTab === 'assets-debts') {
-            window.currentData.investments = window.currentData.investments || [];
-            window.currentData.investments.push({ type: 'Taxable', value: 0 });
-        }
-        if (currentTab === 'income') {
-            window.currentData.income = window.currentData.income || [];
-            window.currentData.income.push({ amount: 0, increase: 0 });
-        }
-        if (currentTab === 'budget') {
-            window.currentData.budget = window.currentData.budget || {};
-            window.currentData.budget.expenses = window.currentData.budget.expenses || [];
-            window.currentData.budget.expenses.push({ monthly: 0 });
-        }
-        renderTab();
-        if (window.debouncedAutoSave) window.debouncedAutoSave();
-    };
+    if(fab) fab.classList.add('hidden');
     
     document.body.addEventListener('input', (e) => {
         const input = e.target;
@@ -294,17 +478,20 @@ function updateMobileNW() {
 
 function renderTab() {
     const main = document.getElementById('mobile-content');
-    const fab = document.getElementById('mobile-fab');
     main.innerHTML = MOBILE_TEMPLATES[currentTab]();
     
-    fab.classList.toggle('hidden', !['assets-debts', 'income', 'budget'].includes(currentTab));
+    // Ensure FAB is hidden if it exists
+    const fab = document.getElementById('mobile-fab');
+    if(fab) fab.classList.add('hidden');
     
     if(!window.currentData) return;
 
     if (currentTab === 'assets-debts') {
         window.currentData.investments?.forEach((i, idx) => addMobileRow('m-investment-cards', 'investment', i, idx, 'investments'));
-        window.currentData.realEstate?.forEach((i, idx) => addMobileRow('m-re-cards', 'investment', { ...i, type: 'Real Estate' }, idx, 'realEstate'));
-        window.currentData.debts?.forEach((d, idx) => addMobileRow('m-debt-cards', 'investment', { ...d, type: 'Debt', value: -d.balance }, idx, 'debts'));
+        window.currentData.realEstate?.forEach((i, idx) => addMobileRow('m-re-cards', 'realEstate', i, idx, 'realEstate'));
+        window.currentData.otherAssets?.forEach((i, idx) => addMobileRow('m-other-asset-cards', 'otherAsset', i, idx, 'otherAssets'));
+        window.currentData.helocs?.forEach((i, idx) => addMobileRow('m-heloc-cards', 'heloc', i, idx, 'helocs'));
+        window.currentData.debts?.forEach((d, idx) => addMobileRow('m-debt-cards', 'debt', d, idx, 'debts'));
     }
     if (currentTab === 'income') {
         window.currentData.income?.forEach((i, idx) => addMobileRow('m-income-cards', 'income', i, idx, 'income'));
@@ -332,7 +519,7 @@ function renderTab() {
         projection.load(window.currentData.projectionSettings);
         projection.run(window.currentData);
     }
-    if (currentTab === 'more') {
+    if (currentTab === 'assumptions') {
         benefits.init();
         benefits.load(window.currentData.benefits);
         renderMobileAssumptions();
