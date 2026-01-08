@@ -44,17 +44,28 @@ export const projection = {
         const { assumptions, investments = [], stockOptions = [], realEstate = [], otherAssets = [], budget = {} } = data;
         const currentYear = new Date().getFullYear(), chartEndAge = parseFloat(document.getElementById('input-projection-end')?.value) || 72, maxSimAge = 100, duration = maxSimAge - assumptions.currentAge;
 
-        const optionsEquity = stockOptions.reduce((s, x) => {
+        // Initialize simulation state for individual options
+        // We track them individually because each can have a unique APY
+        const simOptions = stockOptions.map(x => {
             const shares = parseFloat(x.shares) || 0;
             const strike = math.fromCurrency(x.strikePrice);
             const fmv = math.fromCurrency(x.currentPrice);
-            return s + Math.max(0, (fmv - strike) * shares);
-        }, 0);
+            const netEquity = Math.max(0, (fmv - strike) * shares);
+            // Default to 10% or global stock growth if not specified
+            const growthRate = (x.growth !== undefined && x.growth !== "") ? parseFloat(x.growth) : (assumptions.stockGrowth || 10);
+            return {
+                value: netEquity,
+                growthRate: growthRate / 100
+            };
+        });
+
+        // Helper to sum current option values
+        const getTotalOptionsValue = () => simOptions.reduce((s, o) => s + o.value, 0);
 
         let buckets = {
             'Cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'Brokerage': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
-            'Stock Options': optionsEquity,
+            'Stock Options': getTotalOptionsValue(),
             'Pre-Tax': investments.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'Post-Tax': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'Crypto': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -83,11 +94,20 @@ export const projection = {
                 let disp = isRealDollars ? (buckets[key] / infFac) : buckets[key];
                 if (age <= chartEndAge) datasets[idx].data.push(disp);
                 currentYearBuckets[key] = disp;
-                if (['Brokerage', 'Pre-Tax', 'Post-Tax', 'HSA', 'Stock Options'].includes(key)) buckets[key] *= (1 + stockGrowth);
+                
+                // Apply Growth
+                if (['Brokerage', 'Pre-Tax', 'Post-Tax', 'HSA'].includes(key)) buckets[key] *= (1 + stockGrowth);
                 else if (key === 'Crypto') buckets[key] *= (1 + cryptoGrowth);
                 else if (key === 'Metals') buckets[key] *= (1 + metalsGrowth);
                 else if (key === 'Real Estate') buckets[key] *= (1 + realEstateGrowth);
+                // Stock Options are handled separately below
             });
+
+            // Grow individual stock options
+            simOptions.forEach(opt => {
+                opt.value *= (1 + opt.growthRate);
+            });
+            buckets['Stock Options'] = getTotalOptionsValue();
 
             if (i < 10 || age % 5 === 0 || age === maxSimAge) tableData.push({ age, year: currentYear + i, ...currentYearBuckets });
             if (age < assumptions.retirementAge) {

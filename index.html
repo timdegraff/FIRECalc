@@ -158,27 +158,7 @@
                     </table>
                 </div>
 
-                <div class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden mb-8">
-                    <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
-                        <h2 class="text-lg font-black text-white flex items-center gap-2 tracking-tighter"><i class="fas fa-briefcase text-blue-400"></i> <span class="uppercase">Private Equity & Stock Options</span></h2>
-                        <button data-add-row="stock-option-rows" data-row-type="stockOption" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all"><i class="fas fa-plus mr-1"></i> Add</button>
-                    </div>
-                    <table class="w-full text-xs">
-                        <thead>
-                            <tr class="bg-slate-900/50 text-slate-500 label-std">
-                                <th class="px-4 py-2 text-left">Company / Plan</th>
-                                <th class="px-4 py-2 text-right w-24">Shares</th>
-                                <th class="px-4 py-2 text-right w-24">Strike</th>
-                                <th class="px-4 py-2 text-right w-24">Current FMV</th>
-                                <th class="px-4 py-2 text-right w-32">Net Equity</th>
-                                <th class="w-12 px-4 py-2"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="stock-option-rows" class="mono-numbers"></tbody>
-                    </table>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     <div class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
                         <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
                             <h3 class="text-md font-black text-white flex items-center gap-2 tracking-tighter"><i class="fas fa-home text-orange-400"></i> <span class="uppercase">Real Estate</span></h3>
@@ -199,6 +179,28 @@
                             <tbody id="other-assets-rows" class="mono-numbers"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <div class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden mb-8">
+                    <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                        <h2 class="text-lg font-black text-white flex items-center gap-2 tracking-tighter"><i class="fas fa-briefcase text-blue-400"></i> <span class="uppercase">Private Equity & Stock Options</span></h2>
+                        <button data-add-row="stock-option-rows" data-row-type="stockOption" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all"><i class="fas fa-plus mr-1"></i> Add</button>
+                    </div>
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="bg-slate-900/50 text-slate-500 label-std">
+                                <th class="px-4 py-2 text-left">Company / Plan</th>
+                                <th class="px-4 py-2 text-right w-24">Shares</th>
+                                <th class="px-4 py-2 text-right w-24">Strike</th>
+                                <th class="px-4 py-2 text-right w-24">Current FMV</th>
+                                <th class="px-4 py-2 text-center w-20">APY %</th>
+                                <th class="px-4 py-2 text-center w-16">Tax</th>
+                                <th class="px-4 py-2 text-right w-32">Net Equity</th>
+                                <th class="w-12 px-4 py-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-option-rows" class="mono-numbers"></tbody>
+                    </table>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">

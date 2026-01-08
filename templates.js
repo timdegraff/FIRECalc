@@ -98,6 +98,19 @@ export const templates = {
         <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base w-full text-right text-white font-bold mono-numbers"></td>
         <td><input data-id="strikePrice" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-emerald-500 font-bold mono-numbers"></td>
         <td><input data-id="currentPrice" data-type="currency" type="text" placeholder="$0" class="input-base w-full text-right text-teal-400 font-black mono-numbers"></td>
+        <td><input data-id="growth" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base w-full text-center text-blue-400 font-bold mono-numbers"></td>
+        <td class="text-center">
+            <label class="cursor-pointer group inline-flex items-center justify-center relative">
+                <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg !== false ? 'checked' : ''}>
+                <div class="w-12 py-1 rounded text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
+                    bg-blue-500/10 border-blue-500/20 text-blue-400 
+                    peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400
+                    hover:border-opacity-50">
+                    <span class="block peer-checked:hidden">ORD</span>
+                    <span class="hidden peer-checked:block">LTCG</span>
+                </div>
+            </label>
+        </td>
         <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-teal-400 font-black mono-numbers text-sm pr-4">$0</div></td>
         <td class="text-center"><button data-action="remove" class="text-slate-700 hover:text-red-400"><i class="fas fa-times"></i></button></td>
     `,
