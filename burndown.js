@@ -393,16 +393,19 @@ export const burndown = {
                 else { ordInc += netSrc; netAvail += netSrc; pretaxDed += Math.min(gross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
             });
 
+            // MAGI Clamping (Safety)
+            ordInc = Math.max(0, ordInc);
+
             if (age >= assumptions.ssStartAge) {
                 const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac);
-                const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, ordInc - pretaxDed, filingStatus);
+                const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, Math.max(0, ordInc - pretaxDed), filingStatus);
                 ordInc += taxableSS; netAvail += ssGross;
                 trace.push(`Social Security: ${math.toCurrency(ssGross)} (${math.toCurrency(taxableSS)} taxable)`);
             }
             if (age >= 75) { const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; trace.push(`RMD Forced Draw: ${math.toCurrency(rmd)}`); }
             
             const hsaCont = budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
-            ordInc -= (pretaxDed + hsaCont);
+            ordInc = Math.max(0, ordInc - (pretaxDed + hsaCont));
             
             if (isRet && age < 59.5) {
                 const projectedShortfall = targetBudget - (netAvail + bal['cash'] + bal['taxable']);
@@ -447,15 +450,17 @@ export const burndown = {
                 trace.push(`MAGI Harvesting from ${pk}: sold ${math.toCurrency(take)} to get ${math.toCurrency(take * gr)} gain.`);
             });
 
-            // --- LOOP 2: COVER CASH SHORTFALL ---
-            let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
-            const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
-            let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
-            
-            if (snapBen > 0) trace.push(`<span class="text-emerald-400">SNAP Benefit covering: ${math.toCurrency(snapBen)}</span>`);
-
-            if (shortfall > 0) {
-                trace.push(`Cash Shortfall detected: ${math.toCurrency(shortfall)}`);
+            // --- LOOP 2: COVER CASH SHORTFALL (Iterative for Tax Sensitivity) ---
+            // We run up to 3 passes to handle "tax spiraling" (where drawing money creates a tax bill that requires more drawing)
+            for (let pass = 0; pass < 3; pass++) {
+                let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
+                const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
+                let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
+                
+                if (shortfall <= 0.01) break;
+                
+                trace.push(`Shortfall Detection (Pass ${pass + 1}): ${math.toCurrency(shortfall)}`);
+                
                 burndown.priorityOrder.forEach(pk => {
                     if (shortfall <= 0.01) return;
                     let availableLiquidity = 0;
@@ -463,8 +468,9 @@ export const burndown = {
                     else if (pk === 'cash') availableLiquidity = Math.max(0, bal[pk] - cashFloor);
                     else availableLiquidity = (bal[pk] || 0);
 
+                    if (availableLiquidity <= 0) return;
+
                     const take = Math.min(availableLiquidity, shortfall);
-                    if (take <= 0) return;
                     
                     let taxableAdd = 0;
                     if (pk === 'taxable') {
@@ -487,23 +493,24 @@ export const burndown = {
                 });
             }
             
-            totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
+            const finalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
+            const finalSnap = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
 
             const magi = Math.max(0, ordIter);
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             
             const yearRes = { 
                 age, year, budget: targetBudget, magi, netWorth: currentNW, 
-                isInsolvent: (netAvail + drawn + snapBen - totalTax - targetBudget) < -1, 
-                balances: { ...bal }, draws: yrDraws, snapBenefit: snapBen,
-                taxes: totalTax,
+                isInsolvent: (netAvail + drawn + finalSnap - finalTax - targetBudget) < -1, 
+                balances: { ...bal }, draws: yrDraws, snapBenefit: finalSnap,
+                taxes: finalTax,
                 liquid: liquidAssets
             };
             if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Private')));
             
             trace.push(`<span class="text-white">Year End MAGI: ${math.toCurrency(magi)}</span>`);
-            trace.push(`<span class="text-red-400">Year End Taxes: ${math.toCurrency(totalTax)}</span>`);
+            trace.push(`<span class="text-red-400">Year End Taxes: ${math.toCurrency(finalTax)}</span>`);
             trace.push(`Year End Net Worth: ${math.toCurrency(currentNW)}`);
             simulationTrace[age] = trace;
             

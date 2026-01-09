@@ -253,15 +253,16 @@ export const engine = {
 
         const totalAssets = inv.reduce((s, x) => s + math.fromCurrency(x.value), 0) + optionsEquity + re.reduce((s, x) => s + math.fromCurrency(x.value), 0) + oa.reduce((s, x) => s + math.fromCurrency(x.value), 0);
         const totalLiabilities = re.reduce((s, x) => s + math.fromCurrency(x.mortgage), 0) + oa.reduce((s, x) => s + math.fromCurrency(x.loan), 0) + helocs.reduce((s, h) => s + math.fromCurrency(h.balance), 0) + debts.reduce((s, x) => s + math.fromCurrency(x.balance), 0);
-        let total401kContribution = 0, totalGrossIncome = 0; 
+        let total401kContribution = 0, totalGrossIncomeAccum = 0; 
         inc.forEach(x => {
             let base = math.fromCurrency(x.amount) * (x.isMonthly ? 12 : 1);
             let personal401k = base * (parseFloat(x.contribution) / 100 || 0);
             if (x.contribOnBonus) personal401k += (base * (parseFloat(x.bonusPct) / 100 || 0) * (parseFloat(x.contribution) / 100 || 0));
             total401kContribution += personal401k;
-            totalGrossIncome += (base + base * (parseFloat(x.bonusPct) / 100 || 0)) - (math.fromCurrency(x.incomeExpenses) * (x.incomeExpensesMonthly ? 12 : 1)); 
+            totalGrossIncomeAccum += (base + base * (parseFloat(x.bonusPct) / 100 || 0)) - (math.fromCurrency(x.incomeExpenses) * (x.incomeExpensesMonthly ? 12 : 1)); 
         });
         
+        const finalGross = Math.max(0, totalGrossIncomeAccum);
         const age = data.assumptions?.currentAge || 40;
         let irsLimit = 23500;
         if (age >= 60 && age <= 63) irsLimit = 34750;
@@ -270,12 +271,13 @@ export const engine = {
         const capped401k = Math.min(total401kContribution, irsLimit);
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         const manualSavingsSum = budget.savings?.filter(x => !x.isLocked).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
+        
         return { 
             netWorth: totalAssets - totalLiabilities, 
             totalAssets, 
             totalLiabilities, 
-            totalGrossIncome: Math.max(0, totalGrossIncome), 
-            magiBase: Math.max(0, totalGrossIncome - capped401k - hsaSavings), 
+            totalGrossIncome: finalGross, 
+            magiBase: Math.max(0, finalGross - capped401k - hsaSavings), 
             total401kContribution: capped401k, 
             totalAnnualSavings: manualSavingsSum + capped401k + hsaSavings, 
             totalAnnualBudget: budget.expenses?.reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0 
