@@ -216,7 +216,10 @@ export const templates = {
                     </select>`;
 
         return `
-            <td class="pl-8 py-3 border-l-4 ${typeClass.replace('text-', 'border-')}">
+            <td class="w-10 pl-6">
+                ${data.isLocked ? '' : '<i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500"></i>'}
+            </td>
+            <td>
                 <div class="flex items-center gap-3">
                     ${selectorHtml}
                 </div>
@@ -225,7 +228,7 @@ export const templates = {
                  ${data.isLocked ? '' : `
                  <label class="inline-flex items-center px-3 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Contribution stops when you retire">
                     <span class="text-[9px] uppercase font-black text-slate-500 mr-2 group-hover:text-pink-400">Stop</span>
-                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700">
+                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700" ${data.removedInRetirement ? 'checked' : ''}>
                 </label>
                  `}
             </td>
@@ -235,7 +238,8 @@ export const templates = {
         `;
     },
     "budget-expense": (data) => `
-        <td class="pl-8 py-3 border-l-4 border-slate-700 hover:border-pink-500 transition-colors">
+        <td class="w-10 pl-6"><i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500"></i></td>
+        <td>
             <input data-id="name" type="text" placeholder="Item Name" class="input-base font-black uppercase tracking-wider text-xs">
         </td>
         <td class="text-center">

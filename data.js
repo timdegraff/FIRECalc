@@ -288,13 +288,13 @@ function getInitialData() {
             filingStatus: 'Married Filing Jointly'
         }, 
         investments: [
+            { name: "401k", type: "Pre-Tax (401k/IRA)", value: 300000, costBasis: 200000 },
+            { name: "Brokerage", type: "Taxable", value: 250000, costBasis: 150000 },
+            { name: "ROTH IRA", type: "Roth", value: 200000, costBasis: 150000 },
             { name: "Checking Account", type: "Cash", value: 25000, costBasis: 25000 },
-            { name: "Taxable Brokerage", type: "Taxable", value: 250000, costBasis: 150000 },
-            { name: "Vanguard 401k", type: "Pre-Tax (401k/IRA)", value: 300000, costBasis: 200000 },
-            { name: "Roth IRA", type: "Post-Tax (Roth)", value: 200000, costBasis: 150000 },
             { name: "Health Savings", type: "HSA", value: 20000, costBasis: 15000 },
-            { name: "Crypto Portfolio", type: "Crypto", value: 20000, costBasis: 10000 },
-            { name: "Gold/Silver", type: "Metals", value: 10000, costBasis: 8000 }
+            { name: "Bitcoin", type: "Crypto", value: 20000, costBasis: 10000 },
+            { name: "Gold", type: "Metals", value: 10000, costBasis: 8000 }
         ], 
         stockOptions: [
             { name: "Series C", shares: 0, strikePrice: 0, currentPrice: 0, growth: 10, isLtcg: true }

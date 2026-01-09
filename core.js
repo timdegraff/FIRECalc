@@ -21,17 +21,21 @@ export function initializeUI() {
 }
 
 function initializeDragAndDrop() {
-    const invRows = document.getElementById('investment-rows');
-    if (invRows && !investmentSortable) {
-        investmentSortable = new Sortable(invRows, {
-            animation: 150,
-            handle: '.drag-handle',
-            ghostClass: 'bg-slate-700/30',
-            onEnd: () => {
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            }
-        });
-    }
+    const ids = ['investment-rows', 'budget-savings-rows', 'budget-expenses-rows'];
+    ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('sortable-initialized')) {
+            new Sortable(el, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'bg-slate-700/30',
+                onEnd: () => {
+                    if (window.debouncedAutoSave) window.debouncedAutoSave();
+                }
+            });
+            el.classList.add('sortable-initialized');
+        }
+    });
 }
 
 function refreshEfficiencyBadges() {
