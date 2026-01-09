@@ -211,10 +211,6 @@ export const templates = {
         </td>
         <td class="text-center">
             <div class="flex items-center justify-center gap-2">
-                <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Stop in Retirement">
-                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-pink-400">No</span>
-                    <input type="checkbox" data-id="removedInRetirement" class="w-3 h-3 accent-pink-500" ${data.removedInRetirement ? 'checked' : ''}>
-                </label>
                 <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-blue-500/50 transition-all group" title="Fixed (No Inflation)">
                     <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-blue-400">Fixed</span>
                     <input type="checkbox" data-id="isFixed" class="w-3 h-3 accent-blue-500" ${data.isFixed ? 'checked' : ''}>

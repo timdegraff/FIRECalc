@@ -109,7 +109,12 @@ export function loadUserDataIntoUI(data) {
     populate(data.income, 'income-cards', 'income');
     
     const summaries = engine.calculateSummaries(data);
-    window.addRow('budget-savings-rows', 'budget-savings', { type: 'Pre-Tax (401k/IRA)', annual: summaries.total401kContribution, monthly: summaries.total401kContribution / 12, isLocked: true });
+    window.addRow('budget-savings-rows', 'budget-savings', { 
+        type: 'Pre-Tax (401k/IRA)', 
+        annual: summaries.total401kContribution, 
+        monthly: summaries.total401kContribution / 12, 
+        isLocked: true 
+    });
     
     const manualSavings = data.budget?.savings?.filter(s => s.isLocked !== true) || [];
     if (manualSavings.length) {
@@ -344,17 +349,17 @@ export function getInitialData() {
         ],
         budget: {
             savings: [
-                { name: 'Roth Contribution', type: 'Roth IRA', annual: 14000, removedInRetirement: true, isFixed: false },
-                { name: 'HSA Contribution', type: 'HSA', annual: 7000, removedInRetirement: true, isFixed: false },
-                { name: 'Monthly Investment', type: 'Taxable', annual: 12000, removedInRetirement: true, isFixed: false }
+                { name: 'Roth Contribution', type: 'Roth IRA', monthly: 1167, annual: 14000, removedInRetirement: true, isFixed: false },
+                { name: 'HSA Contribution', type: 'HSA', monthly: 583, annual: 7000, removedInRetirement: true, isFixed: false },
+                { name: 'Monthly Investment', type: 'Taxable', monthly: 1000, annual: 12000, removedInRetirement: true, isFixed: false }
             ],
             expenses: [
-                { name: 'Mortgage / Tax / Ins', annual: 36000, removedInRetirement: false, isFixed: true },
-                { name: 'Auto Loans', annual: 12000, removedInRetirement: false, isFixed: true },
-                { name: 'Groceries', annual: 14400, removedInRetirement: false, isFixed: false },
-                { name: 'Utilities', annual: 7200, removedInRetirement: false, isFixed: false },
-                { name: 'Travel & Vacation', annual: 8000, removedInRetirement: false, isFixed: false },
-                { name: 'Miscellaneous', annual: 4000, removedInRetirement: false, isFixed: false }
+                { name: 'Mortgage / Tax / Ins', monthly: 3000, annual: 36000, removedInRetirement: false, isFixed: true },
+                { name: 'Auto Loans', monthly: 1000, annual: 12000, removedInRetirement: false, isFixed: true },
+                { name: 'Groceries', monthly: 1200, annual: 14400, removedInRetirement: false, isFixed: false },
+                { name: 'Utilities', monthly: 600, annual: 7200, removedInRetirement: false, isFixed: false },
+                { name: 'Travel & Vacation', monthly: 667, annual: 8000, removedInRetirement: false, isFixed: false },
+                { name: 'Miscellaneous', monthly: 333, annual: 4000, removedInRetirement: false, isFixed: false }
             ]
         },
         benefits: { hhSize: 5, shelterCosts: 3000, hasSUA: true },

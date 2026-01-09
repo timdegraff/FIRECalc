@@ -385,6 +385,12 @@ window.addRow = (containerId, type, data = {}) => {
     let element = type === 'income' ? document.createElement('div') : document.createElement('tr');
     if (type !== 'income') element.className = 'border-b border-slate-700/50 hover:bg-slate-800/20 transition-colors';
     element.innerHTML = templates[type](data); container.appendChild(element);
+
+    // Auto-calculate missing budget values if one exists
+    if (type === 'budget-savings' || type === 'budget-expense') {
+        if (data.annual !== undefined && data.monthly === undefined) data.monthly = data.annual / 12;
+        else if (data.monthly !== undefined && data.annual === undefined) data.annual = data.monthly * 12;
+    }
     
     element.querySelectorAll('[data-id]').forEach(input => {
         const key = input.dataset.id, val = data[key];
