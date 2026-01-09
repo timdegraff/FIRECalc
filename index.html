@@ -68,9 +68,10 @@
             <div class="p-6 pb-2">
                 <div class="flex items-center justify-between mb-1">
                     <h1 class="text-xl font-black text-white tracking-tight">FIRECalc</h1>
-                    <div id="save-indicator" class="text-slate-600 transition-colors duration-200 text-xs">
-                        <i class="fas fa-cloud"></i>
-                    </div>
+                    <!-- Buy Me a Coffee (Swapped from bottom) -->
+                    <a href="https://buymeacoffee.com/timdegraff" target="_blank" class="text-amber-500 hover:text-amber-400 transition-colors text-xs" title="Buy me a coffee">
+                        <i class="fas fa-coffee"></i>
+                    </a>
                 </div>
                 <p class="label-std text-slate-500">Retirement Engine</p>
             </div>
@@ -96,9 +97,10 @@
                     <p id="user-name" class="font-bold text-slate-300 text-[11px] truncate"></p>
                 </div>
                 <div class="flex gap-2">
-                    <a href="https://buymeacoffee.com/timdegraff" target="_blank" class="flex-1 py-1.5 bg-white/5 hover:bg-white/10 text-amber-500 rounded-lg text-center transition-colors flex items-center justify-center gap-1 border border-white/5">
-                        <i class="fas fa-coffee text-xs"></i>
-                    </a>
+                    <!-- Save Indicator (Swapped from top) -->
+                    <div id="save-indicator" class="flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center gap-1 border border-white/5 text-slate-600 transition-colors duration-200" title="Data Sync Status">
+                        <i class="fas fa-cloud text-xs"></i>
+                    </div>
                     <button id="logout-btn" class="flex-[3] py-1.5 bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors border border-white/5">Logout</button>
                 </div>
             </div>
@@ -109,15 +111,15 @@
             <section id="tab-assets-debts" class="tab-content max-w-7xl mx-auto">
                 <!-- Summary Widgets -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Total Assets</p>
                         <p id="sum-assets" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">$0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Total Liabilities</p>
                         <p id="sum-liabilities" class="text-4xl font-black text-red-400 mono-numbers tracking-tight">$0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px] relative overflow-hidden group">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px] relative overflow-hidden group">
                         <div class="absolute inset-0 bg-teal-500/5 group-hover:bg-teal-500/10 transition-colors"></div>
                         <p class="label-std mb-2 text-teal-500">Net Worth</p>
                         <p id="sum-networth" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight relative z-10">$0</p>
@@ -148,7 +150,7 @@
                     </div>
                 </div>
 
-                <!-- Real Estate & Assets Grid -->
+                <!-- Real Estate & HELOCs Grid (Swapped position for HELOCs) -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
                     <div>
                         <div class="flex justify-between items-center mb-6 px-1">
@@ -173,30 +175,6 @@
                     <div>
                         <div class="flex justify-between items-center mb-6 px-1">
                             <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
-                                    <i class="fas fa-car text-sm"></i>
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-bold text-white tracking-tight">Other Assets</h3>
-                                    <p class="text-xs text-slate-500 font-medium mt-0.5">Vehicles and collectibles</p>
-                                </div>
-                            </div>
-                            <button data-add-row="other-assets-rows" data-row-type="otherAsset" class="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition-colors shadow-lg shadow-blue-900/20"><i class="fas fa-plus text-xs"></i></button>
-                        </div>
-                        <div class="card-container overflow-hidden">
-                            <table class="w-full text-xs">
-                                <thead><tr><th class="pl-6 text-left">Asset</th><th class="text-right">Value</th><th class="text-right">Loan</th><th class="w-12 pr-6"></th></tr></thead>
-                                <tbody id="other-assets-rows" class="mono-numbers"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Debts Grid -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-                    <div>
-                        <div class="flex justify-between items-center mb-6 px-1">
-                            <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
                                     <i class="fas fa-university text-sm"></i>
                                 </div>
@@ -214,6 +192,30 @@
                             </table>
                         </div>
                     </div>
+                </div>
+
+                <!-- Other Assets & Debts Grid (Swapped Other Assets down) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+                    <div>
+                        <div class="flex justify-between items-center mb-6 px-1">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-teal-400">
+                                    <i class="fas fa-car text-sm"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-white tracking-tight">Other Assets</h3>
+                                    <p class="text-xs text-slate-500 font-medium mt-0.5">Vehicles and collectibles</p>
+                                </div>
+                            </div>
+                            <button data-add-row="other-assets-rows" data-row-type="otherAsset" class="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded-lg text-white transition-colors shadow-lg shadow-blue-900/20"><i class="fas fa-plus text-xs"></i></button>
+                        </div>
+                        <div class="card-container overflow-hidden">
+                            <table class="w-full text-xs">
+                                <thead><tr><th class="pl-6 text-left">Asset</th><th class="text-right">Value</th><th class="text-right">Loan</th><th class="w-12 pr-6"></th></tr></thead>
+                                <tbody id="other-assets-rows" class="mono-numbers"></tbody>
+                            </table>
+                        </div>
+                    </div>
                     <div>
                         <div class="flex justify-between items-center mb-6 px-1">
                             <div class="flex items-center gap-4">
@@ -221,7 +223,7 @@
                                     <i class="fas fa-credit-card text-sm"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-lg font-bold text-white tracking-tight">Liabilities</h3>
+                                    <h3 class="text-lg font-bold text-white tracking-tight">Other Debt</h3>
                                     <p class="text-xs text-slate-500 font-medium mt-0.5">Unsecured loans and credit</p>
                                 </div>
                             </div>
@@ -263,15 +265,15 @@
             <!-- Income Tab -->
             <section id="tab-income" class="tab-content hidden max-w-7xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">2026 Gross Income</p>
                         <p id="sum-gross-income" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight">$0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">MAGI (Taxable Base)</p>
                         <p id="sum-income-adjusted" class="text-4xl font-black text-blue-400 mono-numbers tracking-tight">$0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Retirement Floor (Yr 1)</p>
                         <p id="sum-retirement-income-floor" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight mb-2">$0</p>
                         <p id="sum-floor-breakdown" class="text-[9px] font-bold text-slate-500 uppercase tracking-widest"></p>
@@ -296,15 +298,15 @@
             <!-- Budget Tab -->
             <section id="tab-budget" class="tab-content hidden max-w-7xl mx-auto">
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Annual Savings</p>
                         <p id="sum-budget-savings" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">$0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Annual Spend</p>
                         <p id="sum-budget-annual" class="text-4xl font-black text-pink-500 mono-numbers tracking-tight">$0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Total Outflow</p>
                         <p id="sum-budget-total" class="text-4xl font-black text-blue-400 mono-numbers tracking-tight">$0</p>
                     </div>
@@ -360,11 +362,11 @@
             <!-- Benefits Tab -->
             <section id="tab-benefits" class="tab-content hidden max-w-7xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Healthcare Stratum</p>
                         <p id="sum-health-plan" class="text-4xl font-black text-slate-400 uppercase tracking-tight transition-colors">Private</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Est. SNAP Benefit</p>
                         <p id="sum-snap-amt" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">$0</p>
                     </div>
@@ -383,18 +385,18 @@
             <!-- Assumptions Tab -->
             <section id="tab-assumptions" class="tab-content hidden max-w-7xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Years to Retirement</p>
                         <p id="sum-yrs-to-retire" class="text-4xl font-black text-blue-400 mono-numbers tracking-tight">0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Retirement Year 1 Budget</p>
                         <p id="sum-retire-budget" class="text-4xl font-black text-pink-500 mono-numbers tracking-tight">$0</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Est. Life Expectancy</p>
                         <p id="sum-life-exp" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight leading-none mb-2">0</p>
-                        <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">SSA Table</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Per SSA Table</p>
                     </div>
                 </div>
 
@@ -437,11 +439,11 @@
             <!-- Burndown -->
             <section id="tab-burndown" class="tab-content hidden max-w-7xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">First Year Solvency</p>
                         <p id="sum-solvency-age" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">Age 100+</p>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[140px]">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Current Health Forecast</p>
                         <p id="sum-draw-strategy" class="text-4xl font-black text-slate-400 uppercase tracking-tight transition-colors">Private</p>
                     </div>

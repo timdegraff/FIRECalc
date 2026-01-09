@@ -12,6 +12,13 @@ let autoSaveTimeout = null;
 // Guest Mode LocalStorage Keys
 const GUEST_DATA_KEY = 'firecalc_guest_data';
 
+// Helper to safely set indicator color without nuking button styles
+function setIndicatorColor(el, colorClass) {
+    if (!el) return;
+    el.classList.remove('text-slate-600', 'text-green-500', 'text-red-500', 'text-orange-500', 'text-slate-400');
+    el.classList.add(colorClass, 'transition-colors', 'duration-200');
+}
+
 window.debouncedAutoSave = () => {
     if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
     
@@ -22,7 +29,7 @@ window.debouncedAutoSave = () => {
     indicators.forEach(el => {
         // Only flash indicator if not in guest mode
         if (!isGuest) {
-            el.className = "text-orange-500 transition-colors duration-200"; 
+            setIndicatorColor(el, 'text-orange-500');
         }
     });
 
@@ -78,7 +85,7 @@ async function loadData() {
         if (isGuest) {
             el.classList.add('hidden');
         } else {
-            el.className = "text-green-500 transition-colors duration-200";
+            setIndicatorColor(el, 'text-green-500');
         }
     });
 }
@@ -192,7 +199,7 @@ function setSaveState(state) {
         if (isGuest) {
             el.classList.add('hidden');
         } else {
-            el.className = state === 'success' ? "text-green-500 transition-colors duration-200" : "text-red-500 transition-colors duration-200";
+            setIndicatorColor(el, state === 'success' ? "text-green-500" : "text-red-500");
         }
     });
 }
@@ -286,14 +293,20 @@ function getInitialData() {
             { name: "Roth IRA", type: "Post-Tax (Roth)", value: 200000, costBasis: 150000 }
         ], 
         stockOptions: [
-            { name: "Startup Grant (Example)", shares: 5000, strikePrice: 1.00, currentPrice: 5.00, growth: 15, isLtcg: true }
+            { name: "Startup Grant", shares: 0, strikePrice: 0, currentPrice: 0, growth: 10, isLtcg: true }
         ],
         realEstate: [
             { name: "Primary Home", value: 450000, mortgage: 250000, principalPayment: 900 }
         ], 
-        otherAssets: [], 
-        helocs: [], 
-        debts: [], 
+        otherAssets: [
+            { name: "Vehicle", value: 0, loan: 0 }
+        ], 
+        helocs: [
+            { name: "Home Equity Line", balance: 0, rate: 7, limit: 0 }
+        ], 
+        debts: [
+            { name: "Credit Card", balance: 0, principalPayment: 0 }
+        ], 
         income: [
             { name: "Primary Salary", amount: 175000, increase: 3.0, bonusPct: 0, contribution: 6, match: 4, isMonthly: false, incomeExpenses: 0, incomeExpensesMonthly: false, remainsInRetirement: false }
         ], 

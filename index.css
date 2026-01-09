@@ -71,6 +71,9 @@ body {
 }
 .input-base::placeholder { color: #475569; font-weight: 500; }
 
+/* Zero Value Grey State */
+.value-zero { color: #475569 !important; }
+
 /* Custom Select styling to match Filled Inputs */
 select.input-base {
     background-color: var(--input-bg) !important;

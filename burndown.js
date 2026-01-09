@@ -453,11 +453,32 @@ export const burndown = {
                     let availableLiquidity = pk === 'heloc' ? Math.max(0, helocLimit - bal['heloc']) : (bal[pk] || 0);
                     const take = Math.min(availableLiquidity, shortfall);
                     if (take <= 0) return;
+                    
+                    // FIX: Re-calculate Tax/MAGI Impact during shortfall coverage
+                    let taxableAdd = 0;
+                    if (pk === 'taxable') {
+                        // Calculate growth ratio for this specific tranche
+                        const gr = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1));
+                        bal['taxableBasis'] -= (take * (1 - gr));
+                        taxableAdd = take * gr;
+                    } else if (pk === '401k' || pk === 'pre-tax') {
+                        taxableAdd = take;
+                    } else if (['crypto', 'metals'].includes(pk)) {
+                         const basisKey = pk + 'Basis';
+                         const gr = Math.max(0, (bal[pk] - bal[basisKey]) / (bal[pk] || 1));
+                         bal[basisKey] -= (take * (1 - gr));
+                         taxableAdd = take * gr;
+                    }
+                    ordIter += taxableAdd;
+
                     if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
                     drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
                     trace.push(`Shortfall pull from ${pk}: ${math.toCurrency(take)}`);
                 });
             }
+            
+            // Recalculate Final Tax with the updated ordIter (MAGI)
+            totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
 
             const magi = ordIter;
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];

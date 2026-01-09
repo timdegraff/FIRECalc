@@ -316,6 +316,10 @@ window.addRow = (containerId, type, data = {}) => {
         }
     });
 
+    // Apply zero-state styling to numeric/currency fields
+    element.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
+    element.querySelectorAll('input[type="number"]').forEach(formatter.bindNumberEventListeners);
+
     // Trigger update for Stock Option row
     if (type === 'stockOption') {
         const shares = parseFloat(element.querySelector('[data-id="shares"]')?.value) || 0;
@@ -332,7 +336,6 @@ window.addRow = (containerId, type, data = {}) => {
         checkIrsLimits(element);
     }
     if (type === 'investment') updateCostBasisVisibility(element);
-    element.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
 };
 
 window.updateSidebarChart = (data) => {
@@ -448,7 +451,13 @@ window.createAssumptionControls = (data) => {
     };
 
     container.innerHTML = `
-        <div class="col-span-full mb-4 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-user-circle text-blue-400"></i><h3 class="label-std text-slate-400">Personal & Strategy</h3></div>
+        <div class="col-span-full mb-4 pb-2 border-b border-slate-700/50 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fas fa-user-circle text-blue-400"></i>
+                <h3 class="label-std text-slate-400">Personal & Strategy</h3>
+            </div>
+            <button id="btn-reset-market" class="px-3 py-1.5 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all">Reset Defaults</button>
+        </div>
         <div class="space-y-6 lg:border-r lg:border-slate-700/30 lg:pr-8">
             <label class="block"><span class="label-std text-slate-500">Legal State of Residence</span>
                 <select data-id="state" class="input-base w-full mt-1 font-bold bg-slate-900 text-white">
@@ -468,7 +477,6 @@ window.createAssumptionControls = (data) => {
             </div>
             <label class="block"><span class="label-std text-slate-500">SS Start Age</span><input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="input-base w-full mt-1 font-bold text-white"></label>
             <label class="block"><span class="label-std text-slate-500">SS Monthly Benefit</span><input data-id="ssMonthly" type="number" value="${a.ssMonthly}" class="input-base w-full mt-1 font-bold text-white"></label>
-            <div class="pt-4 border-t border-slate-700/30"><button id="btn-reset-market" class="w-full py-2 bg-slate-900 border border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all">Reset Market Defaults</button></div>
         </div>
         <div class="col-span-1 space-y-4">
             <div class="flex justify-between items-center pb-2 border-b border-slate-700/50">

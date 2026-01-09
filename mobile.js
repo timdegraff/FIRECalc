@@ -17,6 +17,13 @@ if (currentSavedVersion !== APP_VERSION) {
     localStorage.setItem('firecalc_app_version', APP_VERSION);
 }
 
+// Helper to safely set indicator color without nuking styling
+function setIndicatorColor(el, colorClass) {
+    if (!el) return;
+    el.classList.remove('text-slate-600', 'text-green-500', 'text-red-500', 'text-orange-500', 'text-slate-400');
+    el.classList.add(colorClass, 'transition-colors', 'duration-200');
+}
+
 // --- POLYFILLS FOR DATA.JS COMPATIBILITY ---
 window.addRow = (id, type, data) => {};
 window.updateSidebarChart = () => {};
@@ -29,7 +36,7 @@ window.debouncedAutoSave = () => {
         
         indicators.forEach(el => {
             if (!isGuest) {
-                el.className = "text-orange-500 transition-colors duration-200"; 
+                setIndicatorColor(el, 'text-orange-500'); 
             }
         });
         
