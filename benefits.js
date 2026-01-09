@@ -1,4 +1,5 @@
-import { math, engine } from './utils.js';
+
+import { math, engine, stateTaxRates } from './utils.js';
 
 export const benefits = {
     init: () => {
@@ -112,7 +113,11 @@ export const benefits = {
         c.querySelector('[data-label="unifiedIncome"]').textContent = math.toCurrency(data.unifiedIncome);
         c.querySelector('[data-label="shelterCosts"]').textContent = math.toCurrency(data.shelterCosts);
 
-        const fpl2026 = 16060 + (data.hhSize - 1) * 5650;
+        const stateMeta = stateTaxRates[window.currentData?.assumptions?.state || 'Michigan'];
+        const fplBase = stateMeta?.fplBase || 16060;
+        const fpl2026 = fplBase + (data.hhSize - 1) * 5650;
+        const isExpanded = stateMeta?.expanded !== false; // Default to true if not specified
+        
         const ratio = data.unifiedIncome / fpl2026;
         const sliderMax = 150000;
         const medRatio = data.isPregnant ? 1.95 : 1.38;
@@ -159,30 +164,24 @@ export const benefits = {
             document.getElementById('detail-premium').textContent = prem;
             document.getElementById('detail-deductible').textContent = ded;
             document.getElementById('card-healthcare').style.borderColor = borderColor;
-            
-            const mobHealthPlan = document.getElementById('mobile-val-health-plan');
-            if (mobHealthPlan) {
-                mobHealthPlan.textContent = main;
-                mobHealthPlan.className = `text-base font-black uppercase tracking-tight truncate leading-tight ${colorClass}`;
-            }
         };
 
-        if (ratio <= medRatio) setHealth("Platinum", "100% Full Coverage", "$0", "$0", "text-emerald-400", "rgba(52, 211, 153, 0.4)");
+        if (ratio <= medRatio) {
+            if (isExpanded) setHealth("Platinum", "100% Full Coverage", "$0", "$0", "text-emerald-400", "rgba(52, 211, 153, 0.4)");
+            else setHealth("Private", "Non-Expansion State", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
+        }
         else if (ratio <= hmpRatio) setHealth("HMP+", "Small Copay", "$20", "Low", "text-emerald-300", "rgba(110, 231, 183, 0.3)");
         else if (ratio <= silverRatio) setHealth("Silver CSR", "Subsidized", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.3)");
         else if (ratio <= goldRatio) setHealth("Gold Plan", "Subsidy Cap", math.toCurrency(dynamicPremium), "$1500", "text-amber-400", "rgba(251, 191, 36, 0.3)");
         else setHealth("Private", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
 
-        const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled);
+        const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled, window.currentData?.assumptions?.state || 'Michigan');
         const snapRes = document.getElementById('snap-result-value');
         const snapCard = document.getElementById('card-snap');
         
         snapRes.textContent = math.toCurrency(estimatedBenefit);
         if (document.getElementById('snap-hh-display')) document.getElementById('snap-hh-display').textContent = `fam size of ${data.hhSize}`;
         
-        const mobSnapAmt = document.getElementById('mobile-val-snap-amt');
-        if (mobSnapAmt) mobSnapAmt.textContent = math.toCurrency(estimatedBenefit);
-
         if (estimatedBenefit <= 0) {
             snapRes.className = "text-3xl font-black text-slate-700 mono-numbers tracking-tighter leading-tight";
             snapCard.style.borderColor = "rgba(255, 255, 255, 0.05)";

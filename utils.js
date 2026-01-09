@@ -24,39 +24,57 @@ export const assetColors = {
 };
 
 export const stateTaxRates = {
-    'Michigan': { rate: 0.0425, taxesSS: false },
-    'Florida': { rate: 0.00, taxesSS: false },
-    'Texas': { rate: 0.00, taxesSS: false },
-    'California': { rate: 0.093, taxesSS: false },
-    'New York': { rate: 0.06, taxesSS: false },
-    'Washington': { rate: 0.00, taxesSS: false },
-    'Nevada': { rate: 0.00, taxesSS: false },
-    'Tennessee': { rate: 0.00, taxesSS: false },
-    'New Hampshire': { rate: 0.00, taxesSS: false },
-    'South Dakota': { rate: 0.00, taxesSS: false },
-    'Wyoming': { rate: 0.00, taxesSS: false },
-    'Illinois': { rate: 0.0495, taxesSS: false },
-    'Ohio': { rate: 0.035, taxesSS: false },
-    'Indiana': { rate: 0.0305, taxesSS: false },
-    'Wisconsin': { rate: 0.053, taxesSS: false },
-    'North Carolina': { rate: 0.045, taxesSS: false },
-    'Colorado': { rate: 0.044, taxesSS: true },
-    'Connecticut': { rate: 0.06, taxesSS: true },
-    'Minnesota': { rate: 0.07, taxesSS: true },
-    'Montana': { rate: 0.05, taxesSS: true },
-    'New Mexico': { role: 0.049, taxesSS: true },
-    'Rhode Island': { rate: 0.04, taxesSS: true },
-    'Utah': { rate: 0.0465, taxesSS: true },
-    'New Jersey': { rate: 0.0637, taxesSS: false },
-    'Massachusetts': { rate: 0.05, taxesSS: false },
-    'Virginia': { rate: 0.0575, taxesSS: false },
-    'Maryland': { rate: 0.0475, taxesSS: false },
-    'Georgia': { rate: 0.0575, taxesSS: false },
-    'Pennsylvania': { rate: 0.0307, taxesSS: false },
-    'Arizona': { rate: 0.025, taxesSS: false },
-    'Oregon': { rate: 0.09, taxesSS: false },
-    'Vermont': { rate: 0.06, taxesSS: true },
-    'West Virginia': { rate: 0.04, taxesSS: true }
+    'Alabama': { rate: 0.04, taxesSS: false, expanded: false },
+    'Alaska': { rate: 0.00, taxesSS: false, expanded: true, fplBase: 20080 },
+    'Arizona': { rate: 0.025, taxesSS: false, expanded: true },
+    'Arkansas': { rate: 0.044, taxesSS: false, expanded: true },
+    'California': { rate: 0.093, taxesSS: false, expanded: true },
+    'Colorado': { rate: 0.044, taxesSS: true, expanded: true },
+    'Connecticut': { rate: 0.06, taxesSS: true, expanded: true },
+    'Delaware': { rate: 0.05, taxesSS: false, expanded: true },
+    'District of Columbia': { rate: 0.08, taxesSS: false, expanded: true },
+    'Florida': { rate: 0.00, taxesSS: false, expanded: false },
+    'Georgia': { rate: 0.0575, taxesSS: false, expanded: false },
+    'Hawaii': { rate: 0.08, taxesSS: false, expanded: true, fplBase: 18470 },
+    'Idaho': { rate: 0.058, taxesSS: false, expanded: true },
+    'Illinois': { rate: 0.0495, taxesSS: false, expanded: true },
+    'Indiana': { rate: 0.0305, taxesSS: false, expanded: true },
+    'Iowa': { rate: 0.06, taxesSS: false, expanded: true },
+    'Kansas': { rate: 0.05, taxesSS: true, expanded: false },
+    'Kentucky': { rate: 0.045, taxesSS: false, expanded: true },
+    'Louisiana': { rate: 0.04, taxesSS: false, expanded: true },
+    'Maine': { rate: 0.06, taxesSS: false, expanded: true },
+    'Maryland': { rate: 0.0475, taxesSS: false, expanded: true },
+    'Massachusetts': { rate: 0.05, taxesSS: false, expanded: true },
+    'Michigan': { rate: 0.0425, taxesSS: false, expanded: true },
+    'Minnesota': { rate: 0.07, taxesSS: true, expanded: true },
+    'Mississippi': { rate: 0.05, taxesSS: false, expanded: false },
+    'Missouri': { rate: 0.049, taxesSS: false, expanded: true },
+    'Montana': { rate: 0.05, taxesSS: true, expanded: true },
+    'Nebraska': { rate: 0.06, taxesSS: true, expanded: true },
+    'Nevada': { rate: 0.00, taxesSS: false, expanded: true },
+    'New Hampshire': { rate: 0.00, taxesSS: false, expanded: true },
+    'New Jersey': { rate: 0.0637, taxesSS: false, expanded: true },
+    'New Mexico': { rate: 0.049, taxesSS: true, expanded: true },
+    'New York': { rate: 0.06, taxesSS: false, expanded: true },
+    'North Carolina': { rate: 0.045, taxesSS: false, expanded: true },
+    'North Dakota': { rate: 0.02, taxesSS: false, expanded: true },
+    'Ohio': { rate: 0.035, taxesSS: false, expanded: true },
+    'Oklahoma': { rate: 0.0475, taxesSS: false, expanded: true },
+    'Oregon': { rate: 0.09, taxesSS: false, expanded: true },
+    'Pennsylvania': { rate: 0.0307, taxesSS: false, expanded: true },
+    'Rhode Island': { rate: 0.04, taxesSS: true, expanded: true },
+    'South Carolina': { rate: 0.06, taxesSS: false, expanded: false },
+    'South Dakota': { rate: 0.00, taxesSS: false, expanded: true },
+    'Tennessee': { rate: 0.00, taxesSS: false, expanded: false },
+    'Texas': { rate: 0.00, taxesSS: false, expanded: false },
+    'Utah': { rate: 0.0465, taxesSS: true, expanded: true },
+    'Vermont': { rate: 0.06, taxesSS: true, expanded: true },
+    'Virginia': { rate: 0.0575, taxesSS: false, expanded: true },
+    'Washington': { rate: 0.00, taxesSS: false, expanded: true },
+    'West Virginia': { rate: 0.04, taxesSS: true, expanded: true },
+    'Wisconsin': { rate: 0.053, taxesSS: false, expanded: true },
+    'Wyoming': { rate: 0.00, taxesSS: false, expanded: false }
 };
 
 export const math = {
@@ -178,7 +196,7 @@ export const engine = {
         let taxableLtcg = Math.max(0, ltcgIncome - Math.max(0, stdDed - ordinaryIncome));
         let tax = 0;
         
-        // Projected 2026 Federal Brackets (Full Tier Support)
+        // Projected 2026 Federal Brackets
         const brackets = {
             'Single': [
                 [11925, 0.10], [48475, 0.12], [103350, 0.22], [197300, 0.24],
@@ -211,9 +229,10 @@ export const engine = {
         tax += ((ordinaryIncome + ltcgIncome) * (stateTaxRates[state]?.rate || 0));
         return tax;
     },
-    calculateSnapBenefit: (income, hhSize, shelterCosts, hasSUA, isDisabled, inflationFactor = 1) => {
+    calculateSnapBenefit: (income, hhSize, shelterCosts, hasSUA, isDisabled, state = 'Michigan', inflationFactor = 1) => {
         const monthlyGross = income / 12;
-        const snapFpl = (16060 + (hhSize - 1) * 5650) * inflationFactor;
+        const fplBaseline = stateTaxRates[state]?.fplBase || 16060;
+        const snapFpl = (fplBaseline + (hhSize - 1) * 5650) * inflationFactor;
         if (monthlyGross > (snapFpl * 2.0) / 12) return 0;
         const stdDed = (hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) * inflationFactor;
         const adjIncome = Math.max(0, monthlyGross - stdDed);
@@ -245,12 +264,9 @@ export const engine = {
         });
         
         const age = data.assumptions?.currentAge || 40;
-        
-        // 2026 SECURE 2.0 & IRS Limits
-        // Ages 60, 61, 62, 63 get the "Super Catch-Up" ($11,250 catch-up instead of $7,500)
         let irsLimit = 23500;
-        if (age >= 60 && age <= 63) irsLimit = 34750; // $23,500 + $11,250
-        else if (age >= 50) irsLimit = 31000; // $23,500 + $7,500
+        if (age >= 60 && age <= 63) irsLimit = 34750;
+        else if (age >= 50) irsLimit = 31000;
         
         const capped401k = Math.min(total401kContribution, irsLimit);
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
