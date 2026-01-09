@@ -7,6 +7,20 @@ import { initializeData } from './data.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 
+// --- DEVELOPER / RESET MODE ---
+// Check for ?reset=true in URL to simulate a fresh user experience
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('reset') === 'true') {
+    localStorage.removeItem('firecalc_guest_data');
+    localStorage.removeItem('firecalc_guest_acknowledged');
+    // Ensure we stay in guest mode for the test, or comment out to force login screen
+    localStorage.setItem('firecalc_guest_mode', 'true'); 
+    
+    // Clean URL
+    const newUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, newUrl);
+}
+
 // --- VERSION CHECK LOGIC ---
 const APP_VERSION = "2.3"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
@@ -87,10 +101,30 @@ function setupAppHeader(avatarUrl, userName, logoutText) {
     }
     const name = document.getElementById('user-name');
     if (name) {
+        name.innerHTML = ''; // Clear previous content
         if (userName === null) {
             // Guest mode: show LOGIN TO SAVE button
-            name.innerHTML = `<button id="sidebar-login-btn" class="text-blue-400 hover:text-white transition-colors font-black uppercase tracking-widest text-[9px] border border-blue-500/30 px-2 py-1 rounded bg-blue-500/10">LOGIN TO SAVE</button>`;
-            document.getElementById('sidebar-login-btn').onclick = signInWithGooglePopup;
+            const container = document.createElement('div');
+            container.className = 'flex flex-col items-start gap-1';
+
+            const loginBtn = document.createElement('button');
+            loginBtn.id = 'sidebar-login-btn';
+            loginBtn.className = "text-blue-400 hover:text-white transition-colors font-black uppercase tracking-widest text-[9px] border border-blue-500/30 px-2 py-1 rounded bg-blue-500/10";
+            loginBtn.textContent = "LOGIN TO SAVE";
+            loginBtn.onclick = signInWithGooglePopup;
+            
+            const resetLink = document.createElement('button');
+            resetLink.className = "text-[9px] font-bold text-slate-600 hover:text-red-400 uppercase tracking-widest px-1";
+            resetLink.innerHTML = "<i class='fas fa-trash-alt mr-1'></i>Factory Reset";
+            resetLink.onclick = () => {
+                if(confirm("Factory Reset:\n\nThis will wipe all data and return the app to the initial state for a new user.\n\nAre you sure?")) {
+                    window.location.href = window.location.pathname + '?reset=true';
+                }
+            };
+
+            container.appendChild(loginBtn);
+            container.appendChild(resetLink);
+            name.appendChild(container);
         } else {
             name.textContent = userName;
         }

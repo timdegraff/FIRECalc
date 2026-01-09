@@ -9,6 +9,17 @@ import { burndown } from './burndown.js';
 import { projection } from './projection.js';
 import { formatter } from './formatter.js';
 
+// --- DEVELOPER / RESET MODE ---
+// Check for ?reset=true in URL to simulate a fresh user experience
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('reset') === 'true') {
+    localStorage.removeItem('firecalc_guest_data');
+    localStorage.removeItem('firecalc_guest_acknowledged');
+    localStorage.setItem('firecalc_guest_mode', 'true');
+    const newUrl = window.location.href.split('?')[0];
+    window.history.replaceState({}, document.title, newUrl);
+}
+
 // --- SAFE VERSION CHECK LOGIC ---
 const APP_VERSION = "2.5"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
@@ -231,8 +242,11 @@ const MOBILE_TEMPLATES = {
     'assumptions': () => `
         <div class="space-y-8">
             <div id="mobile-assumptions-summary" class="text-center py-2 border-b border-slate-800 mb-2">
-                <button id="btn-reset-defaults-mobile" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest active:scale-95 active:bg-slate-700 transition-all">
-                    <i class="fas fa-undo-alt mr-2"></i> Reset to Defaults
+                <button id="btn-reset-defaults-mobile" class="w-full mb-3 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest active:scale-95 active:bg-slate-700 transition-all">
+                    Reset Market Defaults
+                </button>
+                <button id="btn-factory-reset-mobile" class="w-full px-4 py-3 bg-red-900/20 border border-red-500/30 rounded-xl text-[10px] font-black text-red-400 uppercase tracking-widest active:scale-95 active:bg-red-900/40 transition-all">
+                    <i class="fas fa-trash-alt mr-2"></i> Factory Reset App
                 </button>
             </div>
             <div>
@@ -879,6 +893,16 @@ function renderTab() {
                     if (window.debouncedAutoSave) window.debouncedAutoSave();
                 }
             };
+        }
+        
+        const factoryResetBtn = document.getElementById('btn-factory-reset-mobile');
+        if (factoryResetBtn) {
+            factoryResetBtn.onclick = () => {
+                triggerHaptic();
+                if(confirm("Factory Reset:\n\nThis will wipe all data and return the app to the initial state for a new user.\n\nAre you sure?")) {
+                    window.location.href = window.location.pathname + '?reset=true';
+                }
+            }
         }
     }
     
