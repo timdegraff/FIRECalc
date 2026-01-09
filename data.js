@@ -21,12 +21,10 @@ function setIndicatorColor(el, colorClass) {
 window.debouncedAutoSave = () => {
     if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
     
-    // Trigger "Saving" State (Orange Flash)
     const indicators = document.querySelectorAll('#save-indicator');
     const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
 
     indicators.forEach(el => {
-        // Only flash indicator if not in guest mode
         if (!isGuest) {
             setIndicatorColor(el, 'text-orange-500');
         }
@@ -44,7 +42,6 @@ export async function initializeData(authUser) {
 }
 
 async function loadData() {
-    // --- AUTHENTICATED PATH ---
     if (user) {
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
@@ -57,7 +54,6 @@ async function loadData() {
             await autoSave(false);
         }
     } 
-    // --- GUEST PATH ---
     else {
         const localData = localStorage.getItem(GUEST_DATA_KEY);
         if (localData) {
@@ -74,11 +70,7 @@ async function loadData() {
     }
     
     loadUserDataIntoUI(window.currentData);
-    benefits.load(window.currentData.benefits);
-    burndown.load(window.currentData.burndown);
-    projection.load(window.currentData.projectionSettings);
     
-    // Set initial synced state
     document.querySelectorAll('#save-indicator').forEach(el => {
         const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
         if (isGuest) {
@@ -91,16 +83,13 @@ async function loadData() {
 
 function sanitizeAndPatchData() {
     if (!window.currentData.assumptions) window.currentData.assumptions = { ...assumptions.defaults };
-    
-    // Merge missing default keys for segmented APY (Advanced Mode Persistence)
     Object.keys(assumptions.defaults).forEach(key => {
         if (window.currentData.assumptions[key] === undefined) {
             window.currentData.assumptions[key] = assumptions.defaults[key];
         }
     });
-
     if (!window.currentData.burndown) {
-        window.currentData.burndown = { useSEPP: true };
+        window.currentData.burndown = { useSync: true };
     }
 }
 
@@ -117,23 +106,26 @@ export function loadUserDataIntoUI(data) {
     populate(data.helocs, 'heloc-rows', 'heloc');
     populate(data.debts, 'debt-rows', 'debt');
     populate(data.income, 'income-cards', 'income');
-    const summaries = engine.calculateSummaries(data);
     
+    const summaries = engine.calculateSummaries(data);
     window.addRow('budget-savings-rows', 'budget-savings', { type: 'Pre-Tax (401k/IRA)', annual: summaries.total401kContribution, monthly: summaries.total401kContribution / 12, isLocked: true });
     populate(data.budget?.savings?.filter(s => s.isLocked !== true), 'budget-savings-rows', 'budget-savings');
     populate(data.budget?.expenses, 'budget-expenses-rows', 'budget-expense');
     
     const projEndInput = document.getElementById('input-projection-end');
-    const projEndLabel = document.getElementById('label-projection-end');
     if (projEndInput) {
         const val = data.projectionEndAge || 72;
         projEndInput.value = val;
-        if (projEndLabel) projEndLabel.textContent = val;
+        const lbl = document.getElementById('label-projection-end');
+        if (lbl) lbl.textContent = val;
     }
 
-    window.createAssumptionControls(data);
+    if (window.createAssumptionControls) window.createAssumptionControls(data);
     updateSummaries(data);
-    window.updateSidebarChart(data);
+    if (window.updateSidebarChart) window.updateSidebarChart(data);
+    if (benefits.load) benefits.load(data.benefits);
+    if (burndown.load) burndown.load(data.burndown);
+    if (projection.load) projection.load(data.projectionSettings);
 }
 
 function clearDynamicContent() {
@@ -142,14 +134,9 @@ function clearDynamicContent() {
 }
 
 function stripUndefined(obj) {
-    if (Array.isArray(obj)) {
-        return obj.map(item => stripUndefined(item));
-    } else if (obj !== null && typeof obj === 'object') {
-        return Object.fromEntries(
-            Object.entries(obj)
-                .filter(([_, value]) => value !== undefined)
-                .map(([key, value]) => [key, stripUndefined(value)])
-        );
+    if (Array.isArray(obj)) return obj.map(item => stripUndefined(item));
+    if (obj !== null && typeof obj === 'object') {
+        return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined).map(([k, v]) => [k, stripUndefined(v)]));
     }
     return obj;
 }
@@ -157,7 +144,7 @@ function stripUndefined(obj) {
 export async function autoSave(scrape = true) {
     if (scrape) window.currentData = scrapeDataFromUI();
     updateSummaries(window.currentData);
-    window.updateSidebarChart(window.currentData);
+    if (window.updateSidebarChart) window.updateSidebarChart(window.currentData);
     
     const projTab = document.getElementById('tab-projection');
     if (projTab && !projTab.classList.contains('hidden')) projection.run(window.currentData);
@@ -167,53 +154,38 @@ export async function autoSave(scrape = true) {
     
     const sanitizedData = stripUndefined(window.currentData);
 
-    // --- AUTHENTICATED SAVE ---
     if (user && db) {
         try { 
             await setDoc(doc(db, "users", user.uid), sanitizedData, { merge: true }); 
             setSaveState('success');
-        }
-        catch (e) { 
-            console.error("Save Error:", e); 
-            setSaveState('error');
-        }
-    } 
-    // --- GUEST SAVE ---
-    else {
+        } catch (e) { setSaveState('error'); }
+    } else {
         try {
             localStorage.setItem(GUEST_DATA_KEY, JSON.stringify(sanitizedData));
             setSaveState('success');
-        } catch (e) {
-            console.error("Local Save Error:", e);
-            setSaveState('error');
-        }
+        } catch (e) { setSaveState('error'); }
     }
 }
 
 function setSaveState(state) {
     const indicators = document.querySelectorAll('#save-indicator');
     const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
-
     indicators.forEach(el => {
-        if (isGuest) {
-            el.classList.add('hidden');
-        } else {
-            setIndicatorColor(el, state === 'success' ? "text-green-500" : "text-red-500");
-        }
+        if (isGuest) el.classList.add('hidden');
+        else setIndicatorColor(el, state === 'success' ? "text-green-500" : "text-red-500");
     });
 }
 
 function scrapeDataFromUI() {
     if (window.addMobileItem) return window.currentData;
-
     const prevData = window.currentData || getInitialData();
     const data = { 
         assumptions: { ...prevData.assumptions }, 
         investments: [], stockOptions: [], realEstate: [], otherAssets: [], helocs: [], debts: [], income: [], 
         budget: { savings: [], expenses: [] }, 
-        benefits: benefits.scrape(), 
-        burndown: burndown.scrape(),
-        projectionSettings: projection.scrape(),
+        benefits: benefits.scrape ? benefits.scrape() : {}, 
+        burndown: burndown.scrape ? burndown.scrape() : {},
+        projectionSettings: projection.scrape ? projection.scrape() : {},
         projectionEndAge: parseFloat(document.getElementById('input-projection-end')?.value) || 72
     };
 
@@ -234,4 +206,83 @@ function scrapeDataFromUI() {
     document.querySelectorAll('#real-estate-rows tr').forEach(r => data.realEstate.push(scrapeRow(r)));
     document.querySelectorAll('#other-assets-rows tr').forEach(r => data.otherAssets.push(scrapeRow(r)));
     document.querySelectorAll('#heloc-rows tr').forEach(r => data.helocs.push(scrapeRow(r, 'heloc')));
-    document
+    document.querySelectorAll('#debt-rows tr').forEach(r => data.debts.push(scrapeRow(r)));
+    document.querySelectorAll('#income-cards > div').forEach(c => data.income.push(scrapeRow(c)));
+    document.querySelectorAll('#budget-savings-rows tr').forEach(r => {
+        const rowData = scrapeRow(r);
+        if (!rowData.isLocked) data.budget.savings.push(rowData);
+    });
+    document.querySelectorAll('#budget-expenses-rows tr').forEach(r => data.budget.expenses.push(scrapeRow(r)));
+
+    return data;
+}
+
+function scrapeRow(el, forcedType = null) {
+    const obj = {};
+    el.querySelectorAll('[data-id]').forEach(i => {
+        const id = i.dataset.id;
+        if (i.type === 'checkbox') obj[id] = i.checked;
+        else if (i.dataset.type === 'currency') obj[id] = math.fromCurrency(i.value);
+        else if (i.type === 'number' || i.step) obj[id] = parseFloat(i.value) || 0;
+        else obj[id] = i.value;
+    });
+    if (forcedType) obj.type = forcedType;
+    return obj;
+}
+
+export function updateSummaries(data) {
+    const s = engine.calculateSummaries(data);
+    const set = (id, val, isCurr = true) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = isCurr ? math.toCurrency(val) : val;
+    };
+
+    set('sum-assets', s.totalAssets);
+    set('sum-liabilities', s.totalLiabilities);
+    set('sum-networth', s.netWorth);
+    set('sidebar-networth', s.netWorth);
+    set('sum-gross-income', s.totalGrossIncome);
+    set('sum-income-adjusted', s.magiBase);
+    set('sum-budget-savings', s.totalAnnualSavings);
+    set('sum-budget-annual', s.totalAnnualBudget);
+    set('sum-budget-total', s.totalAnnualSavings + s.totalAnnualBudget);
+
+    const yrsToRetire = Math.max(0, (data.assumptions?.retirementAge || 65) - (data.assumptions?.currentAge || 40));
+    set('sum-yrs-to-retire', yrsToRetire, false);
+    set('sum-life-exp', engine.getLifeExpectancy(data.assumptions?.currentAge || 40) + (data.assumptions?.currentAge || 40), false);
+
+    const floor = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => sum + math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1), 0);
+    set('sum-retirement-income-floor', floor);
+    
+    const floorDetails = document.getElementById('sum-floor-breakdown');
+    if (floorDetails) {
+        const ss = engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, 1);
+        floorDetails.textContent = `Streams: ${math.toSmartCompactCurrency(floor)} + Est SS: ${math.toSmartCompactCurrency(ss)}`;
+    }
+}
+
+export function getInitialData() {
+    return {
+        assumptions: { ...assumptions.defaults, currentAge: 40, retirementAge: 45, ssStartAge: 62, ssMonthly: 3000 },
+        investments: [
+            { name: 'Emergency Fund', type: 'Cash', value: 25000, costBasis: 25000 },
+            { name: 'Vanguard 401k', type: 'Pre-Tax (401k/IRA)', value: 300000, costBasis: 200000 },
+            { name: 'Roth IRA', type: 'Post-Tax (Roth)', value: 200000, costBasis: 150000 }
+        ],
+        realEstate: [
+            { name: 'Primary Residence', value: 450000, mortgage: 250000, principalPayment: 900 }
+        ],
+        income: [
+            { name: 'Primary Salary', amount: 175000, increase: 3, contribution: 6, match: 4, bonusPct: 10, remainsInRetirement: false }
+        ],
+        budget: {
+            expenses: [
+                { name: 'Mortgage', annual: 24000, removedInRetirement: true, isFixed: true },
+                { name: 'Living Costs', annual: 60000, removedInRetirement: false, isFixed: false }
+            ]
+        },
+        benefits: { hhSize: 5, shelterCosts: 2000 },
+        burndown: { strategyDial: 33, useSync: true },
+        projectionSettings: { isRealDollars: false }
+    };
+}
