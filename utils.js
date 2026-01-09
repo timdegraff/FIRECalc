@@ -1,4 +1,3 @@
-
 export const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
 export const assetColors = {
@@ -271,6 +270,15 @@ export const engine = {
         const capped401k = Math.min(total401kContribution, irsLimit);
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         const manualSavingsSum = budget.savings?.filter(x => !x.isLocked).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
-        return { netWorth: totalAssets - totalLiabilities, totalAssets, totalLiabilities, totalGrossIncome, magiBase: totalGrossIncome - capped401k - hsaSavings, total401kContribution: capped401k, totalAnnualSavings: manualSavingsSum + capped401k + hsaSavings, totalAnnualBudget: budget.expenses?.reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0 };
+        return { 
+            netWorth: totalAssets - totalLiabilities, 
+            totalAssets, 
+            totalLiabilities, 
+            totalGrossIncome: Math.max(0, totalGrossIncome), 
+            magiBase: Math.max(0, totalGrossIncome - capped401k - hsaSavings), 
+            total401kContribution: capped401k, 
+            totalAnnualSavings: manualSavingsSum + capped401k + hsaSavings, 
+            totalAnnualBudget: budget.expenses?.reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0 
+        };
     }
 };
