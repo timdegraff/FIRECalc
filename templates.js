@@ -152,7 +152,7 @@ export const templates = {
                         <div class="space-y-1 relative">
                             <label class="label-std">401k %</label>
                             <input data-id="contribution" type="number" placeholder="0" class="input-base text-white font-bold mono-numbers text-center">
-                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs" title="Exceeds Limit">
+                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs cursor-help" title="Exceeds IRS Limit">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
                         </div>
@@ -188,7 +188,7 @@ export const templates = {
 
                 <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5">
                     <div class="flex items-center gap-2">
-                        <label class="label-std text-slate-500">NT Until:</label>
+                        <label class="label-std text-slate-500">NO TAX UNTIL:</label>
                         <input data-id="nonTaxableUntil" type="number" placeholder="2026" class="input-base w-16 text-center text-teal-400 font-bold mono-numbers px-1 py-0.5 h-6 text-[10px]">
                     </div>
                     <label class="flex items-center gap-2 cursor-pointer group">
@@ -270,8 +270,8 @@ export const templates = {
     heloc: (data) => `
         <td class="pl-6"><input data-id="name" type="text" placeholder="HELOC" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-black mono-numbers"></td>
-        <td><input data-id="rate" type="number" step="0.1" placeholder="7.0" value="${data.rate || 7.0}" class="input-base text-center text-red-400 font-bold mono-numbers"></td>
         <td><input data-id="limit" data-type="currency" type="text" placeholder="$0" class="input-base text-right font-bold mono-numbers"></td>
+        <td><input data-id="rate" type="number" step="0.1" placeholder="7.0" value="${data.rate || 7.0}" class="input-base text-center text-red-400 font-bold mono-numbers"></td>
         <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     debt: () => `

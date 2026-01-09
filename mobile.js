@@ -418,12 +418,12 @@ const ITEM_TEMPLATES = {
                     <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
                 </div>
                 <div>
-                    <span class="mobile-label">Rate %</span>
-                    <input data-id="rate" type="number" step="0.1" value="${data.rate || 0}" inputmode="decimal" class="block w-full bg-transparent text-white font-bold text-lg mono-numbers outline-none border-b border-slate-700">
-                </div>
-                <div>
                     <span class="mobile-label">Limit</span>
                     <input data-id="limit" data-type="currency" value="${math.toCurrency(data.limit || 0)}" inputmode="decimal" class="block w-full bg-transparent text-slate-400 font-bold text-lg mono-numbers outline-none border-b border-slate-700">
+                </div>
+                <div>
+                    <span class="mobile-label">Rate %</span>
+                    <input data-id="rate" type="number" step="0.1" value="${data.rate || 0}" inputmode="decimal" class="block w-full bg-transparent text-white font-bold text-lg mono-numbers outline-none border-b border-slate-700">
                 </div>
             </div>
         </div>
@@ -472,7 +472,15 @@ const ITEM_TEMPLATES = {
                 </div>
             </div>
 
-             <label class="flex items-center gap-2 mt-2"><input type="checkbox" data-id="remainsInRetirement" ${data.remainsInRetirement ? 'checked' : ''} class="w-4 h-4 bg-slate-800 border-slate-600 rounded"><span class="text-[9px] font-bold text-slate-400 uppercase">Continue in Retirement</span></label>
+             <div class="space-y-1 mt-2 pt-2 border-t border-slate-800">
+                <div class="flex justify-between items-center gap-4">
+                    <div class="w-1/2">
+                        <span class="mobile-label">NO TAX UNTIL</span>
+                        <input data-id="nonTaxableUntil" type="number" placeholder="YYYY" value="${data.nonTaxableUntil || ''}" class="block w-full bg-transparent text-teal-400 font-black mono-numbers outline-none border-b border-slate-700 text-center">
+                    </div>
+                    <label class="flex items-center gap-2 mt-2 w-1/2 justify-end"><input type="checkbox" data-id="remainsInRetirement" ${data.remainsInRetirement ? 'checked' : ''} class="w-4 h-4 bg-slate-800 border-slate-600 rounded"><span class="text-[9px] font-bold text-slate-400 uppercase">Retirement Income</span></label>
+                </div>
+            </div>
         </div>
     `,
     savings: (data) => {
@@ -653,6 +661,10 @@ function attachGlobal() {
             }
             if (window.currentData.assumptions) {
                window.currentData.assumptions[id] = val;
+            }
+            // Handle hhSize specific for mobile as it maps to benefits
+            if (id === 'hhSize' && window.currentData.benefits) {
+                window.currentData.benefits.hhSize = val;
             }
         }
 
@@ -1035,6 +1047,7 @@ function renderMobileAssumptions() {
     const container = document.getElementById('m-assumptions-container');
     if (!container) return;
     const a = window.currentData.assumptions || assumptions.defaults;
+    const hhSize = window.currentData.benefits?.hhSize || 1;
     
     const slider = (label, id, min, max, step, val, suffix = '', colorClass = 'text-blue-400') => `
         <label class="block space-y-1">
@@ -1057,8 +1070,8 @@ function renderMobileAssumptions() {
                     <span class="mobile-label text-white">Family Size</span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <input data-id="hhSize" type="range" min="1" max="10" step="1" value="${window.currentData.benefits?.hhSize || 1}" class="mobile-slider">
-                    <span class="text-white font-bold mono-numbers w-10 text-right text-xs">${window.currentData.benefits?.hhSize || 1}</span>
+                    <input data-id="hhSize" type="range" min="1" max="10" step="1" value="${hhSize}" class="mobile-slider">
+                    <span class="text-white font-bold mono-numbers w-10 text-right text-xs">${hhSize}</span>
                 </div>
             </div>
         </div>

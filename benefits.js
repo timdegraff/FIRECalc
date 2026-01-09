@@ -83,6 +83,7 @@ export const benefits = {
                                 <span class="label-std text-slate-500 mb-1">Monthly Benefit</span>
                                 <div id="snap-result-value" class="text-6xl font-black text-emerald-400 mono-numbers tracking-tighter drop-shadow-lg">$0</div>
                                 <div id="snap-annual-value" class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Total Annual: $0</div>
+                                <div id="snap-hh-display" class="text-[9px] text-slate-500 font-medium italic mt-1">based on fam size of 1</div>
                             </div>
                             <div class="pt-2 mt-auto">
                                 <div class="flex justify-between items-center mb-2">
@@ -201,9 +202,11 @@ export const benefits = {
         const snapRes = document.getElementById('snap-result-value');
         const snapAnnual = document.getElementById('snap-annual-value');
         const snapCard = document.getElementById('card-snap');
+        const snapHH = document.getElementById('snap-hh-display');
         
         snapRes.textContent = math.toCurrency(estimatedBenefit);
         snapAnnual.textContent = `Total Annual: ${math.toCurrency(estimatedBenefit * 12)}`;
+        if (snapHH) snapHH.textContent = `based on fam size of ${data.hhSize}`;
         
         const deskSnap = document.getElementById('sum-snap-amt');
         if (deskSnap) deskSnap.textContent = math.toCurrency(estimatedBenefit);

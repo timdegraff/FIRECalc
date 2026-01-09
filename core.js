@@ -127,6 +127,10 @@ function attachGlobalListeners() {
                     window.currentData.assumptions[id] = nVal;
                     if (id === 'state') refreshEfficiencyBadges();
                 }
+                // Handle Family Size specifically as it lives in benefits object
+                if (id === 'hhSize' && window.currentData.benefits) {
+                    window.currentData.benefits.hhSize = val;
+                }
             }
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
@@ -432,6 +436,7 @@ window.createAssumptionControls = (data) => {
     const container = document.getElementById('assumptions-container'); if (!container) return;
     const a = data.assumptions || assumptions.defaults;
     const isAdv = !!a.advancedGrowth;
+    const hhSize = data.benefits?.hhSize || 1;
 
     const renderAPY = (label, id, color, val) => {
         if (!isAdv) {
@@ -464,13 +469,18 @@ window.createAssumptionControls = (data) => {
                     ${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
                 </select>
             </label>
-            <label class="block"><span class="label-std text-slate-500">Filing Status</span>
-                <select data-id="filingStatus" class="input-base w-full mt-1 font-bold bg-slate-900 text-white">
-                    <option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
-                    <option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
-                    <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
-                </select>
-            </label>
+            <div class="grid grid-cols-2 gap-4">
+                <label class="block"><span class="label-std text-slate-500">Filing Status</span>
+                    <select data-id="filingStatus" class="input-base w-full mt-1 font-bold bg-slate-900 text-white">
+                        <option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
+                        <option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
+                        <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
+                    </select>
+                </label>
+                <label class="block"><span class="label-std text-slate-500">Family Size</span>
+                    <input data-id="hhSize" type="number" value="${hhSize}" min="1" max="10" class="input-base w-full mt-1 font-bold text-white">
+                </label>
+            </div>
             <div class="grid grid-cols-2 gap-4">
                 <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span><input data-id="currentAge" type="number" value="${a.currentAge}" class="input-base w-full mt-auto font-bold text-white"></label>
                 <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span><input data-id="retirementAge" type="number" value="${a.retirementAge}" class="input-base w-full mt-auto font-bold text-blue-400"></label>

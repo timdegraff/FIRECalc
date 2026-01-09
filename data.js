@@ -279,18 +279,22 @@ function getInitialData() {
             retirementAge: 45,
             ssStartAge: 62,
             ssMonthly: 3000,
-            stockGrowth: 10,
-            cryptoGrowth: 10,
-            metalsGrowth: 8,
+            stockGrowth: 8,
+            cryptoGrowth: 8,
+            metalsGrowth: 6,
             realEstateGrowth: 3.5,
             inflation: 3,
             state: 'Michigan',
             filingStatus: 'Married Filing Jointly'
         }, 
         investments: [
-            { name: "Emergency Fund", type: "Cash", value: 25000, costBasis: 25000 },
+            { name: "Checking Account", type: "Cash", value: 25000, costBasis: 25000 },
+            { name: "Taxable Brokerage", type: "Taxable", value: 250000, costBasis: 150000 },
             { name: "Vanguard 401k", type: "Pre-Tax (401k/IRA)", value: 300000, costBasis: 200000 },
-            { name: "Roth IRA", type: "Post-Tax (Roth)", value: 200000, costBasis: 150000 }
+            { name: "Roth IRA", type: "Post-Tax (Roth)", value: 200000, costBasis: 150000 },
+            { name: "Health Savings", type: "HSA", value: 20000, costBasis: 15000 },
+            { name: "Crypto Portfolio", type: "Crypto", value: 20000, costBasis: 10000 },
+            { name: "Gold/Silver", type: "Metals", value: 10000, costBasis: 8000 }
         ], 
         stockOptions: [
             { name: "Startup Grant", shares: 0, strikePrice: 0, currentPrice: 0, growth: 10, isLtcg: true }
@@ -299,28 +303,29 @@ function getInitialData() {
             { name: "Primary Home", value: 450000, mortgage: 250000, principalPayment: 900 }
         ], 
         otherAssets: [
-            { name: "Vehicle", value: 0, loan: 0 }
+            { name: "Vehicles", value: 40000, loan: 0 }
         ], 
         helocs: [
-            { name: "Home Equity Line", balance: 0, rate: 7, limit: 0 }
+            { name: "Home Equity Line", balance: 150000, limit: 200000, rate: 6.0 }
         ], 
         debts: [
             { name: "Credit Card", balance: 0, principalPayment: 0 }
         ], 
         income: [
-            { name: "Primary Salary", amount: 175000, increase: 3.0, bonusPct: 0, contribution: 6, match: 4, isMonthly: false, incomeExpenses: 0, incomeExpensesMonthly: false, remainsInRetirement: false }
+            { name: "Primary Earner", amount: 150000, increase: 3.0, bonusPct: 10, contribution: 10, match: 4, isMonthly: false, incomeExpenses: 0, incomeExpensesMonthly: false, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, nonTaxableUntil: "" },
+            { name: "Secondary Earner", amount: 100000, increase: 3.0, bonusPct: 5, contribution: 10, match: 4, isMonthly: false, incomeExpenses: 0, incomeExpensesMonthly: false, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, nonTaxableUntil: "" }
         ], 
         budget: { 
             savings: [
-                { type: "Post-Tax (Roth)", name: "Roth Contrib", monthly: 500, annual: 6000, removedInRetirement: true, isFixed: false },
-                { type: "HSA", name: "HSA Contrib", monthly: 500, annual: 6000, removedInRetirement: true, isFixed: false }
+                { type: "Post-Tax (Roth)", name: "Roth Contrib", monthly: 1166.66, annual: 14000, removedInRetirement: true, isFixed: false }
             ], 
             expenses: [
-                { name: "Mortgage", monthly: 2000, annual: 24000, isFixed: true, removedInRetirement: false },
-                { name: "Cars", monthly: 1000, annual: 12000, isFixed: false, removedInRetirement: false },
-                { name: "Groceries", monthly: 1000, annual: 12000, isFixed: false, removedInRetirement: false },
-                { name: "Utilities", monthly: 400, annual: 4800, isFixed: false, removedInRetirement: false },
-                { name: "Discretionary / Other", monthly: 2000, annual: 24000, isFixed: false, removedInRetirement: false }
+                { name: "Mortgage/Tax/Ins", monthly: 3000, annual: 36000, isFixed: true, removedInRetirement: false },
+                { name: "Groceries & Household", monthly: 1200, annual: 14400, isFixed: false, removedInRetirement: false },
+                { name: "Utilities & Internet", monthly: 400, annual: 4800, isFixed: false, removedInRetirement: false },
+                { name: "Transportation/Gas", monthly: 800, annual: 9600, isFixed: false, removedInRetirement: false },
+                { name: "Medical/Insurance", monthly: 500, annual: 6000, isFixed: false, removedInRetirement: false },
+                { name: "Kids/Activities/Life", monthly: 1500, annual: 18000, isFixed: false, removedInRetirement: false }
             ] 
         }, 
         benefits: {
