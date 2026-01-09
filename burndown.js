@@ -40,7 +40,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Retirement Age</label>
                             <div class="flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/10">
                                 <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
-                                <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm w-6 text-center">65</span>
+                                <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm w-6 text-center">--</span>
                                 <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
                                 <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="hidden"> 
                             </div>
@@ -289,7 +289,11 @@ export const burndown = {
             sync('input-strategy-dial', data.strategyDial || 33);
             sync('input-cash-reserve', data.cashReserve || 25000);
             sync('toggle-budget-sync', data.useSync ?? true, true);
-            sync('input-top-retire-age', data.retirementAge || 65);
+            
+            // Prioritize window.currentData.assumptions.retirementAge if local burndown retirementAge is missing
+            const fallbackRetAge = window.currentData?.assumptions?.retirementAge || 65;
+            sync('input-top-retire-age', data.retirementAge || fallbackRetAge);
+            
             if (data.dieWithZero) document.getElementById('btn-dwz-toggle')?.classList.add('active');
             
             const manualInput = document.getElementById('input-manual-budget');

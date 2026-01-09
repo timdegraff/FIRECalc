@@ -325,7 +325,7 @@ export function getInitialData() {
             ]
         },
         benefits: { hhSize: 5, shelterCosts: 3000, hasSUA: true },
-        burndown: { strategyDial: 33, useSync: true, cashReserve: 30000 },
+        burndown: { strategyDial: 33, useSync: true, cashReserve: 30000, retirementAge: 45 },
         projectionSettings: { isRealDollars: false }
     };
 }
