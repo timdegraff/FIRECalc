@@ -304,23 +304,22 @@ export function getInitialData() {
             { name: 'CHECKING ACCOUNT', type: 'Cash', value: 40000, costBasis: 40000 }
         ],
         realEstate: [
-            { name: 'Primary Residence', value: 500000, mortgage: 250000, principalPayment: 1200 }
+            { name: 'Primary Residence', value: 500000, mortgage: 250000, principalPayment: 1000 }
         ],
         otherAssets: [
-            { name: 'Family SUV', value: 40000, loan: 15000, principalPayment: 500 },
-            { name: 'Commuter Sedan', value: 30000, loan: 10000, principalPayment: 350 },
-            { name: 'Personal Property', value: 25000, loan: 0, principalPayment: 0 }
+            { name: 'Car 1', value: 40000, loan: 15000, principalPayment: 500 },
+            { name: 'Car 2', value: 30000, loan: 10000, principalPayment: 350 }
         ],
         income: [
-            { name: 'Lead Income', amount: 175000, increase: 3, contribution: 10, match: 4, bonusPct: 10, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false },
-            { name: 'Support Income', amount: 100000, increase: 3, contribution: 10, match: 4, bonusPct: 5, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false }
+            { name: 'Salary 1', amount: 175000, increase: 3, contribution: 10, match: 4, bonusPct: 10, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false },
+            { name: 'Salary 2', amount: 100000, increase: 3, contribution: 10, match: 4, bonusPct: 5, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false }
         ],
         budget: {
             expenses: [
                 { name: 'Mortgage / Tax / Ins', annual: 36000, removedInRetirement: false, isFixed: true },
                 { name: 'Auto Loans', annual: 12000, removedInRetirement: true, isFixed: true },
                 { name: 'Groceries', annual: 14400, removedInRetirement: false, isFixed: false },
-                { name: 'Utilities', annual: 6000, removedInRetirement: false, isFixed: false },
+                { name: 'Utilities', annual: 7200, removedInRetirement: false, isFixed: false },
                 { name: 'Travel & Vacation', annual: 8000, removedInRetirement: false, isFixed: false },
                 { name: 'Miscellaneous', annual: 4000, removedInRetirement: false, isFixed: false }
             ]
