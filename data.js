@@ -1,251 +1,194 @@
-import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { math, engine, assumptions } from './utils.js';
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { auth } from './firebase-config.js';
+import { engine, math } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
 
-let db;
-let user; // If null, we are in Guest Mode
-let autoSaveTimeout = null;
+const db = getFirestore();
+window.currentData = null;
+window.saveTimeout = null;
 
-// Guest Mode LocalStorage Keys
-const GUEST_DATA_KEY = 'firecalc_guest_data';
-
-// Helper to safely set indicator color without nuking button styles
-function setIndicatorColor(el, colorClass) {
-    if (!el) return;
-    el.classList.remove('text-slate-600', 'text-green-500', 'text-red-500', 'text-orange-500', 'text-slate-400');
-    el.classList.add(colorClass, 'transition-colors', 'duration-200');
-}
-
-window.debouncedAutoSave = () => {
-    if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
-    
-    const indicators = document.querySelectorAll('#save-indicator');
-    const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
-
-    indicators.forEach(el => {
-        if (!isGuest) {
-            setIndicatorColor(el, 'text-orange-500');
-        }
-    });
-
-    autoSaveTimeout = setTimeout(() => {
-        autoSave();
-    }, 1000);
+// Default Data Structure
+const DEFAULTS = {
+    investments: [
+        { name: 'Vanguard 401k', type: 'Pre-Tax (401k/IRA)', value: 300000, costBasis: 0 },
+        { name: 'Roth IRA', type: 'Roth IRA', value: 200000, costBasis: 150000 },
+        { name: 'Emergency Fund', type: 'Cash', value: 25000, costBasis: 25000 },
+        { name: 'Brokerage', type: 'Taxable', value: 50000, costBasis: 40000 }
+    ],
+    realEstate: [
+        { name: 'Primary Home', value: 450000, mortgage: 250000, principalPayment: 900 }
+    ],
+    income: [
+        { name: 'Primary Salary', amount: 175000, increase: 3, contribution: 6, match: 4, bonusPct: 0, isMonthly: false, incomeExpenses: 0 }
+    ],
+    budget: {
+        savings: [
+            { type: 'Taxable', annual: 12000, monthly: 1000, removedInRetirement: true }
+        ],
+        expenses: [
+            { name: 'Mortgage', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: true },
+            { name: 'Living Expenses', annual: 48000, monthly: 4000, remainsInRetirement: true, isFixed: false }
+        ]
+    },
+    assumptions: { ...window.assumptions?.defaults }
 };
 
-export async function initializeData(authUser) {
-    db = getFirestore();
-    user = authUser;
-    return loadData();
-}
-
-async function loadData() {
+export async function initializeData(user) {
     if (user) {
-        const docRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-            window.currentData = docSnap.data();
-            sanitizeAndPatchData();
-        } else {
-            window.currentData = getInitialData();
-            await autoSave(false);
-        }
-    } 
-    else {
-        const localData = localStorage.getItem(GUEST_DATA_KEY);
-        if (localData) {
-            try {
-                window.currentData = JSON.parse(localData);
-                sanitizeAndPatchData();
-            } catch (e) {
-                console.error("Corrupt guest data, resetting:", e);
-                window.currentData = getInitialData();
+        // Authenticated Load
+        try {
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                window.currentData = { ...DEFAULTS, ...docSnap.data() };
+            } else {
+                window.currentData = JSON.parse(JSON.stringify(DEFAULTS));
+                await setDoc(docRef, window.currentData);
             }
-        } else {
-            window.currentData = getInitialData();
+        } catch (e) {
+            console.error("Firestore Load Error:", e);
+            window.currentData = JSON.parse(JSON.stringify(DEFAULTS));
         }
+    } else {
+        // Guest Mode Load
+        const local = localStorage.getItem('firecalc_guest_data');
+        window.currentData = local ? JSON.parse(local) : JSON.parse(JSON.stringify(DEFAULTS));
     }
-    
-    loadUserDataIntoUI(window.currentData);
-    
-    document.querySelectorAll('#save-indicator').forEach(el => {
-        const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
-        if (isGuest) {
-            el.classList.add('hidden');
-        } else {
-            setIndicatorColor(el, 'text-green-500');
-        }
-    });
+
+    // Initialize UI Modules
+    loadUserDataIntoUI();
+    if(window.updateSidebarChart) window.updateSidebarChart(window.currentData);
+    if(window.createAssumptionControls) window.createAssumptionControls(window.currentData);
+    benefits.load(window.currentData.benefits);
+    burndown.load(window.currentData.burndown);
+    projection.load(window.currentData.projectionSettings);
+    updateSummaries();
 }
 
-function sanitizeAndPatchData() {
-    if (!window.currentData.assumptions) window.currentData.assumptions = { ...assumptions.defaults };
-    Object.keys(assumptions.defaults).forEach(key => {
-        if (window.currentData.assumptions[key] === undefined) {
-            window.currentData.assumptions[key] = assumptions.defaults[key];
-        }
-    });
-    if (!window.currentData.burndown) {
-        window.currentData.burndown = { useSync: true };
-    }
-}
-
-export function loadUserDataIntoUI(data) {
-    clearDynamicContent();
-    const populate = (arr, id, type) => {
-        if (arr?.length) arr.forEach(item => window.addRow(id, type, item));
-        // Only skip auto-empty-row for budget-savings because it has a locked row
-        else if (type !== 'budget-savings') window.addRow(id, type, {});
-    };
-    populate(data.investments, 'investment-rows', 'investment');
-    populate(data.stockOptions, 'stock-option-rows', 'stockOption');
-    populate(data.realEstate, 'real-estate-rows', 'realEstate');
-    populate(data.otherAssets, 'other-assets-rows', 'otherAsset');
-    populate(data.helocs, 'heloc-rows', 'heloc');
-    populate(data.debts, 'debt-rows', 'debt');
-    populate(data.income, 'income-cards', 'income');
+function loadUserDataIntoUI() {
+    if (!window.addRow) return; 
     
-    const summaries = engine.calculateSummaries(data);
+    // Clear dynamic tables
+    ['investment-rows', 'real-estate-rows', 'other-assets-rows', 'debt-rows', 'heloc-rows', 'budget-savings-rows', 'budget-expenses-rows', 'income-cards', 'stock-option-rows'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = '';
+    });
+
+    const d = window.currentData;
+    d.investments?.forEach(i => window.addRow('investment-rows', 'investment', i));
+    d.realEstate?.forEach(i => window.addRow('real-estate-rows', 'realEstate', i));
+    d.otherAssets?.forEach(i => window.addRow('other-assets-rows', 'otherAsset', i));
+    d.helocs?.forEach(i => window.addRow('heloc-rows', 'heloc', i));
+    d.debts?.forEach(i => window.addRow('debt-rows', 'debt', i));
+    d.stockOptions?.forEach(i => window.addRow('stock-option-rows', 'stockOption', i));
+    d.income?.forEach(i => window.addRow('income-cards', 'income', i));
+    d.budget?.expenses?.forEach(i => window.addRow('budget-expenses-rows', 'budget-expense', i));
+
+    // Calculate Locked 401k Row
+    const summaries = engine.calculateSummaries(d);
     window.addRow('budget-savings-rows', 'budget-savings', { 
         type: 'Pre-Tax (401k/IRA)', 
         annual: summaries.total401kContribution, 
         monthly: summaries.total401kContribution / 12, 
         isLocked: true 
     });
-    
-    const manualSavings = data.budget?.savings?.filter(s => s.isLocked !== true) || [];
-    if (manualSavings.length) {
-        manualSavings.forEach(item => window.addRow('budget-savings-rows', 'budget-savings', item));
-    } else {
-        // Always provide one blank savings row for new users if the initial prepop somehow fails
-        window.addRow('budget-savings-rows', 'budget-savings', {});
-    }
 
-    populate(data.budget?.expenses, 'budget-expenses-rows', 'budget-expense');
-    
-    const projEndInput = document.getElementById('input-projection-end');
-    if (projEndInput) {
-        const val = data.projectionEndAge || 72;
-        projEndInput.value = val;
-        const lbl = document.getElementById('label-projection-end');
-        if (lbl) lbl.textContent = val;
-    }
-
-    if (window.createAssumptionControls) window.createAssumptionControls(data);
-    updateSummaries(data);
-    if (window.updateSidebarChart) window.updateSidebarChart(data);
-    if (benefits.load) benefits.load(data.benefits);
-    if (burndown.load) burndown.load(data.burndown);
-    if (projection.load) projection.load(data.projectionSettings);
-}
-
-function clearDynamicContent() {
-    ['investment-rows', 'stock-option-rows', 'real-estate-rows', 'other-assets-rows', 'heloc-rows', 'debt-rows', 'income-cards', 'budget-savings-rows', 'budget-expenses-rows']
-    .forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
-}
-
-function stripUndefined(obj) {
-    if (Array.isArray(obj)) return obj.map(item => stripUndefined(item));
-    if (obj !== null && typeof obj === 'object') {
-        return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined).map(([k, v]) => [k, stripUndefined(v)]));
-    }
-    return obj;
-}
-
-export async function autoSave(scrape = true) {
-    if (scrape) window.currentData = scrapeDataFromUI();
-    updateSummaries(window.currentData);
-    if (window.updateSidebarChart) window.updateSidebarChart(window.currentData);
-    
-    const projTab = document.getElementById('tab-projection');
-    if (projTab && !projTab.classList.contains('hidden')) projection.run(window.currentData);
-    
-    const burnTab = document.getElementById('tab-burndown');
-    if (burnTab && !burnTab.classList.contains('hidden')) burndown.run();
-    
-    const sanitizedData = stripUndefined(window.currentData);
-
-    if (user && db) {
-        try { 
-            await setDoc(doc(db, "users", user.uid), sanitizedData, { merge: true }); 
-            setSaveState('success');
-        } catch (e) { setSaveState('error'); }
-    } else {
-        try {
-            localStorage.setItem(GUEST_DATA_KEY, JSON.stringify(sanitizedData));
-            setSaveState('success');
-        } catch (e) { setSaveState('error'); }
-    }
-}
-
-function setSaveState(state) {
-    const indicators = document.querySelectorAll('#save-indicator');
-    const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
-    indicators.forEach(el => {
-        if (isGuest) el.classList.add('hidden');
-        else setIndicatorColor(el, state === 'success' ? "text-green-500" : "text-red-500");
+    // Add User Savings Rows
+    d.budget?.savings?.forEach(i => {
+        // Prevent loading locked rows if they accidentally got saved
+        if (!i.isLocked) window.addRow('budget-savings-rows', 'budget-savings', i);
     });
 }
 
-function scrapeDataFromUI() {
-    if (window.addMobileItem) return window.currentData;
-    const prevData = window.currentData || getInitialData();
-    const data = { 
-        assumptions: { ...prevData.assumptions }, 
-        investments: [], stockOptions: [], realEstate: [], otherAssets: [], helocs: [], debts: [], income: [], 
-        budget: { savings: [], expenses: [] }, 
-        benefits: benefits.scrape ? benefits.scrape() : {}, 
-        burndown: burndown.scrape ? burndown.scrape() : {},
-        projectionSettings: projection.scrape ? projection.scrape() : {},
-        projectionEndAge: parseFloat(document.getElementById('input-projection-end')?.value) || 72
+function scrapeData() {
+    const getData = (id, fields) => {
+        const container = document.getElementById(id);
+        if (!container) return [];
+        // CRITICAL FIX: Ignore rows with class 'locked-row' to prevent duplicates
+        const rows = Array.from(container.children).filter(row => !row.classList.contains('locked-row'));
+        return rows.map(row => {
+            const obj = {};
+            fields.forEach(field => {
+                const el = row.querySelector(`[data-id="${field}"]`);
+                if (el) {
+                    if (el.type === 'checkbox') obj[field] = el.checked;
+                    else if (el.dataset.type === 'currency') obj[field] = math.fromCurrency(el.value);
+                    else if (el.type === 'number') obj[field] = parseFloat(el.value) || 0;
+                    else obj[field] = el.value;
+                }
+            });
+            // Handle hidden inputs for row-specific settings
+            row.querySelectorAll('input[type="hidden"]').forEach(h => {
+                if (fields.includes(h.dataset.id)) obj[h.dataset.id] = (h.value === 'true');
+            });
+            return obj;
+        });
     };
 
-    const stateEl = document.querySelector('[data-id="state"]');
-    if (stateEl) data.assumptions.state = stateEl.value;
-    const filingStatusEl = document.querySelector('[data-id="filingStatus"]');
-    if (filingStatusEl) data.assumptions.filingStatus = filingStatusEl.value;
+    const newData = {
+        assumptions: { ...window.currentData.assumptions }, // Preserves assumption keys not in scraping list
+        investments: getData('investment-rows', ['name', 'type', 'value', 'costBasis']),
+        realEstate: getData('real-estate-rows', ['name', 'value', 'mortgage', 'principalPayment']),
+        otherAssets: getData('other-assets-rows', ['name', 'value', 'loan']),
+        helocs: getData('heloc-rows', ['name', 'balance', 'limit', 'rate']),
+        debts: getData('debt-rows', ['name', 'balance', 'principalPayment']),
+        stockOptions: getData('stock-option-rows', ['name', 'shares', 'strikePrice', 'currentPrice', 'growth', 'isLtcg']),
+        income: getData('income-cards', ['name', 'amount', 'increase', 'contribution', 'match', 'bonusPct', 'isMonthly', 'incomeExpenses', 'incomeExpensesMonthly', 'nonTaxableUntil', 'remainsInRetirement', 'contribOnBonus', 'matchOnBonus']),
+        budget: {
+            savings: getData('budget-savings-rows', ['type', 'monthly', 'annual', 'removedInRetirement']),
+            expenses: getData('budget-expenses-rows', ['name', 'monthly', 'annual', 'remainsInRetirement', 'isFixed'])
+        },
+        benefits: benefits.scrape(),
+        burndown: burndown.scrape(),
+        projectionSettings: projection.scrape()
+    };
 
-    document.querySelectorAll('#assumptions-container [data-id]').forEach(i => {
-        if (i.tagName !== 'SELECT') {
-            const val = parseFloat(i.value);
-            data.assumptions[i.dataset.id] = isNaN(val) ? 0 : val;
+    return newData;
+}
+
+export function autoSave(updateUI = true) {
+    if (window.saveTimeout) clearTimeout(window.saveTimeout);
+    window.saveTimeout = setTimeout(async () => {
+        const newData = scrapeData();
+        window.currentData = newData; // Update local state immediately
+        
+        if (updateUI) {
+            updateSummaries();
+            if(window.updateSidebarChart) window.updateSidebarChart(newData);
         }
-    });
 
-    document.querySelectorAll('#investment-rows tr').forEach(r => data.investments.push(scrapeRow(r)));
-    document.querySelectorAll('#stock-option-rows tr').forEach(r => data.stockOptions.push(scrapeRow(r)));
-    document.querySelectorAll('#real-estate-rows tr').forEach(r => data.realEstate.push(scrapeRow(r)));
-    document.querySelectorAll('#other-assets-rows tr').forEach(r => data.otherAssets.push(scrapeRow(r)));
-    document.querySelectorAll('#heloc-rows tr').forEach(r => data.helocs.push(scrapeRow(r, 'heloc')));
-    document.querySelectorAll('#debt-rows tr').forEach(r => data.debts.push(scrapeRow(r)));
-    document.querySelectorAll('#income-cards > div').forEach(c => data.income.push(scrapeRow(c)));
-    document.querySelectorAll('#budget-savings-rows tr').forEach(r => {
-        const rowData = scrapeRow(r);
-        if (!rowData.isLocked) data.budget.savings.push(rowData);
-    });
-    document.querySelectorAll('#budget-expenses-rows tr').forEach(r => data.budget.expenses.push(scrapeRow(r)));
+        const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
+        const user = auth.currentUser;
 
-    return data;
+        // Persist Data
+        if (user) {
+            try {
+                await setDoc(doc(db, "users", user.uid), newData);
+                showSaveIndicator();
+            } catch (e) { console.error("Save Error", e); }
+        } else if (isGuest) {
+            localStorage.setItem('firecalc_guest_data', JSON.stringify(newData));
+            showSaveIndicator(); // Mobile might use this
+        }
+    }, 1000);
 }
 
-function scrapeRow(el, forcedType = null) {
-    const obj = {};
-    el.querySelectorAll('[data-id]').forEach(i => {
-        const id = i.dataset.id;
-        if (i.type === 'checkbox') obj[id] = i.checked;
-        else if (i.type === 'hidden') obj[id] = i.value === 'true';
-        else if (i.dataset.type === 'currency') obj[id] = math.fromCurrency(i.value);
-        else if (i.type === 'number' || i.step) obj[id] = parseFloat(i.value) || 0;
-        else obj[id] = i.value;
-    });
-    if (forcedType) obj.type = forcedType;
-    return obj;
+// Global debounced save for UI events
+window.debouncedAutoSave = () => autoSave(true);
+
+function showSaveIndicator() {
+    const el = document.getElementById('save-indicator');
+    if (!el) return;
+    el.classList.add('text-emerald-400');
+    setTimeout(() => el.classList.remove('text-emerald-400'), 2000);
 }
 
-export function updateSummaries(data) {
+export function updateSummaries() {
+    const data = window.currentData;
+    if (!data) return;
+    
     const s = engine.calculateSummaries(data);
     const set = (id, val, isCurr = true) => {
         const el = document.getElementById(id);
@@ -260,8 +203,7 @@ export function updateSummaries(data) {
     set('sum-income-adjusted', s.magiBase);
     set('sum-budget-savings', s.totalAnnualSavings);
     set('sum-budget-annual', s.totalAnnualBudget);
-    set('sum-budget-total', s.totalAnnualSavings + s.totalAnnualBudget);
-
+    
     const currentAge = data.assumptions?.currentAge || 40;
     const retirementAge = data.assumptions?.retirementAge || 65;
     const ssStartAge = data.assumptions?.ssStartAge || 67;
@@ -291,82 +233,14 @@ export function updateSummaries(data) {
         return sum + (exp.isFixed ? base : base * infFacRet);
     }, 0);
     set('sum-retire-budget', retireBudget);
+    set('sum-budget-total', retireBudget); 
 
-    // Income at SS start age
+    // Income at SS start age breakdown
     const floorDetails = document.getElementById('sum-floor-breakdown');
     if (floorDetails) {
-        const iSS = Math.max(0, ssStartAge - currentAge);
-        const infFacSS = Math.pow(1 + inflation, iSS);
-        const streamsAtSS = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
-            const growth = (parseFloat(inc.increase) / 100) || 0;
-            return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, iSS));
-        }, 0);
-        const ssBenefitAtSS = engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacSS);
-        const totalIncomeAtSS = streamsAtSS + ssBenefitAtSS;
-        
-        floorDetails.textContent = `Income at SS start (${ssStartAge}): ${math.toSmartCompactCurrency(totalIncomeAtSS)}`;
+        let details = [];
+        if (streamsAtRet > 0) details.push(`Income: ${math.toSmartCompactCurrency(streamsAtRet)}`);
+        if (ssAtRet > 0) details.push(`SS: ${math.toSmartCompactCurrency(ssAtRet)}`);
+        floorDetails.textContent = details.join(' + ');
     }
-}
-
-export function getInitialData() {
-    return {
-        assumptions: { 
-            ...assumptions.defaults, 
-            currentAge: 42, 
-            retirementAge: 45, 
-            ssStartAge: 62, 
-            ssMonthly: 3500,
-            stockGrowth: 8,
-            cryptoGrowth: 8,
-            realEstateGrowth: 3,
-            metalsGrowth: 6,
-            inflation: 3,
-            slowGoFactor: 1.0,
-            midGoFactor: 0.9,
-            noGoFactor: 0.8
-        },
-        investments: [
-            { name: 'EMPLOYER 401K', type: 'Pre-Tax (401k/IRA)', value: 750000, costBasis: 750000 },
-            { name: 'BROKERAGE STOCKS', type: 'Taxable', value: 450000, costBasis: 300000 },
-            { name: 'ROTH IRA', type: 'Roth IRA', value: 300000, costBasis: 150000 },
-            { name: '529', type: '529', value: 75000, costBasis: 75000 },
-            { name: 'HSA', type: 'HSA', value: 45000, costBasis: 45000 },
-            { name: 'CHECKING ACCOUNT', type: 'Cash', value: 40000, costBasis: 40000 }
-        ],
-        realEstate: [
-            { name: 'Primary Residence', value: 500000, mortgage: 250000, principalPayment: 1000 }
-        ],
-        helocs: [
-            { name: 'HELOC', balance: 0, limit: 250000, rate: 6 }
-        ],
-        otherAssets: [
-            { name: 'Car 1', value: 40000, loan: 15000, principalPayment: 500 },
-            { name: 'Car 2', value: 30000, loan: 10000, principalPayment: 350 }
-        ],
-        debts: [
-            { name: 'Credit Card', balance: 15000, principalPayment: 1000 }
-        ],
-        income: [
-            { name: 'Salary 1', amount: 175000, increase: 3, contribution: 10, match: 4, bonusPct: 10, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false },
-            { name: 'Salary 2', amount: 100000, increase: 3, contribution: 10, match: 4, bonusPct: 5, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false }
-        ],
-        budget: {
-            savings: [
-                { name: 'Roth Contribution', type: 'Roth IRA', monthly: 1167, annual: 14000, removedInRetirement: true, isFixed: false },
-                { name: 'HSA Contribution', type: 'HSA', monthly: 583, annual: 7000, removedInRetirement: true, isFixed: false },
-                { name: 'Monthly Investment', type: 'Taxable', monthly: 1000, annual: 12000, removedInRetirement: true, isFixed: false }
-            ],
-            expenses: [
-                { name: 'Mortgage / Tax / Ins', monthly: 3000, annual: 36000, remainsInRetirement: true, isFixed: true },
-                { name: 'Auto Loans', monthly: 1000, annual: 12000, remainsInRetirement: true, isFixed: true },
-                { name: 'Groceries', monthly: 1200, annual: 14400, remainsInRetirement: true, isFixed: false },
-                { name: 'Utilities', monthly: 600, annual: 7200, remainsInRetirement: true, isFixed: false },
-                { name: 'Travel & Vacation', monthly: 667, annual: 8000, remainsInRetirement: true, isFixed: false },
-                { name: 'Miscellaneous', monthly: 333, annual: 4000, remainsInRetirement: true, isFixed: false }
-            ]
-        },
-        benefits: { hhSize: 5, shelterCosts: 3000, hasSUA: true, unifiedIncome: 30000 },
-        burndown: { strategyDial: 33, useSync: true, cashReserve: 30000, retirementAge: 45 },
-        projectionSettings: { isRealDollars: false }
-    };
 }

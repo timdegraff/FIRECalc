@@ -211,9 +211,10 @@ function syncAllInputs(id, val, updateTextInputs = true) {
                 if (el.id === 'input-top-retire-age') {
                     lbl = document.getElementById('label-top-retire-age');
                 } else {
+                    // Refined label targeting: exclude labels with explicitly defined .label-std class
                     lbl = el.parentElement.querySelector('span:not(.label-std)');
                     if (!lbl) {
-                        lbl = el.previousElementSibling?.querySelector('span');
+                        lbl = el.previousElementSibling?.querySelector('span:not(.label-std)');
                     }
                 }
 
@@ -388,7 +389,16 @@ window.addRow = (containerId, type, data = {}) => {
     const container = document.getElementById(containerId); if (!container) return;
     let element = type === 'income' ? document.createElement('div') : document.createElement('tr');
     if (type !== 'income') element.className = 'border-b border-slate-700/50 hover:bg-slate-800/20 transition-colors';
-    element.innerHTML = templates[type](data); container.appendChild(element);
+    
+    // Add locked class if applicable to prevent scraping
+    if (data.isLocked) {
+        element.classList.add('locked-row');
+    }
+
+    // Default defaults for new rows
+    if (type === 'budget-savings' && data.removedInRetirement === undefined) {
+        data.removedInRetirement = true; // Pre-check "NO" (removed in retirement) by default
+    }
 
     // Auto-calculate missing budget values if one exists
     if (type === 'budget-savings' || type === 'budget-expense') {
@@ -398,7 +408,9 @@ window.addRow = (containerId, type, data = {}) => {
         // Default new expenses to remainsInRetirement = true
         if (type === 'budget-expense' && data.remainsInRetirement === undefined) data.remainsInRetirement = true;
     }
-    
+
+    element.innerHTML = templates[type](data); container.appendChild(element);
+
     element.querySelectorAll('[data-id]').forEach(input => {
         const key = input.dataset.id, val = data[key];
         if (val !== undefined) {
@@ -550,9 +562,9 @@ window.createAssumptionControls = (data) => {
             <div class="p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 space-y-3">
                 <div class="flex justify-between items-center"><span class="label-std ${color}">${label} Growth</span><span class="text-[8px] font-black text-slate-600">ADVANCED</span></div>
                 <div class="grid grid-cols-3 gap-2">
-                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Initial %</span><input data-id="${id}" data-decimals="1" type="number" step="0.1" value="${val}" class="input-base w-full text-[10px] font-bold ${color}"></div>
-                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Years</span><input data-id="${id}Years" type="number" value="${yrs}" class="input-base w-full text-[10px] font-bold text-white"></div>
-                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Perpetual %</span><input data-id="${id}Perpetual" data-decimals="1" type="number" step="0.1" value="${perp}" class="input-base w-full text-[10px] font-bold ${color}"></div>
+                    <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Initial %</span><input data-id="${id}" data-decimals="1" type="number" step="0.1" value="${val}" class="input-base w-full text-[12px] font-bold ${color}"></div>
+                    <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Years</span><input data-id="${id}Years" type="number" value="${yrs}" class="input-base w-full text-[12px] font-bold text-white"></div>
+                    <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Perpetual %</span><input data-id="${id}Perpetual" data-decimals="1" type="number" step="0.1" value="${perp}" class="input-base w-full text-[12px] font-bold ${color}"></div>
                 </div>
             </div>`;
     };
