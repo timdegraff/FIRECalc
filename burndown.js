@@ -5,6 +5,7 @@ let isRealDollars = false;
 let simulationTrace = {}; 
 let firstInsolvencyAge = null; 
 let lastUsedRetirementAge = 65;
+let traceAgeManuallySet = false;
 
 export const burndown = {
     getIsRealDollars: () => isRealDollars,
@@ -162,23 +163,29 @@ export const burndown = {
         
         if (debugAgeInp) {
             debugAgeInp.oninput = () => {
+                traceAgeManuallySet = true;
                 burndown.updateTraceLog();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         }
         
         if (btnDebugMinus && debugAgeInp) {
             btnDebugMinus.onclick = () => {
+                traceAgeManuallySet = true;
                 const current = parseInt(debugAgeInp.value) || lastUsedRetirementAge;
                 debugAgeInp.value = Math.max(18, current - 1);
                 burndown.updateTraceLog();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         }
         
         if (btnDebugPlus && debugAgeInp) {
             btnDebugPlus.onclick = () => {
+                traceAgeManuallySet = true;
                 const current = parseInt(debugAgeInp.value) || lastUsedRetirementAge;
                 debugAgeInp.value = Math.min(100, current + 1);
                 burndown.updateTraceLog();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         }
 
@@ -268,6 +275,7 @@ export const burndown = {
     load: (data) => {
         if (data?.priority) burndown.priorityOrder = [...new Set(data.priority)];
         isRealDollars = !!data?.isRealDollars;
+        traceAgeManuallySet = !!data?.traceAgeManuallySet;
         
         const sync = (id, val, isCheck = false) => {
             const el = document.getElementById(id);
@@ -286,6 +294,11 @@ export const burndown = {
             
             const manualInput = document.getElementById('input-manual-budget');
             if (data.manualBudget && manualInput) manualInput.value = math.toCurrency(data.manualBudget);
+
+            if (traceAgeManuallySet && data.traceAge !== undefined) {
+                const debugAgeInp = document.getElementById('input-debug-age');
+                if (debugAgeInp) debugAgeInp.value = data.traceAge;
+            }
         }
 
         burndown.run();
@@ -299,7 +312,9 @@ export const burndown = {
         dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
         retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
-        isRealDollars
+        isRealDollars,
+        traceAge: parseInt(document.getElementById('input-debug-age')?.value || 65),
+        traceAgeManuallySet
     }),
 
     assetMeta: {
@@ -372,8 +387,8 @@ export const burndown = {
 
         const debugAgeInp = document.getElementById('input-debug-age');
         if (debugAgeInp) {
-            // Set default if empty
-            if (!debugAgeInp.value) {
+            // If linked (not manually set), update to retirement age
+            if (!traceAgeManuallySet) {
                 debugAgeInp.value = config.retirementAge;
             }
             burndown.updateTraceLog();
@@ -415,7 +430,7 @@ export const burndown = {
         for (let i = 0; i <= (100 - assumptions.currentAge); i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
             const trace = [];
-            trace.push(`<span class="text-blue-400 font-bold">--- STARTING AGE ${age} (${year}) ---</span>`);
+            trace.push(`<span class="text-blue-400 font-bold">--- STARTING AGE ${age} ---</span>`);
 
             const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
             const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
@@ -462,25 +477,37 @@ export const burndown = {
             const hsaCont = budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
             ordInc = Math.max(0, ordInc - (pretaxDed + hsaCont));
             
+            let drawn = 0, ordIter = ordInc, yrDraws = {};
+
+            // --- SEPP / 72t Logic REFACTORED ---
             if (isRet && age < 59.5) {
-                const projectedShortfall = targetBudget - (netAvail + bal['cash'] + bal['taxable']);
+                // Calculate total liquidity available BEFORE touching the 401k/IRA
+                // This prevents 72t from firing if you have money in HELOC/Crypto/Roth
+                let totalLiquidityBefore401k = netAvail + bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['crypto'] + bal['metals'];
+                const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0);
+                totalLiquidityBefore401k += Math.max(0, helocLimit - bal['heloc']);
+
+                const projectedShortfall = targetBudget - totalLiquidityBefore401k;
+                
                 if (projectedShortfall > 0 && bal['401k'] > 0) {
                     const seppMax = engine.calculateMaxSepp(bal['401k'], age);
                     const seppTake = Math.min(seppMax, projectedShortfall); 
                     if (seppTake > 0) {
-                        bal['401k'] -= seppTake; ordInc += seppTake; netAvail += seppTake;
+                        bal['401k'] -= seppTake; 
+                        ordIter += seppTake; 
+                        drawn += seppTake; 
+                        yrDraws['401k'] = (yrDraws['401k'] || 0) + seppTake;
                         trace.push(`<span class="text-amber-400">⚠️ 72t Bridge Triggered: Withdrew ${math.toCurrency(seppTake)} (Max: ${math.toCurrency(seppMax)}) to cover shortfall.</span>`);
                     }
                 }
             }
 
-            trace.push(`Fixed Income & Deductions: ${math.toCurrency(netAvail)} cash, ${math.toCurrency(ordInc)} MAGI base`);
+            trace.push(`Fixed Income & Deductions: ${math.toCurrency(netAvail)} cash, ${math.toCurrency(ordIter)} MAGI base`);
             
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
             let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget));
             trace.push(`MAGI Strategy Target: ${math.toCurrency(magiTarget)} (FPL @ 100%: ${math.toCurrency(fpl)})`);
 
-            let drawn = 0, ordIter = ordInc, yrDraws = {};
             // --- LOOP 1: HARVEST MAGI ---
             burndown.priorityOrder.forEach(pk => {
                 const meta = burndown.assetMeta[pk];
@@ -506,7 +533,6 @@ export const burndown = {
             });
 
             // --- LOOP 2: COVER CASH SHORTFALL (Iterative for Tax Sensitivity) ---
-            // We run up to 3 passes to handle "tax spiraling" (where drawing money creates a tax bill that requires more drawing)
             for (let pass = 0; pass < 3; pass++) {
                 let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
                 const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
