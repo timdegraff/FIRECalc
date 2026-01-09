@@ -366,7 +366,7 @@ export const burndown = {
             for (let i = 0; i < 20; i++) {
                 let mid = (low + high) / 2;
                 const sim = burndown.simulateProjection(data, mid);
-                if (sim[sim.length - 1].netWorth < 0) high = mid;
+                if (sim[sim.length - 1].liquid < 0) high = mid;
                 else { bestBudget = mid; low = mid; }
             }
             results = burndown.simulateProjection(data, bestBudget);
@@ -479,15 +479,13 @@ export const burndown = {
             
             let drawn = 0, ordIter = ordInc, yrDraws = {};
 
-            // --- SEPP / 72t Logic REFACTORED ---
+            // --- Bridge Audit: Strategy for Under 59.5 ---
             if (isRet && age < 59.5) {
-                // Calculate total liquidity available BEFORE touching the 401k/IRA
-                // This prevents 72t from firing if you have money in HELOC/Crypto/Roth
-                let totalLiquidityBefore401k = netAvail + bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['crypto'] + bal['metals'];
+                let auditLiquidity = netAvail + bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['crypto'] + bal['metals'];
                 const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0);
-                totalLiquidityBefore401k += Math.max(0, helocLimit - bal['heloc']);
+                auditLiquidity += Math.max(0, helocLimit - bal['heloc']);
 
-                const projectedShortfall = targetBudget - totalLiquidityBefore401k;
+                const projectedShortfall = targetBudget - auditLiquidity;
                 
                 if (projectedShortfall > 0 && bal['401k'] > 0) {
                     const seppMax = engine.calculateMaxSepp(bal['401k'], age);
@@ -497,18 +495,18 @@ export const burndown = {
                         ordIter += seppTake; 
                         drawn += seppTake; 
                         yrDraws['401k'] = (yrDraws['401k'] || 0) + seppTake;
-                        trace.push(`<span class="text-amber-400">⚠️ 72t Bridge Triggered: Withdrew ${math.toCurrency(seppTake)} (Max: ${math.toCurrency(seppMax)}) to cover shortfall.</span>`);
+                        trace.push(`<span class="text-amber-400">⚠️ Bridge Triggered: Audit pot shortfall detected. Triggering 72t bridge. Withdrew ${math.toCurrency(seppTake)}</span>`);
                     }
                 }
             }
 
-            trace.push(`Fixed Income & Deductions: ${math.toCurrency(netAvail)} cash, ${math.toCurrency(ordIter)} MAGI base`);
+            trace.push(`Base Ordinary Income: ${math.toCurrency(ordIter)}`);
             
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
             let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget));
             trace.push(`MAGI Strategy Target: ${math.toCurrency(magiTarget)} (FPL @ 100%: ${math.toCurrency(fpl)})`);
 
-            // --- LOOP 1: HARVEST MAGI ---
+            // --- Pass 1: MAGI Harvesting ---
             burndown.priorityOrder.forEach(pk => {
                 const meta = burndown.assetMeta[pk];
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
@@ -517,10 +515,7 @@ export const burndown = {
                 if (availableInBucket <= 0) return;
 
                 const estimatedCashCap = (targetBudget + (ordIter * 0.25)) - (netAvail + drawn);
-                if (estimatedCashCap <= 0.01) {
-                    trace.push(`[Optimization] MAGI Harvesting capped for ${pk} - cash already covers needs.`);
-                    return;
-                }
+                if (estimatedCashCap <= 0.01) return;
 
                 const gr = pk === 'taxable' ? Math.max(0.01, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
                 let take = Math.min(availableInBucket, (magiTarget - ordIter) / gr);
@@ -529,18 +524,18 @@ export const burndown = {
 
                 bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); 
                 drawn += take; ordIter += (take * gr); yrDraws[pk] = (yrDraws[pk] || 0) + take;
-                trace.push(`MAGI Harvesting from ${pk}: sold ${math.toCurrency(take)} to get ${math.toCurrency(take * gr)} gain.`);
+                trace.push(`Pass 1: Harvesting ${pk} (${math.toCurrency(take)}) to match MAGI target.`);
             });
 
-            // --- LOOP 2: COVER CASH SHORTFALL (Iterative for Tax Sensitivity) ---
-            for (let pass = 0; pass < 3; pass++) {
+            // --- Pass 2 & 3: Shortfall Spiral ---
+            for (let pass = 2; pass <= 3; pass++) {
                 let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
                 const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
                 let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
                 
                 if (shortfall <= 0.01) break;
                 
-                trace.push(`Shortfall Detection (Pass ${pass + 1}): ${math.toCurrency(shortfall)}`);
+                trace.push(`Shortfall Spiral (Pass ${pass}): ${math.toCurrency(shortfall)}`);
                 
                 burndown.priorityOrder.forEach(pk => {
                     if (shortfall <= 0.01) return;
@@ -570,7 +565,6 @@ export const burndown = {
 
                     if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
                     drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
-                    trace.push(`Shortfall pull from ${pk}: ${math.toCurrency(take)}`);
                 });
             }
             
@@ -592,7 +586,6 @@ export const burndown = {
             
             trace.push(`<span class="text-white">Year End MAGI: ${math.toCurrency(magi)}</span>`);
             trace.push(`<span class="text-red-400">Year End Taxes: ${math.toCurrency(finalTax)}</span>`);
-            trace.push(`Year End Net Worth: ${math.toCurrency(currentNW)}`);
             simulationTrace[age] = trace;
             
             results.push(yearRes);

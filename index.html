@@ -489,29 +489,29 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gross Inflow</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Gross Inflow</p>
                                         <p class="text-sm text-slate-300">The engine sums all W2 and 1099 income streams based on your current age and projected growth percentages.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Siphon Effect</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: The Siphon Effect</p>
                                         <p class="text-sm text-slate-300">Pre-tax contributions (401k/HSA) are subtracted from gross income to calculate the <strong>MAGI Base</strong>. These funds are added directly to your account balances.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tax Leakage</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Tax Leakage</p>
                                         <p class="text-sm text-slate-300">Federal, State, and FICA taxes are calculated on the remaining taxable portion of your income.</p>
                                     </div>
                                 </div>
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Excess Cash Disposal</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: Excess Cash Disposal</p>
                                         <p class="text-sm text-slate-300">The engine solves for surplus: <code class="text-teal-400">Income - Taxes - Budget - Savings = Excess Cash</code>. This surplus is automatically routed to your <strong>Taxable Brokerage</strong> bucket.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Compounding Loop</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">E: The Compounding Loop</p>
                                         <p class="text-sm text-slate-300">Each year, the engine applies your specific APY settings (Stock, Crypto, RE) to existing balances <em>before</em> adding the current year's contributions.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Inflation Scaling</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">F: Inflation Scaling</p>
                                         <p class="text-sm text-slate-300">Your budget, IRS contribution limits, and FPL benefit thresholds are increased annually according to your inflation setting.</p>
                                     </div>
                                 </div>
@@ -529,22 +529,22 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div class="space-y-4">
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Solving for Shortfall</p>
-                                            <p class="text-sm text-slate-300">The engine defines the need: <code class="text-pink-400">Target Budget - Passive Income - SNAP Benefits = Shortfall</code>.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: The Bridge Audit</p>
+                                            <p class="text-sm text-slate-300">Before touching the 401k, the tool performs a full audit of your other liquid pots (Cash, Brokerage, Crypto, Metals, Roth Basis, and HELOC). If these pots fail to cover the budget, a <strong>72(t) / SEPP</strong> systematic withdrawal is triggered.</p>
                                         </div>
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">MAGI Strategy Target</p>
-                                            <p class="text-sm text-slate-300">Instead of just withdrawing money, the tool targets the specific "Sweet Spot" (Platinum or Silver zones) using your Strategy Dial to maximize ACA subsidies.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: MAGI Strategy Targeting</p>
+                                            <p class="text-sm text-slate-300">The tool targets specific "Sweet Spots" (Platinum or Silver zones) using your Strategy Dial to maximize ACA subsidies while raising necessary cash.</p>
                                         </div>
                                     </div>
                                     <div class="space-y-4">
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Withdrawal Waterfall</p>
-                                            <p class="text-sm text-slate-300">To maintain the MAGI target, the engine drains buckets in sequence: <code class="text-white">Cash → Brokerage Basis → Brokerage Gains → 72(t) / SEPP</code>.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: The Withdrawal Waterfall</p>
+                                            <p class="text-sm text-slate-300">Assets are drained in a specific sequence to maintain the tax strategy: <code class="text-white">Cash → Brokerage Basis → Brokerage Gains → HELOC → 72(t)</code>.</p>
                                         </div>
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Tax Spiral Loop</p>
-                                            <p class="text-sm text-slate-300">Drawing money creates a tax bill, which creates more shortfall. The engine runs 3 iterative passes to "gross up" the final withdrawal and cover the resulting taxes.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: 3-Pass Tax Spiral</p>
+                                            <p class="text-sm text-slate-300">Withdrawals generate taxes, which create more shortfall. The engine runs 3 iterative passes per year to "gross up" the final withdrawal and cover the resulting tax bill.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -560,21 +560,21 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Social Security Floor</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Social Security Floor</p>
                                         <p class="text-sm text-slate-300">The engine calculates your provisional income to determine how much of your Social Security benefit is taxable ordinary income.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">RMD Triggering</p>
-                                        <p class="text-sm text-slate-300">At age 73/75, the engine triggers Required Minimum Distributions, forcing taxable withdrawals from Pre-Tax buckets regardless of cash need.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: RMD Triggering</p>
+                                        <p class="text-sm text-slate-300">At age 75, the engine triggers Required Minimum Distributions, forcing taxable withdrawals from Pre-Tax buckets regardless of cash need.</p>
                                     </div>
                                 </div>
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Medicare Transition</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Medicare Transition</p>
                                         <p class="text-sm text-slate-300">Healthcare logic automatically switches from MAGI-based ACA subsidies to standard Medicare logic at age 65.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Final Solvency Check</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: Final Solvency Check</p>
                                         <p class="text-sm text-slate-300">If total liquid assets drop below $0 at any point, the engine marks the year as <strong>INSOLVENT</strong> and flags the "Solvency Cliff" in the projection chart.</p>
                                     </div>
                                 </div>
