@@ -288,9 +288,9 @@ function getInitialData() {
             filingStatus: 'Married Filing Jointly'
         }, 
         investments: [
-            { name: "401k", type: "Pre-Tax (401k/IRA)", value: 300000, costBasis: 200000 },
-            { name: "Brokerage", type: "Taxable", value: 250000, costBasis: 150000 },
-            { name: "ROTH IRA", type: "Roth", value: 200000, costBasis: 150000 },
+            { name: "401k", type: "Pre-Tax (401k/IRA)", value: 2750000, costBasis: 175000 },
+            { name: "Brokerage", type: "Taxable", value: 225000, costBasis: 125000 },
+            { name: "ROTH IRA", type: "Roth", value: 175000, costBasis: 125000 },
             { name: "Checking Account", type: "Cash", value: 25000, costBasis: 25000 },
             { name: "Health Savings", type: "HSA", value: 20000, costBasis: 15000 },
             { name: "Bitcoin", type: "Crypto", value: 20000, costBasis: 10000 },
@@ -300,10 +300,10 @@ function getInitialData() {
             { name: "Series C", shares: 0, strikePrice: 0, currentPrice: 0, growth: 10, isLtcg: true }
         ],
         realEstate: [
-            { name: "Primary Home", value: 450000, mortgage: 250000, principalPayment: 900 }
+            { name: "Primary Home", value: 425000, mortgage: 250000, principalPayment: 900 }
         ], 
         otherAssets: [
-            { name: "Vehicles", value: 40000, loan: 0 }
+            { name: "Vehicles", value: 35000, loan: 0 }
         ], 
         helocs: [
             { name: "Home Equity Line", balance: 0, limit: 150000, rate: 6.0 }
