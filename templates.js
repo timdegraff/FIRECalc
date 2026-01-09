@@ -18,7 +18,7 @@ export const templates = {
         },
         renderStepper: (id, value, colorClass = "text-white") => `
             <div class="relative group/stepper">
-                <input data-id="${id}" type="number" step="0.5" placeholder="0" value="${value || 0}" class="input-base text-center font-bold mono-numbers ${colorClass} pr-6">
+                <input data-id="${id}" type="number" step="0.5" placeholder="0" value="${value !== undefined ? value : 0}" class="input-base text-center font-bold mono-numbers ${colorClass} pr-6">
                 <div class="absolute right-1 top-0 bottom-0 flex flex-col justify-center gap-0.5 opacity-0 group-hover/stepper:opacity-100 transition-opacity">
                     <button data-step="up" data-target="${id}" class="text-[8px] text-slate-500 hover:text-white leading-none"><i class="fas fa-chevron-up"></i></button>
                     <button data-step="down" data-target="${id}" class="text-[8px] text-slate-500 hover:text-white leading-none"><i class="fas fa-chevron-down"></i></button>

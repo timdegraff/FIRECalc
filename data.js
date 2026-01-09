@@ -97,7 +97,8 @@ export function loadUserDataIntoUI(data) {
     clearDynamicContent();
     const populate = (arr, id, type) => {
         if (arr?.length) arr.forEach(item => window.addRow(id, type, item));
-        else if (!['budget-savings', 'heloc', 'debt'].includes(type)) window.addRow(id, type, {});
+        // Only skip auto-empty-row for budget-savings because it has a locked row
+        else if (type !== 'budget-savings') window.addRow(id, type, {});
     };
     populate(data.investments, 'investment-rows', 'investment');
     populate(data.stockOptions, 'stock-option-rows', 'stockOption');
@@ -109,7 +110,15 @@ export function loadUserDataIntoUI(data) {
     
     const summaries = engine.calculateSummaries(data);
     window.addRow('budget-savings-rows', 'budget-savings', { type: 'Pre-Tax (401k/IRA)', annual: summaries.total401kContribution, monthly: summaries.total401kContribution / 12, isLocked: true });
-    populate(data.budget?.savings?.filter(s => s.isLocked !== true), 'budget-savings-rows', 'budget-savings');
+    
+    const manualSavings = data.budget?.savings?.filter(s => s.isLocked !== true) || [];
+    if (manualSavings.length) {
+        manualSavings.forEach(item => window.addRow('budget-savings-rows', 'budget-savings', item));
+    } else {
+        // Always provide one blank savings row for new users if the initial prepop somehow fails
+        window.addRow('budget-savings-rows', 'budget-savings', {});
+    }
+
     populate(data.budget?.expenses, 'budget-expenses-rows', 'budget-expense');
     
     const projEndInput = document.getElementById('input-projection-end');
@@ -257,16 +266,26 @@ export function updateSummaries(data) {
     set('sum-yrs-to-retire', yrsToRetire, false);
     set('sum-life-exp', engine.getLifeExpectancy(currentAge) + currentAge, false);
 
+    // Factors for retirement
+    const infFacRet = Math.pow(1 + inflation, yrsToRetire);
+
     // Income at retirement (Yr 1)
-    const iRet = yrsToRetire;
-    const infFacRet = Math.pow(1 + inflation, iRet);
     const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
         const growth = (parseFloat(inc.increase) / 100) || 0;
-        return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, iRet));
+        return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
     }, 0);
     const ssAtRet = (retirementAge >= ssStartAge) ? engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacRet) : 0;
     const totalRetIncome = streamsAtRet + ssAtRet;
     set('sum-retirement-income-floor', totalRetIncome);
+
+    // Retirement Year 1 Budget Calculation
+    const retireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
+        if (exp.removedInRetirement) return sum;
+        const base = math.fromCurrency(exp.annual);
+        // If fixed, don't inflate. If not fixed, inflate to retirement year.
+        return sum + (exp.isFixed ? base : base * infFacRet);
+    }, 0);
+    set('sum-retire-budget', retireBudget);
 
     // Income at SS start age
     const floorDetails = document.getElementById('sum-floor-breakdown');
@@ -292,8 +311,11 @@ export function getInitialData() {
             retirementAge: 45, 
             ssStartAge: 62, 
             ssMonthly: 3500,
-            stockGrowth: 10,
-            realEstateGrowth: 3.5
+            stockGrowth: 8,
+            cryptoGrowth: 8,
+            realEstateGrowth: 3,
+            metalsGrowth: 6,
+            inflation: 3
         },
         investments: [
             { name: 'EMPLOYER 401K', type: 'Pre-Tax (401k/IRA)', value: 750000, costBasis: 750000 },
@@ -306,18 +328,29 @@ export function getInitialData() {
         realEstate: [
             { name: 'Primary Residence', value: 500000, mortgage: 250000, principalPayment: 1000 }
         ],
+        helocs: [
+            { name: 'HELOC', balance: 0, limit: 250000, rate: 6 }
+        ],
         otherAssets: [
             { name: 'Car 1', value: 40000, loan: 15000, principalPayment: 500 },
             { name: 'Car 2', value: 30000, loan: 10000, principalPayment: 350 }
+        ],
+        debts: [
+            { name: 'Credit Card', balance: 15000, principalPayment: 1000 }
         ],
         income: [
             { name: 'Salary 1', amount: 175000, increase: 3, contribution: 10, match: 4, bonusPct: 10, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false },
             { name: 'Salary 2', amount: 100000, increase: 3, contribution: 10, match: 4, bonusPct: 5, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false }
         ],
         budget: {
+            savings: [
+                { name: 'Roth Contribution', type: 'Roth IRA', annual: 14000, removedInRetirement: true, isFixed: false },
+                { name: 'HSA Contribution', type: 'HSA', annual: 7000, removedInRetirement: true, isFixed: false },
+                { name: 'Monthly Investment', type: 'Taxable', annual: 12000, removedInRetirement: true, isFixed: false }
+            ],
             expenses: [
                 { name: 'Mortgage / Tax / Ins', annual: 36000, removedInRetirement: false, isFixed: true },
-                { name: 'Auto Loans', annual: 12000, removedInRetirement: true, isFixed: true },
+                { name: 'Auto Loans', annual: 12000, removedInRetirement: false, isFixed: true },
                 { name: 'Groceries', annual: 14400, removedInRetirement: false, isFixed: false },
                 { name: 'Utilities', annual: 7200, removedInRetirement: false, isFixed: false },
                 { name: 'Travel & Vacation', annual: 8000, removedInRetirement: false, isFixed: false },

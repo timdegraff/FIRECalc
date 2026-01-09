@@ -549,7 +549,7 @@ function renderTab() {
     if (currentTab === 'projection') { projection.load(window.currentData.projectionSettings); projection.run(window.currentData); }
     if (currentTab === 'assumptions') {
         renderMobileAssumptions();
-        document.getElementById('btn-reset-defaults-mobile').onclick = () => { triggerHaptic(); if (confirm('Reset market defaults?')) { const marketDefaults = { stockGrowth: 8, cryptoGrowth: 10, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 }; Object.entries(marketDefaults).forEach(([id, val]) => { if (window.currentData.assumptions) { window.currentData.assumptions[id] = val; window.currentData.assumptions[id + 'Perpetual'] = val; } }); renderMobileAssumptions(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } };
+        document.getElementById('btn-reset-defaults-mobile').onclick = () => { triggerHaptic(); if (confirm('Reset market defaults?')) { const marketDefaults = { stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 }; Object.entries(marketDefaults).forEach(([id, val]) => { if (window.currentData.assumptions) { window.currentData.assumptions[id] = val; window.currentData.assumptions[id + 'Perpetual'] = val; } }); renderMobileAssumptions(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } };
         document.getElementById('btn-factory-reset-mobile').onclick = () => { triggerHaptic(); if(confirm("Factory Reset App?")) window.location.href = window.location.pathname + '?reset=true'; };
     }
     updateMobileSummaries(); updateMobileNW(); initSwipeHandlers();

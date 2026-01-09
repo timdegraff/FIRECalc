@@ -65,7 +65,7 @@ function attachGlobalListeners() {
         }
 
         if (e.target.id === 'btn-reset-market') {
-            const marketDefaults = { stockGrowth: 8, cryptoGrowth: 10, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 };
+            const marketDefaults = { stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 };
             Object.entries(marketDefaults).forEach(([id, val]) => {
                 syncAllInputs(id, val);
                 if (window.currentData?.assumptions) window.currentData.assumptions[id] = val;
@@ -270,7 +270,9 @@ function checkIrsLimits(row) {
         const isOver = personal > limit;
         warning.classList.toggle('hidden', !isOver);
         if (isOver) {
-            warning.title = `401k contribution over IRS limit of ${math.toCurrency(limit)}`;
+            warning.setAttribute('title', `401k contribution over IRS limit of ${math.toCurrency(limit)}`);
+        } else {
+            warning.removeAttribute('title');
         }
     }
 }
@@ -484,7 +486,7 @@ window.updateSidebarChart = (data) => {
     const legendContainer = document.getElementById('sidebar-asset-legend');
     if (legendContainer) {
         legendContainer.innerHTML = '';
-        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Roth IRA': 'Roth', 'Taxable': 'Brokerage', 'Stock Options': 'Options', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529': '529', 'Other': 'Other', 'Debt': 'Debt' };
+        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Roth IRA': 'Roth', 'Taxable': 'Taxable', 'Stock Options': 'Options', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529': '529', 'Other': 'Other', 'Debt': 'Debt' };
         
         const compactFormat = (val) => {
             const absVal = Math.abs(val);
