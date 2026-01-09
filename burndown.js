@@ -155,6 +155,33 @@ export const burndown = {
             };
         });
 
+        // Debug controls
+        const debugAgeInp = document.getElementById('input-debug-age');
+        const btnDebugMinus = document.getElementById('btn-debug-minus');
+        const btnDebugPlus = document.getElementById('btn-debug-plus');
+        
+        if (debugAgeInp) {
+            debugAgeInp.oninput = () => {
+                burndown.updateTraceLog();
+            };
+        }
+        
+        if (btnDebugMinus && debugAgeInp) {
+            btnDebugMinus.onclick = () => {
+                const current = parseInt(debugAgeInp.value) || lastUsedRetirementAge;
+                debugAgeInp.value = Math.max(18, current - 1);
+                burndown.updateTraceLog();
+            };
+        }
+        
+        if (btnDebugPlus && debugAgeInp) {
+            btnDebugPlus.onclick = () => {
+                const current = parseInt(debugAgeInp.value) || lastUsedRetirementAge;
+                debugAgeInp.value = Math.min(100, current + 1);
+                burndown.updateTraceLog();
+            };
+        }
+
         const btnMinus = document.getElementById('btn-retire-minus');
         const btnPlus = document.getElementById('btn-retire-plus');
         const topRetireSlider = document.getElementById('input-top-retire-age');
@@ -196,6 +223,19 @@ export const burndown = {
                 burndown.run(); 
                 if (window.debouncedAutoSave) window.debouncedAutoSave(); 
             };
+        }
+    },
+
+    updateTraceLog: () => {
+        const debugAgeInp = document.getElementById('input-debug-age');
+        const log = document.getElementById('burndown-trace-log');
+        if (!debugAgeInp || !log) return;
+        
+        const focusAge = parseInt(debugAgeInp.value);
+        if (simulationTrace[focusAge]) {
+            log.innerHTML = simulationTrace[focusAge].join('\n');
+        } else {
+            log.innerHTML = `No data found for age ${focusAge}. Select an age between 30 and 100.`;
         }
     },
 
@@ -318,10 +358,12 @@ export const burndown = {
         if (tableContainer) tableContainer.innerHTML = burndown.renderTable(results);
 
         const debugAgeInp = document.getElementById('input-debug-age');
-        const focusAge = parseInt(debugAgeInp?.value || results[0]?.age);
-        const log = document.getElementById('burndown-trace-log');
-        if (log && simulationTrace[focusAge]) {
-            log.innerHTML = simulationTrace[focusAge].join('\n');
+        if (debugAgeInp) {
+            // Set default if empty
+            if (!debugAgeInp.value) {
+                debugAgeInp.value = config.retirementAge;
+            }
+            burndown.updateTraceLog();
         }
     },
 

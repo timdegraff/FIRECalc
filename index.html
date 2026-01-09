@@ -457,12 +457,14 @@
                     <div class="flex items-center justify-between mb-4">
                          <div class="flex items-center gap-3">
                             <i class="fas fa-terminal text-blue-400"></i>
-                            <h3 class="text-xs font-black text-white uppercase tracking-widest">Logic Trace</h3>
+                            <h3 class="text-xs font-black text-white uppercase tracking-widest">Advanced Logic Trace</h3>
                          </div>
                          <div class="flex items-center gap-3">
                             <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Age:</label>
-                            <div class="bg-black/40 rounded-lg p-1">
-                                <input type="number" id="input-debug-age" min="30" max="100" placeholder="Age" class="bg-transparent border-none text-xs text-blue-400 font-bold outline-none w-12 text-center mono-numbers">
+                            <div class="bg-black/40 rounded-lg p-1 flex items-center gap-1">
+                                <button id="btn-debug-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
+                                <input type="number" id="input-debug-age" min="30" max="100" placeholder="Age" class="bg-transparent border-none text-xs text-blue-400 font-bold outline-none w-10 text-center mono-numbers">
+                                <button id="btn-debug-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
                             </div>
                          </div>
                     </div>
