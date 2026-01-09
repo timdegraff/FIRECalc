@@ -298,7 +298,7 @@ export function getInitialData() {
         investments: [
             { name: 'EMPLOYER 401K', type: 'Pre-Tax (401k/IRA)', value: 750000, costBasis: 750000 },
             { name: 'BROKERAGE STOCKS', type: 'Taxable', value: 450000, costBasis: 300000 },
-            { name: 'ROTH IRA', type: 'Roth IRA', value: 300000, costBasis: 200000 },
+            { name: 'ROTH IRA', type: 'Roth IRA', value: 300000, costBasis: 150000 },
             { name: '529', type: '529', value: 75000, costBasis: 75000 },
             { name: 'HSA', type: 'HSA', value: 45000, costBasis: 45000 },
             { name: 'CHECKING ACCOUNT', type: 'Cash', value: 40000, costBasis: 40000 }

@@ -115,7 +115,7 @@ const MOBILE_TEMPLATES = {
             <div>
                 <div class="flex justify-between items-center mb-2">
                     <h2 class="text-xs font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-orange-400 mr-2"></i>Investments</h2>
-                    <button onclick="window.addMobileItem('investments')" class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white active:scale-95"><i class="fas fa-plus text-[10px]"></i></button>
+                    <button id="add-investment-btn" onclick="window.addMobileItem('investments')" class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-white active:scale-95"><i class="fas fa-plus text-[10px]"></i></button>
                 </div>
                 <div id="m-investment-cards" class="space-y-1.5"></div>
             </div>
@@ -550,9 +550,38 @@ function renderTab() {
 function initSwipeHandlers() {
     let startX = 0, isSwiping = false, activeCard = null;
     document.querySelectorAll('.swipe-front').forEach(card => {
-        card.addEventListener('touchstart', (e) => { document.querySelectorAll('.swipe-front').forEach(c => { if (c !== card) c.style.transform = 'translateX(0)'; }); startX = e.touches[0].clientX; isSwiping = true; activeCard = card; card.classList.remove('snapping'); }, { passive: true });
-        card.addEventListener('touchmove', (e) => { if (!isSwiping || activeCard !== card) return; const diffX = e.touches[0].clientX - startX; if (diffX < 0) card.style.transform = `translateX(${diffX}px)`; }, { passive: true });
-        card.addEventListener('touchend', () => { if (!isSwiping || activeCard !== card) return; isSwiping = false; activeCard = null; const currentTransformX = new WebKitCSSMatrix(window.getComputedStyle(card).transform).m41; card.classList.add('snapping'); if (currentTransformX < -60) { triggerHaptic(); card.style.transform = 'translateX(-80px)'; } else card.style.transform = 'translateX(0)'; });
+        card.addEventListener('touchstart', (e) => { 
+            document.querySelectorAll('.swipe-front').forEach(c => { if (c !== card) c.style.transform = 'translateX(0)'; }); 
+            startX = e.touches[0].clientX; 
+            isSwiping = true; 
+            activeCard = card; 
+            card.classList.remove('snapping'); 
+            const outer = card.closest('.swipe-outer');
+            if (outer) outer.classList.add('swiping');
+        }, { passive: true });
+        
+        card.addEventListener('touchmove', (e) => { 
+            if (!isSwiping || activeCard !== card) return; 
+            const diffX = e.touches[0].clientX - startX; 
+            if (diffX < 0) card.style.transform = `translateX(${diffX}px)`; 
+        }, { passive: true });
+        
+        card.addEventListener('touchend', () => { 
+            if (!isSwiping || activeCard !== card) return; 
+            isSwiping = false; 
+            activeCard = null; 
+            const currentTransformX = new WebKitCSSMatrix(window.getComputedStyle(card).transform).m41; 
+            card.classList.add('snapping'); 
+            const outer = card.closest('.swipe-outer');
+            
+            if (currentTransformX < -60) { 
+                triggerHaptic(); 
+                card.style.transform = 'translateX(-80px)'; 
+            } else { 
+                card.style.transform = 'translateX(0)'; 
+                if (outer) outer.classList.remove('swiping');
+            } 
+        });
     });
 }
 

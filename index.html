@@ -9,8 +9,12 @@
     
     <title>FIRECalc</title>
     <script>
-        if (window.innerWidth < 768 && !window.location.search.includes('desktop')) {
-            window.location.href = 'mobile.html';
+        const urlParams = new URLSearchParams(window.location.search);
+        const isForcedMobile = urlParams.get('force') === 'true';
+        const isForcedDesktop = urlParams.get('desktop') === 'true' || window.location.search.includes('desktop');
+
+        if ((window.innerWidth < 768 || isForcedMobile) && !isForcedDesktop) {
+            window.location.href = 'mobile.html' + window.location.search;
         }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
