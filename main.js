@@ -1,4 +1,3 @@
-
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { signInWithGooglePopup } from './auth.js';
@@ -11,18 +10,21 @@ import { burndown } from './burndown.js';
 // Check for ?reset=true in URL to simulate a fresh user experience
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('reset') === 'true') {
-    localStorage.removeItem('firecalc_guest_data');
-    localStorage.removeItem('firecalc_guest_acknowledged');
-    // Ensure we stay in guest mode for the test, or comment out to force login screen
-    localStorage.setItem('firecalc_guest_mode', 'true'); 
+    // Aggressively clear all FIRECalc related local storage
+    const keysToClear = [
+        'firecalc_guest_data',
+        'firecalc_guest_acknowledged',
+        'firecalc_guest_mode',
+        'firecalc_app_version'
+    ];
+    keysToClear.forEach(k => localStorage.removeItem(k));
     
-    // Clean URL
-    const newUrl = window.location.pathname;
-    window.history.replaceState({}, document.title, newUrl);
+    // Redirect to root without params to ensure fresh state
+    window.location.href = window.location.pathname;
 }
 
 // --- VERSION CHECK LOGIC ---
-const APP_VERSION = "2.3"; 
+const APP_VERSION = "3.0"; // Bumped version to match mobile and force cache refresh
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
 if (currentSavedVersion !== APP_VERSION) {

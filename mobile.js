@@ -11,18 +11,26 @@ import { formatter } from './formatter.js';
 // --- DEVELOPER / RESET MODE ---
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('reset') === 'true') {
-    localStorage.removeItem('firecalc_guest_data');
-    localStorage.removeItem('firecalc_guest_acknowledged');
-    localStorage.setItem('firecalc_guest_mode', 'true');
-    const newUrl = window.location.href.split('?')[0];
-    window.history.replaceState({}, document.title, newUrl);
+    // Aggressively clear all FIRECalc related local storage
+    const keysToClear = [
+        'firecalc_guest_data',
+        'firecalc_guest_acknowledged',
+        'firecalc_guest_mode',
+        'firecalc_app_version'
+    ];
+    keysToClear.forEach(k => localStorage.removeItem(k));
+    
+    // Redirect to root without params to ensure fresh state
+    window.location.href = window.location.pathname;
 }
 
 // --- SAFE VERSION CHECK LOGIC ---
-const APP_VERSION = "2.5"; 
+const APP_VERSION = "3.0"; // Bumped version to force cache refresh
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 if (currentSavedVersion !== APP_VERSION) {
     localStorage.setItem('firecalc_app_version', APP_VERSION);
+    // On version change, clear session storage which might hold stale UI state
+    sessionStorage.clear();
 }
 
 function setIndicatorColor(el, colorClass) {
@@ -423,7 +431,7 @@ function init() {
                     const btn = document.createElement('button');
                     btn.id = 'login-to-save-mobile';
                     btn.className = "px-2 py-1.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase tracking-tight active:scale-95";
-                    btn.textContent = "LOGIN"; btn.onclick = () => document.getElementById('login-btn').click();
+                    btn.textContent = "LOGIN TO SAVE"; btn.onclick = () => document.getElementById('login-btn').click();
                     headerActions.insertBefore(btn, document.getElementById('save-indicator'));
                 }
                 const saveInd = document.getElementById('save-indicator'); if (saveInd) saveInd.classList.add('hidden');
