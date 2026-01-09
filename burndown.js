@@ -22,24 +22,15 @@ export const burndown = {
 
         viewContainer.innerHTML = `
             <div class="flex flex-col gap-4">
-                <!-- Top Bar: Title + Primary Inputs -->
-                <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4 border-b border-slate-800 pb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                            <i class="fas fa-microchip text-purple-400 text-lg"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-black text-white uppercase tracking-tighter leading-none">Burndown Engine</h3>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Decumulation Logic</span>
-                        </div>
-                    </div>
+                <!-- Top Bar: Controls Only (Title Removed) -->
+                <div class="flex flex-col md:flex-row justify-end items-end md:items-center gap-4 mb-4 border-b border-white/5 pb-4">
                     
-                    <!-- Primary Controls moved to header -->
+                    <!-- Primary Controls -->
                     <div class="flex items-center gap-6">
                          <!-- Retirement Age -->
                          <div class="flex flex-col items-end gap-1">
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Retirement Age</label>
-                            <div class="flex items-center gap-2 bg-slate-900 p-1 rounded-lg border border-slate-700">
+                            <div class="flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/10">
                                 <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
                                 <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm w-6 text-center">65</span>
                                 <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
@@ -54,7 +45,7 @@ export const burndown = {
                                 <div id="manual-budget-container" class="hidden">
                                     <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-teal-400 font-bold text-right w-24 mono-numbers outline-none focus:border-blue-500">
                                 </div>
-                                <label class="flex items-center gap-2 cursor-pointer bg-slate-900 border border-slate-700 px-2 py-1 rounded-lg hover:border-slate-600 transition-all">
+                                <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 border border-white/10 px-2 py-1 rounded-lg hover:border-slate-600 transition-all">
                                     <span class="text-[9px] font-black text-slate-400 uppercase">Sync Budget</span>
                                     <input type="checkbox" id="toggle-budget-sync" checked class="w-3 h-3 accent-blue-500 rounded bg-slate-800 border-slate-600">
                                 </label>
@@ -112,7 +103,7 @@ export const burndown = {
                 </div>
 
                 <!-- Table -->
-                <div class="card-container bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl mt-2">
+                <div class="card-container bg-black/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl mt-2">
                     <div id="burndown-table-container" class="max-h-[60vh] overflow-auto mono-numbers"></div>
                 </div>
             </div>
@@ -501,8 +492,8 @@ export const burndown = {
         const formatCell = (v) => isMobile ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 0 }).format(v) : formatter.formatCurrency(v, 0);
         
         const header = isMobile 
-            ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Spend</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Health</th><th class="p-2 text-right">Net Worth</th></tr>`
-            : `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10">Age</th><th class="p-2 text-right">Budget</th><th class="p-2 text-right">MAGI</th><th class="p-2 text-center">Health</th><th class="p-2 text-right">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-right text-[9px]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-right">Net Worth</th></tr>`;
+            ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10 text-center">Age</th><th class="p-2 text-center">Spend</th><th class="p-2 text-center">MAGI</th><th class="p-2 text-center">Health</th><th class="p-2 text-center">Net Worth</th></tr>`
+            : `<tr class="sticky top-0 bg-black/40 !text-slate-500 label-std z-20 border-b border-white/5"><th class="p-2 w-10 text-center !bg-black/40">Age</th><th class="p-2 text-center !bg-black/40">Budget</th><th class="p-2 text-center !bg-black/40">MAGI</th><th class="p-2 text-center !bg-black/40">Health</th><th class="p-2 text-center !bg-black/40">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-center text-[9px] !bg-black/40" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-center !bg-black/40">Net Worth</th></tr>`;
 
         const rows = results.map((r, i) => {
             const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
@@ -514,22 +505,22 @@ export const burndown = {
                 if (r.age > 70 && r.age % 5 !== 0) return '';
                 return `<tr class="border-b border-slate-800/50 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}">
                     <td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td>
-                    <td class="p-2 text-right">
+                    <td class="p-2 text-center">
                         <div class="text-slate-400">${formatCell(r.budget / inf)}</div>
                         <div class="text-[8px] text-red-400/70 font-bold">+${formatCell(r.taxes / inf)} Tax</div>
                     </td>
-                    <td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td>
+                    <td class="p-2 text-center font-black text-white">${formatCell(r.magi / inf)}</td>
                     <td class="p-2 text-center">
                         <span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${badgeClass}">${r.status}</span>
                     </td>
-                    <td class="p-2 text-right">
+                    <td class="p-2 text-center">
                         <div class="font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</div>
                         <div class="text-[8px] text-emerald-600 font-bold">Liq: ${formatCell(r.liquid / inf)}</div>
                     </td>
                 </tr>`;
             }
-            const draws = burndown.priorityOrder.map(k => `<td class="p-1.5 text-right border-l border-slate-800/50"><div class="${r.draws?.[k] > 0 ? 'font-bold' : 'text-slate-700'}" style="color:${r.draws?.[k] > 0 ? burndown.assetMeta[k]?.color : ''}">${formatCell((r.draws?.[k] || 0) / inf)}</div><div class="text-[8px] opacity-40">${formatCell(r.balances[k] / inf)}</div></td>`).join('');
-            return `<tr class="border-b border-slate-800/50 hover:bg-slate-800/10 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : (isRetYear ? 'bg-blue-900/10' : '')}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-right text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-right font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>${retBadge}</td><td class="p-2 text-right text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-right font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
+            const draws = burndown.priorityOrder.map(k => `<td class="p-1.5 text-center border-l border-white/5"><div class="${r.draws?.[k] > 0 ? 'font-bold' : 'text-slate-700'}" style="color:${r.draws?.[k] > 0 ? burndown.assetMeta[k]?.color : ''}">${formatCell((r.draws?.[k] || 0) / inf)}</div><div class="text-[8px] opacity-40">${formatCell(r.balances[k] / inf)}</div></td>`).join('');
+            return `<tr class="border-b border-white/5 hover:bg-white/5 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : (isRetYear ? 'bg-blue-900/10' : '')}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-center text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-center font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>${retBadge}</td><td class="p-2 text-center text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-center font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
         }).join('');
 
         return `<table class="w-full text-left border-collapse table-auto">${header}<tbody>${rows}</tbody></table>`;

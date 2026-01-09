@@ -42,7 +42,7 @@ body {
     color: #94a3b8;
     font-weight: 600;
     font-family: 'Inter', sans-serif;
-    font-size: 13px;
+    font-size: 16px; /* Increased from 13px */
     border-radius: 10px; /* Apple Shape */
 }
 .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.03); }
