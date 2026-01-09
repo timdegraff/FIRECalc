@@ -77,7 +77,6 @@ function attachGlobalListeners() {
             const advanced = !window.currentData.assumptions.advancedGrowth;
             window.currentData.assumptions.advancedGrowth = advanced;
             window.createAssumptionControls(window.currentData);
-            // FIX: Force immediate save (scrape=false) to persist boolean state without waiting for debounce
             autoSave(false);
         }
 
@@ -95,7 +94,6 @@ function attachGlobalListeners() {
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
             handleLinkedBudgetValues(target);
             
-            // Handle Stock Options Net Equity Display
             const optRow = target.closest('#stock-option-rows tr');
             if (optRow) {
                 const shares = parseFloat(optRow.querySelector('[data-id="shares"]')?.value) || 0;
@@ -131,7 +129,6 @@ function attachGlobalListeners() {
                     window.currentData.assumptions[id] = nVal;
                     if (id === 'state') refreshEfficiencyBadges();
                 }
-                // Handle Family Size specifically as it lives in benefits object
                 if (id === 'hhSize' && window.currentData.benefits) {
                     window.currentData.benefits.hhSize = val;
                 }
@@ -153,8 +150,6 @@ function syncAllInputs(id, val) {
         document.querySelectorAll(sel).forEach(el => {
             if (el.value != val) el.value = val;
             
-            // Only update the display label if this is a slider (range input).
-            // Number inputs display their own value and their labels are static headers.
             if (el.type === 'range') {
                 let lbl = null;
                 if (el.id === 'input-top-retire-age') {
@@ -212,7 +207,7 @@ function checkIrsLimits(row) {
     const cPct = parseFloat(row.querySelector('[data-id="contribution"]')?.value) || 0;
     let personal = baseAnn * (cPct / 100);
     if (row.querySelector('[data-id="contribOnBonus"]')?.checked) personal += (bonus * (cPct / 100));
-    const age = window.currentData?.assumptions?.currentAge || 40, limit = age >= 50 ? 31000 : 23500;
+    const age = window.currentData?.assumptions?.currentAge || 40, limit = age >= 60 && age <= 63 ? 34750 : (age >= 50 ? 31000 : 23500);
     const warning = row.querySelector('[data-id="capWarning"]');
     if (warning) warning.classList.toggle('hidden', personal <= limit);
 }
@@ -245,14 +240,17 @@ function attachDynamicRowListeners() {
         else if (btn.dataset.action === 'toggle-freq') {
             const isMon = btn.textContent.trim().toLowerCase() === 'monthly';
             btn.textContent = isMon ? 'Annual' : 'Monthly';
-            const wrapper = btn.closest('.space-y-1.5');
-            const input = wrapper ? wrapper.querySelector('input') : null;
+            
+            // Fixed selector logic for both desktop card and row layouts
+            const parentContainer = btn.closest('.space-y-1') || btn.closest('.space-y-1.5') || btn.closest('td');
+            const input = parentContainer ? parentContainer.querySelector('input') : null;
+            
             if (input) { 
                 const cur = math.fromCurrency(input.value); 
                 input.value = math.toCurrency(isMon ? cur * 12 : cur / 12);
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }
-            const parent = btn.closest('.bg-slate-800'); if (parent) checkIrsLimits(parent);
+            const parent = btn.closest('.bg-slate-800') || btn.closest('tr'); if (parent) checkIrsLimits(parent);
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
@@ -324,11 +322,9 @@ window.addRow = (containerId, type, data = {}) => {
         }
     });
 
-    // Apply zero-state styling to numeric/currency fields
     element.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
     element.querySelectorAll('input[type="number"]').forEach(formatter.bindNumberEventListeners);
 
-    // Trigger update for Stock Option row
     if (type === 'stockOption') {
         const shares = parseFloat(element.querySelector('[data-id="shares"]')?.value) || 0;
         const strike = math.fromCurrency(element.querySelector('[data-id="strikePrice"]')?.value || "0");
@@ -349,14 +345,12 @@ window.addRow = (containerId, type, data = {}) => {
 window.updateSidebarChart = (data) => {
     const totals = {}; let totalSum = 0;
     
-    // Investments
     data.investments?.forEach(i => { 
         const v = math.fromCurrency(i.value); 
         totals[i.type] = (totals[i.type] || 0) + v; 
         totalSum += v; 
     });
 
-    // Stock Options (Net Equity)
     const optionsEquity = (data.stockOptions || []).reduce((s, x) => {
         const shares = parseFloat(x.shares) || 0;
         const strike = math.fromCurrency(x.strikePrice);
@@ -368,10 +362,8 @@ window.updateSidebarChart = (data) => {
         totalSum += optionsEquity;
     }
 
-    // Calculate HELOC Total (Secured Debt against RE)
     const helocTotal = data.helocs?.reduce((s, h) => s + math.fromCurrency(h.balance), 0) || 0;
 
-    // Real Estate: Value - Mortgage - HELOCs
     data.realEstate?.forEach(r => { 
         const v = math.fromCurrency(r.value); 
         const m = math.fromCurrency(r.mortgage);
@@ -380,17 +372,14 @@ window.updateSidebarChart = (data) => {
         totalSum += equity; 
     });
     
-    // Apply HELOC deduction to Real Estate bucket
     if (totals['Real Estate']) {
         totals['Real Estate'] -= helocTotal;
         totalSum -= helocTotal;
     } else {
-        // Fallback if no RE exists but HELOC does (unlikely but possible in data entry)
         totals['Real Estate'] = -helocTotal;
         totalSum -= helocTotal;
     }
 
-    // Other Assets: Show Equity (Value - Loan)
     data.otherAssets?.forEach(o => { 
         const v = math.fromCurrency(o.value); 
         const l = math.fromCurrency(o.loan);
@@ -399,10 +388,9 @@ window.updateSidebarChart = (data) => {
         totalSum += equity; 
     });
 
-    // Unsecured Debt (Credit Cards, Personal Loans, etc)
     const unsecuredDebt = data.debts?.reduce((s, d) => s + math.fromCurrency(d.balance), 0) || 0;
     if (unsecuredDebt > 0) {
-        totals['Debt'] = -unsecuredDebt; // Display as negative in list
+        totals['Debt'] = -unsecuredDebt; 
         totalSum -= unsecuredDebt;
     }
 
@@ -413,7 +401,6 @@ window.updateSidebarChart = (data) => {
         legendContainer.innerHTML = '';
         const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Roth IRA': 'Roth', 'Taxable': 'Brokerage', 'Stock Options': 'Options', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529': '529', 'Other': 'Other', 'Debt': 'Debt' };
         
-        // Compact Formatter for Legend
         const compactFormat = (val) => {
             const absVal = Math.abs(val);
             let str = '';
@@ -424,7 +411,7 @@ window.updateSidebarChart = (data) => {
         };
 
         Object.entries(totals).sort(([, a], [, b]) => b - a).forEach(([type, value]) => {
-            if (value === 0) return; // Skip 0 items
+            if (value === 0) return; 
             
             const color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']);
             const shortName = shortNames[type] || type;

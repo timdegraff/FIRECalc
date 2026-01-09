@@ -83,8 +83,8 @@
                 <button data-tab="assets-debts" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-wallet w-5 text-center text-orange-400"></i><span>Assets</span></button>
                 <button data-tab="income" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-money-bill-wave w-5 text-center text-teal-400"></i><span>Income</span></button>
                 <button data-tab="budget" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-chart-pie w-5 text-center text-pink-500"></i><span>Budget</span></button>
-                <button data-tab="benefits" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-hand-holding-heart w-5 text-center text-amber-400"></i><span>Benefits</span></button>
                 <button data-tab="assumptions" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-sliders-h w-5 text-center text-emerald-400"></i><span>Assumptions</span></button>
+                <button data-tab="benefits" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-hand-holding-heart w-5 text-center text-amber-400"></i><span>Benefits</span></button>
                 <button data-tab="projection" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-chart-line w-5 text-center text-blue-400"></i><span>Projection</span></button>
                 <button data-tab="burndown" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-stairs w-5 text-center text-purple-400" style="transform: scaleX(-1);"></i><span>Burndown</span></button>
             </nav>
@@ -362,29 +362,6 @@
                 </div>
             </section>
 
-            <!-- Benefits Tab -->
-            <section id="tab-benefits" class="tab-content hidden max-w-7xl mx-auto">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
-                        <p class="label-std mb-2 text-slate-500">Healthcare Stratum</p>
-                        <p id="sum-health-plan" class="text-4xl font-black text-slate-400 uppercase tracking-tight transition-colors">Private</p>
-                    </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
-                        <p class="label-std mb-2 text-slate-500">Est. SNAP Benefit</p>
-                        <p id="sum-snap-amt" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">$0</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-4 mb-8 px-1">
-                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
-                        <i class="fas fa-hand-holding-heart text-sm"></i>
-                    </div>
-                    <h2 class="text-xl font-bold text-white tracking-tight">Benefit Optimization</h2>
-                </div>
-
-                <div id="benefits-module" class="space-y-8"></div>
-            </section>
-
             <!-- Assumptions Tab -->
             <section id="tab-assumptions" class="tab-content hidden max-w-7xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
@@ -398,7 +375,7 @@
                     </div>
                     <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
                         <p class="label-std mb-2 text-slate-500">Est. Life Expectancy</p>
-                        <p id="sum-life-exp" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight leading-none mb-2">0</p>
+                        <p id="sum-life-exp" class="text-4xl font-black text-teal-400 mono-numbers tracking-none mb-2">0</p>
                         <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Per SSA Table</p>
                     </div>
                 </div>
@@ -410,6 +387,29 @@
                     <h2 class="text-xl font-bold text-white tracking-tight">Global Parameters</h2>
                 </div>
                 <div id="assumptions-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-8 card-container"></div>
+            </section>
+
+            <!-- Benefits Tab -->
+            <section id="tab-benefits" class="tab-content hidden max-w-7xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
+                        <p class="label-std mb-2 text-slate-500">Healthcare Plan</p>
+                        <p id="sum-health-plan" class="text-4xl font-black text-slate-400 uppercase tracking-tight transition-colors">Private</p>
+                    </div>
+                    <div class="card-container p-6 flex flex-col items-center justify-center min-h-[110px]">
+                        <p class="label-std mb-2 text-slate-500">Est. SNAP (2026 Monthly)</p>
+                        <p id="sum-snap-amt" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">$0</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4 mb-8 px-1">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400">
+                        <i class="fas fa-hand-holding-heart text-sm"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-white tracking-tight">Benefit Optimization</h2>
+                </div>
+
+                <div id="benefits-module" class="space-y-8"></div>
             </section>
 
             <!-- Projection -->

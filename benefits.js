@@ -87,6 +87,14 @@ export const benefits = {
                         </div>
                     </div>
                 </div>
+
+                <div class="pt-8 pb-4 text-center">
+                    <p class="text-[10px] text-slate-500 leading-relaxed max-w-2xl mx-auto italic">
+                        Disclaimer: The data on this page is for reference and sandbox simulation only. 
+                        Adjusting the <strong>MAGI Sandbox</strong> slider above does not modify your actual investment data or 
+                        influence calculations in the Projection or Burndown modules.
+                    </p>
+                </div>
             </div>
         `;
 
@@ -116,7 +124,7 @@ export const benefits = {
         const stateMeta = stateTaxRates[window.currentData?.assumptions?.state || 'Michigan'];
         const fplBase = stateMeta?.fplBase || 16060;
         const fpl2026 = fplBase + (data.hhSize - 1) * 5650;
-        const isExpanded = stateMeta?.expanded !== false; // Default to true if not specified
+        const isExpanded = stateMeta?.expanded !== false; 
         
         const ratio = data.unifiedIncome / fpl2026;
         const sliderMax = 150000;
@@ -158,8 +166,15 @@ export const benefits = {
 
         const setHealth = (main, sub, prem, ded, colorClass, borderColor) => {
             const mainDisp = document.getElementById('health-main-display');
+            const globalMainDisp = document.getElementById('sum-health-plan');
+            
             mainDisp.textContent = main;
             mainDisp.className = `text-2xl font-black tracking-tighter ${colorClass}`;
+            if (globalMainDisp) {
+                globalMainDisp.textContent = main;
+                globalMainDisp.className = `text-4xl font-black uppercase tracking-tight transition-colors ${colorClass}`;
+            }
+            
             document.getElementById('health-sub-display').textContent = sub;
             document.getElementById('detail-premium').textContent = prem;
             document.getElementById('detail-deductible').textContent = ded;
@@ -168,18 +183,22 @@ export const benefits = {
 
         if (ratio <= medRatio) {
             if (isExpanded) setHealth("Platinum", "100% Full Coverage", "$0", "$0", "text-emerald-400", "rgba(52, 211, 153, 0.4)");
-            else setHealth("Private", "Non-Expansion State", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
+            else setHealth("Private (No Gov Coverage)", "Non-Expansion State", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
         }
         else if (ratio <= hmpRatio) setHealth("HMP+", "Small Copay", "$20", "Low", "text-emerald-300", "rgba(110, 231, 183, 0.3)");
         else if (ratio <= silverRatio) setHealth("Silver CSR", "Subsidized", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.3)");
         else if (ratio <= goldRatio) setHealth("Gold Plan", "Subsidy Cap", math.toCurrency(dynamicPremium), "$1500", "text-amber-400", "rgba(251, 191, 36, 0.3)");
-        else setHealth("Private", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
+        else setHealth("Private (No Gov Coverage)", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
 
         const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled, window.currentData?.assumptions?.state || 'Michigan');
         const snapRes = document.getElementById('snap-result-value');
+        const globalSnapRes = document.getElementById('sum-snap-amt');
         const snapCard = document.getElementById('card-snap');
         
-        snapRes.textContent = math.toCurrency(estimatedBenefit);
+        const snapVal = math.toCurrency(estimatedBenefit);
+        snapRes.textContent = snapVal;
+        if (globalSnapRes) globalSnapRes.textContent = snapVal;
+
         if (document.getElementById('snap-hh-display')) document.getElementById('snap-hh-display').textContent = `fam size of ${data.hhSize}`;
         
         if (estimatedBenefit <= 0) {
