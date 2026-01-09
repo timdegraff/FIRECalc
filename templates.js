@@ -96,8 +96,8 @@ export const templates = {
     stockOption: (data) => `
         <td class="pl-6"><input data-id="name" type="text" placeholder="Grant" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base text-right text-white font-bold mono-numbers"></td>
-        <td><input data-id="strikePrice" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-emerald-500 font-bold mono-numbers"></td>
-        <td><input data-id="currentPrice" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
+        <td><input data-id="strikePrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-emerald-500 font-bold mono-numbers"></td>
+        <td><input data-id="currentPrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="growth" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base text-center text-blue-400 font-bold mono-numbers"></td>
         <td class="text-center">
             <label class="cursor-pointer inline-flex items-center justify-center relative">
@@ -228,7 +228,7 @@ export const templates = {
                  ${data.isLocked ? '' : `
                  <label class="inline-flex items-center px-3 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Contribution stops when you retire">
                     <span class="text-[9px] uppercase font-black text-slate-500 mr-2 group-hover:text-pink-400">Stop</span>
-                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700" ${data.removedInRetirement ? 'checked' : ''}>
+                    <input type="checkbox" data-id="removedInRetirement" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700" ${data.removedInRetirement ? 'checked' : ''}>
                 </label>
                  `}
             </td>
@@ -246,11 +246,11 @@ export const templates = {
             <div class="flex items-center justify-center gap-2">
                 <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Stop in Retirement">
                     <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-pink-400">Stop</span>
-                    <input data-id="removedInRetirement" type="checkbox" class="w-3 h-3 accent-pink-500" ${data.removedInRetirement ? 'checked' : ''}>
+                    <input type="checkbox" data-id="removedInRetirement" class="w-3 h-3 accent-pink-500" ${data.removedInRetirement ? 'checked' : ''}>
                 </label>
                 <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-blue-500/50 transition-all group" title="Fixed (No Inflation)">
                     <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-blue-400">Fixed</span>
-                    <input data-id="isFixed" type="checkbox" class="w-3 h-3 accent-blue-500" ${data.isFixed ? 'checked' : ''}>
+                    <input type="checkbox" data-id="isFixed" class="w-3 h-3 accent-blue-500" ${data.isFixed ? 'checked' : ''}>
                 </label>
             </div>
         </td>

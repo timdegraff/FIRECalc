@@ -47,21 +47,29 @@ export const stateTaxRates = {
     'New Mexico': { role: 0.049, taxesSS: true },
     'Rhode Island': { rate: 0.04, taxesSS: true },
     'Utah': { rate: 0.0465, taxesSS: true },
+    'New Jersey': { rate: 0.0637, taxesSS: false },
+    'Massachusetts': { rate: 0.05, taxesSS: false },
+    'Virginia': { rate: 0.0575, taxesSS: false },
+    'Maryland': { rate: 0.0475, taxesSS: false },
+    'Georgia': { rate: 0.0575, taxesSS: false },
+    'Pennsylvania': { rate: 0.0307, taxesSS: false },
+    'Arizona': { rate: 0.025, taxesSS: false },
+    'Oregon': { rate: 0.09, taxesSS: false },
     'Vermont': { rate: 0.06, taxesSS: true },
     'West Virginia': { rate: 0.04, taxesSS: true }
 };
 
 export const math = {
-    toCurrency: (value, isCompact = false) => {
+    toCurrency: (value, isCompact = false, decimals = 0) => {
         if (isNaN(value) || value === null) return '$0';
         const absVal = Math.abs(value);
-        let maxFrac = 0;
+        let maxFrac = decimals;
         if (isCompact && absVal >= 1000000) maxFrac = 1;
         return new Intl.NumberFormat('en-US', { 
             style: 'currency', currency: 'USD',
             notation: isCompact ? 'compact' : 'standard',
-            minimumFractionDigits: 0, 
-            maximumFractionDigits: maxFrac
+            minimumFractionDigits: decimals, 
+            maximumFractionDigits: Math.max(decimals, maxFrac)
         }).format(value);
     },
     toSmartCompactCurrency: (value) => {
@@ -81,7 +89,6 @@ export const math = {
         return Number(String(value).replace(/[^0-9.-]+/g, "")) || 0;
     },
     getGrowthForAge: (type, age, currentAge, assumptions) => {
-        // Growth is stored as percentages (e.g. 8.0)
         const keyMap = {
             'Stock': 'stockGrowth',
             'Stock Options': 'stockGrowth',
