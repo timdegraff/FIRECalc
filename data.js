@@ -248,17 +248,39 @@ export function updateSummaries(data) {
     set('sum-budget-annual', s.totalAnnualBudget);
     set('sum-budget-total', s.totalAnnualSavings + s.totalAnnualBudget);
 
-    const yrsToRetire = Math.max(0, (data.assumptions?.retirementAge || 65) - (data.assumptions?.currentAge || 40));
-    set('sum-yrs-to-retire', yrsToRetire, false);
-    set('sum-life-exp', engine.getLifeExpectancy(data.assumptions?.currentAge || 40) + (data.assumptions?.currentAge || 40), false);
+    const currentAge = data.assumptions?.currentAge || 40;
+    const retirementAge = data.assumptions?.retirementAge || 65;
+    const ssStartAge = data.assumptions?.ssStartAge || 67;
+    const inflation = (data.assumptions?.inflation || 3) / 100;
 
-    const floor = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => sum + math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1), 0);
-    set('sum-retirement-income-floor', floor);
-    
+    const yrsToRetire = Math.max(0, retirementAge - currentAge);
+    set('sum-yrs-to-retire', yrsToRetire, false);
+    set('sum-life-exp', engine.getLifeExpectancy(currentAge) + currentAge, false);
+
+    // Income at retirement (Yr 1)
+    const iRet = yrsToRetire;
+    const infFacRet = Math.pow(1 + inflation, iRet);
+    const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
+        const growth = (parseFloat(inc.increase) / 100) || 0;
+        return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, iRet));
+    }, 0);
+    const ssAtRet = (retirementAge >= ssStartAge) ? engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacRet) : 0;
+    const totalRetIncome = streamsAtRet + ssAtRet;
+    set('sum-retirement-income-floor', totalRetIncome);
+
+    // Income at SS start age
     const floorDetails = document.getElementById('sum-floor-breakdown');
     if (floorDetails) {
-        const ss = engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, 1);
-        floorDetails.textContent = `Streams: ${math.toSmartCompactCurrency(floor)} + Est SS: ${math.toSmartCompactCurrency(ss)}`;
+        const iSS = Math.max(0, ssStartAge - currentAge);
+        const infFacSS = Math.pow(1 + inflation, iSS);
+        const streamsAtSS = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
+            const growth = (parseFloat(inc.increase) / 100) || 0;
+            return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, iSS));
+        }, 0);
+        const ssBenefitAtSS = engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacSS);
+        const totalIncomeAtSS = streamsAtSS + ssBenefitAtSS;
+        
+        floorDetails.textContent = `Income at SS start (${ssStartAge}): ${math.toSmartCompactCurrency(totalIncomeAtSS)}`;
     }
 }
 
@@ -274,15 +296,15 @@ export function getInitialData() {
             realEstateGrowth: 3.5
         },
         investments: [
-            { name: 'HYSA Reserve', type: 'Cash', value: 40000, costBasis: 40000 },
-            { name: 'Vanguard Brokerage', type: 'Taxable', value: 450000, costBasis: 300000 },
-            { name: 'Employer 401k', type: 'Pre-Tax (401k/IRA)', value: 750000, costBasis: 500000 },
-            { name: 'Roth IRAs', type: 'Roth IRA', value: 300000, costBasis: 200000 },
-            { name: 'Family HSA', type: 'HSA', value: 45000, costBasis: 45000 },
-            { name: '529 Plans', type: '529', value: 75000, costBasis: 60000 }
+            { name: 'EMPLOYER 401K', type: 'Pre-Tax (401k/IRA)', value: 750000, costBasis: 750000 },
+            { name: 'BROKERAGE STOCKS', type: 'Taxable', value: 450000, costBasis: 300000 },
+            { name: 'ROTH IRA', type: 'Roth IRA', value: 300000, costBasis: 200000 },
+            { name: '529', type: '529', value: 75000, costBasis: 75000 },
+            { name: 'HSA', type: 'HSA', value: 45000, costBasis: 45000 },
+            { name: 'CHECKING ACCOUNT', type: 'Cash', value: 40000, costBasis: 40000 }
         ],
         realEstate: [
-            { name: 'Primary Residence', value: 550000, mortgage: 250000, principalPayment: 1200 }
+            { name: 'Primary Residence', value: 500000, mortgage: 250000, principalPayment: 1200 }
         ],
         otherAssets: [
             { name: 'Family SUV', value: 40000, loan: 15000, principalPayment: 500 },
@@ -290,8 +312,8 @@ export function getInitialData() {
             { name: 'Personal Property', value: 25000, loan: 0, principalPayment: 0 }
         ],
         income: [
-            { name: 'Lead Income', amount: 175000, increase: 3, contribution: 13, match: 4, bonusPct: 15, remainsInRetirement: false, contribOnBonus: true, isMonthly: false, incomeExpensesMonthly: false },
-            { name: 'Support Income', amount: 100000, increase: 3, contribution: 23, match: 3, bonusPct: 5, remainsInRetirement: false, contribOnBonus: true, isMonthly: false, incomeExpensesMonthly: false }
+            { name: 'Lead Income', amount: 175000, increase: 3, contribution: 10, match: 4, bonusPct: 10, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false },
+            { name: 'Support Income', amount: 100000, increase: 3, contribution: 10, match: 4, bonusPct: 5, remainsInRetirement: false, contribOnBonus: false, matchOnBonus: false, isMonthly: false, incomeExpensesMonthly: false }
         ],
         budget: {
             expenses: [

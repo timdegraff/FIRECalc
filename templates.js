@@ -15,7 +15,16 @@ export const templates = {
                 'Stock Options': 'text-type-taxable'
             };
             return map[type] || 'text-type-taxable';
-        }
+        },
+        renderStepper: (id, value, colorClass = "text-white") => `
+            <div class="relative group/stepper">
+                <input data-id="${id}" type="number" step="0.5" placeholder="0" value="${value || 0}" class="input-base text-center font-bold mono-numbers ${colorClass} pr-6">
+                <div class="absolute right-1 top-0 bottom-0 flex flex-col justify-center gap-0.5 opacity-0 group-hover/stepper:opacity-100 transition-opacity">
+                    <button data-step="up" data-target="${id}" class="text-[8px] text-slate-500 hover:text-white leading-none"><i class="fas fa-chevron-up"></i></button>
+                    <button data-step="down" data-target="${id}" class="text-[8px] text-slate-500 hover:text-white leading-none"><i class="fas fa-chevron-down"></i></button>
+                </div>
+            </div>
+        `
     },
 
     investment: (data) => {
@@ -94,36 +103,38 @@ export const templates = {
                         <div class="h-4 flex items-center">
                             <label class="label-std">Growth %</label>
                         </div>
-                        <input data-id="increase" type="number" step="0.1" placeholder="0" class="input-base text-white font-bold mono-numbers text-lg">
+                        ${templates.helpers.renderStepper('increase', data.increase, 'text-white text-lg')}
                     </div>
                 </div>
 
                 <div class="p-3 bg-black/20 rounded-xl border border-white/5 space-y-3">
                     <div class="grid grid-cols-3 gap-3">
                         <div class="space-y-1 relative">
-                            <label class="label-std">401k %</label>
-                            <input data-id="contribution" type="number" placeholder="0" class="input-base text-white font-bold mono-numbers text-center">
-                            <div data-id="capWarning" class="hidden absolute -top-1 -right-1 text-yellow-500 text-xs cursor-help" title="Exceeds IRS Limit">
-                                <i class="fas fa-exclamation-triangle"></i>
+                            <div class="flex items-center gap-1.5 mb-1">
+                                <label class="label-std mb-0">401k %</label>
+                                <div data-id="capWarning" class="hidden text-yellow-500 text-[10px] cursor-help animate-pulse" title="Exceeds IRS Limit">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
                             </div>
+                            ${templates.helpers.renderStepper('contribution', data.contribution, 'text-blue-400')}
                         </div>
                         <div class="space-y-1">
                             <label class="label-std">Match %</label>
-                            <input data-id="match" type="number" placeholder="0" class="input-base text-white font-bold mono-numbers text-center">
+                            ${templates.helpers.renderStepper('match', data.match, 'text-white')}
                         </div>
                         <div class="space-y-1">
                             <label class="label-std">Bonus %</label>
-                            <input data-id="bonusPct" type="number" placeholder="0" class="input-base text-white font-bold mono-numbers text-center">
+                            ${templates.helpers.renderStepper('bonusPct', data.bonusPct, 'text-white')}
                         </div>
                     </div>
                     
                     <div class="flex items-center gap-4 pt-2 border-t border-white/5">
                          <label class="flex items-center gap-2 cursor-pointer group">
-                            <input data-id="contribOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <input data-id="contribOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600" ${data.contribOnBonus ? 'checked' : ''}>
                             <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Contrib Bonus</span>
                          </label>
                          <label class="flex items-center gap-2 cursor-pointer group">
-                            <input data-id="matchOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600">
+                            <input data-id="matchOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600" ${data.matchOnBonus ? 'checked' : ''}>
                             <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Match Bonus</span>
                          </label>
                     </div>
@@ -144,7 +155,7 @@ export const templates = {
                         <input data-id="nonTaxableUntil" type="number" placeholder="2026" class="input-base w-16 text-center text-teal-400 font-bold mono-numbers px-1 py-0.5 h-6 text-[10px]">
                     </div>
                     <label class="flex items-center gap-2 cursor-pointer group">
-                        <input data-id="remainsInRetirement" type="checkbox" class="w-3.5 h-3.5 accent-blue-500 rounded bg-slate-900 border-white/20">
+                        <input data-id="remainsInRetirement" type="checkbox" class="w-3.5 h-3.5 accent-blue-500 rounded bg-slate-900 border-white/20" ${data.remainsInRetirement ? 'checked' : ''}>
                         <span class="text-[9px] font-black text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Retirement Income</span>
                     </label>
                 </div>

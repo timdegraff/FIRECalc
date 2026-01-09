@@ -45,6 +45,23 @@ function attachGlobalListeners() {
     if (logoutBtn) logoutBtn.onclick = logoutUser;
 
     document.body.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        
+        // Handle custom steppers
+        if (btn && btn.dataset.step) {
+            const container = btn.closest('.relative');
+            const input = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
+            if (input) {
+                const currentVal = parseFloat(input.value) || 0;
+                const step = parseFloat(input.step) || 0.5;
+                const newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
+                input.value = newVal;
+                // Dispatch input event to trigger auto-recalc
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            return;
+        }
+
         if (e.target.id === 'btn-reset-market') {
             const marketDefaults = { stockGrowth: 8, cryptoGrowth: 10, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 };
             Object.entries(marketDefaults).forEach(([id, val]) => {
@@ -86,7 +103,7 @@ function attachGlobalListeners() {
             }
 
             if (target.dataset.id === 'contribution' || target.dataset.id === 'amount' || target.dataset.id === 'bonusPct' || target.dataset.id === 'contribOnBonus') {
-                const row = target.closest('tr') || target.closest('.bg-slate-800');
+                const row = target.closest('tr') || target.closest('.card-container');
                 if (row) checkIrsLimits(row);
             }
             const id = target.dataset.id || target.dataset.liveId;
@@ -185,7 +202,13 @@ function checkIrsLimits(row) {
     if (row.querySelector('[data-id="contribOnBonus"]')?.checked) personal += (bonus * (cPct / 100));
     const age = window.currentData?.assumptions?.currentAge || 40, limit = age >= 60 && age <= 63 ? 34750 : (age >= 50 ? 31000 : 23500);
     const warning = row.querySelector('[data-id="capWarning"]');
-    if (warning) warning.classList.toggle('hidden', personal <= limit);
+    if (warning) {
+        const isOver = personal > limit;
+        warning.classList.toggle('hidden', !isOver);
+        if (isOver) {
+            warning.title = `401k contribution over IRS limit of ${math.toCurrency(limit)}`;
+        }
+    }
 }
 
 function handleLinkedBudgetValues(target) {
@@ -252,7 +275,7 @@ function attachDynamicRowListeners() {
             target.style.backgroundColor = '#0f172a';
         }
         if (target.dataset.id === 'contribOnBonus' || target.dataset.id === 'matchOnBonus') {
-            const row = target.closest('.bg-slate-800'); if (row) checkIrsLimits(row);
+            const row = target.closest('.card-container'); if (row) checkIrsLimits(row);
         }
         if (target.dataset.id && window.debouncedAutoSave) window.debouncedAutoSave();
     });
