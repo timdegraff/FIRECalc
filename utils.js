@@ -137,7 +137,7 @@ export const assumptions = {
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', benefitCeiling: 1.38, 
         helocRate: 7, state: 'Michigan', workYearsAtRetirement: 35,
-        slowGoFactor: 1.1, midGoFactor: 1.0, noGoFactor: 0.8,
+        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
         advancedGrowth: false,
         stockGrowthYears: 10, stockGrowthPerpetual: 4,
         cryptoGrowthYears: 5, cryptoGrowthPerpetual: 5,

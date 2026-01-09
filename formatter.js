@@ -1,4 +1,3 @@
-
 import { math } from './utils.js';
 
 export const formatter = {
@@ -40,7 +39,14 @@ export const formatter = {
     bindNumberEventListeners: (input) => {
         if (!input) return;
         input.addEventListener('blur', (e) => {
-            const val = parseFloat(e.target.value) || 0;
+            const decimals = e.target.dataset.decimals !== undefined ? parseInt(e.target.dataset.decimals) : null;
+            let val = parseFloat(e.target.value) || 0;
+            
+            if (decimals !== null) {
+                val = parseFloat(val.toFixed(decimals));
+                e.target.value = val;
+            }
+            
             if (val === 0) e.target.classList.add('value-zero');
             else e.target.classList.remove('value-zero');
         });

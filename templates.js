@@ -16,9 +16,9 @@ export const templates = {
             };
             return map[type] || 'text-type-taxable';
         },
-        renderStepper: (id, value, colorClass = "text-white") => `
+        renderStepper: (id, value, colorClass = "text-white", decimals = "1") => `
             <div class="relative group/stepper">
-                <input data-id="${id}" type="number" step="0.5" placeholder="0" value="${value !== undefined ? value : 0}" class="input-base text-center font-bold mono-numbers ${colorClass} pr-6">
+                <input data-id="${id}" data-decimals="${decimals}" type="number" step="0.5" placeholder="0" value="${value !== undefined ? value : 0}" class="input-base text-center font-bold mono-numbers ${colorClass} pr-6">
                 <div class="absolute right-1 top-0 bottom-0 flex flex-col justify-center gap-0.5 opacity-0 group-hover/stepper:opacity-100 transition-opacity">
                     <button data-step="up" data-target="${id}" class="text-[8px] text-slate-500 hover:text-white leading-none"><i class="fas fa-chevron-up"></i></button>
                     <button data-step="down" data-target="${id}" class="text-[8px] text-slate-500 hover:text-white leading-none"><i class="fas fa-chevron-down"></i></button>
@@ -57,10 +57,10 @@ export const templates = {
         <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base text-right text-white font-bold mono-numbers"></td>
         <td><input data-id="strikePrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-emerald-500 font-bold mono-numbers"></td>
         <td><input data-id="currentPrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
-        <td><input data-id="growth" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base text-center text-blue-400 font-bold mono-numbers"></td>
+        <td><input data-id="growth" data-decimals="1" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base text-center text-blue-400 font-bold mono-numbers"></td>
         <td class="text-center">
             <label class="cursor-pointer inline-flex items-center justify-center relative">
-                <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg !== false ? 'checked' : ''}>
+                <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg === true ? 'checked' : ''}>
                 <div class="w-12 py-1 rounded-md text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
                     bg-blue-500/10 border-blue-500/20 text-blue-400 
                     peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400
@@ -103,7 +103,7 @@ export const templates = {
                         <div class="h-4 flex items-center">
                             <label class="label-std">Growth %</label>
                         </div>
-                        ${templates.helpers.renderStepper('increase', data.increase, 'text-white text-lg')}
+                        ${templates.helpers.renderStepper('increase', data.increase, 'text-white text-lg', '1')}
                     </div>
                 </div>
 
@@ -116,19 +116,19 @@ export const templates = {
                                     <i class="fas fa-exclamation-triangle"></i>
                                 </div>
                             </div>
-                            ${templates.helpers.renderStepper('contribution', data.contribution, 'text-blue-400')}
+                            ${templates.helpers.renderStepper('contribution', data.contribution, 'text-blue-400', '1')}
                         </div>
                         <div class="space-y-1">
                             <div class="flex items-center h-4 mb-1">
                                 <label class="label-std mb-0">Match %</label>
                             </div>
-                            ${templates.helpers.renderStepper('match', data.match, 'text-white')}
+                            ${templates.helpers.renderStepper('match', data.match, 'text-white', '1')}
                         </div>
                         <div class="space-y-1">
                             <div class="flex items-center h-4 mb-1">
                                 <label class="label-std mb-0">Bonus %</label>
                             </div>
-                            ${templates.helpers.renderStepper('bonusPct', data.bonusPct, 'text-white')}
+                            ${templates.helpers.renderStepper('bonusPct', data.bonusPct, 'text-white', '1')}
                         </div>
                     </div>
                     
@@ -211,6 +211,10 @@ export const templates = {
         </td>
         <td class="text-center">
             <div class="flex items-center justify-center gap-2">
+                <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-emerald-500/50 transition-all group" title="Persists in Retirement">
+                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-emerald-400">Yes</span>
+                    <input type="checkbox" data-id="remainsInRetirement" class="w-3 h-3 accent-emerald-500" ${data.remainsInRetirement !== false ? 'checked' : ''}>
+                </label>
                 <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-blue-500/50 transition-all group" title="Fixed (No Inflation)">
                     <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-blue-400">Fixed</span>
                     <input type="checkbox" data-id="isFixed" class="w-3 h-3 accent-blue-500" ${data.isFixed ? 'checked' : ''}>
@@ -238,7 +242,7 @@ export const templates = {
         <td><input data-id="name" type="text" placeholder="HELOC" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-black mono-numbers"></td>
         <td><input data-id="limit" data-type="currency" type="text" placeholder="$0" class="input-base text-right font-bold mono-numbers"></td>
-        <td><input data-id="rate" type="number" step="0.1" placeholder="7.0" value="${data.rate || 7.0}" class="input-base text-center text-red-400 font-bold mono-numbers"></td>
+        <td><input data-id="rate" data-decimals="2" type="number" step="0.01" placeholder="7.0" value="${data.rate || 7.0}" class="input-base text-center text-red-400 font-bold mono-numbers"></td>
         <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     debt: () => `

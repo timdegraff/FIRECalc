@@ -450,12 +450,12 @@ export const burndown = {
             const totalOL = simOA.reduce((s, o) => s + (o.loan = Math.max(0, o.loan - (o.principalPayment || 0) * 12)), 0);
             const totalDebt = simDebts.reduce((s, d) => s + (d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12)), 0);
 
-            let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
+            let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
             
             let factor = 1.0;
             if (isRet) {
-                if (age < 50) factor = assumptions.slowGoFactor || 1.1; 
-                else if (age < 80) factor = assumptions.midGoFactor || 1.0; 
+                if (age < 50) factor = assumptions.slowGoFactor || 1.0; 
+                else if (age < 80) factor = assumptions.midGoFactor || 0.9; 
                 else factor = assumptions.noGoFactor || 0.8; 
             }
             let targetBudget = isRet ? baseBudget * factor : baseBudget;
@@ -471,6 +471,23 @@ export const burndown = {
                 if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) netAvail += netSrc;
                 else { ordInc += netSrc; netAvail += netSrc; pretaxDed += Math.min(gross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
             });
+
+            // Stage 1: Accumulation (Before Retirement)
+            if (!isRet) {
+                // Add defined savings from table
+                bal['401k'] += pretaxDed;
+                (budget.savings || []).forEach(sav => {
+                    const amt = math.fromCurrency(sav.annual) * infFac;
+                    const keyMap = { 'Cash': 'cash', 'Taxable': 'taxable', 'Roth IRA': 'roth-basis', 'HSA': 'hsa', 'Crypto': 'crypto', 'Metals': 'metals' };
+                    const key = keyMap[sav.type];
+                    if (key) {
+                        bal[key] += amt;
+                        if (key === 'taxable' || key === 'crypto' || key === 'metals') bal[key + 'Basis'] += amt;
+                    }
+                });
+                trace.push(`Working Year: Accumulated ${math.toCurrency(pretaxDed)} to 401k.`);
+                // CRITICAL: Surplus income is explicitly NOT saved per user request to avoid ghost wealth.
+            }
 
             // MAGI Clamping (Safety)
             ordInc = Math.max(0, ordInc);
@@ -507,7 +524,6 @@ export const burndown = {
                 if (availableInBucket <= 0) return;
 
                 // PRECISE CASH CEILING: Don't harvest MAGI if budget + estimated taxes are already covered by current draws
-                // We estimate a 20% effective tax rate buffer to prevent over-selling.
                 const estimatedCashNeed = (targetBudget * 1.1) - (netAvail + drawn);
                 if (estimatedCashNeed <= 0.01) return;
 
@@ -564,7 +580,6 @@ export const burndown = {
 
                     if (availableLiquidity <= 0) continue;
 
-                    // MINIMAL SEPP LOGIC: If account is 401k and age < 59.5, limit to required shortfall up to remaining limit
                     let take = Math.min(availableLiquidity, shortfall);
                     if (pk === '401k' && age < 59.5) {
                         const currentDrawnFrom401k = yrDraws['401k'] || 0;
@@ -595,7 +610,6 @@ export const burndown = {
             const magi = Math.max(0, ordIter + ltcgIter + colIter);
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             
-            // INSOLVENCY is only if shortfall persists after trying ALL available and allowable buckets
             const isActuallyInsolvent = finalShortfall > 10.0;
 
             const yearRes = { 

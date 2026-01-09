@@ -55,7 +55,8 @@ function attachGlobalListeners() {
                 const currentVal = parseFloat(input.value) || 0;
                 const step = parseFloat(input.step) || 0.5;
                 const newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
-                input.value = newVal;
+                const decimals = parseInt(input.dataset.decimals) || 0;
+                input.value = newVal.toFixed(decimals);
                 // Dispatch input event to trigger auto-recalc
                 input.dispatchEvent(new Event('input', { bubbles: true }));
                 // Also dispatch change for the stepper buttons since they "commit" the value
@@ -220,7 +221,10 @@ function syncAllInputs(id, val, updateTextInputs = true) {
                     const numericVal = parseFloat(val);
                     if (isNaN(numericVal)) return;
                     if (id === 'ssMonthly') lbl.textContent = math.toCurrency(numericVal);
-                    else if (id.toLowerCase().includes('growth') || id === 'inflation' || id.toLowerCase().includes('rate')) lbl.textContent = `${val}%`;
+                    else if (id.toLowerCase().includes('growth') || id === 'inflation' || id.toLowerCase().includes('rate')) {
+                        const decimals = parseInt(el.dataset.decimals) || 1;
+                        lbl.textContent = `${numericVal.toFixed(decimals)}%`;
+                    }
                     else if (id.toLowerCase().includes('factor')) lbl.textContent = `${Math.round(numericVal * 100)}%`;
                     else lbl.textContent = val;
                 }
@@ -390,6 +394,9 @@ window.addRow = (containerId, type, data = {}) => {
     if (type === 'budget-savings' || type === 'budget-expense') {
         if (data.annual !== undefined && data.monthly === undefined) data.monthly = data.annual / 12;
         else if (data.monthly !== undefined && data.annual === undefined) data.annual = data.monthly * 12;
+        
+        // Default new expenses to remainsInRetirement = true
+        if (type === 'budget-expense' && data.remainsInRetirement === undefined) data.remainsInRetirement = true;
     }
     
     element.querySelectorAll('[data-id]').forEach(input => {
@@ -404,6 +411,7 @@ window.addRow = (containerId, type, data = {}) => {
                 input.style.backgroundColor = '#0f172a';
             }
             else if (input.dataset.type === 'currency') input.value = math.toCurrency(val);
+            else if (input.dataset.decimals !== undefined && typeof val === 'number') input.value = val.toFixed(parseInt(input.dataset.decimals));
             else input.value = val;
         }
     });
@@ -522,9 +530,9 @@ window.createAssumptionControls = (data) => {
     const isAdv = !!a.advancedGrowth;
     const hhSize = data.benefits?.hhSize || 1;
 
-    const renderStepper = (id, val, step = 1, color = "text-white") => `
+    const renderStepper = (id, val, step = 1, color = "text-white", decimals = "0") => `
         <div class="relative group/stepper mt-1">
-            <input data-id="${id}" type="number" step="${step}" value="${val}" class="input-base w-full font-bold ${color} pr-10">
+            <input data-id="${id}" data-decimals="${decimals}" type="number" step="${step}" value="${val}" class="input-base w-full font-bold ${color} pr-10">
             <div class="absolute right-1 top-0 bottom-0 flex flex-col justify-center gap-0.5 opacity-40 group-hover/stepper:opacity-100 transition-opacity">
                 <button data-step="up" data-target="${id}" class="w-5 h-4 flex items-center justify-center hover:bg-slate-700 rounded text-[7px] text-slate-500 hover:text-white transition-colors"><i class="fas fa-plus"></i></button>
                 <button data-step="down" data-target="${id}" class="w-5 h-4 flex items-center justify-center hover:bg-slate-700 rounded text-[7px] text-slate-500 hover:text-white transition-colors"><i class="fas fa-minus"></i></button>
@@ -534,7 +542,7 @@ window.createAssumptionControls = (data) => {
 
     const renderAPY = (label, id, color, val) => {
         if (!isAdv) {
-            return `<label class="block"><span class="label-std text-slate-500">${label} APY</span><div class="flex items-center gap-2 mt-1"><input data-id="${id}" type="range" min="0" max="20" step="0.5" value="${val}" class="input-range"><span class="${color} font-bold mono-numbers w-10 text-right">${val}%</span></div></label>`;
+            return `<label class="block"><span class="label-std text-slate-500">${label} APY</span><div class="flex items-center gap-2 mt-1"><input data-id="${id}" data-decimals="1" type="range" min="0" max="10" step="0.1" value="${val}" class="input-range"><span class="${color} font-bold mono-numbers w-10 text-right">${val}%</span></div></label>`;
         }
         const yrs = a[id + 'Years'] || 10;
         const perp = a[id + 'Perpetual'] || val;
@@ -542,9 +550,9 @@ window.createAssumptionControls = (data) => {
             <div class="p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 space-y-3">
                 <div class="flex justify-between items-center"><span class="label-std ${color}">${label} Growth</span><span class="text-[8px] font-black text-slate-600">ADVANCED</span></div>
                 <div class="grid grid-cols-3 gap-2">
-                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Initial %</span><input data-id="${id}" type="number" step="0.1" value="${val}" class="input-base w-full text-[10px] font-bold ${color}"></div>
+                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Initial %</span><input data-id="${id}" data-decimals="1" type="number" step="0.1" value="${val}" class="input-base w-full text-[10px] font-bold ${color}"></div>
                     <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Years</span><input data-id="${id}Years" type="number" value="${yrs}" class="input-base w-full text-[10px] font-bold text-white"></div>
-                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Perpetual %</span><input data-id="${id}Perpetual" type="number" step="0.1" value="${perp}" class="input-base w-full text-[10px] font-bold ${color}"></div>
+                    <div class="flex flex-col"><span class="text-[7px] font-black text-slate-500 uppercase mb-1">Perpetual %</span><input data-id="${id}Perpetual" data-decimals="1" type="number" step="0.1" value="${perp}" class="input-base w-full text-[10px] font-bold ${color}"></div>
                 </div>
             </div>`;
     };
@@ -572,12 +580,12 @@ window.createAssumptionControls = (data) => {
                     </select>
                 </label>
                 <label class="block"><span class="label-std text-slate-500">Family Size</span>
-                    ${renderStepper('hhSize', hhSize, 1, 'text-white')}
+                    ${renderStepper('hhSize', hhSize, 1, 'text-white', '0')}
                 </label>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span>${renderStepper('currentAge', a.currentAge, 1, 'text-white')}</label>
-                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span>${renderStepper('retirementAge', a.retirementAge, 1, 'text-blue-400')}</label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span>${renderStepper('currentAge', a.currentAge, 1, 'text-white', '0')}</label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span>${renderStepper('retirementAge', a.retirementAge, 1, 'text-blue-400', '0')}</label>
             </div>
             <label class="block"><span class="label-std text-slate-500">SS Start Age</span><input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="input-base w-full mt-1 font-bold text-white"></label>
             <label class="block"><span class="label-std text-slate-500">SS Monthly Benefit</span><input data-id="ssMonthly" type="number" value="${a.ssMonthly}" class="input-base w-full mt-1 font-bold text-white"></label>
@@ -592,7 +600,7 @@ window.createAssumptionControls = (data) => {
             ${renderAPY('Metals', 'metalsGrowth', 'text-yellow-500', a.metalsGrowth)}
             ${renderAPY('Real Estate', 'realEstateGrowth', 'text-indigo-400', a.realEstateGrowth)}
             
-            <label class="block pt-2 border-t border-slate-700/30"><span class="label-std text-slate-500">Inflation</span><div class="flex items-center gap-2 mt-1"><input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="input-range"><span class="text-red-400 font-bold mono-numbers w-10 text-right">${a.inflation}%</span></div></label>
+            <label class="block pt-2 border-t border-slate-700/30"><span class="label-std text-slate-500">Inflation</span><div class="flex items-center gap-2 mt-1"><input data-id="inflation" data-decimals="1" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="input-range"><span class="text-red-400 font-bold mono-numbers w-10 text-right">${a.inflation}%</span></div></label>
         </div>
         <div class="col-span-1 space-y-6 lg:border-l lg:border-slate-700/30 lg:pl-8">
             <h3 class="label-std text-slate-400 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-couch text-pink-400"></i> Retirement Spending</h3>

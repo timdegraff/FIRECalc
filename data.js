@@ -285,7 +285,7 @@ export function updateSummaries(data) {
 
     // Retirement Year 1 Budget Calculation
     const retireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
-        if (exp.removedInRetirement) return sum;
+        if (exp.remainsInRetirement === false) return sum;
         const base = math.fromCurrency(exp.annual);
         // If fixed, don't inflate. If not fixed, inflate to retirement year.
         return sum + (exp.isFixed ? base : base * infFacRet);
@@ -320,7 +320,10 @@ export function getInitialData() {
             cryptoGrowth: 8,
             realEstateGrowth: 3,
             metalsGrowth: 6,
-            inflation: 3
+            inflation: 3,
+            slowGoFactor: 1.0,
+            midGoFactor: 0.9,
+            noGoFactor: 0.8
         },
         investments: [
             { name: 'EMPLOYER 401K', type: 'Pre-Tax (401k/IRA)', value: 750000, costBasis: 750000 },
@@ -354,15 +357,15 @@ export function getInitialData() {
                 { name: 'Monthly Investment', type: 'Taxable', monthly: 1000, annual: 12000, removedInRetirement: true, isFixed: false }
             ],
             expenses: [
-                { name: 'Mortgage / Tax / Ins', monthly: 3000, annual: 36000, removedInRetirement: false, isFixed: true },
-                { name: 'Auto Loans', monthly: 1000, annual: 12000, removedInRetirement: false, isFixed: true },
-                { name: 'Groceries', monthly: 1200, annual: 14400, removedInRetirement: false, isFixed: false },
-                { name: 'Utilities', monthly: 600, annual: 7200, removedInRetirement: false, isFixed: false },
-                { name: 'Travel & Vacation', monthly: 667, annual: 8000, removedInRetirement: false, isFixed: false },
-                { name: 'Miscellaneous', monthly: 333, annual: 4000, removedInRetirement: false, isFixed: false }
+                { name: 'Mortgage / Tax / Ins', monthly: 3000, annual: 36000, remainsInRetirement: true, isFixed: true },
+                { name: 'Auto Loans', monthly: 1000, annual: 12000, remainsInRetirement: true, isFixed: true },
+                { name: 'Groceries', monthly: 1200, annual: 14400, remainsInRetirement: true, isFixed: false },
+                { name: 'Utilities', monthly: 600, annual: 7200, remainsInRetirement: true, isFixed: false },
+                { name: 'Travel & Vacation', monthly: 667, annual: 8000, remainsInRetirement: true, isFixed: false },
+                { name: 'Miscellaneous', monthly: 333, annual: 4000, remainsInRetirement: true, isFixed: false }
             ]
         },
-        benefits: { hhSize: 5, shelterCosts: 3000, hasSUA: true },
+        benefits: { hhSize: 5, shelterCosts: 3000, hasSUA: true, unifiedIncome: 30000 },
         burndown: { strategyDial: 33, useSync: true, cashReserve: 30000, retirementAge: 45 },
         projectionSettings: { isRealDollars: false }
     };
