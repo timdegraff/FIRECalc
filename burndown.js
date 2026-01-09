@@ -240,8 +240,8 @@ export const burndown = {
                 const isHidden = docContainer.classList.contains('hidden');
                 docContainer.classList.toggle('hidden');
                 docBtn.innerHTML = isHidden 
-                    ? `<i class="fas fa-chevron-up mr-2"></i> Hide Calculation Stages` 
-                    : `<i class="fas fa-chevron-down mr-2"></i> Show Calculation Stages`;
+                    ? `<i class="fas fa-chevron-up mr-2"></i> HIDE DETAILS` 
+                    : `<i class="fas fa-question-circle mr-2"></i> HOW IT WORKS`;
             };
         }
     },
