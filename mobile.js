@@ -113,112 +113,112 @@ window.addMobileItem = (type) => {
 
 const MOBILE_TEMPLATES = {
     'assets-debts': () => `
-        <div class="space-y-8">
-            <div id="mobile-assets-summary" class="text-center py-2 border-b border-slate-800 mb-2 grid grid-cols-2 gap-4">
+        <div class="space-y-6">
+            <div id="mobile-assets-summary" class="text-center py-1 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
                 <div>
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Assets</span>
-                    <div id="val-total-assets" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total Assets</span>
+                    <div id="val-total-assets" class="text-lg font-black text-emerald-400 mono-numbers">$0</div>
                 </div>
                 <div>
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Total Debts</span>
-                    <div id="val-total-debts" class="text-xl font-black text-red-400 mono-numbers">$0</div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total Debts</span>
+                    <div id="val-total-debts" class="text-lg font-black text-red-400 mono-numbers">$0</div>
                 </div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-orange-400 mr-2"></i>Investments</h2>
-                    <button onclick="window.addMobileItem('investments')" class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-blue-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-orange-400 mr-2"></i>Investments</h2>
+                    <button onclick="window.addMobileItem('investments')" class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-blue-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
-                <div id="m-investment-cards" class="space-y-3"></div>
+                <div id="m-investment-cards" class="space-y-2"></div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-home text-indigo-400 mr-2"></i>Real Estate</h2>
-                    <button onclick="window.addMobileItem('realEstate')" class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-indigo-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-home text-indigo-400 mr-2"></i>Real Estate</h2>
+                    <button onclick="window.addMobileItem('realEstate')" class="w-7 h-7 bg-indigo-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-indigo-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-re-cards" class="space-y-2"></div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-car text-teal-400 mr-2"></i>Other Assets</h2>
-                    <button onclick="window.addMobileItem('otherAssets')" class="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-car text-teal-400 mr-2"></i>Other Assets</h2>
+                    <button onclick="window.addMobileItem('otherAssets')" class="w-7 h-7 bg-teal-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-other-asset-cards" class="space-y-2"></div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-university text-orange-400 mr-2"></i>HELOCs</h2>
-                    <button onclick="window.addMobileItem('helocs')" class="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-orange-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-university text-orange-400 mr-2"></i>HELOCs</h2>
+                    <button onclick="window.addMobileItem('helocs')" class="w-7 h-7 bg-orange-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-orange-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-heloc-cards" class="space-y-2"></div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-credit-card text-red-500 mr-2"></i>Other Debts</h2>
-                    <button onclick="window.addMobileItem('debts')" class="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-red-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-credit-card text-red-500 mr-2"></i>Other Debts</h2>
+                    <button onclick="window.addMobileItem('debts')" class="w-7 h-7 bg-red-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-red-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-debt-cards" class="space-y-2"></div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-briefcase text-blue-400 mr-2"></i>Private Equity</h2>
-                    <button onclick="window.addMobileItem('stockOptions')" class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white active:scale-95 shadow-lg shadow-blue-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-briefcase text-blue-400 mr-2"></i>Private Equity</h2>
+                    <button onclick="window.addMobileItem('stockOptions')" class="w-7 h-7 bg-blue-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-blue-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-stock-option-cards" class="space-y-2"></div>
             </div>
             
-            <div class="pt-8 border-t border-slate-800">
-                <h3 class="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 text-center">Asset Allocation</h3>
-                <div id="mobile-asset-allocation-list" class="grid grid-cols-2 gap-3"></div>
+            <div class="pt-4 border-t border-slate-800">
+                <h3 class="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center">Asset Allocation</h3>
+                <div id="mobile-asset-allocation-list" class="grid grid-cols-2 gap-2"></div>
             </div>
         </div>
     `,
     'income': () => `
         <div class="space-y-6">
             <div id="mobile-income-summary" class="text-center py-2 border-b border-slate-800 mb-2">
-                <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">2026 Gross Income</span>
-                <div id="val-income-total" class="text-3xl font-black text-teal-400 mono-numbers tracking-tighter">$0</div>
+                <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">2026 Gross Income</span>
+                <div id="val-income-total" class="text-2xl font-black text-teal-400 mono-numbers tracking-tighter">$0</div>
             </div>
             <div>
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-money-bill-wave text-teal-400 mr-2"></i>Income Sources</h2>
-                    <button onclick="window.addMobileItem('income')" class="w-10 h-10 bg-teal-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-money-bill-wave text-teal-400 mr-2"></i>Income Sources</h2>
+                    <button onclick="window.addMobileItem('income')" class="w-8 h-8 bg-teal-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-teal-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-income-cards" class="space-y-3"></div>
             </div>
         </div>
     `,
     'budget': () => `
-        <div class="space-y-8">
-            <div id="mobile-budget-summary" class="text-center py-2 border-b border-slate-800 mb-2 grid grid-cols-2 gap-4">
+        <div class="space-y-6">
+            <div id="mobile-budget-summary" class="text-center py-1 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
                 <div>
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Annual Savings</span>
-                    <div id="val-budget-savings" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Annual Savings</span>
+                    <div id="val-budget-savings" class="text-lg font-black text-emerald-400 mono-numbers">$0</div>
                 </div>
                 <div>
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Annual Spend</span>
-                    <div id="val-budget-spend" class="text-xl font-black text-pink-500 mono-numbers">$0</div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Annual Spend</span>
+                    <div id="val-budget-spend" class="text-lg font-black text-pink-500 mono-numbers">$0</div>
                 </div>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-piggy-bank text-emerald-400 mr-2"></i>ANNUAL SAVINGS</h2>
-                    <button onclick="window.addMobileItem('budget.savings')" class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-emerald-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-piggy-bank text-emerald-400 mr-2"></i>ANNUAL SAVINGS</h2>
+                    <button onclick="window.addMobileItem('budget.savings')" class="w-8 h-8 bg-emerald-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-emerald-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-budget-savings" class="space-y-2"></div>
             </div>
             
             <div>
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-pie text-pink-500 mr-2"></i>MONTHLY SPENDING</h2>
-                    <button onclick="window.addMobileItem('budget.expenses')" class="w-10 h-10 bg-pink-600 rounded-xl flex items-center justify-center text-white active:scale-95 shadow-lg shadow-pink-900/20"><i class="fas fa-plus"></i></button>
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-pie text-pink-500 mr-2"></i>MONTHLY SPENDING</h2>
+                    <button onclick="window.addMobileItem('budget.expenses')" class="w-8 h-8 bg-pink-600 rounded flex items-center justify-center text-white active:scale-95 shadow-lg shadow-pink-900/20"><i class="fas fa-plus text-xs"></i></button>
                 </div>
                 <div id="m-budget-expenses" class="space-y-2"></div>
             </div>
@@ -226,57 +226,58 @@ const MOBILE_TEMPLATES = {
     `,
     'benefits': () => `
         <div class="space-y-6">
-            <div id="mobile-benefits-summary" class="text-center py-2 border-b border-slate-800 mb-2 grid grid-cols-2 gap-4">
+            <div id="mobile-benefits-summary" class="text-center py-1 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
                 <div>
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Health Plan</span>
-                    <div id="mobile-val-health-plan" class="text-xl font-black text-blue-400 uppercase tracking-tight truncate">Platinum</div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Health Plan</span>
+                    <div id="mobile-val-health-plan" class="text-lg font-black text-blue-400 uppercase tracking-tight truncate">Platinum</div>
                 </div>
                 <div>
-                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Est. SNAP</span>
-                    <div id="mobile-val-snap-amt" class="text-xl font-black text-emerald-400 mono-numbers">$0</div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Est. SNAP</span>
+                    <div id="mobile-val-snap-amt" class="text-lg font-black text-emerald-400 mono-numbers">$0</div>
                 </div>
             </div>
-            <div id="benefits-module" class="space-y-6"></div>
+            <div id="benefits-module" class="space-y-4"></div>
         </div>
     `,
     'assumptions': () => `
-        <div class="space-y-8">
-            <div id="mobile-assumptions-summary" class="text-center py-2 border-b border-slate-800 mb-2">
-                <button id="btn-reset-defaults-mobile" class="w-full mb-3 px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest active:scale-95 active:bg-slate-700 transition-all">
+        <div class="space-y-6">
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
+                </div>
+                <div id="m-assumptions-container" class="space-y-3"></div>
+            </div>
+            
+            <div id="mobile-assumptions-summary" class="pt-8 border-t border-slate-800 space-y-3">
+                <button id="btn-reset-defaults-mobile" class="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest active:scale-95 active:bg-slate-700 transition-all">
                     Reset Market Defaults
                 </button>
                 <button id="btn-factory-reset-mobile" class="w-full px-4 py-3 bg-red-900/20 border border-red-500/30 rounded-xl text-[10px] font-black text-red-400 uppercase tracking-widest active:scale-95 active:bg-red-900/40 transition-all">
                     <i class="fas fa-trash-alt mr-2"></i> Factory Reset App
                 </button>
             </div>
-            <div>
-                <div class="flex items-center gap-2 mb-4">
-                    <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-sliders-h text-emerald-400 mr-2"></i>Assumptions</h2>
-                </div>
-                <div id="m-assumptions-container" class="space-y-4"></div>
-            </div>
         </div>
     `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
-             <div class="flex items-center gap-2 mb-4">
-                <h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
+             <div class="flex items-center gap-2 mb-3">
+                <h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
             </div>
             
-            <div class="mobile-card mb-4 space-y-4">
-                <div class="space-y-2">
+            <div class="mobile-card mb-3 space-y-3">
+                <div class="space-y-1">
                     <div class="flex justify-between items-center">
                         <label class="mobile-label text-slate-500">Income Strategy Dial</label>
-                        <span id="mobile-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest">Platinum Max</span>
+                        <span id="mobile-strategy-status" class="text-emerald-400 font-black mono-numbers text-[8px] uppercase tracking-widest">Platinum Max</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="mobile-slider">
                     </div>
                 </div>
-                <div class="space-y-2">
+                <div class="space-y-1">
                     <div class="flex justify-between items-center">
                          <label class="mobile-label text-slate-500">Retirement Age</label>
-                         <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm">65</span>
+                         <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-xs">65</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" value="65" class="mobile-slider">
@@ -284,18 +285,18 @@ const MOBILE_TEMPLATES = {
                 </div>
             </div>
 
-            <div id="burndown-view-container" class="space-y-4"></div>
-            <div id="burndown-table-container" class="mt-8 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/50"></div>
+            <div id="burndown-view-container" class="space-y-3"></div>
+            <div id="burndown-table-container" class="mt-4 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50"></div>
         </div>
     `,
     'projection': () => `
-        <div class="space-y-6 pb-4">
-            <div class="flex items-center justify-between"><h2 class="text-xl font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-blue-400 mr-2"></i>Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal $</button></div>
-            <div class="card-container p-4 bg-slate-800 rounded-2xl border border-slate-700 h-[300px] relative"><canvas id="projection-chart"></canvas></div>
+        <div class="space-y-4 pb-4">
+            <div class="flex items-center justify-between"><h2 class="text-sm font-black text-white uppercase tracking-tighter"><i class="fas fa-chart-line text-blue-400 mr-2"></i>Projection</h2><button id="toggle-projection-real" class="px-3 py-1 bg-slate-800 border border-slate-700 rounded-lg text-[10px] font-bold text-slate-400">Nominal $</button></div>
+            <div class="card-container p-3 bg-slate-800 rounded-xl border border-slate-700 h-[250px] relative"><canvas id="projection-chart"></canvas></div>
             
-            <div class="flex items-center gap-4 bg-slate-900 p-3 rounded-xl border border-slate-800 shadow-inner">
-                <div class="flex flex-col"><span class="mobile-label">End Age</span><span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-sm">72</span></div>
-                <input type="range" id="input-projection-end" min="50" max="100" value="72" class="flex-grow h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+            <div class="flex items-center gap-4 bg-slate-900 p-2 rounded-xl border border-slate-800 shadow-inner">
+                <div class="flex flex-col"><span class="mobile-label">End Age</span><span id="mobile-proj-end-val" class="text-blue-400 font-black mono-numbers text-xs">72</span></div>
+                <input type="range" id="input-projection-end" min="50" max="100" value="72" class="flex-grow mobile-slider">
             </div>
         </div>
     `
@@ -306,13 +307,11 @@ const ITEM_TEMPLATES = {
         const ASSET_TYPE_COLORS = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400' };
         const tc = ASSET_TYPE_COLORS[data.type] || 'text-white';
         return `
-        <div class="mobile-card flex flex-col gap-2">
-            <div class="flex justify-between items-start">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-lg w-2/3 outline-none" placeholder="Account Name">
-            </div>
-            <div class="flex justify-between items-end mt-1">
-                <div class="flex flex-col">
-                    <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 outline-none ${tc}">
+        <div class="mobile-card flex flex-col gap-1">
+            <div class="flex justify-between items-center">
+                <div class="flex flex-col w-1/2">
+                    <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-xs outline-none" placeholder="Account Name">
+                    <select data-id="type" class="bg-transparent text-[8px] font-bold outline-none ${tc} mt-0.5">
                         <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
                         <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
@@ -323,24 +322,24 @@ const ITEM_TEMPLATES = {
                     </select>
                 </div>
                 <div class="text-right flex-grow">
-                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-7xl mono-numbers outline-none leading-none tracking-tight">
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-teal-400 font-black text-4xl mono-numbers outline-none leading-none tracking-tighter">
                 </div>
             </div>
         </div>`;
     },
     realEstate: (data) => `
-        <div class="mobile-card space-y-2">
+        <div class="mobile-card space-y-1">
             <div class="flex justify-between items-start">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Property Name">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-xs w-2/3 outline-none" placeholder="Property Name">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <span class="mobile-label">Value</span>
-                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold text-base mono-numbers outline-none border-b border-slate-700">
                 </div>
                 <div>
                     <span class="mobile-label">Mortgage</span>
-                    <input data-id="mortgage" data-type="currency" value="${math.toCurrency(data.mortgage || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="mortgage" data-type="currency" value="${math.toCurrency(data.mortgage || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-bold text-base mono-numbers outline-none border-b border-slate-700">
                 </div>
             </div>
         </div>
@@ -352,36 +351,35 @@ const ITEM_TEMPLATES = {
        const equity = Math.max(0, (fmv - strike) * shares);
 
        return `
-       <div class="mobile-card space-y-3">
+       <div class="mobile-card space-y-2">
            <div class="flex justify-between items-center">
-               <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Grant Name">
-               <div class="text-xs font-black text-teal-400 mono-numbers">${math.toCurrency(equity)}</div>
+               <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-xs w-2/3 outline-none" placeholder="Grant Name">
+               <div class="text-[10px] font-black text-teal-400 mono-numbers">${math.toCurrency(equity)}</div>
            </div>
            <div class="grid grid-cols-3 gap-2">
                <div>
                    <span class="mobile-label">Shares</span>
-                   <input data-id="shares" type="number" value="${data.shares || 0}" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-700">
+                   <input data-id="shares" type="number" value="${data.shares || 0}" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-700 text-xs">
                </div>
                <div>
                    <span class="mobile-label">Strike</span>
-                   <input data-id="strikePrice" data-type="currency" value="${math.toCurrency(data.strikePrice || 0)}" inputmode="decimal" class="block w-full bg-transparent text-emerald-500 font-bold mono-numbers outline-none border-b border-slate-700">
+                   <input data-id="strikePrice" data-type="currency" value="${math.toCurrency(data.strikePrice || 0)}" inputmode="decimal" class="block w-full bg-transparent text-emerald-500 font-bold mono-numbers outline-none border-b border-slate-700 text-xs">
                </div>
                <div>
                    <span class="mobile-label">FMV</span>
-                   <input data-id="currentPrice" data-type="currency" value="${math.toCurrency(data.currentPrice || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                   <input data-id="currentPrice" data-type="currency" value="${math.toCurrency(data.currentPrice || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700 text-xs">
                </div>
            </div>
-           <div class="flex justify-between items-center pt-1">
-                <div class="w-1/3">
-                    <span class="mobile-label">APY %</span>
-                    <input data-id="growth" type="number" step="0.1" value="${data.growth !== undefined ? data.growth : 10}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+           <div class="flex justify-between items-center pt-0.5">
+                <div class="w-1/3 flex items-center gap-2">
+                    <span class="mobile-label">APY%</span>
+                    <input data-id="growth" type="number" step="0.1" value="${data.growth !== undefined ? data.growth : 10}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700 text-[10px]">
                 </div>
                 <label class="cursor-pointer group inline-flex items-center justify-center relative">
                     <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg !== false ? 'checked' : ''}>
-                    <div class="w-12 py-1 rounded text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
+                    <div class="w-10 py-0.5 rounded text-[7px] font-black border transition-all duration-200 select-none flex items-center justify-center
                         bg-blue-500/10 border-blue-500/20 text-blue-400 
-                        peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400
-                        hover:border-opacity-50">
+                        peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400">
                         <span class="inline-block peer-checked:hidden">ORD</span>
                         <span class="hidden peer-checked:inline-block">LTCG</span>
                     </div>
@@ -391,63 +389,63 @@ const ITEM_TEMPLATES = {
        `;
     },
     otherAsset: (data) => `
-        <div class="mobile-card space-y-2">
+        <div class="mobile-card space-y-1">
             <div class="flex justify-between items-start">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Asset Name">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-xs w-2/3 outline-none" placeholder="Asset Name">
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <span class="mobile-label">Value</span>
-                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="value" data-type="currency" value="${math.toCurrency(data.value || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold text-base mono-numbers outline-none border-b border-slate-700">
                 </div>
                 <div>
                     <span class="mobile-label">Loan</span>
-                    <input data-id="loan" data-type="currency" value="${math.toCurrency(data.loan || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="loan" data-type="currency" value="${math.toCurrency(data.loan || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-bold text-base mono-numbers outline-none border-b border-slate-700">
                 </div>
             </div>
         </div>
     `,
     heloc: (data) => `
-        <div class="mobile-card space-y-2">
+        <div class="mobile-card space-y-1">
             <div class="flex justify-between items-start">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="HELOC Name">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent border-none font-black text-white uppercase tracking-widest text-xs w-2/3 outline-none" placeholder="HELOC Name">
             </div>
             <div class="grid grid-cols-3 gap-2">
                 <div>
                     <span class="mobile-label">Balance</span>
-                    <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-bold text-base mono-numbers outline-none border-b border-slate-700">
                 </div>
                 <div>
                     <span class="mobile-label">Limit</span>
-                    <input data-id="limit" data-type="currency" value="${math.toCurrency(data.limit || 0)}" inputmode="decimal" class="block w-full bg-transparent text-slate-400 font-bold text-lg mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="limit" data-type="currency" value="${math.toCurrency(data.limit || 0)}" inputmode="decimal" class="block w-full bg-transparent text-slate-400 font-bold text-base mono-numbers outline-none border-b border-slate-700">
                 </div>
                 <div>
                     <span class="mobile-label">Rate %</span>
-                    <input data-id="rate" type="number" step="0.1" value="${data.rate || 0}" inputmode="decimal" class="block w-full bg-transparent text-white font-bold text-lg mono-numbers outline-none border-b border-slate-700">
+                    <input data-id="rate" type="number" step="0.1" value="${data.rate || 0}" inputmode="decimal" class="block w-full bg-transparent text-white font-bold text-base mono-numbers outline-none border-b border-slate-700">
                 </div>
             </div>
         </div>
     `,
     debt: (data) => `
-        <div class="mobile-card space-y-2">
+        <div class="mobile-card space-y-1">
             <div class="flex justify-between items-start">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Debt Name">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-xs w-2/3 outline-none" placeholder="Debt Name">
             </div>
             <div>
                 <span class="mobile-label">Balance</span>
-                <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-lg mono-numbers outline-none border-b border-slate-700">
+                <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-base mono-numbers outline-none border-b border-slate-700">
             </div>
         </div>
     `,
     income: (data) => `
-        <div class="mobile-card space-y-3">
+        <div class="mobile-card space-y-2">
              <div class="flex justify-between items-center">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-sm w-2/3 outline-none" placeholder="Source">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-xs w-2/3 outline-none" placeholder="Source">
             </div>
             <div class="grid grid-cols-2 gap-4 items-end">
                 <div>
                     <span class="mobile-label">Gross Amount</span>
-                    <input data-id="amount" data-type="currency" value="${math.toCurrency(data.amount || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700 text-4xl">
+                    <input data-id="amount" data-type="currency" value="${math.toCurrency(data.amount || 0)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-700 text-3xl">
                 </div>
                 <div>
                     <span class="mobile-label">Growth %</span>
@@ -455,30 +453,30 @@ const ITEM_TEMPLATES = {
                 </div>
             </div>
             
-            <div class="p-3 bg-slate-900/50 rounded-xl space-y-3 border border-slate-800">
-                <div class="grid grid-cols-3 gap-2">
+            <div class="p-2 bg-slate-900/50 rounded-xl space-y-2 border border-slate-800">
+                <div class="grid grid-cols-3 gap-1">
                     <div>
                         <span class="mobile-label">401k %</span>
-                        <input data-id="contribution" type="number" value="${data.contribution || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                        <input data-id="contribution" type="number" value="${data.contribution || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700 text-xs">
                     </div>
                     <div>
                         <span class="mobile-label">Match %</span>
-                        <input data-id="match" type="number" value="${data.match || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                        <input data-id="match" type="number" value="${data.match || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700 text-xs">
                     </div>
                     <div>
                         <span class="mobile-label">Bonus %</span>
-                        <input data-id="bonusPct" type="number" value="${data.bonusPct || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700">
+                        <input data-id="bonusPct" type="number" value="${data.bonusPct || 0}" class="block w-full bg-transparent text-blue-400 font-bold mono-numbers outline-none border-b border-slate-700 text-xs">
                     </div>
                 </div>
             </div>
 
-             <div class="space-y-1 mt-2 pt-2 border-t border-slate-800">
-                <div class="flex justify-between items-center gap-4">
-                    <div class="w-1/2">
-                        <span class="mobile-label">NO TAX UNTIL</span>
-                        <input data-id="nonTaxableUntil" type="number" placeholder="YYYY" value="${data.nonTaxableUntil || ''}" class="block w-full bg-transparent text-teal-400 font-black mono-numbers outline-none border-b border-slate-700 text-center">
+             <div class="space-y-0 mt-1 pt-1 border-t border-slate-800">
+                <div class="flex justify-between items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[7px] font-black uppercase text-slate-500">NO TAX UNTIL:</span>
+                        <input data-id="nonTaxableUntil" type="number" placeholder="YYYY" value="${data.nonTaxableUntil || ''}" class="bg-transparent text-teal-400 font-black mono-numbers outline-none border-b border-slate-700 text-center text-xs w-12">
                     </div>
-                    <label class="flex items-center gap-2 mt-2 w-1/2 justify-end"><input type="checkbox" data-id="remainsInRetirement" ${data.remainsInRetirement ? 'checked' : ''} class="w-4 h-4 bg-slate-800 border-slate-600 rounded"><span class="text-[9px] font-bold text-slate-400 uppercase">Retirement Income</span></label>
+                    <label class="flex items-center gap-1.5 justify-end"><input type="checkbox" data-id="remainsInRetirement" ${data.remainsInRetirement ? 'checked' : ''} class="w-3.5 h-3.5 bg-slate-800 border-slate-600 rounded"><span class="text-[7px] font-bold text-slate-400 uppercase">Retirement Income</span></label>
                 </div>
             </div>
         </div>
@@ -486,12 +484,12 @@ const ITEM_TEMPLATES = {
     savings: (data) => {
         if (data.isLocked) {
              return `
-             <div class="mobile-card border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)] bg-slate-800/80 flex justify-between items-center gap-3">
-                <div class="flex flex-col w-auto whitespace-nowrap">
-                    <div class="text-blue-400 font-black text-xs uppercase tracking-widest leading-tight">401k from Income</div>
+             <div class="mobile-card border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)] bg-slate-800/80 flex justify-between items-center py-1.5 px-3">
+                <div class="flex flex-col">
+                    <div class="text-blue-400 font-black text-[9px] uppercase tracking-widest leading-tight">401k from Income</div>
                 </div>
-                <div class="text-right flex-grow">
-                    <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block w-full text-right bg-transparent text-blue-400 font-black text-3xl mono-numbers outline-none" readonly>
+                <div class="text-right">
+                    <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block text-right bg-transparent text-blue-400 font-black text-2xl mono-numbers outline-none" readonly>
                 </div>
             </div>`;
         }
@@ -499,9 +497,9 @@ const ITEM_TEMPLATES = {
         const ASSET_TYPE_COLORS = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400' };
         const tc = ASSET_TYPE_COLORS[data.type] || 'text-white';
         return `
-        <div class="mobile-card flex justify-between items-center gap-3">
+        <div class="mobile-card flex justify-between items-center py-1.5 px-3">
             <div class="flex flex-col w-5/12">
-                <select data-id="type" class="bg-slate-900 text-[10px] font-bold rounded px-2 py-1 outline-none ${tc} w-full">
+                <select data-id="type" class="bg-slate-900 text-[9px] font-bold rounded px-1.5 py-0.5 outline-none ${tc} w-full">
                     <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                     <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
                     <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
@@ -510,23 +508,23 @@ const ITEM_TEMPLATES = {
                     <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
                     <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
                 </select>
-                <div class="flex gap-3 mt-2">
+                <div class="flex gap-2 mt-1">
                     <label class="flex items-center gap-1"><input type="checkbox" data-id="removedInRetirement" ${data.removedInRetirement ? 'checked' : ''} class="w-3 h-3"><span class="text-[7px] uppercase font-black text-slate-500">Stop in Retire</span></label>
                 </div>
             </div>
             <div class="text-right flex-grow">
-                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400 font-black text-3xl mono-numbers outline-none">
+                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400 font-black text-2xl mono-numbers outline-none">
             </div>
         </div>
         `;
     },
     expense: (data) => `
-        <div class="mobile-card py-2 flex justify-between items-center gap-2">
+        <div class="mobile-card py-1.5 px-3 flex justify-between items-center">
             <div class="flex flex-col w-1/2">
-                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-xs outline-none" placeholder="Item Name">
+                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-[10px] outline-none" placeholder="Item Name">
             </div>
             <div class="text-right flex-grow">
-                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-center bg-transparent text-pink-400 font-black text-3xl mono-numbers outline-none">
+                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-pink-400 font-black text-2xl mono-numbers outline-none">
             </div>
         </div>
     `
@@ -791,8 +789,8 @@ function renderMobileAssetList() {
         const shortName = shortNames[type] || type;
         
         const item = document.createElement('div');
-        item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400 bg-slate-800 p-2 rounded-lg border border-slate-700/50';
-        item.innerHTML = `<div class="w-2 h-2 rounded-full flex-shrink-0" style="background-color: ${color}"></div><span class="truncate flex-grow">${shortName}</span><span class="text-white mono-numbers">${math.toSmartCompactCurrency(value)}</span>`;
+        item.className = 'flex items-center gap-1.5 text-[8px] font-bold text-slate-400 bg-slate-800/50 p-1.5 rounded-lg border border-slate-700/50';
+        item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${color}"></div><span class="truncate flex-grow">${shortName}</span><span class="text-white mono-numbers">${math.toSmartCompactCurrency(value)}</span>`;
         list.appendChild(item);
     });
 }
@@ -1005,7 +1003,7 @@ function addMobileRow(containerId, type, data = {}, index = null, arrayName = nu
 
     if (data.isLocked) {
         const simpleContainer = document.createElement('div');
-        simpleContainer.className = 'mb-3';
+        simpleContainer.className = 'mb-2';
         simpleContainer.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : '';
         simpleContainer.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
         container.appendChild(simpleContainer);
@@ -1050,42 +1048,42 @@ function renderMobileAssumptions() {
     const hhSize = window.currentData.benefits?.hhSize || 1;
     
     const slider = (label, id, min, max, step, val, suffix = '', colorClass = 'text-blue-400') => `
-        <label class="block space-y-1">
+        <label class="block space-y-0.5">
             <div class="flex justify-between items-center">
                 <span class="mobile-label ${colorClass}">${label}</span>
             </div>
             <div class="flex items-center gap-2">
                 <input data-id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}" class="mobile-slider">
-                <span class="${colorClass} font-bold mono-numbers w-10 text-right text-xs">${val}${suffix}</span>
+                <span class="${colorClass} font-bold mono-numbers w-10 text-right text-[10px]">${val}${suffix}</span>
             </div>
         </label>
     `;
 
     container.innerHTML = `
-        <div class="mobile-card space-y-4">
+        <div class="mobile-card space-y-3">
             ${slider("Current Age", "currentAge", 18, 90, 1, a.currentAge, "", "text-white")}
             ${slider("Retirement Age", "retirementAge", 30, 80, 1, a.retirementAge, "", "text-blue-400")}
-            <div class="space-y-1">
+            <div class="space-y-0.5">
                 <div class="flex justify-between items-center">
                     <span class="mobile-label text-white">Family Size</span>
                 </div>
                 <div class="flex items-center gap-2">
                     <input data-id="hhSize" type="range" min="1" max="10" step="1" value="${hhSize}" class="mobile-slider">
-                    <span class="text-white font-bold mono-numbers w-10 text-right text-xs">${hhSize}</span>
+                    <span class="text-white font-bold mono-numbers w-10 text-right text-[10px]">${hhSize}</span>
                 </div>
             </div>
         </div>
 
-        <div class="mobile-card space-y-3">
+        <div class="mobile-card space-y-2">
              <div class="flex items-center justify-between gap-4">
                 <span class="mobile-label">State</span>
-                <select data-id="state" class="bg-slate-900 border border-slate-700 rounded-lg py-1 px-2 font-bold text-[10px] text-white outline-none w-32">
+                <select data-id="state" class="bg-slate-900 border border-slate-700 rounded py-0.5 px-2 font-bold text-[10px] text-white outline-none w-32">
                     ${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
                 </select>
             </div>
             <div class="flex items-center justify-between gap-4">
                 <span class="mobile-label">Filing Status</span>
-                <select data-id="filingStatus" class="bg-slate-900 border border-slate-700 rounded-lg py-1 px-2 font-bold text-[10px] text-white outline-none w-32">
+                <select data-id="filingStatus" class="bg-slate-900 border border-slate-700 rounded py-0.5 px-2 font-bold text-[10px] text-white outline-none w-32">
                     <option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
                     <option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
                     <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
@@ -1093,26 +1091,26 @@ function renderMobileAssumptions() {
             </div>
         </div>
 
-        <div class="mobile-card space-y-3">
-            <h3 class="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Market Assumptions</h3>
+        <div class="mobile-card space-y-2">
+            <h3 class="text-[8px] font-black uppercase text-slate-500 tracking-widest mb-1">Market Assumptions</h3>
             ${slider("Stock Growth", "stockGrowth", 0, 15, 0.5, a.stockGrowth, "%")}
             ${slider("Crypto Growth", "cryptoGrowth", 0, 15, 0.5, a.cryptoGrowth, "%")}
             ${slider("Metals Growth", "metalsGrowth", 0, 15, 0.5, a.metalsGrowth, "%")}
             ${slider("Real Estate Growth", "realEstateGrowth", 0, 15, 0.5, a.realEstateGrowth, "%")}
-            <div class="pt-2 border-t border-slate-700">
+            <div class="pt-1 border-t border-slate-700">
              ${slider("Inflation", "inflation", 0, 10, 0.1, a.inflation, "%", "text-red-400")}
             </div>
         </div>
 
-        <div class="mobile-card space-y-3">
+        <div class="mobile-card space-y-2">
             <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-1">
+                <div class="space-y-0.5">
                     <span class="mobile-label">SS Start Age</span>
-                    <input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-2 font-black text-white outline-none text-center">
+                    <input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded p-1.5 font-black text-white outline-none text-center text-sm">
                 </div>
-                <div class="space-y-1">
+                <div class="space-y-0.5">
                     <span class="mobile-label">SS Monthly</span>
-                    <input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded-lg p-2 font-black text-teal-400 outline-none text-center">
+                    <input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded p-1.5 font-black text-teal-400 outline-none text-center text-sm">
                 </div>
             </div>
         </div>

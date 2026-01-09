@@ -2,15 +2,18 @@
 /* Mobile Specific Overrides */
 :root {
     --safe-bottom: env(safe-area-inset-bottom);
+    --app-bg: #0B0F19;
+    --card-bg: rgba(30, 41, 59, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.05);
 }
 
 html, body {
     height: 100%;
     width: 100%;
-    overflow: hidden; /* Prevent body scroll */
-    overscroll-behavior: none; /* Prevent browser bounce */
-    position: fixed; /* Lock content in place */
-    background-color: #0B0F19 !important; /* Match Desktop Deep Dark */
+    overflow: hidden;
+    overscroll-behavior: none;
+    position: fixed;
+    background-color: var(--app-bg) !important;
 }
 
 body.safe-bottom {
@@ -46,7 +49,7 @@ input, select, textarea {
     height: 100%;
     color: #64748b; 
     transition: all 0.2s;
-    border-radius: 12px; /* Smoother Pill */
+    border-radius: 12px;
     margin: 4px 1px;
     display: flex;
     flex-direction: column;
@@ -55,7 +58,7 @@ input, select, textarea {
 }
 
 .mobile-nav-btn.active {
-    background-color: rgba(255, 255, 255, 0.05); /* Subtle Highlight */
+    background-color: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(4px);
 }
 
@@ -69,12 +72,12 @@ input, select, textarea {
 .mobile-nav-btn.active[data-tab="benefits"] { color: #f59e0b; } 
 
 .mobile-card {
-    background: rgba(30, 41, 59, 0.4); /* Glassy matching desktop */
+    background: var(--card-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 20px; /* Consistent with Desktop */
-    padding: 16px;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 12px; /* Reduced from 16px */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     position: relative;
     z-index: 10;
@@ -92,8 +95,8 @@ input, select, textarea {
     position: relative;
     width: 100%;
     overflow: hidden;
-    border-radius: 20px;
-    margin-bottom: 0.75rem; 
+    border-radius: 16px;
+    margin-bottom: 0.5rem; /* Reduced from 0.75rem */
 }
 
 .swipe-bg {
@@ -103,26 +106,26 @@ input, select, textarea {
     right: 0;
     width: 100%;
     background-color: #dc2626; 
-    border-radius: 20px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    padding-right: 24px;
+    padding-right: 20px;
     z-index: 1;
 }
 
 .swipe-bg i {
     color: white;
-    font-size: 1.25rem;
+    font-size: 1rem;
 }
 
 .swipe-front {
     position: relative;
     z-index: 10;
-    background: rgba(30, 41, 59, 0.6); /* Slightly more opaque for swipe cards */
+    background: rgba(30, 41, 59, 0.6);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
     transition: transform 0.1s linear; 
     touch-action: pan-y; 
 }
@@ -163,29 +166,25 @@ input, select, textarea {
     padding-bottom: var(--safe-bottom);
 }
 
-.burndown-desktop-controls {
-    display: none !important;
-}
-
 /* Mobile Range Slider */
 .mobile-slider {
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    height: 6px;
-    background: #334155; 
+    height: 4px; /* Reduced height */
+    background: #1e293b; /* Visible track */
     border-radius: 99px;
     outline: none;
-    margin: 10px 0;
+    margin: 8px 0;
 }
 
 .mobile-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px;
-    height: 24px;
+    width: 18px; /* Reduced thumb size */
+    height: 18px;
     background: #fff; 
     border-radius: 50%;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
