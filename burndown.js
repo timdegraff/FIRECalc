@@ -444,6 +444,12 @@ export const burndown = {
             const trace = [];
             trace.push(`<span class="text-blue-400 font-bold">--- STARTING AGE ${age} ---</span>`);
 
+            // Apply Growth (Moved to top of loop for valuation)
+            const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
+            const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
+            const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
+            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, assumptions.currentAge, assumptions);
+
             // Apply Payments to Debts
             const totalMort = simRE.reduce((s, r) => s + (r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12)), 0);
             const totalOL = simOA.reduce((s, o) => s + (o.loan = Math.max(0, o.loan - (o.principalPayment || 0) * 12)), 0);
@@ -678,6 +684,11 @@ export const burndown = {
             // Allow for a small margin of error ($100) due to step-wise filling
             const isActuallyInsolvent = (targetBudget - finalNetCash) > 100 && liquidAssets < 1000;
 
+            const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
+            const currentOAVal = otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0);
+            const totalLiabilities = totalMort + totalOL + totalDebt + bal['heloc'];
+            const currentNW = (liquidAssets + currentREVal + currentOAVal) - totalLiabilities;
+
             const yearRes = { 
                 age, year, budget: targetBudget, magi, netWorth: currentNW, 
                 isInsolvent: isActuallyInsolvent, 
@@ -696,12 +707,7 @@ export const burndown = {
             simulationTrace[age] = trace;
             results.push(yearRes);
 
-            // Growth Loop
-            const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
-            const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
-            const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
-            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, assumptions.currentAge, assumptions);
-
+            // Apply Growth to balances for next year
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
             bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
             if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); 
