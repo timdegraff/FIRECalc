@@ -1,4 +1,3 @@
-
 import { math, engine, stateTaxRates } from './utils.js';
 
 export const benefits = {
@@ -92,7 +91,7 @@ export const benefits = {
                     <p class="text-[10px] text-slate-500 leading-relaxed max-w-2xl mx-auto italic">
                         Disclaimer: The data on this page is for reference and sandbox simulation only. 
                         Adjusting the <strong>MAGI Sandbox</strong> slider above does not modify your actual investment data or 
-                        influence calculations in the Projection or Burndown modules.
+                        influence calculations in other modules of this application.
                     </p>
                 </div>
             </div>
@@ -183,12 +182,12 @@ export const benefits = {
 
         if (ratio <= medRatio) {
             if (isExpanded) setHealth("Platinum", "100% Full Coverage", "$0", "$0", "text-emerald-400", "rgba(52, 211, 153, 0.4)");
-            else setHealth("Private (No Gov Coverage)", "Non-Expansion State", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
+            else setHealth("PRIVATE (No Gov Coverage)", "Non-Expansion State", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
         }
         else if (ratio <= hmpRatio) setHealth("HMP+", "Small Copay", "$20", "Low", "text-emerald-300", "rgba(110, 231, 183, 0.3)");
         else if (ratio <= silverRatio) setHealth("Silver CSR", "Subsidized", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.3)");
         else if (ratio <= goldRatio) setHealth("Gold Plan", "Subsidy Cap", math.toCurrency(dynamicPremium), "$1500", "text-amber-400", "rgba(251, 191, 36, 0.3)");
-        else setHealth("Private (No Gov Coverage)", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
+        else setHealth("PRIVATE (No Gov Coverage)", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
 
         const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled, window.currentData?.assumptions?.state || 'Michigan');
         const snapRes = document.getElementById('snap-result-value');

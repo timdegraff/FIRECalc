@@ -1,4 +1,3 @@
-
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { math, engine, assumptions } from './utils.js';
 import { benefits } from './benefits.js';
@@ -223,6 +222,7 @@ function scrapeRow(el, forcedType = null) {
     el.querySelectorAll('[data-id]').forEach(i => {
         const id = i.dataset.id;
         if (i.type === 'checkbox') obj[id] = i.checked;
+        else if (i.type === 'hidden') obj[id] = i.value === 'true';
         else if (i.dataset.type === 'currency') obj[id] = math.fromCurrency(i.value);
         else if (i.type === 'number' || i.step) obj[id] = parseFloat(i.value) || 0;
         else obj[id] = i.value;
@@ -290,8 +290,8 @@ export function getInitialData() {
             { name: 'Personal Property', value: 25000, loan: 0, principalPayment: 0 }
         ],
         income: [
-            { name: 'Lead Income', amount: 175000, increase: 3, contribution: 13, match: 4, bonusPct: 15, remainsInRetirement: false, contribOnBonus: true },
-            { name: 'Support Income', amount: 100000, increase: 3, contribution: 23, match: 3, bonusPct: 5, remainsInRetirement: false, contribOnBonus: true }
+            { name: 'Lead Income', amount: 175000, increase: 3, contribution: 13, match: 4, bonusPct: 15, remainsInRetirement: false, contribOnBonus: true, isMonthly: false, incomeExpensesMonthly: false },
+            { name: 'Support Income', amount: 100000, increase: 3, contribution: 23, match: 3, bonusPct: 5, remainsInRetirement: false, contribOnBonus: true, isMonthly: false, incomeExpensesMonthly: false }
         ],
         budget: {
             expenses: [

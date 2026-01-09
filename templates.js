@@ -1,4 +1,3 @@
-
 import { math, stateTaxRates } from './utils.js';
 
 export const templates = {
@@ -135,7 +134,8 @@ export const templates = {
                     <div class="space-y-1">
                         <div class="flex justify-between items-center h-4">
                             <label class="label-std">Gross Amount</label>
-                            <button data-action="toggle-freq" data-id="isMonthly" class="text-blue-500 hover:text-blue-400 label-std text-[9px]">Annual</button>
+                            <input type="hidden" data-id="isMonthly" value="${data.isMonthly ? 'true' : 'false'}">
+                            <button data-action="toggle-freq" data-target="isMonthly" class="text-blue-500 hover:text-blue-400 label-std text-[9px]">Annual</button>
                         </div>
                         <input data-id="amount" data-type="currency" type="text" placeholder="$0" class="input-base text-teal-400 font-bold mono-numbers text-lg">
                     </div>
@@ -181,7 +181,8 @@ export const templates = {
                 <div class="space-y-1">
                     <div class="flex justify-between items-center h-4">
                         <label class="label-std text-slate-500">Deductions</label>
-                        <button data-action="toggle-freq" data-id="incomeExpensesMonthly" class="text-blue-500 hover:text-blue-400 label-std text-[9px]">Annual</button>
+                        <input type="hidden" data-id="incomeExpensesMonthly" value="${data.incomeExpensesMonthly ? 'true' : 'false'}">
+                        <button data-action="toggle-freq" data-target="incomeExpensesMonthly" class="text-blue-500 hover:text-blue-400 label-std text-[9px]">Annual</button>
                     </div>
                     <input data-id="incomeExpenses" data-type="currency" type="text" placeholder="$0" class="input-base text-pink-400 font-bold mono-numbers">
                 </div>

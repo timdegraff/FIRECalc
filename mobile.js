@@ -1,4 +1,3 @@
-
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
 import { initializeData, autoSave } from './data.js';
@@ -246,19 +245,34 @@ const MOBILE_TEMPLATES = {
     `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
-             <div class="flex items-center gap-2 mb-3">
-                <h2 class="text-xs font-black text-white uppercase tracking-tighter"><i class="fas fa-stairs text-purple-400 mr-2" style="transform: scaleX(-1);"></i>Burndown</h2>
-            </div>
-            <div class="mobile-card mb-2 space-y-2">
-                <div class="space-y-0.5">
-                    <div class="flex justify-between items-center"><label class="mobile-label">Strategy Dial</label><span id="mobile-strategy-status" class="text-emerald-400 font-black mono-numbers text-[8px] uppercase tracking-widest">Platinum Max</span></div>
-                    <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="mobile-slider">
+            <!-- MAGI Strategy Target Slider (Sandbox Style) -->
+            <div class="card-container bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg p-3 mb-2">
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-end">
+                         <div class="flex flex-col">
+                            <label class="label-std text-emerald-400">MAGI Strategy Target</label>
+                            <p class="text-[7px] text-slate-500 font-medium italic">Platinum → Silver → Private</p>
+                         </div>
+                         <div id="mobile-strategy-status" class="text-sm font-black text-white uppercase tracking-widest leading-none">Platinum Max</div>
+                    </div>
+                    <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                 </div>
-                <div class="space-y-0.5">
-                    <div class="flex justify-between items-center"><label class="mobile-label">Retirement Age</label><span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-xs">65</span></div>
-                    <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" value="65" class="mobile-slider">
+            </div>
+
+            <!-- Retirement Age Slider (Sandbox Style) -->
+            <div class="card-container bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg p-3 mb-4">
+                <div class="flex flex-col gap-1.5">
+                    <div class="flex justify-between items-end">
+                         <div class="flex flex-col">
+                            <label class="label-std text-blue-400">Retirement Age</label>
+                            <p class="text-[7px] text-slate-500 font-medium italic">Simulate earlier exit</p>
+                         </div>
+                         <div id="label-top-retire-age" class="text-xl font-black text-white mono-numbers leading-none">65</div>
+                    </div>
+                    <input type="range" id="input-top-retire-age" min="30" max="80" step="1" value="65" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
                 </div>
             </div>
+
             <div id="burndown-view-container" class="space-y-2"></div>
             <div id="burndown-table-container" class="mt-2 overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50"></div>
         </div>

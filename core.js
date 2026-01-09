@@ -1,4 +1,3 @@
-
 import { signInWithGoogle, logoutUser } from './auth.js';
 import { templates } from './templates.js';
 import { autoSave, updateSummaries } from './data.js';
@@ -200,7 +199,8 @@ function attachPasteListeners() {
 function checkIrsLimits(row) {
     const amountEl = row.querySelector('[data-id="amount"]');
     if (!amountEl) return;
-    const isMon = row.querySelector('[data-id="isMonthly"]')?.textContent.trim().toLowerCase() === 'monthly';
+    const isMonHid = row.querySelector('input[data-id="isMonthly"]');
+    const isMon = isMonHid ? isMonHid.value === 'true' : false;
     const baseAnn = math.fromCurrency(amountEl.value) * (isMon ? 12 : 1);
     const bPct = parseFloat(row.querySelector('[data-id="bonusPct"]')?.value) || 0;
     const bonus = baseAnn * (bPct / 100);
@@ -238,19 +238,32 @@ function attachDynamicRowListeners() {
             if (window.debouncedAutoSave) window.debouncedAutoSave(); 
         }
         else if (btn.dataset.action === 'toggle-freq') {
-            const isMon = btn.textContent.trim().toLowerCase() === 'monthly';
-            btn.textContent = isMon ? 'Annual' : 'Monthly';
+            const targetId = btn.dataset.target;
+            const rowOrCard = btn.closest('.bg-slate-800') || btn.closest('.removable-item') || btn.closest('tr');
+            if (!rowOrCard) return;
+
+            const hiddenInput = rowOrCard.querySelector(`input[type="hidden"][data-id="${targetId}"]`);
+            if (!hiddenInput) return;
+
+            const wasMonthly = hiddenInput.value === 'true';
+            const isNowMonthly = !wasMonthly;
             
-            // Fixed selector logic for both desktop card and row layouts
-            const parentContainer = btn.closest('.space-y-1') || btn.closest('.space-y-1.5') || btn.closest('td');
-            const input = parentContainer ? parentContainer.querySelector('input') : null;
+            // Update UI
+            hiddenInput.value = isNowMonthly ? 'true' : 'false';
+            btn.textContent = isNowMonthly ? 'Monthly' : 'Annual';
             
-            if (input) { 
-                const cur = math.fromCurrency(input.value); 
-                input.value = math.toCurrency(isMon ? cur * 12 : cur / 12);
-                input.dispatchEvent(new Event('input', { bubbles: true }));
+            // Update Value
+            const inputId = targetId === 'incomeExpensesMonthly' ? 'incomeExpenses' : 'amount';
+            const valInput = rowOrCard.querySelector(`[data-id="${inputId}"]`);
+            
+            if (valInput) { 
+                const cur = math.fromCurrency(valInput.value); 
+                // If it was monthly and is now annual -> multiply by 12
+                // If it was annual and is now monthly -> divide by 12
+                valInput.value = math.toCurrency(isNowMonthly ? cur / 12 : cur * 12);
+                valInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
-            const parent = btn.closest('.bg-slate-800') || btn.closest('tr'); if (parent) checkIrsLimits(parent);
+            if (rowOrCard) checkIrsLimits(rowOrCard);
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
@@ -307,10 +320,12 @@ window.addRow = (containerId, type, data = {}) => {
     let element = type === 'income' ? document.createElement('div') : document.createElement('tr');
     if (type !== 'income') element.className = 'border-b border-slate-700/50 hover:bg-slate-800/20 transition-colors';
     element.innerHTML = templates[type](data); container.appendChild(element);
+    
     element.querySelectorAll('[data-id]').forEach(input => {
         const key = input.dataset.id, val = data[key];
         if (val !== undefined) {
             if (input.type === 'checkbox') input.checked = !!val;
+            else if (input.type === 'hidden') input.value = val ? 'true' : 'false';
             else if (input.tagName === 'SELECT') { 
                 input.value = val; 
                 const typeClass = templates.helpers.getTypeClass(val);
@@ -335,8 +350,15 @@ window.addRow = (containerId, type, data = {}) => {
     }
 
     if (type === 'income') {
-        const amtBtn = element.querySelector('[data-id="isMonthly"]'); if (amtBtn) amtBtn.textContent = data.isMonthly ? 'Monthly' : 'Annual';
-        const expBtn = element.querySelector('[data-id="incomeExpensesMonthly"]'); if (expBtn) expBtn.textContent = data.incomeExpensesMonthly ? 'Monthly' : 'Annual';
+        // Correctly set toggle button labels based on loaded state
+        const isMon = !!data.isMonthly;
+        const monBtn = element.querySelector('button[data-target="isMonthly"]');
+        if (monBtn) monBtn.textContent = isMon ? 'Monthly' : 'Annual';
+
+        const isExpMon = !!data.incomeExpensesMonthly;
+        const expBtn = element.querySelector('button[data-target="incomeExpensesMonthly"]');
+        if (expBtn) expBtn.textContent = isExpMon ? 'Monthly' : 'Annual';
+        
         checkIrsLimits(element);
     }
     if (type === 'investment') updateCostBasisVisibility(element);

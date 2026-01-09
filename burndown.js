@@ -22,9 +22,17 @@ export const burndown = {
 
         viewContainer.innerHTML = `
             <div class="flex flex-col gap-4">
-                <!-- Top Bar: Controls Only (Title Removed) -->
-                <div class="flex flex-col md:flex-row justify-end items-end md:items-center gap-4 mb-4 border-b border-white/5 pb-4">
+                <!-- Integrated Header & Controls -->
+                <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4 border-b border-white/5 pb-4">
                     
+                    <!-- Title & Icon -->
+                    <div class="flex items-center gap-4 px-1">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                            <i class="fas fa-microchip text-sm"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-white tracking-tight">Burndown Engine</h2>
+                    </div>
+
                     <!-- Primary Controls -->
                     <div class="flex items-center gap-6">
                          <!-- Retirement Age -->
