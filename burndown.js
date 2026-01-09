@@ -371,7 +371,8 @@ export const burndown = {
             for (let i = 0; i < 20; i++) {
                 let mid = (low + high) / 2;
                 const sim = burndown.simulateProjection(data, mid);
-                if (sim[sim.length - 1].liquid < 0) high = mid;
+                // Simple insolvency check for binary search
+                if (sim.some(y => y.isInsolvent)) high = mid;
                 else { bestBudget = mid; low = mid; }
             }
             results = burndown.simulateProjection(data, bestBudget);
@@ -415,6 +416,8 @@ export const burndown = {
 
         simulationTrace = {};
         firstInsolvencyAge = null;
+        
+        // Initialize Balances
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -441,15 +444,12 @@ export const burndown = {
             const trace = [];
             trace.push(`<span class="text-blue-400 font-bold">--- STARTING AGE ${age} ---</span>`);
 
-            const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
-            const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
-            const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
-            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, assumptions.currentAge, assumptions);
-
+            // Apply Payments to Debts
             const totalMort = simRE.reduce((s, r) => s + (r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12)), 0);
             const totalOL = simOA.reduce((s, o) => s + (o.loan = Math.max(0, o.loan - (o.principalPayment || 0) * 12)), 0);
             const totalDebt = simDebts.reduce((s, d) => s + (d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12)), 0);
 
+            // Determine Target Spend
             let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
             
             let factor = 1.0;
@@ -461,16 +461,52 @@ export const burndown = {
             let targetBudget = isRet ? baseBudget * factor : baseBudget;
             trace.push(`Target Spending: ${math.toCurrency(targetBudget)} (Factor: ${Math.round(factor * 100)}%)`);
 
-            const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
-            const currentNW = (bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0) + (currentREVal - totalMort)) - bal['heloc'] - totalOL - totalDebt;
+            // ----- INCOME FLOOR CALCULATION -----
+            // This is "passive" income that comes in regardless of withdrawals.
+            let floorOrdIncome = 0;
+            let floorTotalIncome = 0;
+            let floorNetCash = 0;
+            let pretaxDed = 0; // For active years
 
-            let ordInc = 0, netAvail = 0, pretaxDed = 0;
+            // Active Income & Passive Retirement Income
             (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i);
-                const netSrc = (gross + gross * (parseFloat(inc.bonusPct) / 100 || 0)) - math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1);
-                if (inc.nonTaxableUntil && parseInt(inc.nonTaxableUntil) >= year) netAvail += netSrc;
-                else { ordInc += netSrc; netAvail += netSrc; pretaxDed += Math.min(gross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
+                const grossWithBonus = gross + gross * (parseFloat(inc.bonusPct) / 100 || 0);
+                const expenses = math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1);
+                const netSrc = grossWithBonus - expenses;
+
+                // Check "No Tax Until"
+                const isTaxable = !inc.nonTaxableUntil || parseInt(inc.nonTaxableUntil) < year;
+                
+                if (isTaxable) {
+                    floorOrdIncome += netSrc;
+                    // For active years, calculate 401k deductions to remove from taxable flow
+                    if (!isRet) {
+                        const contribution = Math.min(gross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac);
+                        pretaxDed += contribution;
+                    }
+                }
+                floorTotalIncome += netSrc;
             });
+
+            // Social Security
+            if (age >= assumptions.ssStartAge) {
+                const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac);
+                const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, Math.max(0, floorOrdIncome), filingStatus);
+                floorOrdIncome += taxableSS; 
+                floorTotalIncome += ssGross;
+                trace.push(`Social Security: ${math.toCurrency(ssGross)} (${math.toCurrency(taxableSS)} taxable)`);
+            }
+
+            // RMDs (Forced Withdrawal) - Treated as mandatory income
+            let rmd = 0;
+            if (age >= 75) { 
+                rmd = engine.calculateRMD(bal['401k'], age); 
+                bal['401k'] -= rmd; 
+                floorOrdIncome += rmd; 
+                floorTotalIncome += rmd;
+                trace.push(`RMD Forced Draw: ${math.toCurrency(rmd)}`); 
+            }
 
             // Stage 1: Accumulation (Before Retirement)
             if (!isRet) {
@@ -486,149 +522,186 @@ export const burndown = {
                     }
                 });
                 trace.push(`Working Year: Accumulated ${math.toCurrency(pretaxDed)} to 401k.`);
-                // CRITICAL: Surplus income is explicitly NOT saved per user request to avoid ghost wealth.
             }
 
-            // MAGI Clamping (Safety)
-            ordInc = Math.max(0, ordInc);
-
-            if (age >= assumptions.ssStartAge) {
-                const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac);
-                const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, Math.max(0, ordInc - pretaxDed), filingStatus);
-                ordInc += taxableSS; netAvail += ssGross;
-                trace.push(`Social Security: ${math.toCurrency(ssGross)} (${math.toCurrency(taxableSS)} taxable)`);
-            }
-            if (age >= 75) { const rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; ordInc += rmd; netAvail += rmd; trace.push(`RMD Forced Draw: ${math.toCurrency(rmd)}`); }
+            // ----- BASELINE DEFICIT CALCULATION -----
+            // Calculate taxes and SNAP based on the "Floor" income.
+            const baseTax = engine.calculateTax(Math.max(0, floorOrdIncome - pretaxDed), 0, filingStatus, assumptions.state, infFac);
+            const baseSnap = engine.calculateSnapBenefit(floorOrdIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
             
-            const hsaCont = budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
-            ordInc = Math.max(0, ordInc - (pretaxDed + hsaCont));
+            // Available Cash from Income = Gross Income - Taxes + SNAP
+            // Note: For active years, we already subtracted pretaxDed from balances, so we don't subtract it from "Cash" flow here unless it wasn't added to balance.
+            // Simplified: Net Cash = (TotalIncome - PreTaxSavings) - Tax + Snap
+            floorNetCash = (floorTotalIncome - pretaxDed) - baseTax + baseSnap;
             
-            // Core Iterators: track separate tax types
-            let drawn = 0, ordIter = ordInc, ltcgIter = 0, colIter = 0, yrDraws = {};
-            const seppLimit = age < 59.5 ? engine.calculateMaxSepp(bal['401k'], age) : Infinity;
+            let deficit = targetBudget - floorNetCash;
+            let currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed);
+            let currentLtcgIncome = 0;
+            let currentDraws = {};
+            let totalWithdrawn = 0;
 
-            trace.push(`Base Ordinary Income: ${math.toCurrency(ordIter)}`);
-            if (age < 59.5 && isRet) trace.push(`72(t)/SEPP Max Limit: ${math.toCurrency(seppLimit)}`);
+            trace.push(`Base Net Income: ${math.toCurrency(floorNetCash)} (Tax: ${math.toCurrency(baseTax)}, SNAP: ${math.toCurrency(baseSnap)})`);
             
-            const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
-            let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget));
-            trace.push(`MAGI Strategy Target: ${math.toCurrency(magiTarget)} (FPL @ 100%: ${math.toCurrency(fpl)})`);
-
-            // --- Pass 1: MAGI Harvesting ---
-            burndown.priorityOrder.forEach(pk => {
-                const meta = burndown.assetMeta[pk];
-                // ONLY harvest if we have MAGI room AND we still need cash
-                if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - (ordIter + ltcgIter + colIter)) <= 0.01 || (bal[pk] || 0) <= 0) return;
+            if (deficit > 0) {
+                trace.push(`<strong>Initial Shortfall: ${math.toCurrency(deficit)}</strong>`);
                 
-                let availableInBucket = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : bal[pk];
-                if (availableInBucket <= 0) return;
-
-                // PRECISE CASH CEILING: Don't harvest MAGI if budget + estimated taxes are already covered by current draws
-                const estimatedCashNeed = (targetBudget * 1.1) - (netAvail + drawn);
-                if (estimatedCashNeed <= 0.01) return;
-
-                const gr = (pk === 'taxable' || pk === 'crypto' || pk === 'metals') 
-                    ? Math.max(0.01, (bal[pk] - bal[pk + 'Basis']) / (bal[pk] || 1)) 
-                    : 1;
-
-                let take = Math.min(availableInBucket, (magiTarget - (ordIter + ltcgIter + colIter)) / gr);
-                take = Math.min(take, estimatedCashNeed);
+                // Strategy Targets
+                const fpl = (16060 + (hhSize - 1) * 5650) * infFac;
+                const medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
+                const silverLim = fpl * 2.5;
+                let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget * 1.5));
                 
-                // Respect SEPP limit during harvest
-                if (pk === '401k' && age < 59.5) {
-                    const currentDrawnFrom401k = yrDraws['401k'] || 0;
-                    take = Math.min(take, seppLimit - currentDrawnFrom401k);
-                }
-
-                if (take <= 0.01) return;
-
-                bal[pk] -= take; 
-                if (pk === 'taxable' || pk === 'crypto' || pk === 'metals') bal[pk + 'Basis'] -= (take * (1 - gr)); 
+                // Allow "survival mode" to exceed strategy
+                // If the floor income is already above target, the target is irrelevant for limitation, only for tax bracket calc.
                 
-                drawn += take; 
-                if (pk === '401k') ordIter += take;
-                else if (pk === 'metals') colIter += (take * gr);
-                else ltcgIter += (take * gr);
-
-                yrDraws[pk] = (yrDraws[pk] || 0) + take;
-                trace.push(`Pass 1: Harvesting ${pk} (${math.toCurrency(take)}) for MAGI.`);
-            });
-
-            // --- Pass 2 & 3: Shortfall Spiral ---
-            let finalShortfall = 0;
-            for (let pass = 2; pass <= 4; pass++) {
-                let totalTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
-                totalTax += colIter * (colRate + (stateTaxRates[assumptions.state]?.rate || 0));
-                if (ordIter + ltcgIter + colIter > medLim && age < 65 && dial <= 66) totalTax += (ordIter + ltcgIter + colIter) * 0.085;
-
-                const snapBen = engine.calculateSnapBenefit(ordIter + ltcgIter + colIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
-                let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
-                
-                finalShortfall = shortfall;
-                if (shortfall <= 1.0) break;
-                
-                trace.push(`Shortfall Spiral (Pass ${pass}): ${math.toCurrency(shortfall)}`);
-                
-                // Prioritized Drain
+                // ----- SMART FILL LOOP -----
                 for (const pk of burndown.priorityOrder) {
-                    if (shortfall <= 0.01) break;
+                    if (deficit <= 1) break; // Buffer of $1
+
+                    let available = (pk === 'heloc') ? Math.max(0, helocLimit - bal['heloc']) : ((pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0));
+                    if (available <= 0) continue;
+
+                    // 1. Determine Marginal Tax Rate for this bucket
+                    // This is a heuristic to guess how much we need to pull to cover the deficit + new taxes.
+                    let marginalRate = 0;
+                    const meta = burndown.assetMeta[pk];
                     
-                    let availableLiquidity = 0;
-                    if (pk === 'heloc') availableLiquidity = Math.max(0, helocLimit - bal['heloc']);
-                    else if (pk === 'cash') availableLiquidity = Math.max(0, bal[pk] - cashFloor);
-                    else availableLiquidity = (bal[pk] || 0);
+                    if (meta.isTaxable) {
+                        // Rough marginal rate including SNAP phase-out (30%)
+                        // If current MAGI < SnapLimit, add 0.30.
+                        const snapLimit = (fpl * 2.0); 
+                        const effectiveSnapTax = (currentOrdIncome + currentLtcgIncome < snapLimit) ? 0.30 : 0;
+                        
+                        if (pk === '401k') {
+                            marginalRate = 0.22 + (stateTaxRates[assumptions.state]?.rate || 0.04) + effectiveSnapTax; 
+                        } else if (pk === 'taxable' || pk === 'crypto' || pk === 'metals') {
+                            const basisRatio = (bal[pk] > 0) ? (bal[pk+'Basis'] / bal[pk]) : 0;
+                            const gainRatio = 1 - basisRatio;
+                            // Tax is only on the gain portion
+                            marginalRate = gainRatio * (0.15 + (stateTaxRates[assumptions.state]?.rate || 0.04)) + effectiveSnapTax;
+                        }
+                    }
 
-                    if (availableLiquidity <= 0) continue;
+                    // 2. Gross Up
+                    // We need 'deficit' in net cash. 
+                    // GrossNeeded ~= Deficit / (1 - marginalRate)
+                    // We cap marginalRate at 0.8 to prevent divide-by-zero or absurdity.
+                    let safeRate = Math.min(0.8, marginalRate);
+                    let grossNeeded = deficit / (1 - safeRate);
 
-                    let take = Math.min(availableLiquidity, shortfall);
+                    // 3. Apply Limits
+                    let amountToTake = Math.min(grossNeeded, available);
+                    
+                    // SEPP Limit
                     if (pk === '401k' && age < 59.5) {
-                        const currentDrawnFrom401k = yrDraws['401k'] || 0;
-                        const remainingSepp = Math.max(0, seppLimit - currentDrawnFrom401k);
-                        take = Math.min(take, remainingSepp);
-                        if (take > 0) trace.push(`SEPP Cap applied: Limited draw to ${math.toCurrency(take)} of remaining ${math.toCurrency(remainingSepp)} capacity.`);
+                        const seppLimit = engine.calculateMaxSepp(bal['401k'], age); // This should technically be fixed at start of 72t but simulating annual check
+                        const remainingSepp = Math.max(0, seppLimit - (currentDraws['401k'] || 0));
+                        amountToTake = Math.min(amountToTake, remainingSepp);
                     }
 
-                    if (take <= 0.01) continue;
-
-                    if (pk === '401k') ordIter += take;
-                    else if (pk === 'taxable' || pk === 'crypto' || pk === 'metals') {
-                        const basisKey = pk + 'Basis';
-                        const gr = Math.max(0, (bal[pk] - bal[basisKey]) / (bal[pk] || 1));
-                        bal[basisKey] -= (take * (1 - gr));
-                        if (pk === 'metals') colIter += (take * gr);
-                        else ltcgIter += (take * gr);
+                    // MAGI Strategy Cap (Only if we aren't desperate)
+                    // If taking this amount pushes us over MAGI target, AND we haven't already filled the deficit...
+                    // Actually, the new logic says: priority is meeting budget. 
+                    // But we should try to switch buckets if we hit the cap.
+                    // Let's implement a soft cap: Try to limit to MAGI target first.
+                    if (meta.isMagi) {
+                        const currentMagi = currentOrdIncome + currentLtcgIncome;
+                        const room = Math.max(0, magiTarget - currentMagi);
+                        
+                        // If we have room, take it. If we run out of room, STOP taking from this bucket IF there are other buckets left.
+                        // But we don't know if other buckets have money.
+                        // Simplified approach: Just take what's needed. The Priority Order dictates the strategy.
+                        // User sets Priority. If they put 401k first, they want to use it.
                     }
 
-                    if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
-                    drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
+                    if (amountToTake <= 0) continue;
+
+                    // 4. Commit Withdrawal
+                    if (pk === 'heloc') bal['heloc'] += amountToTake; 
+                    else {
+                        bal[pk] -= amountToTake;
+                        if (bal[pk+'Basis']) {
+                            const ratio = amountToTake / (available + amountToTake); // Re-add to get start bal
+                            // Actually simplified: just reduce basis proportionally
+                            const basisRed = bal[pk+'Basis'] * (amountToTake / available); 
+                            bal[pk+'Basis'] -= basisRed;
+                        }
+                    }
+
+                    // 5. Update Income Trackers
+                    currentDraws[pk] = (currentDraws[pk] || 0) + amountToTake;
+                    totalWithdrawn += amountToTake;
+
+                    if (pk === '401k') currentOrdIncome += amountToTake;
+                    else if (['taxable', 'crypto', 'metals'].includes(pk)) {
+                        // Calculate gain
+                        // Approximation for loop speed: Assume average basis ratio of *remaining* balance
+                        // or use the specific lot logic? Let's use proportional.
+                        // We already adjusted basis above.
+                        // Gain = Amount - BasisPart
+                        // Recalculating basis ratio from the snapshot before this specific draw is hard without temp var.
+                        // Let's use the marginal rate heuristic for the income adder to be safe/fast.
+                        // Actually, let's track Basis separately carefully.
+                        // Gain = Amount * (1 - (Basis / Value))
+                        // We updated balance, so let's use the 'available' snapshot.
+                        const basisRatio = (bal[pk] + amountToTake) > 0 ? ((bal[pk+'Basis'] + (bal[pk+'Basis']*(amountToTake/available))) / (bal[pk] + amountToTake)) : 0;
+                        // Correction: just use the global tracking
+                        // Let's simplified: 
+                        const impliedGain = amountToTake * (1 - (bal[pk+'Basis'] / (bal[pk] || 1))); // rough
+                        currentLtcgIncome += Math.max(0, impliedGain); 
+                        // Note: This is getting messy inside the loop. 
+                        // Better: Just update the `currentLtcgIncome` accumulator based on a simple ratio.
+                        // For the simulation, let's assume 50% basis if data missing, or actual.
+                    }
+
+                    // 6. Recalculate Deficit
+                    const newTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
+                    const newSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+                    
+                    const newNetCash = (floorTotalIncome - pretaxDed) + totalWithdrawn - newTax + newSnap;
+                    deficit = targetBudget - newNetCash;
+                    
+                    trace.push(`Withdrew ${math.toCurrency(amountToTake)} from ${pk}. Remaining Shortfall: ${math.toCurrency(deficit)}`);
                 }
             }
-            
-            const finalTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) + colIter * (colRate + (stateTaxRates[assumptions.state]?.rate || 0)) + ((ordIter + ltcgIter + colIter > medLim && age < 65 && dial <= 66) ? (ordIter + ltcgIter + colIter) * 0.085 : 0);
-            const finalSnap = engine.calculateSnapBenefit(ordIter + ltcgIter + colIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
 
-            const magi = Math.max(0, ordIter + ltcgIter + colIter);
+            // Final Calculation for the year
+            const finalTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
+            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+            const finalNetCash = (floorTotalIncome - pretaxDed) + totalWithdrawn - finalTax + finalSnap;
+            const magi = currentOrdIncome + currentLtcgIncome;
+            
+            // Insolvency Check
+            // We check liquid assets. If we still have a deficit > $100 and no liquid assets, we are insolvent.
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             
-            const isActuallyInsolvent = finalShortfall > 10.0;
+            // Allow for a small margin of error ($100) due to step-wise filling
+            const isActuallyInsolvent = (targetBudget - finalNetCash) > 100 && liquidAssets < 1000;
 
             const yearRes = { 
                 age, year, budget: targetBudget, magi, netWorth: currentNW, 
                 isInsolvent: isActuallyInsolvent, 
-                balances: { ...bal }, draws: yrDraws, snapBenefit: finalSnap,
+                balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap,
                 taxes: finalTax,
                 liquid: liquidAssets
             };
-            if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
+            
+            // Status Logic
+            const medLim = (16060 + (hhSize - 1) * 5650) * infFac * (data.benefits?.isPregnant ? 1.95 : 1.38);
+            const silverLim = (16060 + (hhSize - 1) * 5650) * infFac * 2.5;
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Private')));
+
+            if (yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
             
-            trace.push(`<span class="text-white">Year End MAGI: ${math.toCurrency(magi)}</span>`);
-            trace.push(`<span class="text-red-400">Year End Taxes: ${math.toCurrency(finalTax)}</span>`);
             simulationTrace[age] = trace;
-            
             results.push(yearRes);
 
             // Growth Loop
+            const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
+            const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
+            const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
+            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, assumptions.currentAge, assumptions);
+
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
             bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
             if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); 
