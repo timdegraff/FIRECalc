@@ -114,14 +114,14 @@ window.addMobileItem = (type) => {
 const MOBILE_TEMPLATES = {
     'assets-debts': () => `
         <div class="space-y-6">
-            <div id="mobile-assets-summary" class="text-center py-1 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
-                <div>
+            <div id="mobile-assets-summary" class="text-center py-0 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
+                <div class="py-1">
                     <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total Assets</span>
-                    <div id="val-total-assets" class="text-lg font-black text-emerald-400 mono-numbers">$0</div>
+                    <div id="val-total-assets" class="text-base font-black text-emerald-400 mono-numbers leading-tight">$0</div>
                 </div>
-                <div>
+                <div class="py-1">
                     <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total Debts</span>
-                    <div id="val-total-debts" class="text-lg font-black text-red-400 mono-numbers">$0</div>
+                    <div id="val-total-debts" class="text-base font-black text-red-400 mono-numbers leading-tight">$0</div>
                 </div>
             </div>
 
@@ -181,9 +181,9 @@ const MOBILE_TEMPLATES = {
     `,
     'income': () => `
         <div class="space-y-6">
-            <div id="mobile-income-summary" class="text-center py-2 border-b border-slate-800 mb-2">
+            <div id="mobile-income-summary" class="text-center py-1 border-b border-slate-800 mb-2">
                 <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">2026 Gross Income</span>
-                <div id="val-income-total" class="text-2xl font-black text-teal-400 mono-numbers tracking-tighter">$0</div>
+                <div id="val-income-total" class="text-xl font-black text-teal-400 mono-numbers tracking-tighter leading-tight">$0</div>
             </div>
             <div>
                 <div class="flex justify-between items-center mb-3">
@@ -196,14 +196,14 @@ const MOBILE_TEMPLATES = {
     `,
     'budget': () => `
         <div class="space-y-6">
-            <div id="mobile-budget-summary" class="text-center py-1 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
-                <div>
+            <div id="mobile-budget-summary" class="text-center py-0 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
+                <div class="py-1">
                     <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Annual Savings</span>
-                    <div id="val-budget-savings" class="text-lg font-black text-emerald-400 mono-numbers">$0</div>
+                    <div id="val-budget-savings" class="text-base font-black text-emerald-400 mono-numbers leading-tight">$0</div>
                 </div>
-                <div>
+                <div class="py-1">
                     <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Annual Spend</span>
-                    <div id="val-budget-spend" class="text-lg font-black text-pink-500 mono-numbers">$0</div>
+                    <div id="val-budget-spend" class="text-base font-black text-pink-500 mono-numbers leading-tight">$0</div>
                 </div>
             </div>
 
@@ -226,14 +226,14 @@ const MOBILE_TEMPLATES = {
     `,
     'benefits': () => `
         <div class="space-y-6">
-            <div id="mobile-benefits-summary" class="text-center py-1 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
-                <div>
+            <div id="mobile-benefits-summary" class="text-center py-0 border-b border-slate-800 mb-1 grid grid-cols-2 gap-4">
+                <div class="py-1">
                     <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Health Plan</span>
-                    <div id="mobile-val-health-plan" class="text-lg font-black text-blue-400 uppercase tracking-tight truncate">Platinum</div>
+                    <div id="mobile-val-health-plan" class="text-base font-black text-emerald-400 uppercase tracking-tight truncate leading-tight">Platinum</div>
                 </div>
-                <div>
+                <div class="py-1">
                     <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Est. SNAP</span>
-                    <div id="mobile-val-snap-amt" class="text-lg font-black text-emerald-400 mono-numbers">$0</div>
+                    <div id="mobile-val-snap-amt" class="text-base font-black text-emerald-400 mono-numbers leading-tight">$0</div>
                 </div>
             </div>
             <div id="benefits-module" class="space-y-4"></div>
@@ -433,7 +433,7 @@ const ITEM_TEMPLATES = {
             </div>
             <div>
                 <span class="mobile-label">Balance</span>
-                <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-black text-base mono-numbers outline-none border-b border-slate-700">
+                <input data-id="balance" data-type="currency" value="${math.toCurrency(data.balance || 0)}" inputmode="decimal" class="block w-full bg-transparent text-red-400 font-bold text-base mono-numbers outline-none border-b border-slate-700">
             </div>
         </div>
     `,
@@ -484,12 +484,12 @@ const ITEM_TEMPLATES = {
     savings: (data) => {
         if (data.isLocked) {
              return `
-             <div class="mobile-card border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)] bg-slate-800/80 flex justify-between items-center py-1.5 px-3">
+             <div class="mobile-card border border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.15)] bg-slate-800/80 flex justify-between items-center py-1 px-3">
                 <div class="flex flex-col">
                     <div class="text-blue-400 font-black text-[9px] uppercase tracking-widest leading-tight">401k from Income</div>
                 </div>
                 <div class="text-right">
-                    <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block text-right bg-transparent text-blue-400 font-black text-2xl mono-numbers outline-none" readonly>
+                    <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block text-right bg-transparent text-blue-400 font-black text-xl mono-numbers outline-none" readonly>
                 </div>
             </div>`;
         }
@@ -497,7 +497,7 @@ const ITEM_TEMPLATES = {
         const ASSET_TYPE_COLORS = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400' };
         const tc = ASSET_TYPE_COLORS[data.type] || 'text-white';
         return `
-        <div class="mobile-card flex justify-between items-center py-1.5 px-3">
+        <div class="mobile-card flex justify-between items-center py-1 px-3">
             <div class="flex flex-col w-5/12">
                 <select data-id="type" class="bg-slate-900 text-[9px] font-bold rounded px-1.5 py-0.5 outline-none ${tc} w-full">
                     <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
@@ -513,18 +513,18 @@ const ITEM_TEMPLATES = {
                 </div>
             </div>
             <div class="text-right flex-grow">
-                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400 font-black text-2xl mono-numbers outline-none">
+                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400 font-black text-xl mono-numbers outline-none">
             </div>
         </div>
         `;
     },
     expense: (data) => `
-        <div class="mobile-card py-1.5 px-3 flex justify-between items-center">
+        <div class="mobile-card py-1 px-3 flex justify-between items-center">
             <div class="flex flex-col w-1/2">
                 <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-[10px] outline-none" placeholder="Item Name">
             </div>
             <div class="text-right flex-grow">
-                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-pink-400 font-black text-2xl mono-numbers outline-none">
+                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-pink-400 font-black text-xl mono-numbers outline-none">
             </div>
         </div>
     `
@@ -1003,7 +1003,7 @@ function addMobileRow(containerId, type, data = {}, index = null, arrayName = nu
 
     if (data.isLocked) {
         const simpleContainer = document.createElement('div');
-        simpleContainer.className = 'mb-2';
+        simpleContainer.className = 'mb-1';
         simpleContainer.innerHTML = ITEM_TEMPLATES[type] ? ITEM_TEMPLATES[type](data) : '';
         simpleContainer.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
         container.appendChild(simpleContainer);
