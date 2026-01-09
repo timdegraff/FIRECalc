@@ -297,7 +297,7 @@ function getInitialData() {
             { name: "Gold/Silver", type: "Metals", value: 10000, costBasis: 8000 }
         ], 
         stockOptions: [
-            { name: "Startup Grant", shares: 0, strikePrice: 0, currentPrice: 0, growth: 10, isLtcg: true }
+            { name: "Series C", shares: 0, strikePrice: 0, currentPrice: 0, growth: 10, isLtcg: true }
         ],
         realEstate: [
             { name: "Primary Home", value: 450000, mortgage: 250000, principalPayment: 900 }
