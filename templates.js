@@ -110,7 +110,7 @@ export const templates = {
                 <div class="p-3 bg-black/20 rounded-xl border border-white/5 space-y-3">
                     <div class="grid grid-cols-3 gap-3">
                         <div class="space-y-1 relative">
-                            <div class="flex items-center gap-1.5 mb-1">
+                            <div class="flex items-center gap-1.5 h-4 mb-1">
                                 <label class="label-std mb-0">401k %</label>
                                 <div data-id="capWarning" class="hidden text-yellow-500 text-[10px] cursor-help animate-pulse" title="Exceeds IRS Limit">
                                     <i class="fas fa-exclamation-triangle"></i>
@@ -119,11 +119,15 @@ export const templates = {
                             ${templates.helpers.renderStepper('contribution', data.contribution, 'text-blue-400')}
                         </div>
                         <div class="space-y-1">
-                            <label class="label-std">Match %</label>
+                            <div class="flex items-center h-4 mb-1">
+                                <label class="label-std mb-0">Match %</label>
+                            </div>
                             ${templates.helpers.renderStepper('match', data.match, 'text-white')}
                         </div>
                         <div class="space-y-1">
-                            <label class="label-std">Bonus %</label>
+                            <div class="flex items-center h-4 mb-1">
+                                <label class="label-std mb-0">Bonus %</label>
+                            </div>
                             ${templates.helpers.renderStepper('bonusPct', data.bonusPct, 'text-white')}
                         </div>
                     </div>
@@ -190,7 +194,7 @@ export const templates = {
             <td class="text-center">
                  ${data.isLocked ? '' : `
                  <label class="inline-flex items-center px-3 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Contribution stops when you retire">
-                    <span class="text-[9px] uppercase font-black text-slate-500 mr-2 group-hover:text-pink-400">Stop</span>
+                    <span class="text-[9px] uppercase font-black text-slate-500 mr-2 group-hover:text-pink-400">No</span>
                     <input type="checkbox" data-id="removedInRetirement" class="w-3 h-3 accent-pink-500 rounded bg-slate-900 border-slate-700" ${data.removedInRetirement ? 'checked' : ''}>
                 </label>
                  `}
@@ -208,7 +212,7 @@ export const templates = {
         <td class="text-center">
             <div class="flex items-center justify-center gap-2">
                 <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-pink-500/50 transition-all group" title="Stop in Retirement">
-                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-pink-400">Stop</span>
+                    <span class="text-[8px] uppercase font-black text-slate-500 mr-1.5 group-hover:text-pink-400">No</span>
                     <input type="checkbox" data-id="removedInRetirement" class="w-3 h-3 accent-pink-500" ${data.removedInRetirement ? 'checked' : ''}>
                 </label>
                 <label class="flex items-center px-2 py-1 bg-black/20 rounded-lg border border-white/5 cursor-pointer hover:border-blue-500/50 transition-all group" title="Fixed (No Inflation)">
