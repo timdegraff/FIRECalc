@@ -224,6 +224,19 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave(); 
             };
         }
+
+        // Logic Documentation Toggle
+        const docBtn = document.getElementById('btn-toggle-engine-doc');
+        const docContainer = document.getElementById('engine-logic-doc');
+        if (docBtn && docContainer) {
+            docBtn.onclick = () => {
+                const isHidden = docContainer.classList.contains('hidden');
+                docContainer.classList.toggle('hidden');
+                docBtn.innerHTML = isHidden 
+                    ? `<i class="fas fa-chevron-up mr-2"></i> Hide Calculation Stages` 
+                    : `<i class="fas fa-chevron-down mr-2"></i> Show Calculation Stages`;
+            };
+        }
     },
 
     updateTraceLog: () => {

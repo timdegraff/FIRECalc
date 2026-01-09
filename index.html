@@ -446,14 +446,14 @@
                         <p id="sum-solvency-age" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">Age 100+</p>
                     </div>
                     <div class="card-container p-6 flex flex-col items-center justify-center h-28">
-                        <p class="label-std mb-2 text-slate-500">Current Health Forecast</p>
+                        <p id="sum-draw-strategy-label" class="label-std mb-2 text-slate-500">Current Health Forecast</p>
                         <p id="sum-draw-strategy" class="text-4xl font-black text-slate-400 uppercase tracking-tight transition-colors">Private</p>
                     </div>
                 </div>
 
                 <div id="burndown-view-container" class="mb-12"></div>
                 
-                <div id="burndown-debug-container" class="p-8 bg-black/20 border border-white/5 rounded-[24px] shadow-inner">
+                <div id="burndown-debug-container" class="p-8 bg-black/20 border border-white/5 rounded-[24px] shadow-inner mb-6">
                     <div class="flex items-center justify-between mb-4">
                          <div class="flex items-center gap-3">
                             <i class="fas fa-terminal text-blue-400"></i>
@@ -470,6 +470,116 @@
                     </div>
                     <div id="burndown-trace-log" class="text-[11px] font-mono leading-relaxed text-slate-400 bg-black/40 p-6 rounded-xl border border-white/5 max-h-[400px] overflow-y-auto whitespace-pre-wrap">
                         Select an age or run simulation to see logic trace...
+                    </div>
+                </div>
+
+                <!-- Engine Documentation -->
+                <div class="flex flex-col items-center">
+                    <button id="btn-toggle-engine-doc" class="px-6 py-3 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all mb-4">
+                        <i class="fas fa-chevron-down mr-2"></i> Show Calculation Stages
+                    </button>
+                    
+                    <div id="engine-logic-doc" class="hidden w-full max-w-4xl bg-slate-900/40 border border-white/5 rounded-[32px] p-8 md:p-12 space-y-12">
+                        <!-- Stage 1 -->
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-black text-sm">1</div>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 1: Prior to Retirement (Accumulation Build)</h4>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gross Inflow</p>
+                                        <p class="text-sm text-slate-300">The engine sums all W2 and 1099 income streams based on your current age and projected growth percentages.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Siphon Effect</p>
+                                        <p class="text-sm text-slate-300">Pre-tax contributions (401k/HSA) are subtracted from gross income to calculate the <strong>MAGI Base</strong>. These funds are added directly to your account balances.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tax Leakage</p>
+                                        <p class="text-sm text-slate-300">Federal, State, and FICA taxes are calculated on the remaining taxable portion of your income.</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Excess Cash Disposal</p>
+                                        <p class="text-sm text-slate-300">The engine solves for surplus: <code class="text-teal-400">Income - Taxes - Budget - Savings = Excess Cash</code>. This surplus is automatically routed to your <strong>Taxable Brokerage</strong> bucket.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Compounding Loop</p>
+                                        <p class="text-sm text-slate-300">Each year, the engine applies your specific APY settings (Stock, Crypto, RE) to existing balances <em>before</em> adding the current year's contributions.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Inflation Scaling</p>
+                                        <p class="text-sm text-slate-300">Your budget, IRS contribution limits, and FPL benefit thresholds are increased annually according to your inflation setting.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stage 2 -->
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-black text-sm">2</div>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 2: Starting Retirement (The Bridge Phase)</h4>
+                            </div>
+                            <div class="pl-14 space-y-6">
+                                <p class="text-sm text-blue-300 font-bold italic leading-relaxed">This phase is critical for FIRE planning. Since users are typically under age 59.5, the engine must solve for the cash shortfall without triggering early withdrawal penalties.</p>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div class="space-y-4">
+                                        <div class="space-y-1">
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Solving for Shortfall</p>
+                                            <p class="text-sm text-slate-300">The engine defines the need: <code class="text-pink-400">Target Budget - Passive Income - SNAP Benefits = Shortfall</code>.</p>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">MAGI Strategy Target</p>
+                                            <p class="text-sm text-slate-300">Instead of just withdrawing money, the tool targets the specific "Sweet Spot" (Platinum or Silver zones) using your Strategy Dial to maximize ACA subsidies.</p>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-4">
+                                        <div class="space-y-1">
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Withdrawal Waterfall</p>
+                                            <p class="text-sm text-slate-300">To maintain the MAGI target, the engine drains buckets in sequence: <code class="text-white">Cash → Brokerage Basis → Brokerage Gains → 72(t) / SEPP</code>.</p>
+                                        </div>
+                                        <div class="space-y-1">
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">The Tax Spiral Loop</p>
+                                            <p class="text-sm text-slate-300">Drawing money creates a tax bill, which creates more shortfall. The engine runs 3 iterative passes to "gross up" the final withdrawal and cover the resulting taxes.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stage 3 -->
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-black text-sm">3</div>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 3: Social Security & Beyond (The Legacy Phase)</h4>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Social Security Floor</p>
+                                        <p class="text-sm text-slate-300">The engine calculates your provisional income to determine how much of your Social Security benefit is taxable ordinary income.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">RMD Triggering</p>
+                                        <p class="text-sm text-slate-300">At age 73/75, the engine triggers Required Minimum Distributions, forcing taxable withdrawals from Pre-Tax buckets regardless of cash need.</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Medicare Transition</p>
+                                        <p class="text-sm text-slate-300">Healthcare logic automatically switches from MAGI-based ACA subsidies to standard Medicare logic at age 65.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Final Solvency Check</p>
+                                        <p class="text-sm text-slate-300">If total liquid assets drop below $0 at any point, the engine marks the year as <strong>INSOLVENT</strong> and flags the "Solvency Cliff" in the projection chart.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
