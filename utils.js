@@ -177,22 +177,34 @@ export const engine = {
         let taxableOrdinary = Math.max(0, ordinaryIncome - stdDed);
         let taxableLtcg = Math.max(0, ltcgIncome - Math.max(0, stdDed - ordinaryIncome));
         let tax = 0;
+        
+        // Projected 2026 Federal Brackets (Full Tier Support)
         const brackets = {
-            'Single': [[11600, 0.10], [47150, 0.12], [100525, 0.22], [191950, 0.24]],
-            'Married Filing Jointly': [[23200, 0.10], [94300, 0.12], [201050, 0.22], [383900, 0.24]],
-            'Head of Household': [[16550, 0.10], [63100, 0.12], [100500, 0.22], [191950, 0.24]]
+            'Single': [
+                [11925, 0.10], [48475, 0.12], [103350, 0.22], [197300, 0.24],
+                [250525, 0.32], [626350, 0.35], [Infinity, 0.37]
+            ],
+            'Married Filing Jointly': [
+                [23850, 0.10], [96950, 0.12], [206700, 0.22], [394600, 0.24],
+                [501050, 0.32], [751600, 0.35], [Infinity, 0.37]
+            ],
+            'Head of Household': [
+                [17000, 0.10], [64850, 0.12], [103350, 0.22], [197300, 0.24],
+                [250525, 0.32], [626350, 0.35], [Infinity, 0.37]
+            ]
         };
+        
         const baseBrackets = brackets[status] || brackets['Single'];
         let prev = 0, remainingOrdinary = taxableOrdinary;
         for (const [limitBase, rate] of baseBrackets) {
-            const limit = limitBase * inflationFactor;
+            const limit = limitBase === Infinity ? Infinity : limitBase * inflationFactor;
             const range = Math.min(remainingOrdinary, limit - prev);
             tax += range * rate;
             remainingOrdinary -= range;
             prev = limit;
             if (remainingOrdinary <= 0) break;
         }
-        if (remainingOrdinary > 0) tax += remainingOrdinary * 0.32;
+
         const ltcgZeroLimit = (status === 'Married Filing Jointly' ? 94000 : (status === 'Head of Household' ? 63000 : 47000)) * inflationFactor;
         const ltcgInFifteen = Math.max(0, taxableLtcg - Math.max(0, ltcgZeroLimit - taxableOrdinary));
         tax += (ltcgInFifteen * 0.15);
@@ -231,8 +243,16 @@ export const engine = {
             total401kContribution += personal401k;
             totalGrossIncome += (base + base * (parseFloat(x.bonusPct) / 100 || 0)) - (math.fromCurrency(x.incomeExpenses) * (x.incomeExpensesMonthly ? 12 : 1)); 
         });
+        
         const age = data.assumptions?.currentAge || 40;
-        const capped401k = Math.min(total401kContribution, age >= 50 ? 31000 : 23500);
+        
+        // 2026 SECURE 2.0 & IRS Limits
+        // Ages 60, 61, 62, 63 get the "Super Catch-Up" ($11,250 catch-up instead of $7,500)
+        let irsLimit = 23500;
+        if (age >= 60 && age <= 63) irsLimit = 34750; // $23,500 + $11,250
+        else if (age >= 50) irsLimit = 31000; // $23,500 + $7,500
+        
+        const capped401k = Math.min(total401kContribution, irsLimit);
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         const manualSavingsSum = budget.savings?.filter(x => !x.isLocked).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         return { netWorth: totalAssets - totalLiabilities, totalAssets, totalLiabilities, totalGrossIncome, magiBase: totalGrossIncome - capped401k - hsaSavings, total401kContribution: capped401k, totalAnnualSavings: manualSavingsSum + capped401k + hsaSavings, totalAnnualBudget: budget.expenses?.reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0 };

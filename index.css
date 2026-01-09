@@ -71,6 +71,16 @@ body {
 }
 .input-base::placeholder { color: #475569; font-weight: 500; }
 
+/* Hide Spin Buttons (Arrows) for Number Inputs */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
 /* Zero Value Grey State */
 .value-zero { color: #475569 !important; }
 
