@@ -58,6 +58,8 @@ function attachGlobalListeners() {
                 input.value = newVal;
                 // Dispatch input event to trigger auto-recalc
                 input.dispatchEvent(new Event('input', { bubbles: true }));
+                // Also dispatch change for the stepper buttons since they "commit" the value
+                input.dispatchEvent(new Event('change', { bubbles: true }));
             }
             return;
         }
@@ -87,6 +89,56 @@ function attachGlobalListeners() {
         }
     });
 
+    // Enforcement Logic (Runs on blur/commit)
+    document.body.addEventListener('change', (e) => {
+        const target = e.target;
+        const id = target.dataset.id;
+        if (!id) return;
+
+        if (id === 'currentAge' || id === 'retirementAge') {
+            let val = parseFloat(target.value);
+            const cAgeInp = document.querySelector('[data-id="currentAge"]');
+            const rAgeInp = document.querySelector('[data-id="retirementAge"]');
+            
+            let cAge = parseFloat(cAgeInp?.value || window.currentData?.assumptions?.currentAge || 40);
+            let rAge = parseFloat(rAgeInp?.value || window.currentData?.assumptions?.retirementAge || 65);
+
+            // Validation Rules
+            if (id === 'currentAge') {
+                if (val < 18) val = 18;
+                if (val > 90) val = 90;
+                if (val > rAge) {
+                    rAge = val;
+                    if (rAgeInp) rAgeInp.value = rAge;
+                    syncAllInputs('retirementAge', rAge);
+                }
+                target.value = val;
+                syncAllInputs('currentAge', val);
+            } else if (id === 'retirementAge') {
+                if (val < cAge) val = cAge;
+                if (val > 100) val = 100;
+                target.value = val;
+                syncAllInputs('retirementAge', val);
+            }
+            
+            if (window.currentData?.assumptions) {
+                window.currentData.assumptions.currentAge = cAge;
+                window.currentData.assumptions.retirementAge = rAge;
+            }
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        }
+        
+        if (id === 'hhSize') {
+            let val = parseInt(target.value) || 1;
+            if (val < 1) val = 1;
+            if (val > 20) val = 20;
+            target.value = val;
+            syncAllInputs('hhSize', val);
+            if (window.currentData?.benefits) window.currentData.benefits.hhSize = val;
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        }
+    });
+
     document.body.addEventListener('input', (e) => {
         const target = e.target;
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
@@ -106,22 +158,26 @@ function attachGlobalListeners() {
                 const row = target.closest('tr') || target.closest('.card-container');
                 if (row) checkIrsLimits(row);
             }
+
             const id = target.dataset.id || target.dataset.liveId;
             const isAssControl = target.closest('#assumptions-container') || target.closest('#burndown-live-sliders') || target.id === 'input-top-retire-age';
+            
             if (id && isAssControl) {
+                // We sync labels and update raw data, but DO NOT modify target.value here
+                // modifying target.value while typing breaks the cursor/entry flow.
                 let val = parseFloat(target.value);
-                if (id === 'currentAge' || id === 'retirementAge') {
-                    const cAge = parseFloat(document.querySelector('[data-id="currentAge"]')?.value || window.currentData?.assumptions?.currentAge || 40);
-                    let rAge = parseFloat(document.querySelector('[data-id="retirementAge"]')?.value || window.currentData?.assumptions?.retirementAge || 65);
-                    if (id === 'currentAge' && val > rAge) syncAllInputs('retirementAge', val);
-                    else if (id === 'retirementAge' && val < cAge) { val = cAge; target.value = val; }
-                }
-                syncAllInputs(id, target.value);
+                
+                // Still sync visual labels or sliders elsewhere
+                syncAllInputs(id, target.value, false); 
+                
                 if (window.currentData && window.currentData.assumptions) {
                     const nVal = (target.tagName === 'SELECT' || isNaN(parseFloat(target.value))) ? target.value : (target.dataset.type === 'currency' ? math.fromCurrency(target.value) : parseFloat(target.value));
-                    window.currentData.assumptions[id] = nVal;
+                    // Gracefully handle temporary NaNs so engine doesn't break
+                    if (id !== 'currentAge' && id !== 'retirementAge' || !isNaN(nVal)) {
+                        window.currentData.assumptions[id] = nVal;
+                    }
                 }
-                if (id === 'hhSize' && window.currentData.benefits) {
+                if (id === 'hhSize' && !isNaN(val) && window.currentData.benefits) {
                     window.currentData.benefits.hhSize = val;
                 }
             }
@@ -136,13 +192,20 @@ function attachGlobalListeners() {
     });
 }
 
-function syncAllInputs(id, val) {
+function syncAllInputs(id, val, updateTextInputs = true) {
     const selectors = [`#assumptions-container [data-id="${id}"]`, `#burndown-live-sliders [data-live-id="${id}"]`, `#burndown-live-sliders [data-id="${id}"]`, `#input-top-retire-age[data-id="${id}"]`];
     selectors.forEach(sel => {
         document.querySelectorAll(sel).forEach(el => {
-            if (el.value != val) el.value = val;
+            // Only update text inputs if explicitly requested (usually on blur/change/stepper)
+            // This prevents the "typing" jumping issue.
+            if (el.type === 'number' || el.type === 'text') {
+                if (updateTextInputs && el.value != val) el.value = val;
+            } else {
+                // Always sync ranges/selects/labels
+                if (el.value != val) el.value = val;
+            }
             
-            if (el.type === 'range') {
+            if (el.type === 'range' || el.tagName === 'SPAN' || (el.type === 'number' && !updateTextInputs)) {
                 let lbl = null;
                 if (el.id === 'input-top-retire-age') {
                     lbl = document.getElementById('label-top-retire-age');
@@ -155,6 +218,7 @@ function syncAllInputs(id, val) {
 
                 if (lbl) {
                     const numericVal = parseFloat(val);
+                    if (isNaN(numericVal)) return;
                     if (id === 'ssMonthly') lbl.textContent = math.toCurrency(numericVal);
                     else if (id.toLowerCase().includes('growth') || id === 'inflation' || id.toLowerCase().includes('rate')) lbl.textContent = `${val}%`;
                     else if (id.toLowerCase().includes('factor')) lbl.textContent = `${Math.round(numericVal * 100)}%`;
@@ -450,6 +514,16 @@ window.createAssumptionControls = (data) => {
     const isAdv = !!a.advancedGrowth;
     const hhSize = data.benefits?.hhSize || 1;
 
+    const renderStepper = (id, val, step = 1, color = "text-white") => `
+        <div class="relative group/stepper mt-1">
+            <input data-id="${id}" type="number" step="${step}" value="${val}" class="input-base w-full font-bold ${color} pr-10">
+            <div class="absolute right-1 top-0 bottom-0 flex flex-col justify-center gap-0.5 opacity-40 group-hover/stepper:opacity-100 transition-opacity">
+                <button data-step="up" data-target="${id}" class="w-5 h-4 flex items-center justify-center hover:bg-slate-700 rounded text-[7px] text-slate-500 hover:text-white transition-colors"><i class="fas fa-plus"></i></button>
+                <button data-step="down" data-target="${id}" class="w-5 h-4 flex items-center justify-center hover:bg-slate-700 rounded text-[7px] text-slate-500 hover:text-white transition-colors"><i class="fas fa-minus"></i></button>
+            </div>
+        </div>
+    `;
+
     const renderAPY = (label, id, color, val) => {
         if (!isAdv) {
             return `<label class="block"><span class="label-std text-slate-500">${label} APY</span><div class="flex items-center gap-2 mt-1"><input data-id="${id}" type="range" min="0" max="20" step="0.5" value="${val}" class="input-range"><span class="${color} font-bold mono-numbers w-10 text-right">${val}%</span></div></label>`;
@@ -490,12 +564,12 @@ window.createAssumptionControls = (data) => {
                     </select>
                 </label>
                 <label class="block"><span class="label-std text-slate-500">Family Size</span>
-                    <input data-id="hhSize" type="number" value="${hhSize}" min="1" max="10" class="input-base w-full mt-1 font-bold text-white">
+                    ${renderStepper('hhSize', hhSize, 1, 'text-white')}
                 </label>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span><input data-id="currentAge" type="number" value="${a.currentAge}" class="input-base w-full mt-auto font-bold text-white"></label>
-                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span><input data-id="retirementAge" type="number" value="${a.retirementAge}" class="input-base w-full mt-auto font-bold text-blue-400"></label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span>${renderStepper('currentAge', a.currentAge, 1, 'text-white')}</label>
+                <label class="flex flex-col h-full"><span class="label-std text-slate-500">Retirement Age</span>${renderStepper('retirementAge', a.retirementAge, 1, 'text-blue-400')}</label>
             </div>
             <label class="block"><span class="label-std text-slate-500">SS Start Age</span><input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="input-base w-full mt-1 font-bold text-white"></label>
             <label class="block"><span class="label-std text-slate-500">SS Monthly Benefit</span><input data-id="ssMonthly" type="number" value="${a.ssMonthly}" class="input-base w-full mt-1 font-bold text-white"></label>
