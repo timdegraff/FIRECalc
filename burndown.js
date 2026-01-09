@@ -484,29 +484,10 @@ export const burndown = {
             
             // Core Iterators: track separate tax types
             let drawn = 0, ordIter = ordInc, ltcgIter = 0, colIter = 0, yrDraws = {};
-
-            // --- Bridge Audit: Strategy for Under 59.5 ---
-            if (isRet && age < 59.5) {
-                let auditLiquidity = netAvail + bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['crypto'] + bal['metals'];
-                const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0);
-                auditLiquidity += Math.max(0, helocLimit - bal['heloc']);
-
-                const projectedShortfall = targetBudget - auditLiquidity;
-                
-                if (projectedShortfall > 0 && bal['401k'] > 0) {
-                    const seppMax = engine.calculateMaxSepp(bal['401k'], age);
-                    const seppTake = Math.min(seppMax, projectedShortfall); 
-                    if (seppTake > 0) {
-                        bal['401k'] -= seppTake; 
-                        ordIter += seppTake; 
-                        drawn += seppTake; 
-                        yrDraws['401k'] = (yrDraws['401k'] || 0) + seppTake;
-                        trace.push(`<span class="text-amber-400">⚠️ Bridge Triggered: Pot shortfall. Withdrew ${math.toCurrency(seppTake)}</span>`);
-                    }
-                }
-            }
+            const seppLimit = age < 59.5 ? engine.calculateMaxSepp(bal['401k'], age) : Infinity;
 
             trace.push(`Base Ordinary Income: ${math.toCurrency(ordIter)}`);
+            if (age < 59.5 && isRet) trace.push(`72(t)/SEPP Max Limit: ${math.toCurrency(seppLimit)}`);
             
             const fpl = (16060 + (hhSize - 1) * 5650) * infFac, medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38), silverLim = fpl * 2.5;
             let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget));
@@ -515,21 +496,30 @@ export const burndown = {
             // --- Pass 1: MAGI Harvesting ---
             burndown.priorityOrder.forEach(pk => {
                 const meta = burndown.assetMeta[pk];
+                // ONLY harvest if we have MAGI room AND we still need cash
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - (ordIter + ltcgIter + colIter)) <= 0.01 || (bal[pk] || 0) <= 0) return;
                 
                 let availableInBucket = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : bal[pk];
                 if (availableInBucket <= 0) return;
 
-                const estimatedCashCap = (targetBudget + (ordIter * 0.25)) - (netAvail + drawn);
-                if (estimatedCashCap <= 0.01) return;
+                // PRECISE CASH CEILING: Don't harvest MAGI if budget + estimated taxes are already covered by current draws
+                // We estimate a 20% effective tax rate buffer to prevent over-selling.
+                const estimatedCashNeed = (targetBudget * 1.1) - (netAvail + drawn);
+                if (estimatedCashNeed <= 0.01) return;
 
-                // Gain Ratio calculation
                 const gr = (pk === 'taxable' || pk === 'crypto' || pk === 'metals') 
                     ? Math.max(0.01, (bal[pk] - bal[pk + 'Basis']) / (bal[pk] || 1)) 
                     : 1;
 
                 let take = Math.min(availableInBucket, (magiTarget - (ordIter + ltcgIter + colIter)) / gr);
-                take = Math.min(take, estimatedCashCap);
+                take = Math.min(take, estimatedCashNeed);
+                
+                // Respect SEPP limit during harvest
+                if (pk === '401k' && age < 59.5) {
+                    const currentDrawnFrom401k = yrDraws['401k'] || 0;
+                    take = Math.min(take, seppLimit - currentDrawnFrom401k);
+                }
+
                 if (take <= 0.01) return;
 
                 bal[pk] -= take; 
@@ -545,31 +535,42 @@ export const burndown = {
             });
 
             // --- Pass 2 & 3: Shortfall Spiral ---
-            for (let pass = 2; pass <= 3; pass++) {
-                // Precise Tax Calculation using separate iters
+            let finalShortfall = 0;
+            for (let pass = 2; pass <= 4; pass++) {
                 let totalTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
-                // Collectibles gross-up (simple marginal approach)
                 totalTax += colIter * (colRate + (stateTaxRates[assumptions.state]?.rate || 0));
-                // ACA Premium logic if dial is active
                 if (ordIter + ltcgIter + colIter > medLim && age < 65 && dial <= 66) totalTax += (ordIter + ltcgIter + colIter) * 0.085;
 
                 const snapBen = engine.calculateSnapBenefit(ordIter + ltcgIter + colIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
                 let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
                 
-                if (shortfall <= 0.01) break;
+                finalShortfall = shortfall;
+                if (shortfall <= 1.0) break;
+                
                 trace.push(`Shortfall Spiral (Pass ${pass}): ${math.toCurrency(shortfall)}`);
                 
-                burndown.priorityOrder.forEach(pk => {
-                    if (shortfall <= 0.01) return;
+                // Prioritized Drain
+                for (const pk of burndown.priorityOrder) {
+                    if (shortfall <= 0.01) break;
+                    
                     let availableLiquidity = 0;
                     if (pk === 'heloc') availableLiquidity = Math.max(0, helocLimit - bal['heloc']);
                     else if (pk === 'cash') availableLiquidity = Math.max(0, bal[pk] - cashFloor);
                     else availableLiquidity = (bal[pk] || 0);
 
-                    if (availableLiquidity <= 0) return;
+                    if (availableLiquidity <= 0) continue;
 
-                    const take = Math.min(availableLiquidity, shortfall);
-                    
+                    // MINIMAL SEPP LOGIC: If account is 401k and age < 59.5, limit to required shortfall up to remaining limit
+                    let take = Math.min(availableLiquidity, shortfall);
+                    if (pk === '401k' && age < 59.5) {
+                        const currentDrawnFrom401k = yrDraws['401k'] || 0;
+                        const remainingSepp = Math.max(0, seppLimit - currentDrawnFrom401k);
+                        take = Math.min(take, remainingSepp);
+                        if (take > 0) trace.push(`SEPP Cap applied: Limited draw to ${math.toCurrency(take)} of remaining ${math.toCurrency(remainingSepp)} capacity.`);
+                    }
+
+                    if (take <= 0.01) continue;
+
                     if (pk === '401k') ordIter += take;
                     else if (pk === 'taxable' || pk === 'crypto' || pk === 'metals') {
                         const basisKey = pk + 'Basis';
@@ -581,19 +582,21 @@ export const burndown = {
 
                     if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
                     drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
-                });
+                }
             }
             
-            // Final Values
             const finalTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) + colIter * (colRate + (stateTaxRates[assumptions.state]?.rate || 0)) + ((ordIter + ltcgIter + colIter > medLim && age < 65 && dial <= 66) ? (ordIter + ltcgIter + colIter) * 0.085 : 0);
             const finalSnap = engine.calculateSnapBenefit(ordIter + ltcgIter + colIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
 
             const magi = Math.max(0, ordIter + ltcgIter + colIter);
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             
+            // INSOLVENCY is only if shortfall persists after trying ALL available and allowable buckets
+            const isActuallyInsolvent = finalShortfall > 10.0;
+
             const yearRes = { 
                 age, year, budget: targetBudget, magi, netWorth: currentNW, 
-                isInsolvent: (netAvail + drawn + finalSnap - finalTax - targetBudget) < -1, 
+                isInsolvent: isActuallyInsolvent, 
                 balances: { ...bal }, draws: yrDraws, snapBenefit: finalSnap,
                 taxes: finalTax,
                 liquid: liquidAssets
@@ -607,7 +610,7 @@ export const burndown = {
             
             results.push(yearRes);
 
-            // Growth
+            // Growth Loop
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
             bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
             if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); 
