@@ -2,52 +2,6 @@ import { math, stateTaxRates } from './utils.js';
 
 export const templates = {
     helpers: {
-        getEfficiencyBadge: (type, value = 0, costBasis = 0, state = 'Michigan') => {
-            const v = math.fromCurrency(value);
-            const b = math.fromCurrency(costBasis);
-            const stateRate = (stateTaxRates[state] || {}).rate || 0;
-            
-            if (type === '529' || type === 'Roth IRA') {
-                return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="Tax Free">TAX 0%</div>`;
-            }
-
-            if (v > 0 && b >= v) {
-                 return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="No Gains Hit">TAX 0%</div>`;
-            }
-
-            const styles = {
-                'Taxable': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                'Stock Options': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                'Pre-Tax (401k/IRA)': { color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                'Roth IRA': { color: 'text-purple-400', bg: 'bg-purple-400/10' },
-                'Cash': { color: 'text-pink-400', bg: 'bg-pink-400/10' },
-                'HSA': { color: 'text-teal-400', bg: 'bg-teal-400/10' },
-                'Crypto': { color: 'text-orange-400', bg: 'bg-orange-400/10' },
-                'Metals': { color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-                '529': { color: 'text-rose-400', bg: 'bg-rose-400/10' }
-            };
-
-            const s = styles[type] || styles['Taxable'];
-            let taxHitPercent = 0;
-
-            if (type === 'Pre-Tax (401k/IRA)') {
-                // Pre-tax accounts are hit by standard income tax on the full balance
-                taxHitPercent = Math.round((0.22 + stateRate) * 100);
-            } else if (['Taxable', 'Crypto', 'Metals', 'Stock Options'].includes(type)) {
-                // These are hit by capital gains tax only on the earnings portion
-                const fedRate = (type === 'Metals') ? 0.28 : 0.15;
-                const combinedCapGainsRate = fedRate + stateRate;
-                const gainRatio = v > 0 ? Math.max(0, (v - b) / v) : 0;
-                taxHitPercent = Math.round((gainRatio * combinedCapGainsRate) * 100);
-            }
-
-            // Dynamic color shift for high tax hits
-            let colorClasses = `${s.bg} ${s.color}`;
-            if (taxHitPercent > 20) colorClasses = 'bg-red-500/10 text-red-400';
-            else if (taxHitPercent > 10) colorClasses = 'bg-amber-500/10 text-amber-400';
-
-            return `<div class="inline-flex items-center px-2 py-1 rounded-md ${colorClasses} text-[9px] font-black uppercase tracking-wider border border-white/5 opacity-90 mono-numbers">TAX ${taxHitPercent}%</div>`;
-        },
         getTypeClass: (type) => {
             const map = {
                 'Cash': 'text-type-cash',
@@ -65,7 +19,6 @@ export const templates = {
     },
 
     investment: (data) => {
-        const state = window.currentData?.assumptions?.state || 'Michigan';
         const type = data.type || 'Taxable';
         return `
             <td class="w-8 text-center"><i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500 text-[10px]"></i></td>
@@ -86,11 +39,6 @@ export const templates = {
             </td>
             <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-bold mono-numbers"></td>
             <td><input data-id="costBasis" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-blue-400/70 mono-numbers"></td>
-            <td class="text-center">
-                <div data-id="efficiency-container">
-                    ${templates.helpers.getEfficiencyBadge(type, data.value, data.costBasis, state)}
-                </div>
-            </td>
             <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
         `;
     },

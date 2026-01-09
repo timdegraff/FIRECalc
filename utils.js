@@ -142,7 +142,11 @@ export const assumptions = {
         stockGrowthYears: 10, stockGrowthPerpetual: 4,
         cryptoGrowthYears: 5, cryptoGrowthPerpetual: 5,
         metalsGrowthYears: 10, metalsGrowthPerpetual: 3,
-        realEstateGrowthYears: 15, realEstateGrowthPerpetual: 2
+        realEstateGrowthYears: 15, realEstateGrowthPerpetual: 2,
+        ltcgRate: 15,
+        collectiblesRate: 28,
+        ordRateMarried: 12,
+        ordRateSingle: 22
     }
 };
 
@@ -194,6 +198,10 @@ export const engine = {
         let taxableOrdinary = Math.max(0, ordinaryIncome - stdDed);
         let taxableLtcg = Math.max(0, ltcgIncome - Math.max(0, stdDed - ordinaryIncome));
         let tax = 0;
+
+        // Custom Federal Rates from Global Assumptions
+        const a = window.currentData?.assumptions || {};
+        const userLtcgRate = (a.ltcgRate || 15) / 100;
         
         // Projected 2026 Federal Brackets
         const brackets = {
@@ -223,8 +231,8 @@ export const engine = {
         }
 
         const ltcgZeroLimit = (status === 'Married Filing Jointly' ? 94000 : (status === 'Head of Household' ? 63000 : 47000)) * inflationFactor;
-        const ltcgInFifteen = Math.max(0, taxableLtcg - Math.max(0, ltcgZeroLimit - taxableOrdinary));
-        tax += (ltcgInFifteen * 0.15);
+        const ltcgInTaxableRange = Math.max(0, taxableLtcg - Math.max(0, ltcgZeroLimit - taxableOrdinary));
+        tax += (ltcgInTaxableRange * userLtcgRate);
         tax += ((ordinaryIncome + ltcgIncome) * (stateTaxRates[state]?.rate || 0));
         return tax;
     },

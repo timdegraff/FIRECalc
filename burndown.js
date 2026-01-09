@@ -345,7 +345,8 @@ export const burndown = {
             if (typeof Sortable !== 'undefined' && !burndown.sortable) {
                 burndown.sortable = new Sortable(priorityList, {
                     animation: 150,
-                    filter: '.fa-chevron-right', 
+                    handle: '.drag-handle',
+                    ghostClass: 'bg-slate-700/30',
                     onEnd: () => {
                         burndown.priorityOrder = Array.from(priorityList.children)
                             .filter(el => el.dataset && el.dataset.pk)
@@ -403,6 +404,10 @@ export const burndown = {
         const hhSize = benefits.hhSize || 1; 
         const currentYear = new Date().getFullYear();
         const dial = config.strategyDial, rAge = config.retirementAge, cashFloor = config.cashReserve;
+
+        // User defined Federal Rates from Assumptions
+        const ltcgRate = (assumptions.ltcgRate || 15) / 100;
+        const colRate = (assumptions.collectiblesRate || 28) / 100;
 
         simulationTrace = {};
         firstInsolvencyAge = null;
@@ -477,7 +482,8 @@ export const burndown = {
             const hsaCont = budget.savings?.filter(s => s.type === 'HSA' && !(isRet && s.removedInRetirement)).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
             ordInc = Math.max(0, ordInc - (pretaxDed + hsaCont));
             
-            let drawn = 0, ordIter = ordInc, yrDraws = {};
+            // Core Iterators: track separate tax types
+            let drawn = 0, ordIter = ordInc, ltcgIter = 0, colIter = 0, yrDraws = {};
 
             // --- Bridge Audit: Strategy for Under 59.5 ---
             if (isRet && age < 59.5) {
@@ -495,7 +501,7 @@ export const burndown = {
                         ordIter += seppTake; 
                         drawn += seppTake; 
                         yrDraws['401k'] = (yrDraws['401k'] || 0) + seppTake;
-                        trace.push(`<span class="text-amber-400">⚠️ Bridge Triggered: Audit pot shortfall detected. Triggering 72t bridge. Withdrew ${math.toCurrency(seppTake)}</span>`);
+                        trace.push(`<span class="text-amber-400">⚠️ Bridge Triggered: Pot shortfall. Withdrew ${math.toCurrency(seppTake)}</span>`);
                     }
                 }
             }
@@ -509,7 +515,7 @@ export const burndown = {
             // --- Pass 1: MAGI Harvesting ---
             burndown.priorityOrder.forEach(pk => {
                 const meta = burndown.assetMeta[pk];
-                if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
+                if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - (ordIter + ltcgIter + colIter)) <= 0.01 || (bal[pk] || 0) <= 0) return;
                 
                 let availableInBucket = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : bal[pk];
                 if (availableInBucket <= 0) return;
@@ -517,24 +523,40 @@ export const burndown = {
                 const estimatedCashCap = (targetBudget + (ordIter * 0.25)) - (netAvail + drawn);
                 if (estimatedCashCap <= 0.01) return;
 
-                const gr = pk === 'taxable' ? Math.max(0.01, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
-                let take = Math.min(availableInBucket, (magiTarget - ordIter) / gr);
+                // Gain Ratio calculation
+                const gr = (pk === 'taxable' || pk === 'crypto' || pk === 'metals') 
+                    ? Math.max(0.01, (bal[pk] - bal[pk + 'Basis']) / (bal[pk] || 1)) 
+                    : 1;
+
+                let take = Math.min(availableInBucket, (magiTarget - (ordIter + ltcgIter + colIter)) / gr);
                 take = Math.min(take, estimatedCashCap);
                 if (take <= 0.01) return;
 
-                bal[pk] -= take; if (pk === 'taxable') bal['taxableBasis'] -= (take * (1 - gr)); 
-                drawn += take; ordIter += (take * gr); yrDraws[pk] = (yrDraws[pk] || 0) + take;
-                trace.push(`Pass 1: Harvesting ${pk} (${math.toCurrency(take)}) to match MAGI target.`);
+                bal[pk] -= take; 
+                if (pk === 'taxable' || pk === 'crypto' || pk === 'metals') bal[pk + 'Basis'] -= (take * (1 - gr)); 
+                
+                drawn += take; 
+                if (pk === '401k') ordIter += take;
+                else if (pk === 'metals') colIter += (take * gr);
+                else ltcgIter += (take * gr);
+
+                yrDraws[pk] = (yrDraws[pk] || 0) + take;
+                trace.push(`Pass 1: Harvesting ${pk} (${math.toCurrency(take)}) for MAGI.`);
             });
 
             // --- Pass 2 & 3: Shortfall Spiral ---
             for (let pass = 2; pass <= 3; pass++) {
-                let totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
-                const snapBen = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
+                // Precise Tax Calculation using separate iters
+                let totalTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac);
+                // Collectibles gross-up (simple marginal approach)
+                totalTax += colIter * (colRate + (stateTaxRates[assumptions.state]?.rate || 0));
+                // ACA Premium logic if dial is active
+                if (ordIter + ltcgIter + colIter > medLim && age < 65 && dial <= 66) totalTax += (ordIter + ltcgIter + colIter) * 0.085;
+
+                const snapBen = engine.calculateSnapBenefit(ordIter + ltcgIter + colIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
                 let shortfall = targetBudget + totalTax - (netAvail + drawn + snapBen);
                 
                 if (shortfall <= 0.01) break;
-                
                 trace.push(`Shortfall Spiral (Pass ${pass}): ${math.toCurrency(shortfall)}`);
                 
                 burndown.priorityOrder.forEach(pk => {
@@ -548,30 +570,25 @@ export const burndown = {
 
                     const take = Math.min(availableLiquidity, shortfall);
                     
-                    let taxableAdd = 0;
-                    if (pk === 'taxable') {
-                        const gr = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1));
-                        bal['taxableBasis'] -= (take * (1 - gr));
-                        taxableAdd = take * gr;
-                    } else if (pk === '401k' || pk === 'pre-tax') {
-                        taxableAdd = take;
-                    } else if (['crypto', 'metals'].includes(pk)) {
-                         const basisKey = pk + 'Basis';
-                         const gr = Math.max(0, (bal[pk] - bal[basisKey]) / (bal[pk] || 1));
-                         bal[basisKey] -= (take * (1 - gr));
-                         taxableAdd = take * gr;
+                    if (pk === '401k') ordIter += take;
+                    else if (pk === 'taxable' || pk === 'crypto' || pk === 'metals') {
+                        const basisKey = pk + 'Basis';
+                        const gr = Math.max(0, (bal[pk] - bal[basisKey]) / (bal[pk] || 1));
+                        bal[basisKey] -= (take * (1 - gr));
+                        if (pk === 'metals') colIter += (take * gr);
+                        else ltcgIter += (take * gr);
                     }
-                    ordIter += taxableAdd;
 
                     if (pk === 'heloc') bal['heloc'] += take; else bal[pk] -= take;
                     drawn += take; shortfall -= take; yrDraws[pk] = (yrDraws[pk] || 0) + take;
                 });
             }
             
-            const finalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
-            const finalSnap = engine.calculateSnapBenefit(ordIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, infFac) * 12;
+            // Final Values
+            const finalTax = engine.calculateTax(ordIter, ltcgIter, filingStatus, assumptions.state, infFac) + colIter * (colRate + (stateTaxRates[assumptions.state]?.rate || 0)) + ((ordIter + ltcgIter + colIter > medLim && age < 65 && dial <= 66) ? (ordIter + ltcgIter + colIter) * 0.085 : 0);
+            const finalSnap = engine.calculateSnapBenefit(ordIter + ltcgIter + colIter, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
 
-            const magi = Math.max(0, ordIter);
+            const magi = Math.max(0, ordIter + ltcgIter + colIter);
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             
             const yearRes = { 
@@ -590,6 +607,7 @@ export const burndown = {
             
             results.push(yearRes);
 
+            // Growth
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
             bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
             if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); 

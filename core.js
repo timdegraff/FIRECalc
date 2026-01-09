@@ -37,24 +37,6 @@ function initializeDragAndDrop() {
     });
 }
 
-function refreshEfficiencyBadges() {
-    const state = window.currentData?.assumptions?.state || 'Michigan';
-    document.querySelectorAll('#investment-rows tr').forEach(invRow => {
-        const valueEl = invRow.querySelector('[data-id="value"]');
-        const basisEl = invRow.querySelector('[data-id="costBasis"]');
-        const typeEl = invRow.querySelector('[data-id="type"]');
-        const container = invRow.querySelector('[data-id="efficiency-container"]');
-        if (container && typeEl && valueEl && basisEl) {
-            container.innerHTML = templates.helpers.getEfficiencyBadge(
-                typeEl.value, 
-                valueEl.value, 
-                basisEl.value,
-                state
-            );
-        }
-    });
-}
-
 function attachGlobalListeners() {
     const loginBtn = document.getElementById('login-btn');
     if (loginBtn) loginBtn.onclick = signInWithGoogle;
@@ -103,11 +85,6 @@ function attachGlobalListeners() {
                 if (display) display.textContent = math.toCurrency(equity);
             }
 
-            const invRow = target.closest('#investment-rows tr');
-            if (invRow) {
-                const valueEl = invRow.querySelector('[data-id="value"]'), basisEl = invRow.querySelector('[data-id="costBasis"]'), typeEl = invRow.querySelector('[data-id="type"]'), container = invRow.querySelector('[data-id="efficiency-container"]');
-                if (container && typeEl && valueEl && basisEl) container.innerHTML = templates.helpers.getEfficiencyBadge(typeEl.value, valueEl.value, basisEl.value, window.currentData?.assumptions?.state || 'Michigan');
-            }
             if (target.dataset.id === 'contribution' || target.dataset.id === 'amount' || target.dataset.id === 'bonusPct' || target.dataset.id === 'contribOnBonus') {
                 const row = target.closest('tr') || target.closest('.bg-slate-800');
                 if (row) checkIrsLimits(row);
@@ -126,7 +103,6 @@ function attachGlobalListeners() {
                 if (window.currentData && window.currentData.assumptions) {
                     const nVal = (target.tagName === 'SELECT' || isNaN(parseFloat(target.value))) ? target.value : (target.dataset.type === 'currency' ? math.fromCurrency(target.value) : parseFloat(target.value));
                     window.currentData.assumptions[id] = nVal;
-                    if (id === 'state') refreshEfficiencyBadges();
                 }
                 if (id === 'hhSize' && window.currentData.benefits) {
                     window.currentData.benefits.hhSize = val;
@@ -163,7 +139,7 @@ function syncAllInputs(id, val) {
                 if (lbl) {
                     const numericVal = parseFloat(val);
                     if (id === 'ssMonthly') lbl.textContent = math.toCurrency(numericVal);
-                    else if (id.toLowerCase().includes('growth') || id === 'inflation') lbl.textContent = `${val}%`;
+                    else if (id.toLowerCase().includes('growth') || id === 'inflation' || id.toLowerCase().includes('rate')) lbl.textContent = `${val}%`;
                     else if (id.toLowerCase().includes('factor')) lbl.textContent = `${Math.round(numericVal * 100)}%`;
                     else lbl.textContent = val;
                 }
@@ -514,12 +490,19 @@ window.createAssumptionControls = (data) => {
             <label class="block pt-2 border-t border-slate-700/30"><span class="label-std text-slate-500">Inflation</span><div class="flex items-center gap-2 mt-1"><input data-id="inflation" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="input-range"><span class="text-red-400 font-bold mono-numbers w-10 text-right">${a.inflation}%</span></div></label>
         </div>
         <div class="col-span-1 space-y-6 lg:border-l lg:border-slate-700/30 lg:pl-8">
-            <h3 class="label-std text-slate-400 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-couch text-pink-400"></i> Retirement Spending</h3>
+            <h3 class="label-std text-slate-400 pb-2 border-b border-slate-700/50 flex items-center gap-2"><i class="fas fa-balance-scale text-purple-400"></i> Tax & Policy</h3>
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
+                <label class="block"><span class="label-std text-slate-500">Long-Term Cap Gains (Fed)</span><div class="flex items-center gap-2 mt-1"><input data-id="ltcgRate" type="range" min="0" max="30" step="1" value="${a.ltcgRate || 15}" class="input-range"><span class="text-emerald-400 font-bold mono-numbers w-12 text-right">${a.ltcgRate || 15}%</span></div></label>
+                <label class="block"><span class="label-std text-slate-500">Collectibles Tax (Metals)</span><div class="flex items-center gap-2 mt-1"><input data-id="collectiblesRate" type="range" min="0" max="40" step="1" value="${a.collectiblesRate || 28}" class="input-range"><span class="text-yellow-500 font-bold mono-numbers w-12 text-right">${a.collectiblesRate || 28}%</span></div></label>
+                <label class="block"><span class="label-std text-slate-500">Ord. Rate (Married)</span><div class="flex items-center gap-2 mt-1"><input data-id="ordRateMarried" type="range" min="0" max="37" step="1" value="${a.ordRateMarried || 12}" class="input-range"><span class="text-blue-400 font-bold mono-numbers w-12 text-right">${a.ordRateMarried || 12}%</span></div></label>
+                <label class="block"><span class="label-std text-slate-500">Ord. Rate (Single)</span><div class="flex items-center gap-2 mt-1"><input data-id="ordRateSingle" type="range" min="0" max="37" step="1" value="${a.ordRateSingle || 22}" class="input-range"><span class="text-blue-400 font-bold mono-numbers w-12 text-right">${a.ordRateSingle || 22}%</span></div></label>
+            </div>
+            
+            <h3 class="label-std text-slate-400 pb-2 border-b border-slate-700/50 flex items-center gap-2 pt-2"><i class="fas fa-couch text-pink-400"></i> Retirement Spending</h3>
             <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 space-y-4">
                 <label class="block"><span class="label-std text-slate-500">GO-GO (Age 30-50)</span><div class="flex items-center gap-2 mt-1"><input data-id="slowGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${a.slowGoFactor}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round(a.slowGoFactor * 100)}%</span></div></label>
                 <label class="block"><span class="label-std text-slate-500">SLOW-GO (Age 50-80)</span><div class="flex items-center gap-2 mt-1"><input data-id="midGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${a.midGoFactor}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round(a.midGoFactor * 100)}%</span></div></label>
                 <label class="block"><span class="label-std text-slate-500">NO-GO (Age 80+)</span><div class="flex items-center gap-2 mt-1"><input data-id="noGoFactor" type="range" min="0.5" max="2.0" step="0.05" value="${a.noGoFactor}" class="input-range"><span class="text-pink-400 font-bold mono-numbers w-12 text-right">${Math.round(a.noGoFactor * 100)}%</span></div></label>
-                <div class="pt-3 border-t border-slate-700/30"><p class="text-[9px] text-slate-500 italic leading-relaxed"><i class="fas fa-info-circle mr-1 text-slate-600"></i>Adjust your retirement spending up or down relative to your current baseline budget.</p></div>
             </div>
         </div>
     `;
