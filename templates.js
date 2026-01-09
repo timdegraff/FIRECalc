@@ -8,7 +8,7 @@ export const templates = {
             const b = math.fromCurrency(costBasis);
             const stateRate = (stateTaxRates[state] || {}).rate || 0;
             
-            if (type === '529 Plan' || type === 'Post-Tax (Roth)') {
+            if (type === '529' || type === 'Roth IRA') {
                 return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="100% Efficient">100%</div>`;
             }
 
@@ -20,12 +20,12 @@ export const templates = {
                 'Taxable': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 'Stock Options': { color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 'Pre-Tax (401k/IRA)': { color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                'Post-Tax (Roth)': { color: 'text-purple-400', bg: 'bg-purple-400/10' },
+                'Roth IRA': { color: 'text-purple-400', bg: 'bg-purple-400/10' },
                 'Cash': { color: 'text-pink-400', bg: 'bg-pink-400/10' },
                 'HSA': { color: 'text-teal-400', bg: 'bg-teal-400/10' },
                 'Crypto': { color: 'text-orange-400', bg: 'bg-orange-400/10' },
                 'Metals': { color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-                '529 Plan': { color: 'text-rose-400', bg: 'bg-rose-400/10' }
+                '529': { color: 'text-rose-400', bg: 'bg-rose-400/10' }
             };
 
             const s = styles[type] || styles['Taxable'];
@@ -51,11 +51,11 @@ export const templates = {
                 'Cash': 'text-type-cash',
                 'Taxable': 'text-type-taxable',
                 'Pre-Tax (401k/IRA)': 'text-type-pretax',
-                'Post-Tax (Roth)': 'text-type-posttax',
+                'Roth IRA': 'text-type-posttax',
                 'Crypto': 'text-type-crypto',
                 'Metals': 'text-type-metals',
                 'HSA': 'text-type-hsa',
-                '529 Plan': 'text-type-529',
+                '529': 'text-type-529',
                 'Stock Options': 'text-type-taxable'
             };
             return map[type] || 'text-type-taxable';
@@ -66,35 +66,35 @@ export const templates = {
         const state = window.currentData?.assumptions?.state || 'Michigan';
         const type = data.type || 'Taxable';
         return `
-            <td class="w-10 pl-6"><i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500"></i></td>
+            <td class="w-8 text-center"><i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500 text-[10px]"></i></td>
             <td><input data-id="name" type="text" placeholder="Account" class="input-base text-white uppercase tracking-wider text-xs"></td>
             <td>
                 <div class="relative">
                     <select data-id="type" class="input-base uppercase tracking-wider text-[10px] ${templates.helpers.getTypeClass(type)}">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
-                        <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
+                        <option value="Roth IRA" ${type === 'Roth IRA' ? 'selected' : ''}>Roth IRA</option>
                         <option value="Cash" ${type === 'Cash' ? 'selected' : ''}>Cash</option>
                         <option value="Crypto" ${type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${type === 'Metals' ? 'selected' : ''}>Metals</option>
                         <option value="HSA" ${type === 'HSA' ? 'selected' : ''}>HSA</option>
-                        <option value="529 Plan" ${type === '529 Plan' ? 'selected' : ''}>529 Plan</option>
+                        <option value="529" ${type === '529' ? 'selected' : ''}>529</option>
                     </select>
                 </div>
             </td>
             <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-bold mono-numbers"></td>
             <td><input data-id="costBasis" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-blue-400/70 mono-numbers"></td>
-            <td class="text-center w-24">
+            <td class="text-center">
                 <div data-id="efficiency-container">
                     ${templates.helpers.getEfficiencyBadge(type, data.value, data.costBasis, state)}
                 </div>
             </td>
-            <td class="text-right pr-6"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
+            <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
         `;
     },
     
     stockOption: (data) => `
-        <td class="pl-6"><input data-id="name" type="text" placeholder="Grant" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="name" type="text" placeholder="Grant" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base text-right text-white font-bold mono-numbers"></td>
         <td><input data-id="strikePrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-emerald-500 font-bold mono-numbers"></td>
         <td><input data-id="currentPrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
@@ -113,7 +113,7 @@ export const templates = {
             </label>
         </td>
         <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-teal-400 font-black mono-numbers text-sm pr-2">$0</div></td>
-        <td class="text-right pr-6"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
+        <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
 
     income: (data) => `
@@ -207,17 +207,17 @@ export const templates = {
             : `<select data-id="type" class="input-base uppercase tracking-wider text-[10px] ${typeClass} cursor-pointer">
                         <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
-                        <option value="Post-Tax (Roth)" ${type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
+                        <option value="Roth IRA" ${type === 'Roth IRA' ? 'selected' : ''}>Roth IRA</option>
                         <option value="Cash" ${type === 'Cash' ? 'selected' : ''}>Cash</option>
                         <option value="Crypto" ${type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${type === 'Metals' ? 'selected' : ''}>Metals</option>
                         <option value="HSA" ${type === 'HSA' ? 'selected' : ''}>HSA</option>
-                        <option value="529 Plan" ${type === '529 Plan' ? 'selected' : ''}>529 Plan</option>
+                        <option value="529" ${type === '529' ? 'selected' : ''}>529</option>
                     </select>`;
 
         return `
-            <td class="w-10 pl-6">
-                ${data.isLocked ? '' : '<i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500"></i>'}
+            <td class="w-8 text-center">
+                ${data.isLocked ? '' : '<i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500 text-[10px]"></i>'}
             </td>
             <td>
                 <div class="flex items-center gap-3">
@@ -234,11 +234,11 @@ export const templates = {
             </td>
             <td class="text-right"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400/80 font-bold mono-numbers" ${data.isLocked ? 'readonly disabled' : ''}></td>
             <td class="text-right"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers" ${data.isLocked ? 'readonly disabled' : ''}></td>
-            <td class="pr-8 text-right">${data.isLocked ? '' : '<button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button>'}</td>
+            <td class="text-right">${data.isLocked ? '' : '<button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button>'}</td>
         `;
     },
     "budget-expense": (data) => `
-        <td class="w-10 pl-6"><i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500"></i></td>
+        <td class="w-8 text-center"><i class="fas fa-grip-vertical drag-handle text-slate-700 cursor-grab hover:text-slate-500 text-[10px]"></i></td>
         <td>
             <input data-id="name" type="text" placeholder="Item Name" class="input-base font-black uppercase tracking-wider text-xs">
         </td>
@@ -256,32 +256,32 @@ export const templates = {
         </td>
         <td class="text-right"><input data-id="monthly" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-pink-400/80 font-bold mono-numbers"></td>
         <td class="text-right"><input data-id="annual" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-pink-500 font-black mono-numbers"></td>
-        <td class="pr-8 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
+        <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     realEstate: () => `
-        <td class="pl-6"><input data-id="name" type="text" placeholder="Property" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="name" type="text" placeholder="Property" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="mortgage" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-bold mono-numbers"></td>
         <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-blue-400 font-bold mono-numbers opacity-60" title="Monthly Principal"></td>
-        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
+        <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     otherAsset: () => `
-        <td class="pl-6"><input data-id="name" type="text" placeholder="Asset" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="name" type="text" placeholder="Asset" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="value" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="loan" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-bold mono-numbers"></td>
-        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
+        <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     heloc: (data) => `
-        <td class="pl-6"><input data-id="name" type="text" placeholder="HELOC" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="name" type="text" placeholder="HELOC" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-black mono-numbers"></td>
         <td><input data-id="limit" data-type="currency" type="text" placeholder="$0" class="input-base text-right font-bold mono-numbers"></td>
         <td><input data-id="rate" type="number" step="0.1" placeholder="7.0" value="${data.rate || 7.0}" class="input-base text-center text-red-400 font-bold mono-numbers"></td>
-        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
+        <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
     debt: () => `
-        <td class="pl-6"><input data-id="name" type="text" placeholder="Debt" class="input-base uppercase tracking-wider text-xs text-white"></td>
+        <td><input data-id="name" type="text" placeholder="Debt" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="balance" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-red-400 font-black mono-numbers"></td>
         <td><input data-id="principalPayment" data-type="currency" type="text" placeholder="$0" class="input-base text-right text-blue-400 font-bold mono-numbers opacity-60" title="Monthly Payment"></td>
-        <td class="pr-6 text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
+        <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `
 };

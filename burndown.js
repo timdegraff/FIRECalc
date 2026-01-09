@@ -55,7 +55,7 @@ export const burndown = {
                 </div>
 
                 <!-- Strategy Dashboard -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     
                     <!-- Card 1: MAGI Strategy -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-center">
@@ -72,9 +72,21 @@ export const burndown = {
                         </div>
                     </div>
 
-                    <!-- Card 2: Configuration & Feedback -->
+                    <!-- Card 2: Cash Reserve Floor -->
+                    <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-center">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Retain Cash Reserve</label>
+                            <span id="label-cash-reserve" class="text-pink-400 font-black mono-numbers text-[10px] tracking-widest bg-pink-400/10 px-2 py-0.5 rounded border border-pink-400/20">$25,000</span>
+                        </div>
+                        <input type="range" id="input-cash-reserve" min="0" max="100000" step="5000" value="25000" class="input-range w-full mb-2">
+                        <div class="flex justify-between items-center mt-1">
+                            <span class="text-[8px] font-bold text-slate-600 uppercase">$0</span>
+                            <span class="text-[8px] font-bold text-slate-600 uppercase">$100K+</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Feedback & Toggles -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex items-center justify-between gap-4">
-                        
                         <!-- SNAP Badge -->
                         <div class="flex flex-col items-center justify-center border-r border-slate-800 pr-4 min-w-[80px]">
                             <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Est. SNAP</span>
@@ -113,13 +125,17 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        ['input-strategy-dial', 'toggle-budget-sync', 'input-top-retire-age'].forEach(id => {
+        ['input-strategy-dial', 'toggle-budget-sync', 'input-top-retire-age', 'input-cash-reserve'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
                 if (id === 'input-strategy-dial') {
                     const lbl = document.getElementById('label-strategy-status');
                     const val = parseInt(el.value);
                     lbl.textContent = val <= 33 ? "Platinum Zone" : (val <= 66 ? "Silver CSR Zone" : "Budget Strategy");
+                }
+                if (id === 'input-cash-reserve') {
+                    const lbl = document.getElementById('label-cash-reserve');
+                    lbl.textContent = math.toCurrency(parseInt(el.value));
                 }
                 if (id === 'input-top-retire-age') {
                     document.getElementById('label-top-retire-age').textContent = el.value;
@@ -131,19 +147,6 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
-
-        const debugAgeInp = document.getElementById('input-debug-age');
-        if (debugAgeInp) {
-            debugAgeInp.oninput = () => {
-                const age = parseInt(debugAgeInp.value);
-                const log = document.getElementById('burndown-trace-log');
-                if (log && simulationTrace[age]) {
-                    log.innerHTML = simulationTrace[age].join('\n');
-                } else if (log) {
-                    log.innerHTML = `No data for age ${age || '??'}. Run simulation first.`;
-                }
-            };
-        }
 
         const btnMinus = document.getElementById('btn-retire-minus');
         const btnPlus = document.getElementById('btn-retire-plus');
@@ -181,9 +184,7 @@ export const burndown = {
 
         const manualInput = document.getElementById('input-manual-budget');
         if (manualInput) {
-            // Apply standard currency behavior (clear on focus if 0, format on blur)
             formatter.bindCurrencyEventListeners(manualInput);
-            
             manualInput.oninput = () => { 
                 burndown.run(); 
                 if (window.debouncedAutoSave) window.debouncedAutoSave(); 
@@ -218,11 +219,11 @@ export const burndown = {
 
         if (data) {
             sync('input-strategy-dial', data.strategyDial || 33);
+            sync('input-cash-reserve', data.cashReserve || 25000);
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-top-retire-age', data.retirementAge || 65);
             if (data.dieWithZero) document.getElementById('btn-dwz-toggle')?.classList.add('active');
             
-            // Fix: Add null check for input-manual-budget
             const manualInput = document.getElementById('input-manual-budget');
             if (data.manualBudget && manualInput) manualInput.value = math.toCurrency(data.manualBudget);
         }
@@ -233,6 +234,7 @@ export const burndown = {
     scrape: () => ({
         priority: burndown.priorityOrder,
         strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
+        cashReserve: parseInt(document.getElementById('input-cash-reserve')?.value || 25000),
         useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
         dieWithZero: document.getElementById('btn-dwz-toggle')?.classList.contains('active') ?? false,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
@@ -243,7 +245,7 @@ export const burndown = {
     assetMeta: {
         'cash': { label: 'Cash', short: 'Cash', color: assetColors['Cash'], isTaxable: false, isMagi: false },
         'taxable': { label: 'Taxable Brokerage', short: 'Brokerage', color: assetColors['Taxable'], isTaxable: true, isMagi: true }, 
-        'roth-basis': { label: 'Roth Basis', short: 'Roth Basis', color: assetColors['Post-Tax (Roth)'], isTaxable: false, isMagi: false },
+        'roth-basis': { label: 'Roth Basis', short: 'Roth Basis', color: assetColors['Roth IRA'], isTaxable: false, isMagi: false },
         'heloc': { label: 'HELOC', short: 'HELOC', color: assetColors['HELOC'], isTaxable: false, isMagi: false },
         '401k': { label: '401k/IRA', short: '401k/IRA', color: assetColors['Pre-Tax (401k/IRA)'], isTaxable: true, isMagi: true },
         'roth-earnings': { label: 'Roth Gains', short: 'Roth Gains', color: assetColors['Roth Gains'], isTaxable: false, isMagi: true },
@@ -268,13 +270,12 @@ export const burndown = {
             if (typeof Sortable !== 'undefined' && !burndown.sortable) {
                 burndown.sortable = new Sortable(priorityList, {
                     animation: 150,
-                    filter: '.fa-chevron-right', // Ignore arrows
+                    filter: '.fa-chevron-right', 
                     onEnd: () => {
-                        // Re-scrape ignoring arrows
                         burndown.priorityOrder = Array.from(priorityList.children)
                             .filter(el => el.dataset && el.dataset.pk)
                             .map(el => el.dataset.pk);
-                        burndown.run(); // Re-render to fix arrow positions
+                        burndown.run(); 
                         if (window.debouncedAutoSave) window.debouncedAutoSave();
                     }
                 });
@@ -309,7 +310,6 @@ export const burndown = {
         const tableContainer = document.getElementById('burndown-table-container');
         if (tableContainer) tableContainer.innerHTML = burndown.renderTable(results);
 
-        // Update Trace Log if focused age matches
         const debugAgeInp = document.getElementById('input-debug-age');
         const focusAge = parseInt(debugAgeInp?.value || results[0]?.age);
         const log = document.getElementById('burndown-trace-log');
@@ -319,14 +319,13 @@ export const burndown = {
     },
 
     simulateProjection: (data, overrideManualBudget = null) => {
-        // Safe Destructuring with defaults
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = {}, debts = [] } = data;
         const config = burndown.scrape(); 
         const inflationRate = (assumptions.inflation || 3) / 100;
         const filingStatus = assumptions.filingStatus || 'Single';
         const hhSize = benefits.hhSize || 1; 
         const currentYear = new Date().getFullYear();
-        const dial = config.strategyDial, rAge = config.retirementAge;
+        const dial = config.strategyDial, rAge = config.retirementAge, cashFloor = config.cashReserve;
 
         simulationTrace = {};
         firstInsolvencyAge = null;
@@ -334,8 +333,8 @@ export const burndown = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxableBasis': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
-            'roth-basis': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
-            'roth-earnings': investments.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + Math.max(0, math.fromCurrency(i.value) - math.fromCurrency(i.costBasis)), 0),
+            'roth-basis': investments.filter(i => i.type === 'Roth IRA').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
+            'roth-earnings': investments.filter(i => i.type === 'Roth IRA').reduce((s, i) => s + Math.max(0, math.fromCurrency(i.value) - math.fromCurrency(i.costBasis)), 0),
             '401k': investments.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'crypto': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'cryptoBasis': investments.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
@@ -367,12 +366,11 @@ export const burndown = {
 
             let baseBudget = overrideManualBudget ? overrideManualBudget * infFac : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.removedInRetirement) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac);
             
-            // Adjusted Go-Go (30-50), Slow-Go (50-80), No-Go (80+) spending logic
             let factor = 1.0;
             if (isRet) {
-                if (age < 50) factor = assumptions.slowGoFactor || 1.1; // GO-GO
-                else if (age < 80) factor = assumptions.midGoFactor || 1.0; // SLOW-GO
-                else factor = assumptions.noGoFactor || 0.8; // NO-GO
+                if (age < 50) factor = assumptions.slowGoFactor || 1.1; 
+                else if (age < 80) factor = assumptions.midGoFactor || 1.0; 
+                else factor = assumptions.noGoFactor || 0.8; 
             }
             let targetBudget = isRet ? baseBudget * factor : baseBudget;
             trace.push(`Target Spending: ${math.toCurrency(targetBudget)} (Factor: ${Math.round(factor * 100)}%)`);
@@ -423,6 +421,9 @@ export const burndown = {
                 const meta = burndown.assetMeta[pk];
                 if (!meta.isMagi || pk === 'roth-earnings' || (magiTarget - ordIter) <= 0.01 || (bal[pk] || 0) <= 0) return;
                 
+                let availableInBucket = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : bal[pk];
+                if (availableInBucket <= 0) return;
+
                 const estimatedCashCap = (targetBudget + (ordIter * 0.25)) - (netAvail + drawn);
                 if (estimatedCashCap <= 0.01) {
                     trace.push(`[Optimization] MAGI Harvesting capped for ${pk} - cash already covers needs.`);
@@ -430,7 +431,7 @@ export const burndown = {
                 }
 
                 const gr = pk === 'taxable' ? Math.max(0.01, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1)) : 1;
-                let take = Math.min(bal[pk], (magiTarget - ordIter) / gr);
+                let take = Math.min(availableInBucket, (magiTarget - ordIter) / gr);
                 take = Math.min(take, estimatedCashCap);
                 if (take <= 0.01) return;
 
@@ -450,14 +451,16 @@ export const burndown = {
                 trace.push(`Cash Shortfall detected: ${math.toCurrency(shortfall)}`);
                 burndown.priorityOrder.forEach(pk => {
                     if (shortfall <= 0.01) return;
-                    let availableLiquidity = pk === 'heloc' ? Math.max(0, helocLimit - bal['heloc']) : (bal[pk] || 0);
+                    let availableLiquidity = 0;
+                    if (pk === 'heloc') availableLiquidity = Math.max(0, helocLimit - bal['heloc']);
+                    else if (pk === 'cash') availableLiquidity = Math.max(0, bal[pk] - cashFloor);
+                    else availableLiquidity = (bal[pk] || 0);
+
                     const take = Math.min(availableLiquidity, shortfall);
                     if (take <= 0) return;
                     
-                    // FIX: Re-calculate Tax/MAGI Impact during shortfall coverage
                     let taxableAdd = 0;
                     if (pk === 'taxable') {
-                        // Calculate growth ratio for this specific tranche
                         const gr = Math.max(0, (bal['taxable'] - bal['taxableBasis']) / (bal['taxable'] || 1));
                         bal['taxableBasis'] -= (take * (1 - gr));
                         taxableAdd = take * gr;
@@ -477,7 +480,6 @@ export const burndown = {
                 });
             }
             
-            // Recalculate Final Tax with the updated ordIter (MAGI)
             totalTax = engine.calculateTax(ordIter, 0, filingStatus, assumptions.state, infFac) + (ordIter > medLim && age < 65 && dial <= 66 ? ordIter * 0.085 : 0);
 
             const magi = ordIter;

@@ -291,7 +291,7 @@ function attachSortingListeners() {
 function updateCostBasisVisibility(row) {
     const typeSel = row.querySelector('[data-id="type"]'), cbIn = row.querySelector('[data-id="costBasis"]');
     if (!typeSel || !cbIn) return;
-    const isIrr = (['Pre-Tax (401k/IRA)', 'Cash', 'HSA', '529 Plan'].includes(typeSel.value));
+    const isIrr = (['Pre-Tax (401k/IRA)', 'Cash', 'HSA', '529'].includes(typeSel.value));
     cbIn.style.visibility = isIrr ? 'hidden' : 'visible'; cbIn.disabled = isIrr;
     if (isIrr) cbIn.value = '$0';
 }
@@ -411,7 +411,7 @@ window.updateSidebarChart = (data) => {
     const legendContainer = document.getElementById('sidebar-asset-legend');
     if (legendContainer) {
         legendContainer.innerHTML = '';
-        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Stock Options': 'Options', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529 Plan': '529', 'Other': 'Other', 'Debt': 'Debt' };
+        const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Roth IRA': 'Roth', 'Taxable': 'Brokerage', 'Stock Options': 'Options', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', '529': '529', 'Other': 'Other', 'Debt': 'Debt' };
         
         // Compact Formatter for Legend
         const compactFormat = (val) => {

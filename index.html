@@ -106,7 +106,7 @@
             </div>
         </aside>
 
-        <main class="main-content flex-grow p-10 overflow-y-auto bg-[#0B0F19]">
+        <main class="main-content flex-grow p-6 md:p-8 overflow-y-auto bg-[#0B0F19]">
             <!-- Assets & Debts Tab -->
             <section id="tab-assets-debts" class="tab-content max-w-7xl mx-auto">
                 <!-- Summary Widgets -->
@@ -143,7 +143,7 @@
                     <div class="card-container overflow-hidden">
                         <table class="w-full text-xs">
                             <thead class="text-slate-500 label-std border-b border-white/5">
-                                <tr><th class="w-10 pl-6"></th><th class="text-left">Account Name</th><th class="text-left">Asset Class</th><th class="text-right group cursor-pointer" data-sort="value" data-target="investment-rows">Value <i class="fas fa-sort ml-1 opacity-20"></i></th><th class="text-right">Cost Basis</th><th class="text-center w-24">Eff %</th><th class="w-16 pr-6"></th></tr>
+                                <tr><th class="w-8"></th><th class="text-left w-[25%]">Account Name</th><th class="text-left w-[18%]">Asset Class</th><th class="text-right group cursor-pointer w-[20%]" data-sort="value" data-target="investment-rows">Value <i class="fas fa-sort ml-1 opacity-20"></i></th><th class="text-right w-[20%]">Cost Basis</th><th class="text-center w-20">Eff %</th><th class="w-10"></th></tr>
                             </thead>
                             <tbody id="investment-rows" class="mono-numbers"></tbody>
                         </table>
@@ -167,7 +167,7 @@
                         </div>
                         <div class="card-container overflow-hidden">
                             <table class="w-full text-xs">
-                                <thead><tr><th class="pl-6 text-left w-[30%]">Property</th><th class="text-right">Value</th><th class="text-right">Mortgage</th><th class="text-right w-[15%]">Principal</th><th class="w-12 pr-6"></th></tr></thead>
+                                <thead><tr><th class="text-left w-[35%]">Property</th><th class="text-right w-[25%]">Value</th><th class="text-right w-[20%]">Mortgage</th><th class="text-right w-[12%]">Principal</th><th class="w-8"></th></tr></thead>
                                 <tbody id="real-estate-rows" class="mono-numbers"></tbody>
                             </table>
                         </div>
@@ -187,7 +187,7 @@
                         </div>
                         <div class="card-container overflow-hidden">
                             <table class="w-full text-xs">
-                                <thead><tr><th class="pl-6 text-left w-[40%]">Name</th><th class="text-right">Balance</th><th class="text-right">Limit</th><th class="text-center w-[12%]">Rate %</th><th class="w-12 pr-6"></th></tr></thead>
+                                <thead><tr><th class="text-left w-[35%]">Name</th><th class="text-right w-[20%]">Balance</th><th class="text-right w-[20%]">Limit</th><th class="text-center w-[15%]">Rate %</th><th class="w-8"></th></tr></thead>
                                 <tbody id="heloc-rows" class="mono-numbers"></tbody>
                             </table>
                         </div>
@@ -211,7 +211,7 @@
                         </div>
                         <div class="card-container overflow-hidden">
                             <table class="w-full text-xs">
-                                <thead><tr><th class="pl-6 text-left">Asset</th><th class="text-right">Value</th><th class="text-right">Loan</th><th class="w-12 pr-6"></th></tr></thead>
+                                <thead><tr><th class="text-left w-[40%]">Asset</th><th class="text-right w-[25%]">Value</th><th class="text-right w-[25%]">Loan</th><th class="w-8"></th></tr></thead>
                                 <tbody id="other-assets-rows" class="mono-numbers"></tbody>
                             </table>
                         </div>
@@ -231,7 +231,7 @@
                         </div>
                         <div class="card-container overflow-hidden">
                             <table class="w-full text-xs">
-                                <thead><tr><th class="pl-6 text-left">Creditor</th><th class="text-right">Balance</th><th class="text-right">Payment</th><th class="w-12 pr-6"></th></tr></thead>
+                                <thead><tr><th class="text-left w-[40%]">Creditor</th><th class="text-right w-[25%]">Balance</th><th class="text-right w-[25%]">Payment</th><th class="w-8"></th></tr></thead>
                                 <tbody id="debt-rows" class="mono-numbers"></tbody>
                             </table>
                         </div>
@@ -254,7 +254,7 @@
                     <div class="card-container overflow-hidden">
                         <table class="w-full text-xs">
                             <thead>
-                                <tr><th class="pl-6 text-left">Name</th><th class="text-right w-32">Shares</th><th class="text-right w-28">Strike</th><th class="text-right w-28">FMV</th><th class="text-center w-24">APY %</th><th class="text-center w-16">Tax</th><th class="text-right w-32">Net Equity</th><th class="w-12 pr-6"></th></tr>
+                                <tr><th class="text-left w-[20%]">Name</th><th class="text-right w-[12%]">Shares</th><th class="text-right w-[15%]">Strike</th><th class="text-right w-[15%]">FMV</th><th class="text-center w-[10%]">APY %</th><th class="text-center w-[8%]">Tax</th><th class="text-right w-[15%]">Net Equity</th><th class="w-8"></th></tr>
                             </thead>
                             <tbody id="stock-option-rows" class="mono-numbers"></tbody>
                         </table>

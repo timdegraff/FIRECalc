@@ -8,7 +8,7 @@ export const assetColors = {
     'Stock Options': '#14b8a6',
     'Pre-Tax (401k/IRA)': '#3b82f6',
     'Pre-Tax': '#3b82f6',
-    'Post-Tax (Roth)': '#a855f7',
+    'Roth IRA': '#a855f7',
     'Post-Tax': '#a855f7',
     'Roth Basis': '#a855f7',
     'Roth Gains': '#9333ea',
@@ -20,7 +20,7 @@ export const assetColors = {
     'HELOC': '#ef4444',
     'Debt': '#dc2626',
     'HSA': '#2dd4bf',
-    '529 Plan': '#fb7185'
+    '529': '#fb7185'
 };
 
 export const stateTaxRates = {

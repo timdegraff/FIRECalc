@@ -1,3 +1,4 @@
+
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { math, engine, assumptions } from './utils.js';
 import { benefits } from './benefits.js';
@@ -263,26 +264,47 @@ export function updateSummaries(data) {
 
 export function getInitialData() {
     return {
-        assumptions: { ...assumptions.defaults, currentAge: 40, retirementAge: 45, ssStartAge: 62, ssMonthly: 3000 },
+        assumptions: { 
+            ...assumptions.defaults, 
+            currentAge: 42, 
+            retirementAge: 45, 
+            ssStartAge: 62, 
+            ssMonthly: 3500,
+            stockGrowth: 10,
+            realEstateGrowth: 3.5
+        },
         investments: [
-            { name: 'Emergency Fund', type: 'Cash', value: 25000, costBasis: 25000 },
-            { name: 'Vanguard 401k', type: 'Pre-Tax (401k/IRA)', value: 300000, costBasis: 200000 },
-            { name: 'Roth IRA', type: 'Post-Tax (Roth)', value: 200000, costBasis: 150000 }
+            { name: 'HYSA Reserve', type: 'Cash', value: 40000, costBasis: 40000 },
+            { name: 'Vanguard Brokerage', type: 'Taxable', value: 450000, costBasis: 300000 },
+            { name: 'Employer 401k', type: 'Pre-Tax (401k/IRA)', value: 750000, costBasis: 500000 },
+            { name: 'Roth IRAs', type: 'Roth IRA', value: 300000, costBasis: 200000 },
+            { name: 'Family HSA', type: 'HSA', value: 45000, costBasis: 45000 },
+            { name: '529 Plans', type: '529', value: 75000, costBasis: 60000 }
         ],
         realEstate: [
-            { name: 'Primary Residence', value: 450000, mortgage: 250000, principalPayment: 900 }
+            { name: 'Primary Residence', value: 550000, mortgage: 250000, principalPayment: 1200 }
+        ],
+        otherAssets: [
+            { name: 'Family SUV', value: 40000, loan: 15000, principalPayment: 500 },
+            { name: 'Commuter Sedan', value: 30000, loan: 10000, principalPayment: 350 },
+            { name: 'Personal Property', value: 25000, loan: 0, principalPayment: 0 }
         ],
         income: [
-            { name: 'Primary Salary', amount: 175000, increase: 3, contribution: 6, match: 4, bonusPct: 10, remainsInRetirement: false }
+            { name: 'Lead Income', amount: 175000, increase: 3, contribution: 13, match: 4, bonusPct: 15, remainsInRetirement: false, contribOnBonus: true },
+            { name: 'Support Income', amount: 100000, increase: 3, contribution: 23, match: 3, bonusPct: 5, remainsInRetirement: false, contribOnBonus: true }
         ],
         budget: {
             expenses: [
-                { name: 'Mortgage', annual: 24000, removedInRetirement: true, isFixed: true },
-                { name: 'Living Costs', annual: 60000, removedInRetirement: false, isFixed: false }
+                { name: 'Mortgage / Tax / Ins', annual: 36000, removedInRetirement: false, isFixed: true },
+                { name: 'Auto Loans', annual: 12000, removedInRetirement: true, isFixed: true },
+                { name: 'Groceries', annual: 14400, removedInRetirement: false, isFixed: false },
+                { name: 'Utilities', annual: 6000, removedInRetirement: false, isFixed: false },
+                { name: 'Travel & Vacation', annual: 8000, removedInRetirement: false, isFixed: false },
+                { name: 'Miscellaneous', annual: 4000, removedInRetirement: false, isFixed: false }
             ]
         },
-        benefits: { hhSize: 5, shelterCosts: 2000 },
-        burndown: { strategyDial: 33, useSync: true },
+        benefits: { hhSize: 5, shelterCosts: 3000, hasSUA: true },
+        burndown: { strategyDial: 33, useSync: true, cashReserve: 30000 },
         projectionSettings: { isRealDollars: false }
     };
 }

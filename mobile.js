@@ -277,7 +277,7 @@ const MOBILE_TEMPLATES = {
 
 const ITEM_TEMPLATES = {
     investment: (data) => {
-        const tc = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400' }[data.type] || 'text-white';
+        const tc = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400', '529': 'text-type-529' }[data.type] || 'text-white';
         return `
         <div class="mobile-card flex flex-col gap-0.5">
             <div class="flex justify-between items-center">
@@ -286,11 +286,12 @@ const ITEM_TEMPLATES = {
                     <select data-id="type" class="bg-transparent text-[8px] font-bold outline-none ${tc} mt-0.5">
                         <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                         <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
-                        <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
+                        <option value="Roth IRA" ${data.type === 'Roth IRA' ? 'selected' : ''}>Roth IRA</option>
                         <option value="Cash" ${data.type === 'Cash' ? 'selected' : ''}>Cash</option>
                         <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                         <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
                         <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
+                        <option value="529" ${data.type === '529' ? 'selected' : ''}>529</option>
                     </select>
                 </div>
                 <div class="text-right flex-grow">
@@ -368,18 +369,19 @@ const ITEM_TEMPLATES = {
                 <div class="text-blue-400 font-black text-[8px] uppercase tracking-widest">401k from Income</div>
                 <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block text-right bg-transparent text-blue-400 font-black text-lg mono-numbers outline-none" readonly>
             </div>`;
-        const tc = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Post-Tax (Roth)': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa' }[data.type] || 'text-white';
+        const tc = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', '529': 'text-type-529' }[data.type] || 'text-white';
         return `
         <div class="mobile-card flex justify-between items-center py-1 px-3">
             <div class="w-1/2">
                 <select data-id="type" class="bg-slate-900 text-[8px] font-bold rounded px-1.5 py-0.5 outline-none ${tc} w-full">
                     <option value="Taxable" ${data.type === 'Taxable' ? 'selected' : ''}>Taxable</option>
                     <option value="Pre-Tax (401k/IRA)" ${data.type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
-                    <option value="Post-Tax (Roth)" ${data.type === 'Post-Tax (Roth)' ? 'selected' : ''}>Roth</option>
+                    <option value="Roth IRA" ${data.type === 'Roth IRA' ? 'selected' : ''}>Roth IRA</option>
                     <option value="Cash" ${data.type === 'Cash' ? 'selected' : ''}>Cash</option>
                     <option value="Crypto" ${data.type === 'Crypto' ? 'selected' : ''}>Crypto</option>
                     <option value="Metals" ${data.type === 'Metals' ? 'selected' : ''}>Metals</option>
                     <option value="HSA" ${data.type === 'HSA' ? 'selected' : ''}>HSA</option>
+                    <option value="529" ${data.type === '529' ? 'selected' : ''}>529</option>
                 </select>
             </div>
             <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-1/2 text-right bg-transparent text-emerald-400 font-black text-lg mono-numbers outline-none">
@@ -477,7 +479,7 @@ function renderMobileAssetList() {
     const buckets = {
         'Taxable': inv.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Pre-Tax (401k/IRA)': inv.filter(i => i.type === 'Pre-Tax (401k/IRA)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
-        'Post-Tax (Roth)': inv.filter(i => i.type === 'Post-Tax (Roth)').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+        'Roth IRA': inv.filter(i => i.type === 'Roth IRA').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Real Estate': re.reduce((s, r) => s + (math.fromCurrency(r.value) - math.fromCurrency(r.mortgage)), 0) - helocTotal,
         'Crypto': inv.filter(i => i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Metals': inv.filter(i => i.type === 'Metals').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -486,7 +488,7 @@ function renderMobileAssetList() {
         'Options': opts.reduce((s, x) => s + Math.max(0, (math.fromCurrency(x.currentPrice) - math.fromCurrency(x.strikePrice)) * (parseFloat(x.shares) || 0)), 0),
         'Debt': -debts.reduce((s, d) => s + math.fromCurrency(d.balance), 0)
     };
-    list.innerHTML = ''; const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Post-Tax (Roth)': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', 'Options': 'Options', 'Debt': 'Debt' };
+    list.innerHTML = ''; const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Roth IRA': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', 'Options': 'Options', 'Debt': 'Debt' };
     Object.entries(buckets).sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)).forEach(([type, value]) => {
         if (value === 0) return; let color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']); if (type === 'Options') color = '#14b8a6'; 
         const item = document.createElement('div'); item.className = 'flex items-center gap-1.5 text-[8px] font-bold text-slate-400 bg-slate-800/50 p-1 rounded-lg border border-slate-700/50';
