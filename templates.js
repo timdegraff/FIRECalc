@@ -8,11 +8,11 @@ export const templates = {
             const stateRate = (stateTaxRates[state] || {}).rate || 0;
             
             if (type === '529' || type === 'Roth IRA') {
-                return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="100% Efficient">100%</div>`;
+                return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="Tax Free">TAX 0%</div>`;
             }
 
             if (v > 0 && b >= v) {
-                 return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="100% Efficient (No Gains)">100%</div>`;
+                 return `<div class="inline-flex items-center px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase tracking-wider border border-emerald-500/20 mono-numbers" title="No Gains Hit">TAX 0%</div>`;
             }
 
             const styles = {
@@ -28,22 +28,25 @@ export const templates = {
             };
 
             const s = styles[type] || styles['Taxable'];
-            let label;
+            let taxHitPercent = 0;
 
             if (type === 'Pre-Tax (401k/IRA)') {
-                const combinedRate = 0.22 + stateRate;
-                label = Math.round((1 - combinedRate) * 100) + '%';
+                // Pre-tax accounts are hit by standard income tax on the full balance
+                taxHitPercent = Math.round((0.22 + stateRate) * 100);
             } else if (['Taxable', 'Crypto', 'Metals', 'Stock Options'].includes(type)) {
+                // These are hit by capital gains tax only on the earnings portion
                 const fedRate = (type === 'Metals') ? 0.28 : 0.15;
                 const combinedCapGainsRate = fedRate + stateRate;
                 const gainRatio = v > 0 ? Math.max(0, (v - b) / v) : 0;
-                const efficiency = 1 - (gainRatio * combinedCapGainsRate);
-                label = Math.round(efficiency * 100) + '%';
-            } else {
-                label = '100%';
+                taxHitPercent = Math.round((gainRatio * combinedCapGainsRate) * 100);
             }
 
-            return `<div class="inline-flex items-center px-2 py-1 rounded-md ${s.bg} ${s.color} text-[9px] font-black uppercase tracking-wider border border-white/5 opacity-90 mono-numbers">${label}</div>`;
+            // Dynamic color shift for high tax hits
+            let colorClasses = `${s.bg} ${s.color}`;
+            if (taxHitPercent > 20) colorClasses = 'bg-red-500/10 text-red-400';
+            else if (taxHitPercent > 10) colorClasses = 'bg-amber-500/10 text-amber-400';
+
+            return `<div class="inline-flex items-center px-2 py-1 rounded-md ${colorClasses} text-[9px] font-black uppercase tracking-wider border border-white/5 opacity-90 mono-numbers">TAX ${taxHitPercent}%</div>`;
         },
         getTypeClass: (type) => {
             const map = {
