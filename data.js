@@ -306,7 +306,7 @@ function getInitialData() {
             { name: "Vehicles", value: 40000, loan: 0 }
         ], 
         helocs: [
-            { name: "Home Equity Line", balance: 150000, limit: 200000, rate: 6.0 }
+            { name: "Home Equity Line", balance: 0, limit: 150000, rate: 6.0 }
         ], 
         debts: [
             { name: "Credit Card", balance: 0, principalPayment: 0 }
