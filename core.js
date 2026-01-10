@@ -116,9 +116,28 @@ function attachGlobalListeners() {
             const container = btn.closest('.relative') || btn.closest('.removable-item');
             const hiddenInput = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
             if (hiddenInput) {
-                const isNow = hiddenInput.value === 'true';
-                hiddenInput.value = isNow ? 'false' : 'true';
-                btn.textContent = isNow ? 'Annual' : 'Monthly';
+                const isMonthlyBefore = hiddenInput.value === 'true';
+                const newVal = !isMonthlyBefore;
+                
+                // Convert existing value
+                const valueInputId = btn.dataset.target === 'isMonthly' ? 'amount' : 'incomeExpenses';
+                const valInput = container.querySelector(`input[data-id="${valueInputId}"]`);
+                
+                if (valInput) {
+                    let val = math.fromCurrency(valInput.value);
+                    if (isMonthlyBefore) {
+                        // Monthly -> Annual
+                        val = val * 12;
+                    } else {
+                        // Annual -> Monthly
+                        val = val / 12;
+                    }
+                    valInput.value = math.toCurrency(val);
+                }
+
+                hiddenInput.value = newVal ? 'true' : 'false';
+                btn.textContent = newVal ? 'Monthly' : 'Annual';
+                
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
                 if (container.classList.contains('removable-item')) {
                     updateIncomeCardPreview(container);
