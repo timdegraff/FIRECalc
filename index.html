@@ -24,12 +24,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
-    <style>
-        /* Globally hide broken images so they dont show the 'alt' text and broken icon */
-        img:-moz-broken, img:invalid {
-            display: none !important;
-        }
-    </style>
     <script type="importmap">
     {
       "imports": {
@@ -82,14 +76,12 @@
                 <button data-profile="25" class="group relative p-8 bg-slate-900/40 hover:bg-slate-800/60 border border-white/10 rounded-[32px] transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-teal-900/20 flex flex-col items-center">
                     <div class="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-rocket text-7xl text-teal-400"></i></div>
                     
-                    <!-- Icon Frame: Precision Centering -->
                     <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8 bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-teal-500/10 blur-2xl group-hover:bg-teal-500/20 transition-all"></div>
                         <div class="absolute inset-0 rounded-full border-2 border-teal-500/20 group-hover:border-teal-500/50 transition-all"></div>
                         <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
                         
-                        <!-- Image: Absolute Centered with max constraints -->
-                        <img src="starter.png" alt="" class="relative z-20 max-w-[85%] max-h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="./starter.png" alt="The Starter" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
                     </div>
 
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">The Starter</h3>
@@ -111,7 +103,7 @@
                         <div class="absolute inset-0 rounded-full border-2 border-blue-500/40 group-hover:border-blue-500/70 transition-all"></div>
                         <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
                         
-                        <img src="couple.png" alt="" class="relative z-20 max-w-[85%] max-h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="./couple.png" alt="The Accumulator" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
                     </div>
 
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">Accumulator</h3>
@@ -133,7 +125,7 @@
                         <div class="absolute inset-0 rounded-full border-2 border-purple-500/20 group-hover:border-purple-500/50 transition-all"></div>
                         <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
                         
-                        <img src="retiree.png" alt="" class="relative z-20 max-w-[85%] max-h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="./retiree.png" alt="Pre-Retiree" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
                     </div>
 
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">Pre-Retiree</h3>
@@ -150,9 +142,7 @@
     </div>
 
     <div id="app-container" class="hidden flex h-screen overflow-hidden relative">
-        <!-- Sidebar and Content remains unchanged -->
         <aside class="sidebar w-64 flex flex-col flex-shrink-0 bg-[#0B0F19]/80 backdrop-blur-xl border-r border-white/5 z-20">
-            <!-- ... sidebar content ... -->
             <div class="p-6 pb-2">
                 <div class="flex items-center justify-between mb-1">
                     <h1 class="text-xl font-black text-white tracking-tight">FIRECalc</h1>
@@ -196,7 +186,6 @@
         </aside>
 
         <main class="main-content flex-grow p-6 md:p-8 overflow-y-auto bg-[#0B0F19]">
-            <!-- Content here remains same -->
             <section id="tab-assets-debts" class="tab-content max-w-7xl mx-auto">
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     <div class="card-container p-6 flex flex-col items-center justify-center h-28">
@@ -213,13 +202,10 @@
                         <p id="sum-networth" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight relative z-10">$0</p>
                     </div>
                 </div>
-                <!-- ... other assets section ... -->
             </section>
-            <!-- ... other sections ... -->
         </main>
     </div>
 
-    <!-- Dynamic import -->
     <script type="module">
         import "./main.js?v=3.0"; 
     </script>

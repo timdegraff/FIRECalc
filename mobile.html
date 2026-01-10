@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- PWA Persistence Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <title>FIRECalc Mobile</title>
     <script>
-        // 1. Desktop Protection
         const isDesktop = window.innerWidth > 768;
         const urlParams = new URLSearchParams(window.location.search);
         const forceMobile = urlParams.get('force') === 'true';
@@ -19,7 +17,6 @@
             window.location.href = './';
         }
 
-        // 2. Clean URL Sharing
         if (window.history.replaceState) {
             let cleanUrl = window.location.href.replace('mobile.html', '');
             cleanUrl = cleanUrl.replace(/([^:])\/\//g, '$1/');
@@ -34,12 +31,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="mobile.css">
-    <style>
-        /* Hide broken images to show background icons as fallback */
-        img:-moz-broken, img:invalid {
-            display: none !important;
-        }
-    </style>
 <script type="importmap">
 {
   "imports": {
@@ -99,7 +90,7 @@
                     <div class="relative w-28 h-28 rounded-full flex items-center justify-center bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-teal-500/5 border border-teal-500/20"></div>
                         <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        <img src="starter.png" alt="" class="relative z-10 max-w-[80%] max-h-[80%] object-contain drop-shadow-xl">
+                        <img src="./starter.png" alt="The Starter" width="100" height="100" class="relative z-10 w-[80%] h-[80%] object-contain drop-shadow-xl">
                     </div>
                     <div class="text-center">
                         <h3 class="text-xl font-black text-white leading-tight">The Starter</h3>
@@ -112,7 +103,7 @@
                     <div class="relative w-28 h-28 rounded-full flex items-center justify-center bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-blue-500/10 border border-blue-500/40"></div>
                         <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        <img src="couple.png" alt="" class="relative z-10 max-w-[80%] max-h-[80%] object-contain drop-shadow-xl">
+                        <img src="./couple.png" alt="The Accumulator" width="100" height="100" class="relative z-10 w-[80%] h-[80%] object-contain drop-shadow-xl">
                     </div>
                     <div class="text-center">
                         <h3 class="text-xl font-black text-white leading-tight">Accumulator</h3>
@@ -125,7 +116,7 @@
                     <div class="relative w-28 h-28 rounded-full flex items-center justify-center bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-purple-500/5 border border-purple-500/20"></div>
                         <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        <img src="retiree.png" alt="" class="relative z-10 max-w-[80%] max-h-[80%] object-contain drop-shadow-xl">
+                        <img src="./retiree.png" alt="Pre-Retiree" width="100" height="100" class="relative z-10 w-[80%] h-[80%] object-contain drop-shadow-xl">
                     </div>
                     <div class="text-center">
                         <h3 class="text-xl font-black text-white leading-tight">Pre-Retiree</h3>
@@ -153,10 +144,6 @@
         </header>
         
         <main id="mobile-content" class="flex-grow overflow-y-auto p-4 space-y-6 pb-24"></main>
-        
-        <button id="mobile-fab" class="fixed bottom-24 right-6 w-14 h-14 bg-teal-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-40 hidden active:scale-95 transition-transform">
-            <i class="fas fa-plus"></i>
-        </button>
         
         <nav class="fixed bottom-0 left-0 right-0 h-20 bg-[#0B0F19]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around z-50 pb-safe">
             <button data-tab="assets-debts" class="mobile-nav-btn active flex flex-col items-center gap-1">
@@ -186,14 +173,6 @@
         </nav>
     </div>
 
-    <div id="inspector-overlay" class="fixed inset-0 bg-black/90 z-[60] hidden flex flex-col backdrop-blur-sm">
-        <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#0B0F19]">
-            <h3 class="text-white font-black uppercase tracking-widest text-sm">Logic Inspector</h3>
-            <button id="close-inspector" class="w-10 h-10 flex items-center justify-center text-slate-500"><i class="fas fa-times text-xl"></i></button>
-        </div>
-        <div id="inspector-log" class="p-6 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400"></div>
-    </div>
-    
     <script type="module">
         import "./mobile.js?v=3.5"; 
     </script>
