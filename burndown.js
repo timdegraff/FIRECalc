@@ -81,7 +81,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero Spend</label>
                             <div id="card-dwz-val" class="text-3xl font-black text-pink-400 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase mono-numbers leading-none">Starting at Retirement</div>
+                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase tracking-tighter leading-none">Starting at Retirement</div>
                     </div>
                 </div>
 
@@ -500,7 +500,7 @@ export const burndown = {
             }
 
             const baseTax = engine.calculateTax(Math.max(0, floorOrdIncome - pretaxDed), 0, filingStatus, assumptions.state, infFac);
-            const baseSnap = engine.calculateSnapBenefit(OrdinaryIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+            const baseSnap = engine.calculateSnapBenefit(floorOrdIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
             floorNetCash = (floorTotalIncome - pretaxDed) - baseTax + baseSnap;
             traceStr += `Floor Net Cash: ${math.toCurrency(floorNetCash)} (Income - Tax + SNAP)\n`;
             
