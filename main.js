@@ -2,7 +2,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.8.0/fi
 import { auth } from './firebase-config.js';
 import { signInWithGooglePopup } from './auth.js';
 import { initializeUI } from './core.js';
-import { initializeData } from './data.js';
+import { initializeData, updateSummaries } from './data.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { PROFILE_25_SINGLE, PROFILE_40_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
@@ -10,226 +10,110 @@ import { PROFILE_25_SINGLE, PROFILE_40_COUPLE, PROFILE_55_RETIREE } from './prof
 // --- DEVELOPER / RESET MODE ---
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('reset') === 'true') {
-    const keysToClear = [
-        'firecalc_guest_data',
-        'firecalc_guest_acknowledged',
-        'firecalc_guest_mode',
-        'firecalc_guest_profile_selected',
-        'firecalc_app_version'
-    ];
-    keysToClear.forEach(k => localStorage.removeItem(k));
+    ['firecalc_guest_data', 'firecalc_guest_acknowledged', 'firecalc_guest_mode', 'firecalc_guest_profile_selected', 'firecalc_app_version'].forEach(k => localStorage.removeItem(k));
     window.location.href = window.location.pathname;
 }
 
-// --- VERSION CHECK LOGIC ---
-const APP_VERSION = "3.0"; 
-const currentSavedVersion = localStorage.getItem('firecalc_app_version');
-
-if (currentSavedVersion !== APP_VERSION) {
-    localStorage.setItem('firecalc_app_version', APP_VERSION);
-    sessionStorage.clear();
-}
-
-// Initialize Modules
+// Module init
 initializeUI();
 benefits.init();
 burndown.init();
 
-// --- AUTH STATE LISTENER ---
 onAuthStateChanged(auth, async (user) => {
     const loginScreen = document.getElementById('login-screen');
     const appContainer = document.getElementById('app-container');
     const guestModeActive = localStorage.getItem('firecalc_guest_mode') === 'true';
 
-    // 1. Authenticated User
     if (user) {
         localStorage.removeItem('firecalc_guest_mode');
         setupAppHeader(user.photoURL, user.displayName, "Logout");
-        await initializeData(user);
-        showApp();
+        try {
+            await initializeData(user);
+            showApp();
+        } catch (e) {
+            console.error("Critical Init Error:", e);
+            alert("App failed to initialize. Please refresh.");
+        }
     } 
-    // 2. Guest Mode Active
     else if (guestModeActive) {
         setupAppHeader(null, null, "Exit Guest Mode");
-        
-        // Hide the discrete indicator on desktop if guest
-        const indicator = document.getElementById('save-indicator');
-        if (indicator) {
-            indicator.classList.add('hidden');
-        }
-
-        // Logic Sequence: Warning -> Profile Selection -> App
         const hasAcknowledged = localStorage.getItem('firecalc_guest_acknowledged') === 'true';
         const hasSelectedProfile = localStorage.getItem('firecalc_guest_profile_selected') === 'true';
 
         if (!hasAcknowledged) {
-            // Step 1: Show Warning
             const modal = document.getElementById('guest-modal');
             const btn = document.getElementById('ack-guest-btn');
             if (modal && btn) {
                 modal.classList.remove('hidden');
-                btn.onclick = () => {
-                    localStorage.setItem('firecalc_guest_acknowledged', 'true');
-                    modal.classList.add('hidden');
-                    // Step 2: Immediate trigger Profile Selection
-                    showProfileSelection();
-                };
+                btn.onclick = () => { localStorage.setItem('firecalc_guest_acknowledged', 'true'); modal.classList.add('hidden'); showProfileSelection(); };
             }
         } else if (!hasSelectedProfile) {
-            // Step 2: Show Profile Selection (if acknowledged but not selected)
             showProfileSelection();
         } else {
-            // Step 3: Load Data & App
             await initializeData(null);
             showApp();
         }
     }
-    // 3. Logged Out / Initial State
     else {
-        hideApp();
         renderLoginScreen();
     }
 
     function showApp() {
         if (loginScreen) loginScreen.classList.add('hidden');
         if (appContainer) appContainer.classList.remove('hidden');
-    }
-
-    function hideApp() {
-        if (appContainer) appContainer.classList.add('hidden');
-        if (loginScreen) loginScreen.classList.remove('hidden');
+        updateSummaries();
     }
 });
 
 function showProfileSelection() {
-    const profileModal = document.getElementById('profile-modal');
-    if (!profileModal) return;
-    
-    profileModal.classList.remove('hidden');
-    
-    const handleProfileSelect = async (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
-        
-        const type = btn.dataset.profile;
-        let dataToLoad = PROFILE_40_COUPLE; // Default fallback
-        
-        if (type === '25') dataToLoad = PROFILE_25_SINGLE;
-        else if (type === '55') dataToLoad = PROFILE_55_RETIREE;
-        
-        // Save to local storage immediately
-        localStorage.setItem('firecalc_guest_data', JSON.stringify(dataToLoad));
-        localStorage.setItem('firecalc_guest_profile_selected', 'true');
-        
-        // Hide Modal
-        profileModal.classList.add('hidden');
-        
-        // Initialize App
-        await initializeData(null);
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('app-container').classList.remove('hidden');
-    };
-
-    profileModal.querySelectorAll('button').forEach(b => {
-        b.onclick = handleProfileSelect;
+    const modal = document.getElementById('profile-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    modal.querySelectorAll('button').forEach(b => {
+        b.onclick = async () => {
+            const type = b.dataset.profile;
+            const data = type === '25' ? PROFILE_25_SINGLE : (type === '55' ? PROFILE_55_RETIREE : PROFILE_40_COUPLE);
+            localStorage.setItem('firecalc_guest_data', JSON.stringify(data));
+            localStorage.setItem('firecalc_guest_profile_selected', 'true');
+            modal.classList.add('hidden');
+            await initializeData(null);
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+        };
     });
 }
 
 function setupAppHeader(avatarUrl, userName, logoutText) {
     const avatar = document.getElementById('user-avatar');
-    if (avatar) {
-        avatar.src = avatarUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-    }
+    if (avatar) avatar.src = avatarUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
     const name = document.getElementById('user-name');
-    if (name) {
-        name.innerHTML = ''; // Clear previous content
-        if (userName === null) {
-            // Guest mode: show LOGIN TO SAVE button
-            const container = document.createElement('div');
-            container.className = 'flex flex-col items-start gap-1';
-
-            const loginBtn = document.createElement('button');
-            loginBtn.id = 'sidebar-login-btn';
-            loginBtn.className = "text-blue-400 hover:text-white transition-colors font-black uppercase tracking-widest text-[9px] border border-blue-500/30 px-2 py-1 rounded bg-blue-500/10";
-            loginBtn.textContent = "LOGIN TO SAVE";
-            loginBtn.onclick = signInWithGooglePopup;
-            
-            const resetLink = document.createElement('button');
-            resetLink.className = "text-[9px] font-bold text-slate-600 hover:text-red-400 uppercase tracking-widest px-1";
-            resetLink.innerHTML = "<i class='fas fa-trash-alt mr-1'></i>Factory Reset";
-            resetLink.onclick = () => {
-                if(confirm("Factory Reset:\n\nThis will wipe all data and return the app to the initial state for a new user.\n\nAre you sure?")) {
-                    window.location.href = window.location.pathname + '?reset=true';
-                }
-            };
-
-            container.appendChild(loginBtn);
-            container.appendChild(resetLink);
-            name.appendChild(container);
-        } else {
-            name.textContent = userName;
-        }
-    }
-    
+    if (name) name.textContent = userName || "Guest User";
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.textContent = logoutText;
-        logoutBtn.onclick = handleLogoutOrExit;
+        logoutBtn.onclick = async () => {
+            if (localStorage.getItem('firecalc_guest_mode') === 'true') {
+                localStorage.removeItem('firecalc_guest_mode');
+                window.location.reload();
+            } else {
+                const { logoutUser } = await import('./auth.js');
+                await logoutUser();
+            }
+        };
     }
-}
-
-async function handleLogoutOrExit() {
-    // If guest mode is active, clear it
-    if (localStorage.getItem('firecalc_guest_mode') === 'true') {
-        localStorage.removeItem('firecalc_guest_mode');
-        window.location.reload();
-    } else {
-        // Standard Firebase Logout
-        try {
-            const { logoutUser } = await import('./auth.js');
-            await logoutUser();
-        } catch (e) {
-            console.error(e);
-        }
-    }
-}
-
-function enableGuestMode() {
-    localStorage.setItem('firecalc_guest_mode', 'true');
-    // Reload to trigger the "Guest Mode Active" path in onAuthStateChanged
-    window.location.reload();
 }
 
 function renderLoginScreen() {
-    const loginScreen = document.getElementById('login-screen');
-    if (!loginScreen) return;
-
-    loginScreen.innerHTML = `
-        <div class="bg-slate-800 p-10 rounded-3xl shadow-2xl text-center max-w-sm w-full border border-slate-700">
-            <h1 class="text-4xl font-black mb-2 text-white tracking-tighter">FIRECalc</h1>
-            <p class="text-slate-400 mb-8 font-medium">Your retirement planner.</p>
-            
-            <button id="login-btn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-3 mb-4">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">
-                Sign in with Google
-            </button>
-
-            <div class="relative flex py-2 items-center">
-                <div class="flex-grow border-t border-slate-700"></div>
-                <span class="flex-shrink-0 mx-4 text-slate-600 text-[10px] font-bold uppercase tracking-widest">Or</span>
-                <div class="flex-grow border-t border-slate-700"></div>
-            </div>
-
-            <button id="guest-btn" class="w-full py-3 mt-4 bg-transparent border border-slate-600 text-slate-400 hover:text-white hover:border-slate-500 rounded-xl font-bold transition-all text-sm uppercase tracking-wider">
-                Continue as Guest
-            </button>
-            
-            <p class="text-[10px] text-slate-600 mt-4 leading-relaxed">
-                Guest data is stored on this device only. <br>Sign in later to sync to the cloud (note: this will replace guest data).
-            </p>
-        </div>
-    `;
-    
+    const screen = document.getElementById('login-screen');
+    if (!screen) return;
+    screen.innerHTML = `<div class="bg-slate-800 p-10 rounded-3xl text-center max-w-sm w-full border border-slate-700">
+        <h1 class="text-4xl font-black mb-2 text-white">FIRECalc</h1>
+        <p class="text-slate-400 mb-8">Your retirement planner.</p>
+        <button id="login-btn" class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-3 mb-4">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-6" alt="Google">Sign in with Google
+        </button>
+        <button id="guest-btn" class="w-full py-3 bg-transparent border border-slate-600 text-slate-400 rounded-xl font-bold uppercase tracking-wider text-xs">Continue as Guest</button>
+    </div>`;
     document.getElementById('login-btn').onclick = signInWithGooglePopup;
-    document.getElementById('guest-btn').onclick = enableGuestMode;
+    document.getElementById('guest-btn').onclick = () => { localStorage.setItem('firecalc_guest_mode', 'true'); window.location.reload(); };
 }

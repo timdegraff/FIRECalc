@@ -20,7 +20,16 @@ export async function initializeData(user) {
             const docRef = doc(db, "users", user.uid);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                window.currentData = { ...DEFAULTS, ...docSnap.data() };
+                const remoteData = docSnap.data();
+                // Deep merge logic to ensure new schema fields (like stock options) 
+                // exist even for old users
+                window.currentData = {
+                    ...JSON.parse(JSON.stringify(DEFAULTS)),
+                    ...remoteData,
+                    assumptions: { ...DEFAULTS.assumptions, ...(remoteData.assumptions || {}) },
+                    budget: { ...DEFAULTS.budget, ...(remoteData.budget || {}) },
+                    benefits: { ...DEFAULTS.benefits, ...(remoteData.benefits || {}) }
+                };
             } else {
                 window.currentData = JSON.parse(JSON.stringify(DEFAULTS));
                 await setDoc(docRef, window.currentData);
@@ -36,7 +45,6 @@ export async function initializeData(user) {
             try {
                 const parsed = JSON.parse(local);
                 window.currentData = { ...DEFAULTS, ...parsed };
-                // Safety check for critical assumption data
                 if (!window.currentData.assumptions || isNaN(window.currentData.assumptions.currentAge)) {
                     window.currentData.assumptions = { ...DEFAULTS.assumptions };
                 }
@@ -58,7 +66,7 @@ export async function initializeData(user) {
 }
 
 function loadUserDataIntoUI() {
-    if (!window.addRow) return; 
+    if (!window.addRow || !window.currentData) return; 
     
     ['investment-rows', 'real-estate-rows', 'other-assets-rows', 'debt-rows', 'heloc-rows', 'budget-savings-rows', 'budget-expenses-rows', 'income-cards', 'stock-option-rows'].forEach(id => {
         const el = document.getElementById(id);
@@ -89,6 +97,8 @@ function loadUserDataIntoUI() {
 }
 
 function scrapeData() {
+    if (!window.currentData) return null; // CRITICAL FIX: Prevent crash if scraping before initialization
+
     const getData = (id, fields) => {
         const container = document.getElementById(id);
         if (!container) return null; 
@@ -103,9 +113,6 @@ function scrapeData() {
                     else if (el.type === 'number') obj[field] = parseFloat(el.value) || 0;
                     else obj[field] = el.value;
                 }
-            });
-            row.querySelectorAll('input[type="hidden"]').forEach(h => {
-                if (fields.includes(h.dataset.id)) obj[h.dataset.id] = (h.value === 'true');
             });
             return obj;
         });
@@ -130,36 +137,28 @@ function scrapeData() {
         expenses: budgetExpenses ?? window.currentData.budget?.expenses
     };
 
-    if (document.getElementById('assumptions-container')) {
-        newData.assumptions = { ...window.currentData.assumptions };
-    }
-    const benefitsData = benefits.scrape();
-    if (document.getElementById('benefits-module')) {
-        newData.benefits = benefitsData;
-    }
-    const burndownData = burndown.scrape();
-    if (document.getElementById('burndown-view-container')) {
-        newData.burndown = burndownData;
-    }
-    const projectionData = projection.scrape();
-    if (document.getElementById('projection-chart')) {
-        newData.projectionSettings = projectionData;
-    }
+    if (document.getElementById('assumptions-container')) newData.assumptions = { ...window.currentData.assumptions };
+    if (document.getElementById('benefits-module')) newData.benefits = benefits.scrape();
+    if (document.getElementById('burndown-view-container')) newData.burndown = burndown.scrape();
+    if (document.getElementById('projection-chart')) newData.projectionSettings = projection.scrape();
 
     return newData;
 }
 
 export function forceSyncData() {
     const newData = scrapeData();
+    if (!newData) return;
     window.currentData = newData;
     updateSummaries();
     if(window.updateSidebarChart) window.updateSidebarChart(newData);
 }
 
 export function autoSave(updateUI = true) {
+    if (!window.currentData) return; // Don't save empty states
     if (window.saveTimeout) clearTimeout(window.saveTimeout);
     window.saveTimeout = setTimeout(async () => {
         const newData = scrapeData();
+        if (!newData) return;
         window.currentData = newData; 
         
         if (updateUI) {
@@ -167,15 +166,13 @@ export function autoSave(updateUI = true) {
             if(window.updateSidebarChart) window.updateSidebarChart(newData);
         }
 
-        const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
         const user = auth.currentUser;
-
         if (user) {
             try {
                 await setDoc(doc(db, "users", user.uid), newData);
                 showSaveIndicator();
             } catch (e) { console.error("Save Error", e); }
-        } else if (isGuest) {
+        } else if (localStorage.getItem('firecalc_guest_mode') === 'true') {
             localStorage.setItem('firecalc_guest_data', JSON.stringify(newData));
             showSaveIndicator(); 
         }
@@ -220,15 +217,13 @@ export function updateSummaries() {
     set('sum-life-exp', engine.getLifeExpectancy(currentAge) + currentAge, false);
 
     const infFacRet = Math.pow(1 + inflation, yrsToRetire);
-
     const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
         const growth = (parseFloat(inc.increase) / 100) || 0;
         return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
     }, 0);
     const ssAtRet = (retirementAge >= ssStartAge) ? engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacRet) : 0;
-    const totalRetIncome = streamsAtRet + ssAtRet;
-    set('sum-retirement-income-floor', totalRetIncome);
-
+    
+    set('sum-retirement-income-floor', streamsAtRet + ssAtRet);
     const retireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
         if (exp.remainsInRetirement === false) return sum;
         const base = math.fromCurrency(exp.annual);
@@ -240,7 +235,7 @@ export function updateSummaries() {
     const floorDetails = document.getElementById('sum-floor-breakdown');
     if (floorDetails) {
         let details = [];
-        if (streamsAtRet > 0) details.push(`Income: ${math.toSmartCompactCurrency(streamsAtRet)}`);
+        if (streamsAtRet > 0) details.push(`Inc: ${math.toSmartCompactCurrency(streamsAtRet)}`);
         if (ssAtRet > 0) details.push(`SS: ${math.toSmartCompactCurrency(ssAtRet)}`);
         floorDetails.textContent = details.join(' + ');
     }
