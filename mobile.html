@@ -39,10 +39,6 @@
     <link rel="stylesheet" href="mobile.css">
     <style>
         /* Hide broken images to show background icons as fallback */
-        img:not([src]), img[src=""], img[src$=".png"] {
-            opacity: 1;
-            transition: opacity 0.3s;
-        }
         img:-moz-broken, img:invalid {
             visibility: hidden;
         }
@@ -108,49 +104,49 @@
                 <p class="text-xs text-slate-400">Choose a starting point.</p>
             </div>
             
-            <div class="space-y-3 flex-grow overflow-y-auto">
-                <button data-profile="25" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-teal-500/10">
-                    <div class="w-16 h-16 rounded-full overflow-hidden border border-teal-500/50 flex-shrink-0 bg-slate-800">
-                        <img src="./starter.png" alt="The Starter" class="w-full h-full object-cover">
+            <div class="space-y-4 flex-grow overflow-y-auto">
+                <button data-profile="25" class="w-full p-5 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-5 active:scale-95 transition-all active:bg-teal-500/10">
+                    <div class="w-20 h-20 rounded-full overflow-hidden border border-teal-500/50 flex-shrink-0 bg-slate-800 flex items-center justify-center">
+                        <img src="./starter.png" alt="The Starter" class="w-full h-full object-contain">
                     </div>
                     <div class="text-left w-full">
                         <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-sm font-bold text-white">The Starter</h3>
-                            <span class="text-[9px] text-teal-400 font-black">25 • Single</span>
+                            <h3 class="text-base font-bold text-white">The Starter</h3>
+                            <span class="text-[10px] text-teal-400 font-black">25 • Single</span>
                         </div>
-                        <div class="flex justify-between text-[9px] text-slate-400">
-                            <span>$120k Inc</span>
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>$120k Income</span>
                             <span>$40k NW</span>
                         </div>
                     </div>
                 </button>
 
-                <button data-profile="40" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-blue-500/10">
-                    <div class="w-16 h-16 rounded-full overflow-hidden border border-blue-500/50 flex-shrink-0 bg-slate-800">
-                        <img src="./couple.png" alt="The Accumulator" class="w-full h-full object-cover">
+                <button data-profile="40" class="w-full p-5 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-5 active:scale-95 transition-all active:bg-blue-500/10 ring-1 ring-blue-500/20">
+                    <div class="w-20 h-20 rounded-full overflow-hidden border border-blue-500/50 flex-shrink-0 bg-slate-800 flex items-center justify-center">
+                        <img src="./couple.png" alt="The Accumulator" class="w-full h-full object-contain">
                     </div>
                     <div class="text-left w-full">
                         <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-sm font-bold text-white">Accumulator</h3>
-                            <span class="text-[9px] text-blue-400 font-black">40 • Family</span>
+                            <h3 class="text-base font-bold text-white">Accumulator</h3>
+                            <span class="text-[10px] text-blue-400 font-black">40 • Family</span>
                         </div>
-                        <div class="flex justify-between text-[9px] text-slate-400">
+                        <div class="flex justify-between text-[10px] text-slate-400">
                             <span>$325k HHI</span>
                             <span>$1.5M NW</span>
                         </div>
                     </div>
                 </button>
 
-                <button data-profile="55" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-purple-500/10">
-                    <div class="w-16 h-16 rounded-full overflow-hidden border border-purple-500/50 flex-shrink-0 bg-slate-800">
-                        <img src="./retiree.png" alt="Pre-Retiree" class="w-full h-full object-cover">
+                <button data-profile="55" class="w-full p-5 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-5 active:scale-95 transition-all active:bg-purple-500/10">
+                    <div class="w-20 h-20 rounded-full overflow-hidden border border-purple-500/50 flex-shrink-0 bg-slate-800 flex items-center justify-center">
+                        <img src="./retiree.png" alt="Pre-Retiree" class="w-full h-full object-contain">
                     </div>
                     <div class="text-left w-full">
                         <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-sm font-bold text-white">Pre-Retiree</h3>
-                            <span class="text-[9px] text-purple-400 font-black">55 • Married</span>
+                            <h3 class="text-base font-bold text-white">Pre-Retiree</h3>
+                            <span class="text-[10px] text-purple-400 font-black">55 • Married</span>
                         </div>
-                        <div class="flex justify-between text-[9px] text-slate-400">
+                        <div class="flex justify-between text-[10px] text-slate-400">
                             <span>$298k Inc</span>
                             <span>$2.9M NW</span>
                         </div>
