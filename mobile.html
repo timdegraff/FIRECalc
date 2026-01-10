@@ -10,7 +10,7 @@
     
     <title>FIRECalc Mobile</title>
     <script>
-        // 1. Desktop Protection: Bounce back to root if on desktop (unless forced)
+        // 1. Desktop Protection
         const isDesktop = window.innerWidth > 768;
         const urlParams = new URLSearchParams(window.location.search);
         const forceMobile = urlParams.get('force') === 'true';
@@ -19,7 +19,7 @@
             window.location.href = './';
         }
 
-        // 2. Clean URL Sharing: visually remove 'mobile.html' from address bar
+        // 2. Clean URL Sharing
         if (window.history.replaceState) {
             let cleanUrl = window.location.href.replace('mobile.html', '');
             cleanUrl = cleanUrl.replace(/([^:])\/\//g, '$1/');
@@ -37,7 +37,7 @@
     <style>
         /* Hide broken images to show background icons as fallback */
         img:-moz-broken, img:invalid {
-            opacity: 0;
+            display: none !important;
         }
     </style>
 <script type="importmap">
@@ -96,10 +96,10 @@
             <div class="space-y-5 flex-grow overflow-y-auto pr-1">
                 <!-- Starter Mobile Card -->
                 <button data-profile="25" class="w-full p-6 bg-slate-900/60 border border-white/10 rounded-[32px] flex flex-col items-center gap-4 active:scale-[0.98] transition-all active:bg-teal-500/10 group">
-                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center">
+                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-teal-500/5 border border-teal-500/20"></div>
                         <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        <img src="./starter.png" alt="The Starter" class="relative z-10 w-20 h-20 object-contain drop-shadow-xl">
+                        <img src="starter.png" alt="" class="relative z-10 max-w-[80%] max-h-[80%] object-contain drop-shadow-xl">
                     </div>
                     <div class="text-center">
                         <h3 class="text-xl font-black text-white leading-tight">The Starter</h3>
@@ -109,10 +109,10 @@
 
                 <!-- Accumulator Mobile Card -->
                 <button data-profile="40" class="w-full p-6 bg-slate-900/60 border border-blue-500/30 rounded-[32px] flex flex-col items-center gap-4 active:scale-[0.98] transition-all active:bg-blue-500/10 group">
-                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center">
+                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-blue-500/10 border border-blue-500/40"></div>
                         <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        <img src="./couple.png" alt="The Accumulator" class="relative z-10 w-20 h-20 object-contain drop-shadow-xl">
+                        <img src="couple.png" alt="" class="relative z-10 max-w-[80%] max-h-[80%] object-contain drop-shadow-xl">
                     </div>
                     <div class="text-center">
                         <h3 class="text-xl font-black text-white leading-tight">Accumulator</h3>
@@ -122,10 +122,10 @@
 
                 <!-- Retiree Mobile Card -->
                 <button data-profile="55" class="w-full p-6 bg-slate-900/60 border border-white/10 rounded-[32px] flex flex-col items-center gap-4 active:scale-[0.98] transition-all active:bg-purple-500/10 group">
-                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center">
+                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-purple-500/5 border border-purple-500/20"></div>
                         <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        <img src="./retiree.png" alt="Pre-Retiree" class="relative z-10 w-20 h-20 object-contain drop-shadow-xl">
+                        <img src="retiree.png" alt="" class="relative z-10 max-w-[80%] max-h-[80%] object-contain drop-shadow-xl">
                     </div>
                     <div class="text-center">
                         <h3 class="text-xl font-black text-white leading-tight">Pre-Retiree</h3>
@@ -137,8 +137,6 @@
     </div>
 
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">
-        
-        <!-- Mobile Header -->
         <header class="p-5 flex justify-between items-center bg-[#0B0F19]/80 backdrop-blur-md border-b border-white/5 flex-shrink-0 z-30">
              <div class="flex flex-col">
                 <h1 class="text-xl font-black text-white tracking-tighter uppercase">FIRECalc</h1>
@@ -154,8 +152,7 @@
              </div>
         </header>
         
-        <main id="mobile-content" class="flex-grow overflow-y-auto p-4 space-y-6 pb-24">
-        </main>
+        <main id="mobile-content" class="flex-grow overflow-y-auto p-4 space-y-6 pb-24"></main>
         
         <button id="mobile-fab" class="fixed bottom-24 right-6 w-14 h-14 bg-teal-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-40 hidden active:scale-95 transition-transform">
             <i class="fas fa-plus"></i>
