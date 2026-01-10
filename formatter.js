@@ -22,19 +22,12 @@ export const formatter = {
 
         input.addEventListener('focus', (e) => {
             const val = math.fromCurrency(e.target.value);
-            // On focus, show raw value with decimals if requested
             const decimals = parseInt(e.target.dataset.decimals) || 0;
-            if (val === 0) {
-                e.target.value = '';
-            } else {
-                e.target.value = decimals > 0 ? val.toFixed(decimals) : Math.round(val);
-            }
+            e.target.value = decimals > 0 ? val.toFixed(decimals) : Math.round(val);
             e.target.classList.remove('value-zero');
-            // Select all text so typing immediately replaces content
             setTimeout(() => e.target.select(), 0);
         });
         
-        // Initial state check
         formatter.updateZeroState(input);
     },
 
@@ -43,22 +36,15 @@ export const formatter = {
         input.addEventListener('blur', (e) => {
             const decimals = e.target.dataset.decimals !== undefined ? parseInt(e.target.dataset.decimals) : null;
             let val = parseFloat(e.target.value) || 0;
-            
             if (decimals !== null) {
                 val = parseFloat(val.toFixed(decimals));
                 e.target.value = val;
             }
-            
             if (val === 0) e.target.classList.add('value-zero');
             else e.target.classList.remove('value-zero');
         });
         input.addEventListener('focus', (e) => {
-            const val = parseFloat(e.target.value) || 0;
-            if (val === 0) {
-                e.target.value = '';
-            }
             e.target.classList.remove('value-zero');
-            // Select all text so typing immediately replaces content
             setTimeout(() => e.target.select(), 0);
         });
         const val = parseFloat(input.value) || 0;

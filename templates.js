@@ -168,6 +168,17 @@ export const templates = {
                     </label>
                 </div>
             </div>
+
+            <!-- Net Source Inflow Footer -->
+            <div class="mt-auto px-5 py-3 bg-black/40 border-t border-white/5">
+                <div class="flex justify-between items-end mb-1">
+                    <span class="label-std text-slate-500">Gross Card Contribution</span>
+                    <span data-id="netSourceDisplay" class="text-xs font-black text-white mono-numbers">$0</span>
+                </div>
+                <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
+                    <div class="bg-gradient-to-r from-teal-500 to-blue-500 h-full w-[45%]"></div>
+                </div>
+            </div>
         </div>
     `,
     "budget-savings": (data) => {

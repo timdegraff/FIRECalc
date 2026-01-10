@@ -9,7 +9,7 @@ import { benefits } from './benefits.js';
 
 let lastChartSum = 0;
 
-// Initialize global addRow immediately to prevent early reference errors
+// Initialize global addRow
 window.addRow = (containerId, type, data = {}) => {
     const container = document.getElementById(containerId); if (!container) return;
     let element = type === 'income' ? document.createElement('div') : document.createElement('tr');
@@ -64,6 +64,7 @@ window.addRow = (containerId, type, data = {}) => {
         const expBtn = element.querySelector('button[data-target="incomeExpensesMonthly"]');
         if (expBtn) expBtn.textContent = !!data.incomeExpensesMonthly ? 'Monthly' : 'Annual';
         checkIrsLimits(element);
+        updateIncomeCardPreview(element);
     }
     if (type === 'investment') updateCostBasisVisibility(element);
 };
@@ -110,42 +111,44 @@ function attachGlobalListeners() {
             }
             return;
         }
+        
+        if (btn && btn.dataset.action === 'toggle-freq') {
+            const container = btn.closest('.relative') || btn.closest('.removable-item');
+            const hiddenInput = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
+            if (hiddenInput) {
+                const isNow = hiddenInput.value === 'true';
+                hiddenInput.value = isNow ? 'false' : 'true';
+                btn.textContent = isNow ? 'Annual' : 'Monthly';
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+                if (container.classList.contains('removable-item')) {
+                    updateIncomeCardPreview(container);
+                }
+            }
+        }
     });
 
     document.body.addEventListener('input', (e) => {
         const target = e.target;
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
-            
-            // Real-time Income Card Updates
             const incomeCard = target.closest('#income-cards .removable-item');
             if (incomeCard) {
                 checkIrsLimits(incomeCard);
+                updateIncomeCardPreview(incomeCard);
             }
-
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
 
-    // Dynamic Color and Logic Updating for Asset Selects
     document.body.addEventListener('change', (e) => {
         const target = e.target;
         if (target.tagName === 'SELECT' && target.dataset.id === 'type') {
             const newClass = templates.helpers.getTypeClass(target.value);
-            // Remove any existing text-type classes
             target.classList.forEach(cls => {
                 if (cls.startsWith('text-type-')) target.classList.remove(cls);
             });
             target.classList.add(newClass);
-            
-            // If this is an investment row, toggle cost basis visibility/interactivity
             const row = target.closest('tr');
             if (row) updateCostBasisVisibility(row);
-        }
-
-        // Trigger IRS check on checkbox change (Contrib on Bonus)
-        const incomeCard = target.closest('#income-cards .removable-item');
-        if (incomeCard && target.type === 'checkbox') {
-            checkIrsLimits(incomeCard);
         }
     });
 }
@@ -156,7 +159,7 @@ export function showTab(tabId) {
     document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
     document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
     
-    if (!window.currentData) return; // Guard for pre-initialization triggers
+    if (!window.currentData) return;
 
     if (tabId === 'burndown' || tabId === 'projection' || tabId === 'benefits') {
         forceSyncData();
@@ -185,44 +188,32 @@ function attachDynamicRowListeners() {
 }
 
 function checkIrsLimits(row) {
-    const amountEl = row.querySelector('[data-id="amount"]');
-    if (!amountEl) return;
-    
-    const isMonthly = row.querySelector('input[data-id="isMonthly"]')?.value === 'true';
-    const baseAnn = math.fromCurrency(amountEl.value) * (isMonthly ? 12 : 1);
     const cPct = parseFloat(row.querySelector('[data-id="contribution"]')?.value) || 0;
-    
-    const bonusPct = parseFloat(row.querySelector('[data-id="bonusPct"]')?.value) || 0;
-    const bonusAmt = baseAnn * (bonusPct / 100);
-    const contribOnBonus = row.querySelector('[data-id="contribOnBonus"]')?.checked;
-    
-    let totalContrib = baseAnn * (cPct / 100);
-    if (contribOnBonus) {
-        totalContrib += bonusAmt * (cPct / 100);
-    }
-
+    const amount = math.fromCurrency(row.querySelector('[data-id="amount"]')?.value);
+    const isMonthly = row.querySelector('input[data-id="isMonthly"]')?.value === 'true';
+    const annual = amount * (isMonthly ? 12 : 1);
     const age = window.currentData?.assumptions?.currentAge || 40;
     const limit = age >= 50 ? 31000 : 23500;
     const warning = row.querySelector('[data-id="capWarning"]');
-    
-    if (warning) {
-        const isOver = totalContrib > limit;
-        warning.classList.toggle('hidden', !isOver);
-        warning.title = `You're over the IRS limit of ${math.toCurrency(limit)}`;
-    }
+    if (warning) warning.classList.toggle('hidden', (annual * (cPct / 100)) <= limit);
+}
+
+function updateIncomeCardPreview(card) {
+    const amount = math.fromCurrency(card.querySelector('[data-id="amount"]')?.value || "0");
+    const isMon = card.querySelector('input[data-id="isMonthly"]')?.value === 'true';
+    const bPct = parseFloat(card.querySelector('[data-id="bonusPct"]')?.value) || 0;
+    const annGross = (amount * (isMon ? 12 : 1)) * (1 + (bPct / 100));
+    const display = card.querySelector('[data-id="netSourceDisplay"]');
+    if (display) display.textContent = math.toCurrency(annGross);
 }
 
 function updateCostBasisVisibility(row) {
     const typeSel = row.querySelector('[data-id="type"]'), cbIn = row.querySelector('[data-id="costBasis"]');
     if (!typeSel || !cbIn) return;
-    // HSA and 529 are tax-free, Pre-Tax and Cash have no applicable basis for capital gains tracking
     const isBasisExempt = (['Pre-Tax (401k/IRA)', 'Cash', 'HSA', '529'].includes(typeSel.value));
     cbIn.style.visibility = isBasisExempt ? 'hidden' : 'visible';
     cbIn.disabled = isBasisExempt;
-    cbIn.tabIndex = isBasisExempt ? -1 : 0;
-    if (isBasisExempt) {
-        cbIn.value = '';
-    }
+    if (isBasisExempt) cbIn.value = '';
 }
 
 window.updateSidebarChart = (data) => {
@@ -250,7 +241,6 @@ window.createAssumptionControls = (data) => {
     container.innerHTML = `<div class="col-span-full p-4 bg-slate-900/40 rounded-xl border border-white/5"><h3 class="label-std mb-4">Core Assumptions</h3><div class="grid grid-cols-2 gap-4"><label class="block"><span class="label-std">Current Age</span><input data-id="currentAge" type="number" value="${a.currentAge}" class="input-base w-full"></label><label class="block"><span class="label-std">Retirement Age</span><input data-id="retirementAge" type="number" value="${a.retirementAge}" class="input-base w-full"></label></div></div>`;
 };
 
-// Placeholder handlers for required UI hooks
 function attachSortingListeners() {}
 function attachPasteListeners() {}
 function handleLinkedBudgetValues() {}
