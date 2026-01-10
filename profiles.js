@@ -71,10 +71,14 @@ export const PROFILE_25_SINGLE = {
             { type: 'Taxable', annual: 6000, monthly: 500, removedInRetirement: true }
         ],
         expenses: [
-            { name: 'Rent', annual: 26400, monthly: 2200, remainsInRetirement: true, isFixed: false },
+            { name: 'Rent', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: false },
+            { name: 'Utilities & Internet', annual: 4200, monthly: 350, remainsInRetirement: true, isFixed: false },
+            { name: 'Car Payment & Ins', annual: 7800, monthly: 650, remainsInRetirement: false, isFixed: true },
+            { name: 'Groceries', annual: 6000, monthly: 500, remainsInRetirement: true, isFixed: false },
             { name: 'Loan Payment', annual: 3000, monthly: 250, remainsInRetirement: false, isFixed: true },
             { name: 'Social/Dining', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false },
             { name: 'Travel', annual: 5000, monthly: 416, remainsInRetirement: true, isFixed: false },
+            { name: 'Gym & Subscriptions', annual: 1800, monthly: 150, remainsInRetirement: true, isFixed: false },
             { name: 'Shopping/Tech', annual: 4000, monthly: 333, remainsInRetirement: true, isFixed: false }
         ]
     },
@@ -82,7 +86,7 @@ export const PROFILE_25_SINGLE = {
         currentAge: 25, retirementAge: 50, ssStartAge: 62, ssMonthly: 2800, 
         stockGrowth: 9, cryptoGrowth: 10, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Single', 
-        helocRate: 7, state: 'New York', workYearsAtRetirement: 23,
+        helocRate: 7, state: 'Texas', workYearsAtRetirement: 23,
         slowGoFactor: 1.1, midGoFactor: 0.9, noGoFactor: 0.8,
         advancedGrowth: false,
         ltcgRate: 15

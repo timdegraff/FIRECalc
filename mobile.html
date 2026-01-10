@@ -37,6 +37,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="mobile.css">
+    <style>
+        /* Hide broken images to show background icons as fallback */
+        img:not([src]), img[src=""], img[src$=".png"] {
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        img:-moz-broken, img:invalid {
+            visibility: hidden;
+        }
+    </style>
 <script type="importmap">
 {
   "imports": {
@@ -100,8 +110,8 @@
             
             <div class="space-y-3 flex-grow overflow-y-auto">
                 <button data-profile="25" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-teal-500/10">
-                    <div class="w-16 h-16 rounded-full overflow-hidden border border-teal-500/50 flex-shrink-0">
-                        <img src="starter.png" alt="The Starter" class="w-full h-full object-cover">
+                    <div class="w-16 h-16 rounded-full overflow-hidden border border-teal-500/50 flex-shrink-0 bg-slate-800">
+                        <img src="./starter.png" alt="The Starter" class="w-full h-full object-cover">
                     </div>
                     <div class="text-left w-full">
                         <div class="flex justify-between items-center mb-1">
@@ -116,8 +126,8 @@
                 </button>
 
                 <button data-profile="40" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-blue-500/10">
-                    <div class="w-16 h-16 rounded-full overflow-hidden border border-blue-500/50 flex-shrink-0">
-                        <img src="couple.png" alt="The Accumulator" class="w-full h-full object-cover">
+                    <div class="w-16 h-16 rounded-full overflow-hidden border border-blue-500/50 flex-shrink-0 bg-slate-800">
+                        <img src="./couple.png" alt="The Accumulator" class="w-full h-full object-cover">
                     </div>
                     <div class="text-left w-full">
                         <div class="flex justify-between items-center mb-1">
@@ -132,8 +142,8 @@
                 </button>
 
                 <button data-profile="55" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-purple-500/10">
-                    <div class="w-16 h-16 rounded-full overflow-hidden border border-purple-500/50 flex-shrink-0">
-                        <img src="retiree.png" alt="Pre-Retiree" class="w-full h-full object-cover">
+                    <div class="w-16 h-16 rounded-full overflow-hidden border border-purple-500/50 flex-shrink-0 bg-slate-800">
+                        <img src="./retiree.png" alt="Pre-Retiree" class="w-full h-full object-cover">
                     </div>
                     <div class="text-left w-full">
                         <div class="flex justify-between items-center mb-1">
