@@ -235,17 +235,45 @@ export const engine = {
         return tax;
     },
     calculateSnapBenefit: (income, hhSize, shelterCosts, hasSUA, isDisabled, state = 'Michigan', inflationFactor = 1) => {
-        const monthlyGross = income / 12;
+        const monthlyGross = Math.max(0, income / 12);
         const fplBaseline = stateTaxRates[state]?.fplBase || 16060;
         const snapFpl = (fplBaseline + (hhSize - 1) * 5650) * inflationFactor;
+        
+        // 200% Gross Test for categorical eligibility in Michigan and most states
         if (monthlyGross > (snapFpl * 2.0) / 12) return 0;
+        
+        // Standard Deduction 2025/2026 values
         const stdDed = (hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) * inflationFactor;
-        const adjIncome = Math.max(0, monthlyGross - stdDed);
-        const shelterThreshold = adjIncome / 2;
-        const rawExcessShelter = Math.max(0, (shelterCosts + (hasSUA ? 680 * inflationFactor : 0)) - shelterThreshold);
+        
+        // Earned Income Deduction (20%)
+        const earnedDed = monthlyGross * 0.20;
+        
+        // Net Income before shelter
+        const netBeforeShelter = Math.max(0, monthlyGross - stdDed - earnedDed);
+        
+        // Shelter Deduction Calculation
+        // Threshold is 50% of the Net Income (after other deductions)
+        const shelterThreshold = netBeforeShelter / 2;
+        const actualShelterCosts = shelterCosts + (hasSUA ? 680 * inflationFactor : 0);
+        const rawExcessShelter = Math.max(0, actualShelterCosts - shelterThreshold);
+        
+        // Cap the shelter deduction unless disabled/elderly
         const finalShelterDeduction = (isDisabled) ? rawExcessShelter : Math.min(rawExcessShelter, 712 * inflationFactor);
-        const maxBenefit = (295 + (hhSize - 1) * 215) * inflationFactor;
-        return Math.floor(Math.max(0, maxBenefit - (Math.max(0, adjIncome - finalShelterDeduction) * 0.3)));
+        
+        // Final Net Income for SNAP
+        const finalNetIncome = Math.max(0, netBeforeShelter - finalShelterDeduction);
+        
+        // Max Benefit (2025 COLA)
+        const maxBenefit = (291 + (hhSize - 1) * 211) * inflationFactor;
+        
+        // Standard 30% contribution rule
+        const benefit = Math.floor(Math.max(0, maxBenefit - (finalNetIncome * 0.3)));
+        
+        // Minimum benefit rule ($23 for 1-2 person households)
+        if (benefit > 0) return benefit;
+        if (hhSize <= 2 && monthlyGross <= (snapFpl / 12)) return 23 * inflationFactor;
+        
+        return 0;
     },
     calculateSummaries: (data) => {
         const inv = data.investments || [], options = data.stockOptions || [], re = data.realEstate || [], oa = data.otherAssets || [], helocs = data.helocs || [], debts = data.debts || [], inc = data.income || [], budget = data.budget || { savings: [], expenses: [] };

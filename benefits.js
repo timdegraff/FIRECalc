@@ -113,7 +113,9 @@ export const benefits = {
                 <div class="pt-8 text-center">
                     <p class="text-[10px] text-slate-500 leading-relaxed max-w-2xl mx-auto italic">
                         The <strong>Current Year Sandbox MAGI</strong> tests your household size as it exists today. 
-                        Retirement simulations in the Burndown tab will automatically <strong>remove</strong> dependents in the years you specify above.
+                        Retirement simulations in the Burndown tab will automatically <strong>remove</strong> dependents in the years you specify above. 
+                        <br><br>
+                        <em>Disclaimer: These are estimates only and subject to nuance, legislative updates, state-specific policy changes, and asset/income verification requirements.</em>
                     </p>
                 </div>
             </div>

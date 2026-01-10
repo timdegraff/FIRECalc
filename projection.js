@@ -1,4 +1,3 @@
-
 import { math, engine, assetColors } from './utils.js';
 import { burndown } from './burndown.js'; 
 
@@ -12,6 +11,34 @@ if (typeof Chart !== 'undefined') {
 }
 
 export const projection = {
+    init: () => {
+        const realBtn = document.getElementById('toggle-projection-real');
+        if (realBtn) {
+            realBtn.onclick = () => {
+                isRealDollars = !isRealDollars;
+                projection.updateToggleStyle(realBtn);
+                if (window.currentData) {
+                    projection.run(window.currentData);
+                }
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+            projection.updateToggleStyle(realBtn);
+        }
+
+        const endSlider = document.getElementById('input-projection-end');
+        if (endSlider) {
+            endSlider.oninput = (e) => {
+                const val = e.target.value;
+                const label = document.getElementById('label-projection-end');
+                if (label) label.textContent = val;
+                if (window.currentData) {
+                    projection.run(window.currentData);
+                }
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+        }
+    },
+
     getIsRealDollars: () => isRealDollars,
     toggleRealDollars: () => {
         isRealDollars = !isRealDollars;
@@ -22,9 +49,19 @@ export const projection = {
         isRealDollars = !!settings.isRealDollars;
         const realBtn = document.getElementById('toggle-projection-real');
         if (realBtn) projection.updateToggleStyle(realBtn);
+        
+        const endSlider = document.getElementById('input-projection-end');
+        if (endSlider && settings.chartEndAge) {
+            endSlider.value = settings.chartEndAge;
+            const label = document.getElementById('label-projection-end');
+            if (label) label.textContent = settings.chartEndAge;
+        }
     },
 
-    scrape: () => ({ isRealDollars }),
+    scrape: () => ({ 
+        isRealDollars,
+        chartEndAge: parseFloat(document.getElementById('input-projection-end')?.value) || 72
+    }),
 
     updateToggleStyle: (btn) => {
         if (!btn) return;
@@ -45,13 +82,11 @@ export const projection = {
         const currentYear = new Date().getFullYear(), chartEndAge = parseFloat(document.getElementById('input-projection-end')?.value) || 72, maxSimAge = 100, duration = maxSimAge - assumptions.currentAge;
 
         // Initialize simulation state for individual options
-        // We track them individually because each can have a unique APY
         const simOptions = stockOptions.map(x => {
             const shares = parseFloat(x.shares) || 0;
             const strike = math.fromCurrency(x.strikePrice);
             const fmv = math.fromCurrency(x.currentPrice);
             const netEquity = Math.max(0, (fmv - strike) * shares);
-            // Default to 10% or global stock growth if not specified
             const growthRate = (x.growth !== undefined && x.growth !== "") ? parseFloat(x.growth) : (assumptions.stockGrowth || 10);
             return {
                 value: netEquity,
@@ -59,7 +94,6 @@ export const projection = {
             };
         });
 
-        // Helper to sum current option values
         const getTotalOptionsValue = () => simOptions.reduce((s, o) => s + o.value, 0);
 
         let buckets = {
@@ -80,9 +114,8 @@ export const projection = {
         const labels = [], datasets = Object.keys(buckets).map(key => ({ label: key, data: [], backgroundColor: assetColors[key] || '#ccc', borderColor: 'transparent', fill: true, pointRadius: 0 })), tableData = [];
 
         for (let i = 0; i <= duration; i++) {
-            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= assumptions.retirementAge, infFac = Math.pow(1 + inflationRate, i);
+            const age = assumptions.currentAge + i, year = currentYear + i, infFac = Math.pow(1 + inflationRate, i);
             
-            // Dynamic APY for this year
             const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
             const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
             const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
@@ -96,15 +129,12 @@ export const projection = {
                 if (age <= chartEndAge) datasets[idx].data.push(disp);
                 currentYearBuckets[key] = disp;
                 
-                // Apply Growth
                 if (['Brokerage', 'Pre-Tax', 'Post-Tax', 'HSA', '529'].includes(key)) buckets[key] *= (1 + stockGrowth);
                 else if (key === 'Crypto') buckets[key] *= (1 + cryptoGrowth);
                 else if (key === 'Metals') buckets[key] *= (1 + metalsGrowth);
                 else if (key === 'Real Estate') buckets[key] *= (1 + realEstateGrowth);
-                // Stock Options are handled separately below
             });
 
-            // Grow individual stock options
             simOptions.forEach(opt => {
                 opt.value *= (1 + opt.growthRate);
             });

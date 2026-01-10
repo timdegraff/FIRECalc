@@ -5,6 +5,7 @@ import { initializeUI } from './core.js';
 import { initializeData, updateSummaries } from './data.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
+import { projection } from './projection.js';
 import { PROFILE_25_SINGLE, PROFILE_40_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
 
 // --- DEVELOPER / RESET MODE ---
@@ -18,6 +19,7 @@ if (urlParams.get('reset') === 'true') {
 initializeUI();
 benefits.init();
 burndown.init();
+projection.init();
 
 onAuthStateChanged(auth, async (user) => {
     const loginScreen = document.getElementById('login-screen');

@@ -251,8 +251,14 @@ window.updateSidebarChart = (data) => {
         legendContainer.innerHTML = '';
         Object.entries(totals).forEach(([type, value]) => {
             const item = document.createElement('div');
-            item.className = 'flex items-center gap-2 text-[9px] font-bold text-slate-400 truncate';
-            item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${assetColors[type] || '#fff'}"></div><span>${type}</span>`;
+            item.className = 'flex items-center justify-between gap-1 text-[9px] font-bold text-slate-400 truncate w-full pr-1';
+            item.innerHTML = `
+                <div class="flex items-center gap-1.5 truncate">
+                    <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${assetColors[type] || '#fff'}"></div>
+                    <span class="truncate">${type}</span>
+                </div>
+                <span class="text-white mono-numbers ml-auto">${math.toSmartCompactCurrency(value)}</span>
+            `;
             legendContainer.appendChild(item);
         });
     }
