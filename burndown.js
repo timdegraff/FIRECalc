@@ -312,7 +312,6 @@ export const burndown = {
 
         // 3. CALCULATE CARD 3: DIE WITH ZERO
         // Sanity Check Cap: Limit search to (Current Net Worth / 5) or $500k, whichever is higher
-        // This prevents runaway values if HELOC logic is loose.
         const currentNW = results[0]?.netWorth || 0;
         const searchCap = Math.max(500000, currentNW / 3); 
         
@@ -474,10 +473,8 @@ export const burndown = {
                 for (const pk of burndown.priorityOrder) {
                     if (deficit <= 1) break; 
 
-                    // HELOC Availability Check: Strict Enforcement
                     let available = 0;
                     if (pk === 'heloc') {
-                        // If no limit or 0 limit, treat as 0 available
                         available = (helocLimit > 0) ? Math.max(0, helocLimit - bal['heloc']) : 0;
                     } else {
                         available = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0);
@@ -544,15 +541,14 @@ export const burndown = {
             
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             
-            // INSOLVENCY LOGIC REFINED:
-            // 1. True Insolvency: Cash shortfall (> $100) AND no liquid assets left.
-            // 2. HELOC Saturation: If shortfall exists, it implies HELOC (if used) maxed out or liquid assets gone.
-            const isActuallyInsolvent = (targetBudget - finalNetCash) > 100 && liquidAssets < 1000;
-
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const currentOAVal = otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0);
             const totalLiabilities = totalMort + totalOL + totalDebt + bal['heloc'];
             const currentNW = (liquidAssets + currentREVal + currentOAVal) - totalLiabilities;
+
+            // INSOLVENCY LOGIC REFINED: 
+            // Trigger if deficit remains (budget not met) OR if Net Worth is dangerously low (< $1000)
+            const isActuallyInsolvent = (targetBudget - finalNetCash) > 500 || currentNW < 1000;
 
             const yearRes = { 
                 age, year, budget: targetBudget, magi, netWorth: currentNW, 
@@ -584,17 +580,18 @@ export const burndown = {
         
         const header = isMobile 
             ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10 text-center">Age</th><th class="p-2 text-center">Spend</th><th class="p-2 text-center">MAGI</th><th class="p-2 text-center">Health</th><th class="p-2 text-center">Net Worth</th></tr>`
-            : `<tr class="sticky top-0 bg-[#1e293b] !text-slate-500 label-std z-20 border-b border-white/5"><th class="p-2 w-10 text-center !bg-[#1e293b]">Age</th><th class="p-2 text-center !bg-[#1e293b]">Budget</th><th class="p-2 text-center !bg-[#1e293b]">MAGI</th><th class="p-2 text-center !bg-[#1e293b]">Health</th><th class="p-2 text-center !bg-[#1e293b]">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-center text-[9px] !bg-[#1e293b]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-center !bg-[#1e293b]">Net Worth</th></tr>`;
+            : `<tr class="sticky top-0 bg-[#1e293b] !text-slate-500 label-std z-20 border-b border-white/5"><th class="p-2 w-10 text-center !bg-[#1e293b]">Age</th><th class="p-2 text-center !bg-[#1e293b]">Budget</th><th class="p-2 text-center !bg-[#1e293b]">MAGI</th><th class="p-2 text-center !bg-[#1e293b]">Health Status</th><th class="p-2 text-center !bg-[#1e293b]">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-center text-[9px] !bg-[#1e293b]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-center !bg-[#1e293b]">Net Worth</th></tr>`;
 
         const rows = results.map((r, i) => {
             const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
-            const badgeClass = r.status === 'INSOLVENT' ? 'bg-red-600 text-white' : (r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-500 text-white')));
+            const badgeClass = r.status === 'INSOLVENT' ? 'bg-red-600 text-white animate-pulse' : (r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-500 text-white')));
             const isRetYear = r.age === lastUsedRetirementAge;
             const retBadge = isRetYear ? `<span class="block text-[7px] text-yellow-400 mt-0.5 tracking-tighter">RET YEAR</span>` : '';
+            const rowClass = r.isInsolvent ? 'bg-red-500/20' : (isRetYear ? 'bg-blue-900/10' : '');
 
             if (isMobile) {
                 if (r.age > 70 && r.age % 5 !== 0) return '';
-                return `<tr class="border-b border-slate-800/50 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : ''}">
+                return `<tr class="border-b border-slate-800/50 text-[10px] ${rowClass}">
                     <td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td>
                     <td class="p-2 text-center">
                         <div class="text-slate-400">${formatCell(r.budget / inf)}</div>
@@ -610,7 +607,7 @@ export const burndown = {
                     </td>
                 </tr>`;
             }
-            // Desktop Cell: Top = Draw (Bold), Bottom = Balance (Dim)
+
             const draws = burndown.priorityOrder.map(k => {
                 const drawVal = (r.draws?.[k] || 0) / inf;
                 const balVal = r.balances[k] / inf;
@@ -621,7 +618,20 @@ export const burndown = {
                 </td>`;
             }).join('');
             
-            return `<tr class="border-b border-white/5 hover:bg-white/5 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : (isRetYear ? 'bg-blue-900/10' : '')}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-center text-slate-400 font-medium">${formatCell(r.budget / inf)}</td><td class="p-2 text-center font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>${retBadge}</td><td class="p-2 text-center text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-center font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
+            const nwColor = r.isInsolvent ? 'text-red-400' : 'text-teal-400';
+            
+            return `<tr class="border-b border-white/5 hover:bg-white/5 text-[10px] ${rowClass}">
+                <td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-500' : ''}">${r.age}</td>
+                <td class="p-2 text-center text-slate-400 font-medium">${formatCell(r.budget / inf)}</td>
+                <td class="p-2 text-center font-black text-white">${formatCell(r.magi / inf)}</td>
+                <td class="p-2 text-center">
+                    <span class="px-3 py-1 rounded text-[9px] font-black uppercase tracking-wider ${badgeClass}">${r.status}</span>
+                    ${retBadge}
+                </td>
+                <td class="p-2 text-center text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>
+                ${draws}
+                <td class="p-2 text-center font-black ${nwColor}">${formatCell(r.netWorth / inf)}</td>
+            </tr>`;
         }).join('');
 
         return `<table class="w-full text-left border-collapse table-auto">${header}<tbody>${rows}</tbody></table>`;
