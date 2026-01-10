@@ -22,6 +22,29 @@ export const assetColors = {
     '529': '#fb7185'
 };
 
+export const assumptions = {
+    defaults: {
+        currentAge: 40,
+        retirementAge: 65,
+        ssStartAge: 67,
+        ssMonthly: 3000,
+        stockGrowth: 7,
+        cryptoGrowth: 7,
+        metalsGrowth: 4,
+        realEstateGrowth: 3,
+        inflation: 3,
+        filingStatus: 'Single',
+        helocRate: 7,
+        state: 'Michigan',
+        workYearsAtRetirement: 35,
+        slowGoFactor: 1.0,
+        midGoFactor: 0.9,
+        noGoFactor: 0.8,
+        advancedGrowth: false,
+        ltcgRate: 15
+    }
+};
+
 export const stateTaxRates = {
     'Alabama': { rate: 0.04, taxesSS: false, expanded: false },
     'Alaska': { rate: 0.00, taxesSS: false, expanded: true, fplBase: 20080 },
