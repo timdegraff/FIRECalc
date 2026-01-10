@@ -47,40 +47,41 @@ export const benefits = {
                                 <div id="hh-total-size-badge" class="text-xl font-black text-blue-400 mono-numbers leading-none">1</div>
                             </div>
                         </div>
-
-                        <div class="pt-4 border-t border-white/5 space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div class="flex flex-col">
-                                    <label class="label-std text-slate-500">Pregnancy Adjustment</label>
-                                    <p class="text-[8px] text-slate-600 font-bold uppercase">Boosts Platinum Threshold (MI Only)</p>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" data-benefit-id="isPregnant" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 text-[10px] flex items-center px-1"></div>
-                                </label>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex flex-col">
-                                    <label class="label-std text-slate-500">Utility Allowance (SUA)</label>
-                                    <p class="text-[8px] text-slate-600 font-bold uppercase">Standard Deduction for SNAP</p>
-                                </div>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" data-benefit-id="hasSUA" class="sr-only peer" checked>
-                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
-                                </label>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- Sandbox & Results -->
                     <div class="space-y-4">
                         <div class="card-container p-6 bg-slate-800/40">
+                            <!-- Toggle Adjustments adjacent to Slider -->
+                            <div class="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-white/5">
+                                <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+                                    <div class="flex flex-col">
+                                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pregnancy</label>
+                                        <p class="text-[8px] text-slate-600 font-bold uppercase">1.95x FPL Threshold</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" data-benefit-id="isPregnant" class="sr-only peer">
+                                        <div class="w-10 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-white/5">
+                                    <div class="flex flex-col">
+                                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Utility (SUA)</label>
+                                        <p class="text-[8px] text-slate-600 font-bold uppercase">SNAP Standard Ded.</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" data-benefit-id="hasSUA" class="sr-only peer" checked>
+                                        <div class="w-10 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <div class="flex justify-between items-end mb-4">
                                 <div class="flex flex-col">
-                                    <label class="label-std text-blue-400">Current Year Sandbox</label>
+                                    <label class="label-std text-blue-400">Current Year Sandbox MAGI</label>
                                     <p class="text-[9px] text-slate-500 font-medium italic">Simulate benefit cliffs for current household</p>
                                 </div>
-                                <div class="text-2xl font-black text-white mono-numbers leading-none" data-label="unifiedIncome">$0</div>
+                                <div class="text-2xl font-black text-white mono-numbers leading-none" data-label="unifiedIncome">$45,000</div>
                             </div>
                             <input type="range" data-benefit-id="unifiedIncome" min="0" max="200000" step="1000" value="45000" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500">
                         </div>
@@ -111,7 +112,7 @@ export const benefits = {
 
                 <div class="pt-8 text-center">
                     <p class="text-[10px] text-slate-500 leading-relaxed max-w-2xl mx-auto italic">
-                        The <strong>Current Year Sandbox</strong> tests your household size as it exists today. 
+                        The <strong>Current Year Sandbox MAGI</strong> tests your household size as it exists today. 
                         Retirement simulations in the Burndown tab will automatically <strong>remove</strong> dependents in the years you specify above.
                     </p>
                 </div>
@@ -268,7 +269,7 @@ export const benefits = {
 
     scrape: () => {
         const c = document.getElementById('benefits-module');
-        if (!c) return { unifiedIncome: 0, dependents: [] };
+        if (!c) return { unifiedIncome: 45000, dependents: [] };
         
         const deps = Array.from(c.querySelectorAll('.dependent-item')).map(item => ({
             name: item.querySelector('[data-id="depName"]').value,
