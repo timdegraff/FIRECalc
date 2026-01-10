@@ -168,7 +168,7 @@ export const templates = {
             <!-- Net Source Inflow Footer -->
             <div class="mt-auto px-5 py-3 bg-black/40 border-t border-white/5">
                 <div class="flex justify-between items-center">
-                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Net Card Contribution</span>
+                    <span data-id="footer-label" class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Net Card Contribution</span>
                     <div data-id="netSourceDisplay" class="text-xs font-black text-white mono-numbers">$0</div>
                 </div>
                 <div class="flex items-center gap-1.5 mt-1">

@@ -221,7 +221,7 @@ function updateIncomeCardPreview(card) {
     const netSource = grossAnn - expensesAnn - personal401k;
     
     const display = card.querySelector('[data-id="netSourceDisplay"]');
-    const footerLabel = card.querySelector('.text-[8px].font-black.text-slate-500');
+    const footerLabel = card.querySelector('[data-id="footer-label"]');
     
     if (display) {
         display.textContent = math.toCurrency(netSource);

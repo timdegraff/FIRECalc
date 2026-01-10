@@ -345,12 +345,13 @@ export const burndown = {
 
         // DIE WITH ZERO SEARCH
         let low = 0, high = 2500000, bestBudget = 0;
-        for (let i = 0; i < 25; i++) {
+        for (let i = 0; i < 30; i++) {
             let mid = (low + high) / 2;
             const tempConfig = { ...config, manualBudget: mid, useSync: false }; 
             const sim = burndown.simulateProjection(data, tempConfig, true); 
             const last = sim[sim.length - 1];
-            if (last.isInsolvent || last.netWorth < 1000) high = mid; 
+            // In DWZ search, we care about the absolute last point of wealth
+            if (last.isInsolvent || last.netWorth < 100) high = mid; 
             else { low = mid; bestBudget = mid; }
         }
 
@@ -358,7 +359,6 @@ export const burndown = {
         const dwzSubEl = document.getElementById('card-dwz-sub');
         if (dwzValEl && dwzSubEl) {
             // DWZ display must respect real dollars toggle context
-            const displayBudget = isRealDollars ? bestBudget : bestBudget * Math.pow(1 + infRate, (100 - data.assumptions.currentAge));
             dwzValEl.textContent = formatter.formatCurrency(bestBudget / 12, true);
             dwzSubEl.textContent = `${formatter.formatCurrency(bestBudget, true)} / YEAR`;
         }
@@ -487,67 +487,91 @@ export const burndown = {
             let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget * 1.5));
             traceStr += `MAGI Strategy Target: ${math.toCurrency(magiTarget)}\n`;
 
-            for (const pk of burndown.priorityOrder) {
-                if (deficit <= 50 && (currentOrdIncome + currentLtcgIncome) >= magiTarget) break;
+            // Sequential Simulator Pass
+            // To prevent fragmented draws, we use a pass-based loop to refine tax gross-ups
+            for (let pass = 0; pass < 3; pass++) {
+                if (deficit <= 5) break; 
 
-                let available = 0;
-                if (pk === 'heloc') available = (helocLimit > 0) ? Math.max(0, helocLimit - bal['heloc']) : 0;
-                else available = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0);
-                if (available <= 1) continue;
+                for (const pk of burndown.priorityOrder) {
+                    // Check if we already hit both survival and strategy goals
+                    if (deficit <= 5 && (currentOrdIncome + currentLtcgIncome) >= magiTarget) break;
 
-                let marginalRate = 0;
-                if (burndown.assetMeta[pk].isTaxable) {
-                    if (pk === '401k') marginalRate = 0.22 + (stateTaxRates[assumptions.state]?.rate || 0.04);
-                    else {
-                        const basisRatio = (bal[pk] > 0) ? (bal[pk+'Basis'] / bal[pk]) : 0;
-                        marginalRate = (1 - basisRatio) * (0.15 + (stateTaxRates[assumptions.state]?.rate || 0.04));
+                    let available = 0;
+                    if (pk === 'heloc') available = (helocLimit > 0) ? Math.max(0, helocLimit - bal['heloc']) : 0;
+                    else available = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0);
+                    if (available <= 1) continue;
+
+                    // Accurate Marginal Rate Calculation instead of hardcoded 22%
+                    let marginalRate = 0;
+                    if (burndown.assetMeta[pk].isTaxable) {
+                        const currentTotal = currentOrdIncome;
+                        // Rough check for 12% vs 22% bracket logic based on status
+                        const bracketBoundary = (filingStatus === 'Married Filing Jointly' ? 96950 : 48475) * infFac;
+                        const baseRate = currentTotal > bracketBoundary ? 0.22 : 0.12;
+                        const stateRate = stateTaxRates[assumptions.state]?.rate || 0.04;
+                        
+                        if (pk === '401k') {
+                            marginalRate = baseRate + stateRate;
+                        } else {
+                            const basisRatio = (bal[pk] > 0) ? (bal[pk+'Basis'] / bal[pk]) : 1;
+                            const gainRatio = 1 - basisRatio;
+                            marginalRate = gainRatio * (0.15 + stateRate);
+                        }
                     }
-                }
 
-                let harvestNeed = Math.max(0, magiTarget - (currentOrdIncome + currentLtcgIncome));
-                let survivalNeed = Math.max(0, deficit);
-                
-                if (survivalNeed <= 1 && harvestNeed <= 1) continue;
+                    let survivalNeed = Math.max(0, deficit);
+                    let harvestNeed = Math.max(0, magiTarget - (currentOrdIncome + currentLtcgIncome));
+                    
+                    if (survivalNeed <= 1 && harvestNeed <= 1) continue;
 
-                let amountToTake = 0;
-                if (survivalNeed > 1) {
-                    let grossNeeded = survivalNeed / (1 - marginalRate);
-                    amountToTake = Math.min(grossNeeded, available);
-                } else if (['401k', 'taxable', 'crypto', 'metals'].includes(pk)) {
-                    if (pk === '401k') amountToTake = Math.min(harvestNeed, available);
-                    else {
-                        const basisRatio = (bal[pk] > 0) ? (bal[pk+'Basis'] / bal[pk]) : 0;
-                        const gainRatio = 1 - basisRatio;
-                        if (gainRatio > 0) amountToTake = Math.min(harvestNeed / gainRatio, available);
+                    let amountToTake = 0;
+                    if (survivalNeed > 1) {
+                        // GREEDY SURVIVAL: Take as much as possible from current bucket to close deficit
+                        let grossNeeded = survivalNeed / (1 - marginalRate);
+                        amountToTake = Math.min(grossNeeded, available);
+                    } else if (['401k', 'taxable', 'crypto', 'metals'].includes(pk)) {
+                        // STRATEGY HARVESTING
+                        if (pk === '401k') amountToTake = Math.min(harvestNeed, available);
+                        else {
+                            const basisRatio = (bal[pk] > 0) ? (bal[pk+'Basis'] / bal[pk]) : 1;
+                            const gainRatio = 1 - basisRatio;
+                            if (gainRatio > 0.05) amountToTake = Math.min(harvestNeed / gainRatio, available);
+                        }
                     }
+
+                    if (amountToTake <= 1) continue;
+                    if (pk === '401k' && age < 59.5) {
+                        amountToTake = Math.min(amountToTake, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
+                    }
+                    if (amountToTake <= 1) continue;
+
+                    traceStr += `> Pass ${pass+1}: Withdraw ${math.toCurrency(amountToTake)} from ${pk.toUpperCase()}\n`;
+
+                    if (pk === 'heloc') bal['heloc'] += amountToTake; 
+                    else {
+                        if (bal[pk+'Basis'] !== undefined) {
+                            const ratio = Math.min(1, amountToTake / bal[pk]);
+                            bal[pk+'Basis'] -= bal[pk+'Basis'] * ratio;
+                        }
+                        bal[pk] -= amountToTake;
+                    }
+
+                    currentDraws[pk] = (currentDraws[pk] || 0) + amountToTake;
+                    totalWithdrawn += amountToTake;
+
+                    if (pk === '401k') currentOrdIncome += amountToTake;
+                    else if (['taxable', 'crypto', 'metals'].includes(pk)) {
+                        const gainRatio = (bal[pk] + amountToTake > 0) ? (1 - (bal[pk+'Basis'] / (bal[pk] + amountToTake))) : 1;
+                        currentLtcgIncome += Math.max(0, amountToTake * gainRatio); 
+                    }
+
+                    const newTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
+                    const newSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+                    deficit = targetBudget - ((floorTotalIncome - pretaxDed) + totalWithdrawn - newTax + newSnap);
+                    
+                    // If we just solved survival in this bucket, don't hop to the next one for survival logic in this pass
+                    if (deficit <= 5) break;
                 }
-
-                if (amountToTake <= 1) continue;
-                if (pk === '401k' && age < 59.5) {
-                    amountToTake = Math.min(amountToTake, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
-                }
-                if (amountToTake <= 1) continue;
-
-                traceStr += `> Withdraw ${math.toCurrency(amountToTake)} from ${pk.toUpperCase()}\n`;
-
-                if (pk === 'heloc') bal['heloc'] += amountToTake; 
-                else {
-                    if (bal[pk+'Basis']) { bal[pk+'Basis'] -= bal[pk+'Basis'] * (amountToTake / bal[pk]); }
-                    bal[pk] -= amountToTake;
-                }
-
-                currentDraws[pk] = (currentDraws[pk] || 0) + amountToTake;
-                totalWithdrawn += amountToTake;
-
-                if (pk === '401k') currentOrdIncome += amountToTake;
-                else if (['taxable', 'crypto', 'metals'].includes(pk)) {
-                    const gainRatio = (bal[pk] > 0) ? (1 - (bal[pk+'Basis'] / bal[pk])) : 1;
-                    currentLtcgIncome += Math.max(0, amountToTake * gainRatio); 
-                }
-
-                const newTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                const newSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
-                deficit = targetBudget - ((floorTotalIncome - pretaxDed) + totalWithdrawn - newTax + newSnap);
             }
 
             const finalTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
@@ -556,7 +580,7 @@ export const burndown = {
             const magi = currentOrdIncome + currentLtcgIncome;
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             const currentNW = (liquidAssets + realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0) + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0)) - (totalMort + totalOL + totalDebt + bal['heloc']);
-            const isActuallyInsolvent = (targetBudget - finalNetCash) > 500 || currentNW < 1000;
+            const isActuallyInsolvent = (targetBudget - finalNetCash) > 100 || currentNW < 100;
 
             traceStr += `Final MAGI: ${math.toCurrency(magi)}\n`;
             traceStr += `Final Net Cash: ${math.toCurrency(finalNetCash)}\n`;
