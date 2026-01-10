@@ -25,7 +25,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
     <style>
-        /* Hide broken images to show background icons as fallback */
+        /* Hide broken images globally */
         img:-moz-broken, img:invalid {
             opacity: 0;
         }
@@ -84,7 +84,7 @@
                     <div class="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-rocket text-7xl text-teal-400"></i></div>
                     
                     <!-- Icon Container: Centered Perfectly -->
-                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8">
+                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8 overflow-hidden">
                         <!-- Glow Effect -->
                         <div class="absolute inset-0 rounded-full bg-teal-500/10 blur-2xl group-hover:bg-teal-500/20 transition-all"></div>
                         <!-- Border Ring -->
@@ -93,7 +93,7 @@
                         <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
                         
                         <!-- The Image -->
-                        <img src="./starter.png" alt="The Starter" class="relative z-10 w-32 h-32 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="starter.png" alt="The Starter" onerror="this.style.opacity='0'" class="relative z-20 max-w-[85%] max-h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
                     </div>
 
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">The Starter</h3>
@@ -110,12 +110,12 @@
                 <button data-profile="40" class="group relative p-8 bg-slate-900/40 hover:bg-slate-800/60 border border-blue-500/30 rounded-[32px] transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-900/30 flex flex-col items-center">
                     <div class="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-users text-7xl text-blue-400"></i></div>
                     
-                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8">
+                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8 overflow-hidden">
                         <div class="absolute inset-0 rounded-full bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
                         <div class="absolute inset-0 rounded-full border-2 border-blue-500/40 group-hover:border-blue-500/70 transition-all"></div>
                         <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
                         
-                        <img src="./couple.png" alt="The Accumulator" class="relative z-10 w-32 h-32 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="couple.png" alt="The Accumulator" onerror="this.style.opacity='0'" class="relative z-20 max-w-[85%] max-h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
                     </div>
 
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">Accumulator</h3>
@@ -132,12 +132,12 @@
                 <button data-profile="55" class="group relative p-8 bg-slate-900/40 hover:bg-slate-800/60 border border-white/10 rounded-[32px] transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-900/20 flex flex-col items-center">
                     <div class="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-umbrella-beach text-7xl text-purple-400"></i></div>
                     
-                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8">
+                    <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8 overflow-hidden">
                         <div class="absolute inset-0 rounded-full bg-purple-500/10 blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
                         <div class="absolute inset-0 rounded-full border-2 border-purple-500/20 group-hover:border-purple-500/50 transition-all"></div>
                         <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
                         
-                        <img src="./retiree.png" alt="Pre-Retiree" class="relative z-10 w-32 h-32 object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="retiree.png" alt="Pre-Retiree" onerror="this.style.opacity='0'" class="relative z-20 max-w-[85%] max-h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
                     </div>
 
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">Pre-Retiree</h3>
