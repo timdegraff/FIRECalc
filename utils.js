@@ -199,11 +199,9 @@ export const engine = {
         let taxableLtcg = Math.max(0, ltcgIncome - Math.max(0, stdDed - ordinaryIncome));
         let tax = 0;
 
-        // Custom Federal Rates from Global Assumptions
         const a = window.currentData?.assumptions || {};
         const userLtcgRate = (a.ltcgRate || 15) / 100;
         
-        // Projected 2026 Federal Brackets
         const brackets = {
             'Single': [
                 [11925, 0.10], [48475, 0.12], [103350, 0.22], [197300, 0.24],
@@ -267,20 +265,27 @@ export const engine = {
         if (age >= 60 && age <= 63) irsLimit = 34750;
         else if (age >= 50) irsLimit = 31000;
 
-        let total401kContribution = 0, totalGrossIncomeAccum = 0; 
+        let total401kContribution = 0;
+        let totalGrossInflow = 0; // True Top Line (Amount + Bonus)
+        let totalNetSource = 0; // After business expenses (Amount + Bonus - Deductions)
+        
         inc.forEach(x => {
             let base = math.fromCurrency(x.amount) * (x.isMonthly ? 12 : 1);
-            let personal401kRaw = base * (parseFloat(x.contribution) / 100 || 0);
-            if (x.contribOnBonus) personal401kRaw += (base * (parseFloat(x.bonusPct) / 100 || 0) * (parseFloat(x.contribution) / 100 || 0));
+            const bonus = (base * (parseFloat(x.bonusPct) / 100 || 0));
+            const sourceGross = base + bonus;
             
-            // INDIVIDUAL CAP: IRS limits are per-person. We cap each earner separately.
+            let personal401kRaw = base * (parseFloat(x.contribution) / 100 || 0);
+            if (x.contribOnBonus) personal401kRaw += (bonus * (parseFloat(x.contribution) / 100 || 0));
+            
             const cappedIndividual401k = Math.min(personal401kRaw, irsLimit);
             total401kContribution += cappedIndividual401k;
             
-            totalGrossIncomeAccum += (base + base * (parseFloat(x.bonusPct) / 100 || 0)) - (math.fromCurrency(x.incomeExpenses) * (x.incomeExpensesMonthly ? 12 : 1)); 
+            const sourceExpenses = (math.fromCurrency(x.incomeExpenses) * (x.incomeExpensesMonthly ? 12 : 1));
+            
+            totalGrossInflow += sourceGross;
+            totalNetSource += (sourceGross - sourceExpenses); 
         });
         
-        const finalGross = Math.max(0, totalGrossIncomeAccum);
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         const manualSavingsSum = budget.savings?.filter(x => !x.isLocked).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         
@@ -288,8 +293,8 @@ export const engine = {
             netWorth: totalAssets - totalLiabilities, 
             totalAssets, 
             totalLiabilities, 
-            totalGrossIncome: finalGross, 
-            magiBase: Math.max(0, finalGross - total401kContribution - hsaSavings), 
+            totalGrossIncome: totalGrossInflow, 
+            magiBase: Math.max(0, totalNetSource - total401kContribution - hsaSavings), 
             total401kContribution, 
             totalAnnualSavings: manualSavingsSum + total401kContribution + hsaSavings, 
             totalAnnualBudget: budget.expenses?.reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0 

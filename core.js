@@ -47,9 +47,8 @@ function attachGlobalListeners() {
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         
-        // Handle custom steppers
         if (btn && btn.dataset.step) {
-            const container = btn.closest('.relative');
+            const container = btn.closest('.relative') || btn.closest('.removable-item');
             const input = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
             if (input) {
                 const currentVal = parseFloat(input.value) || 0;
@@ -57,9 +56,7 @@ function attachGlobalListeners() {
                 const newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
                 const decimals = parseInt(input.dataset.decimals) || 0;
                 input.value = newVal.toFixed(decimals);
-                // Dispatch input event to trigger auto-recalc
                 input.dispatchEvent(new Event('input', { bubbles: true }));
-                // Also dispatch change for the stepper buttons since they "commit" the value
                 input.dispatchEvent(new Event('change', { bubbles: true }));
             }
             return;
@@ -90,7 +87,6 @@ function attachGlobalListeners() {
         }
     });
 
-    // Enforcement Logic (Runs on blur/commit)
     document.body.addEventListener('change', (e) => {
         const target = e.target;
         const id = target.dataset.id;
@@ -104,7 +100,6 @@ function attachGlobalListeners() {
             let cAge = parseFloat(cAgeInp?.value || window.currentData?.assumptions?.currentAge || 40);
             let rAge = parseFloat(rAgeInp?.value || window.currentData?.assumptions?.retirementAge || 65);
 
-            // Validation Rules
             if (id === 'currentAge') {
                 if (val < 18) val = 18;
                 if (val > 90) val = 90;
@@ -145,6 +140,11 @@ function attachGlobalListeners() {
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
             handleLinkedBudgetValues(target);
             
+            const incomeCard = target.closest('.removable-item.card-container');
+            if (incomeCard && incomeCard.querySelector('[data-id="netSourceDisplay"]')) {
+                updateIncomeCardPreview(incomeCard);
+            }
+
             const optRow = target.closest('#stock-option-rows tr');
             if (optRow) {
                 const shares = parseFloat(optRow.querySelector('[data-id="shares"]')?.value) || 0;
@@ -156,7 +156,7 @@ function attachGlobalListeners() {
             }
 
             if (target.dataset.id === 'contribution' || target.dataset.id === 'amount' || target.dataset.id === 'bonusPct' || target.dataset.id === 'contribOnBonus') {
-                const row = target.closest('tr') || target.closest('.card-container');
+                const row = target.closest('tr') || target.closest('.removable-item.card-container');
                 if (row) checkIrsLimits(row);
             }
 
@@ -164,16 +164,11 @@ function attachGlobalListeners() {
             const isAssControl = target.closest('#assumptions-container') || target.closest('#burndown-live-sliders') || target.id === 'input-top-retire-age';
             
             if (id && isAssControl) {
-                // We sync labels and update raw data, but DO NOT modify target.value here
-                // modifying target.value while typing breaks the cursor/entry flow.
                 let val = parseFloat(target.value);
-                
-                // Still sync visual labels or sliders elsewhere
                 syncAllInputs(id, target.value, false); 
                 
                 if (window.currentData && window.currentData.assumptions) {
                     const nVal = (target.tagName === 'SELECT' || isNaN(parseFloat(target.value))) ? target.value : (target.dataset.type === 'currency' ? math.fromCurrency(target.value) : parseFloat(target.value));
-                    // Gracefully handle temporary NaNs so engine doesn't break
                     if (id !== 'currentAge' && id !== 'retirementAge' || !isNaN(nVal)) {
                         window.currentData.assumptions[id] = nVal;
                     }
@@ -193,16 +188,53 @@ function attachGlobalListeners() {
     });
 }
 
+function updateIncomeCardPreview(card) {
+    const amountEl = card.querySelector('[data-id="amount"]');
+    if (!amountEl) return;
+    
+    const isMonHid = card.querySelector('input[data-id="isMonthly"]');
+    const isMon = isMonHid ? isMonHid.value === 'true' : false;
+    const baseAnn = math.fromCurrency(amountEl.value) * (isMon ? 12 : 1);
+    
+    const bPct = parseFloat(card.querySelector('[data-id="bonusPct"]')?.value) || 0;
+    const bonusAnn = baseAnn * (bPct / 100);
+    const grossAnn = baseAnn + bonusAnn;
+    
+    const cPct = parseFloat(card.querySelector('[data-id="contribution"]')?.value) || 0;
+    let personal401k = baseAnn * (cPct / 100);
+    if (card.querySelector('[data-id="contribOnBonus"]')?.checked) personal401k += (bonusAnn * (cPct / 100));
+    
+    const age = window.currentData?.assumptions?.currentAge || 40;
+    const irsLimit = age >= 60 && age <= 63 ? 34750 : (age >= 50 ? 31000 : 23500);
+    personal401k = Math.min(personal401k, irsLimit);
+    
+    const expEl = card.querySelector('[data-id="incomeExpenses"]');
+    const isExpMonHid = card.querySelector('input[data-id="incomeExpensesMonthly"]');
+    const isExpMon = isExpMonHid ? isExpMonHid.value === 'true' : false;
+    const expensesAnn = math.fromCurrency(expEl?.value || "0") * (isExpMon ? 12 : 1);
+    
+    const netSource = grossAnn - expensesAnn - personal401k;
+    
+    const display = card.querySelector('[data-id="netSourceDisplay"]');
+    if (display) display.textContent = math.toCurrency(netSource);
+    
+    const progBase = card.querySelector('[data-id="progress-base"]');
+    const progBonus = card.querySelector('[data-id="progress-bonus"]');
+    if (progBase && progBonus && grossAnn > 0) {
+        const basePct = (baseAnn / grossAnn) * 100;
+        const bonusPct = (bonusAnn / grossAnn) * 100;
+        progBase.style.width = `${basePct}%`;
+        progBonus.style.width = `${bonusPct}%`;
+    }
+}
+
 function syncAllInputs(id, val, updateTextInputs = true) {
     const selectors = [`#assumptions-container [data-id="${id}"]`, `#burndown-live-sliders [data-live-id="${id}"]`, `#burndown-live-sliders [data-id="${id}"]`, `#input-top-retire-age[data-id="${id}"]`];
     selectors.forEach(sel => {
         document.querySelectorAll(sel).forEach(el => {
-            // Only update text inputs if explicitly requested (usually on blur/change/stepper)
-            // This prevents the "typing" jumping issue.
             if (el.type === 'number' || el.type === 'text') {
                 if (updateTextInputs && el.value != val) el.value = val;
             } else {
-                // Always sync ranges/selects/labels
                 if (el.value != val) el.value = val;
             }
             
@@ -211,7 +243,6 @@ function syncAllInputs(id, val, updateTextInputs = true) {
                 if (el.id === 'input-top-retire-age') {
                     lbl = document.getElementById('label-top-retire-age');
                 } else {
-                    // Refined label targeting: exclude labels with explicitly defined .label-std class
                     lbl = el.parentElement.querySelector('span:not(.label-std)');
                     if (!lbl) {
                         lbl = el.previousElementSibling?.querySelector('span:not(.label-std)');
@@ -318,18 +349,14 @@ function attachDynamicRowListeners() {
             const wasMonthly = hiddenInput.value === 'true';
             const isNowMonthly = !wasMonthly;
             
-            // Update UI
             hiddenInput.value = isNowMonthly ? 'true' : 'false';
             btn.textContent = isNowMonthly ? 'Monthly' : 'Annual';
             
-            // Update Value
             const inputId = targetId === 'incomeExpensesMonthly' ? 'incomeExpenses' : 'amount';
             const valInput = rowOrCard.querySelector(`[data-id="${inputId}"]`);
             
             if (valInput) { 
                 const cur = math.fromCurrency(valInput.value); 
-                // If it was monthly and is now annual -> multiply by 12
-                // If it was annual and is now monthly -> divide by 12
                 valInput.value = math.toCurrency(isNowMonthly ? cur / 12 : cur * 12);
                 valInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
@@ -346,7 +373,10 @@ function attachDynamicRowListeners() {
             target.style.backgroundColor = '#0f172a';
         }
         if (target.dataset.id === 'contribOnBonus' || target.dataset.id === 'matchOnBonus') {
-            const row = target.closest('.card-container'); if (row) checkIrsLimits(row);
+            const row = target.closest('.card-container'); if (row) {
+                checkIrsLimits(row);
+                updateIncomeCardPreview(row);
+            }
         }
         if (target.dataset.id && window.debouncedAutoSave) window.debouncedAutoSave();
     });
@@ -390,22 +420,17 @@ window.addRow = (containerId, type, data = {}) => {
     let element = type === 'income' ? document.createElement('div') : document.createElement('tr');
     if (type !== 'income') element.className = 'border-b border-slate-700/50 hover:bg-slate-800/20 transition-colors';
     
-    // Add locked class if applicable to prevent scraping
     if (data.isLocked) {
         element.classList.add('locked-row');
     }
 
-    // Default defaults for new rows
     if (type === 'budget-savings' && data.removedInRetirement === undefined) {
-        data.removedInRetirement = true; // Pre-check "NO" (removed in retirement) by default
+        data.removedInRetirement = true; 
     }
 
-    // Auto-calculate missing budget values if one exists
     if (type === 'budget-savings' || type === 'budget-expense') {
         if (data.annual !== undefined && data.monthly === undefined) data.monthly = data.annual / 12;
         else if (data.monthly !== undefined && data.annual === undefined) data.annual = data.monthly * 12;
-        
-        // Default new expenses to remainsInRetirement = true
         if (type === 'budget-expense' && data.remainsInRetirement === undefined) data.remainsInRetirement = true;
     }
 
@@ -441,7 +466,6 @@ window.addRow = (containerId, type, data = {}) => {
     }
 
     if (type === 'income') {
-        // Correctly set toggle button labels based on loaded state
         const isMon = !!data.isMonthly;
         const monBtn = element.querySelector('button[data-target="isMonthly"]');
         if (monBtn) monBtn.textContent = isMon ? 'Monthly' : 'Annual';
@@ -451,6 +475,7 @@ window.addRow = (containerId, type, data = {}) => {
         if (expBtn) expBtn.textContent = isExpMon ? 'Monthly' : 'Annual';
         
         checkIrsLimits(element);
+        updateIncomeCardPreview(element);
     }
     if (type === 'investment') updateCostBasisVisibility(element);
 };
