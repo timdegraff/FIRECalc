@@ -20,11 +20,8 @@
         }
 
         // 2. Clean URL Sharing: visually remove 'mobile.html' from address bar
-        // This ensures shared links go to the root (which then auto-detects device)
-        // We preserve the 'force=true' param so desktop refreshes keep you on mobile.
         if (window.history.replaceState) {
             let cleanUrl = window.location.href.replace('mobile.html', '');
-            // Ensure we don't end up with // if the path was just /mobile.html
             cleanUrl = cleanUrl.replace(/([^:])\/\//g, '$1/');
             window.history.replaceState({}, document.title, cleanUrl);
         }
@@ -40,7 +37,7 @@
     <style>
         /* Hide broken images to show background icons as fallback */
         img:-moz-broken, img:invalid {
-            visibility: hidden;
+            opacity: 0;
         }
     </style>
 <script type="importmap">
@@ -74,7 +71,7 @@
 
     <!-- Guest Warning Modal Mobile -->
     <div id="guest-modal" class="fixed inset-0 flex items-center justify-center bg-black/90 z-[200] hidden backdrop-blur-sm px-6">
-        <div class="mobile-card w-full max-w-sm text-center">
+        <div class="mobile-card w-full max-sm text-center">
             <div class="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mx-auto mb-4 border border-white/10">
                 <i class="fas fa-hdd text-xl text-slate-400"></i>
             </div>
@@ -82,14 +79,6 @@
             <p class="text-slate-400 text-xs leading-relaxed mb-6">
                 Your data stays on this phone. It is not backed up to the cloud.
             </p>
-            <div class="bg-black/20 p-3 rounded-xl border border-white/5 mb-6 flex items-center gap-3 text-left">
-                <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-500">
-                    <i class="fas fa-sign-out-alt text-xs"></i>
-                </div>
-                <p class="text-[9px] text-slate-500 font-medium leading-tight">
-                    Tap the logout icon in the top right to sign in and sync your data.
-                </p>
-            </div>
             <button id="ack-guest-btn" class="w-full py-3 bg-white/5 border border-white/10 text-white rounded-xl font-bold text-xs uppercase tracking-widest active:scale-95 transition-all">
                 Got it
             </button>
@@ -98,58 +87,49 @@
 
     <!-- Profile Selection Modal Mobile -->
     <div id="profile-modal" class="fixed inset-0 flex items-center justify-center bg-black/95 z-[250] hidden backdrop-blur-md px-6">
-        <div class="w-full max-w-sm flex flex-col h-full py-8">
-            <div class="text-center mb-6">
-                <h2 class="text-xl font-black text-white mb-1 tracking-tight">Select Profile</h2>
-                <p class="text-xs text-slate-400">Choose a starting point.</p>
+        <div class="w-full max-w-sm flex flex-col h-full py-10">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-black text-white mb-1 tracking-tighter">Choose Your Path</h2>
+                <p class="text-xs text-slate-500 font-medium">Select a profile to begin.</p>
             </div>
             
-            <div class="space-y-4 flex-grow overflow-y-auto">
-                <button data-profile="25" class="w-full p-5 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-5 active:scale-95 transition-all active:bg-teal-500/10">
-                    <div class="w-20 h-20 rounded-full overflow-hidden border border-teal-500/50 flex-shrink-0 bg-slate-800 flex items-center justify-center">
-                        <img src="./starter.png" alt="The Starter" class="w-full h-full object-contain">
+            <div class="space-y-5 flex-grow overflow-y-auto pr-1">
+                <!-- Starter Mobile Card -->
+                <button data-profile="25" class="w-full p-6 bg-slate-900/60 border border-white/10 rounded-[32px] flex flex-col items-center gap-4 active:scale-[0.98] transition-all active:bg-teal-500/10 group">
+                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full bg-teal-500/5 border border-teal-500/20"></div>
+                        <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
+                        <img src="./starter.png" alt="The Starter" class="relative z-10 w-20 h-20 object-contain drop-shadow-xl">
                     </div>
-                    <div class="text-left w-full">
-                        <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-base font-bold text-white">The Starter</h3>
-                            <span class="text-[10px] text-teal-400 font-black">25 • Single</span>
-                        </div>
-                        <div class="flex justify-between text-[10px] text-slate-400">
-                            <span>$120k Income</span>
-                            <span>$40k NW</span>
-                        </div>
+                    <div class="text-center">
+                        <h3 class="text-xl font-black text-white leading-tight">The Starter</h3>
+                        <p class="text-[9px] text-teal-400 font-black uppercase tracking-widest mt-1">25 • Single • Renting</p>
                     </div>
                 </button>
 
-                <button data-profile="40" class="w-full p-5 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-5 active:scale-95 transition-all active:bg-blue-500/10 ring-1 ring-blue-500/20">
-                    <div class="w-20 h-20 rounded-full overflow-hidden border border-blue-500/50 flex-shrink-0 bg-slate-800 flex items-center justify-center">
-                        <img src="./couple.png" alt="The Accumulator" class="w-full h-full object-contain">
+                <!-- Accumulator Mobile Card -->
+                <button data-profile="40" class="w-full p-6 bg-slate-900/60 border border-blue-500/30 rounded-[32px] flex flex-col items-center gap-4 active:scale-[0.98] transition-all active:bg-blue-500/10 group">
+                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full bg-blue-500/10 border border-blue-500/40"></div>
+                        <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
+                        <img src="./couple.png" alt="The Accumulator" class="relative z-10 w-20 h-20 object-contain drop-shadow-xl">
                     </div>
-                    <div class="text-left w-full">
-                        <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-base font-bold text-white">Accumulator</h3>
-                            <span class="text-[10px] text-blue-400 font-black">40 • Family</span>
-                        </div>
-                        <div class="flex justify-between text-[10px] text-slate-400">
-                            <span>$325k HHI</span>
-                            <span>$1.5M NW</span>
-                        </div>
+                    <div class="text-center">
+                        <h3 class="text-xl font-black text-white leading-tight">Accumulator</h3>
+                        <p class="text-[9px] text-blue-400 font-black uppercase tracking-widest mt-1">40 • Family • Mortgage</p>
                     </div>
                 </button>
 
-                <button data-profile="55" class="w-full p-5 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-5 active:scale-95 transition-all active:bg-purple-500/10">
-                    <div class="w-20 h-20 rounded-full overflow-hidden border border-purple-500/50 flex-shrink-0 bg-slate-800 flex items-center justify-center">
-                        <img src="./retiree.png" alt="Pre-Retiree" class="w-full h-full object-contain">
+                <!-- Retiree Mobile Card -->
+                <button data-profile="55" class="w-full p-6 bg-slate-900/60 border border-white/10 rounded-[32px] flex flex-col items-center gap-4 active:scale-[0.98] transition-all active:bg-purple-500/10 group">
+                    <div class="relative w-28 h-28 rounded-full flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full bg-purple-500/5 border border-purple-500/20"></div>
+                        <div class="absolute inset-1 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
+                        <img src="./retiree.png" alt="Pre-Retiree" class="relative z-10 w-20 h-20 object-contain drop-shadow-xl">
                     </div>
-                    <div class="text-left w-full">
-                        <div class="flex justify-between items-center mb-1">
-                            <h3 class="text-base font-bold text-white">Pre-Retiree</h3>
-                            <span class="text-[10px] text-purple-400 font-black">55 • Married</span>
-                        </div>
-                        <div class="flex justify-between text-[10px] text-slate-400">
-                            <span>$298k Inc</span>
-                            <span>$2.9M NW</span>
-                        </div>
+                    <div class="text-center">
+                        <h3 class="text-xl font-black text-white leading-tight">Pre-Retiree</h3>
+                        <p class="text-[9px] text-purple-400 font-black uppercase tracking-widest mt-1">55 • Married • Paid Off</p>
                     </div>
                 </button>
             </div>
@@ -165,7 +145,6 @@
                 <p id="mobile-nw-label" class="text-[10px] font-black text-teal-400 mono-numbers">$0 Net Worth</p>
              </div>
              <div class="flex items-center gap-3">
-                <!-- Mobile Save Indicator -->
                 <div id="save-indicator" class="text-slate-600 transition-colors duration-200" title="Data Sync Status">
                     <i class="fas fa-cloud"></i>
                 </div>
@@ -174,15 +153,14 @@
                 </button>
              </div>
         </header>
-        <!-- Dynamic Content Area -->
+        
         <main id="mobile-content" class="flex-grow overflow-y-auto p-4 space-y-6 pb-24">
-            <!-- Tabs are injected here by mobile.js -->
         </main>
-        <!-- Floating Action Button -->
+        
         <button id="mobile-fab" class="fixed bottom-24 right-6 w-14 h-14 bg-teal-500 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl z-40 hidden active:scale-95 transition-transform">
             <i class="fas fa-plus"></i>
         </button>
-        <!-- Bottom Navigation -->
+        
         <nav class="fixed bottom-0 left-0 right-0 h-20 bg-[#0B0F19]/90 backdrop-blur-xl border-t border-white/5 flex items-center justify-around z-50 pb-safe">
             <button data-tab="assets-debts" class="mobile-nav-btn active flex flex-col items-center gap-1">
                 <i class="fas fa-wallet text-xl"></i>
@@ -210,7 +188,7 @@
             </button>
         </nav>
     </div>
-    <!-- Inspector Overlay (Advanced Breakdown) -->
+
     <div id="inspector-overlay" class="fixed inset-0 bg-black/90 z-[60] hidden flex flex-col backdrop-blur-sm">
         <div class="p-6 border-b border-white/10 flex justify-between items-center bg-[#0B0F19]">
             <h3 class="text-white font-black uppercase tracking-widest text-sm">Logic Inspector</h3>
@@ -219,7 +197,6 @@
         <div id="inspector-log" class="p-6 overflow-y-auto font-mono text-[11px] leading-relaxed text-slate-400"></div>
     </div>
     
-    <!-- Dynamic import with cache busting query string -->
     <script type="module">
         import "./mobile.js?v=3.5"; 
     </script>
