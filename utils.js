@@ -270,7 +270,9 @@ export const engine = {
         let totalNetSource = 0; // After business expenses (Amount + Bonus - Deductions)
         
         inc.forEach(x => {
-            let base = math.fromCurrency(x.amount) * (x.isMonthly ? 12 : 1);
+            // Safety check for both boolean and string types
+            const isMon = x.isMonthly === true || x.isMonthly === 'true';
+            let base = math.fromCurrency(x.amount) * (isMon ? 12 : 1);
             const bonus = (base * (parseFloat(x.bonusPct) / 100 || 0));
             const sourceGross = base + bonus;
             
@@ -280,7 +282,8 @@ export const engine = {
             const cappedIndividual401k = Math.min(personal401kRaw, irsLimit);
             total401kContribution += cappedIndividual401k;
             
-            const sourceExpenses = (math.fromCurrency(x.incomeExpenses) * (x.incomeExpensesMonthly ? 12 : 1));
+            const isExpMon = x.incomeExpensesMonthly === true || x.incomeExpensesMonthly === 'true';
+            const sourceExpenses = (math.fromCurrency(x.incomeExpenses) * (isExpMon ? 12 : 1));
             
             totalGrossInflow += sourceGross;
             totalNetSource += (sourceGross - sourceExpenses); 

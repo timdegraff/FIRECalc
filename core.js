@@ -136,6 +136,9 @@ function attachGlobalListeners() {
                 hiddenInput.value = newVal ? 'true' : 'false';
                 btn.textContent = newVal ? 'Monthly' : 'Annual';
                 
+                // CRITICAL: Force immediate sync so dashboard updates
+                forceSyncData();
+                
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
                 if (container.classList.contains('removable-item')) {
                     updateIncomeCardPreview(container);

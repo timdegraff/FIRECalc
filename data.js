@@ -110,7 +110,13 @@ function scrapeData() {
                     if (el.type === 'checkbox') obj[field] = el.checked;
                     else if (el.dataset.type === 'currency') obj[field] = math.fromCurrency(el.value);
                     else if (el.type === 'number') obj[field] = parseFloat(el.value) || 0;
-                    else obj[field] = el.value;
+                    else {
+                        // Correctly handle boolean strings from hidden inputs
+                        let val = el.value;
+                        if (val === 'true') val = true;
+                        else if (val === 'false') val = false;
+                        obj[field] = val;
+                    }
                 }
             });
             return obj;
@@ -234,7 +240,7 @@ export function updateSummaries() {
     const infFacRet = Math.pow(1 + inflation, yrsToRetire);
     const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
         const growth = (parseFloat(inc.increase) / 100) || 0;
-        return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
+        return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly === true || inc.isMonthly === 'true' ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
     }, 0);
     const ssAtRet = (retirementAge >= ssStartAge) ? engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacRet) : 0;
     
