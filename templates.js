@@ -76,7 +76,7 @@ export const templates = {
     `,
 
     income: (data) => `
-        <div class="removable-item card-container flex flex-col relative group shadow-lg overflow-hidden h-full">
+        <div class="card-container flex flex-col relative group shadow-lg overflow-hidden h-full">
             <div class="px-5 py-3 border-b border-white/5 flex justify-between items-center bg-black/20">
                 <div class="flex items-center gap-3 w-full">
                     <div class="w-6 h-6 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400 flex-shrink-0">

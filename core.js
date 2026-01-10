@@ -140,7 +140,7 @@ function attachGlobalListeners() {
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
             handleLinkedBudgetValues(target);
             
-            const incomeCard = target.closest('.removable-item.card-container');
+            const incomeCard = target.closest('.removable-item');
             if (incomeCard && incomeCard.querySelector('[data-id="netSourceDisplay"]')) {
                 updateIncomeCardPreview(incomeCard);
             }
@@ -156,7 +156,7 @@ function attachGlobalListeners() {
             }
 
             if (target.dataset.id === 'contribution' || target.dataset.id === 'amount' || target.dataset.id === 'bonusPct' || target.dataset.id === 'contribOnBonus') {
-                const row = target.closest('tr') || target.closest('.removable-item.card-container');
+                const row = target.closest('tr') || target.closest('.removable-item');
                 if (row) checkIrsLimits(row);
             }
 
@@ -200,6 +200,10 @@ function updateIncomeCardPreview(card) {
     const bonusAnn = baseAnn * (bPct / 100);
     const grossAnn = baseAnn + bonusAnn;
     
+    const mPct = parseFloat(card.querySelector('[data-id="match"]')?.value) || 0;
+    let matchAnn = baseAnn * (mPct / 100);
+    if (card.querySelector('[data-id="matchOnBonus"]')?.checked) matchAnn += (bonusAnn * (mPct / 100));
+
     const cPct = parseFloat(card.querySelector('[data-id="contribution"]')?.value) || 0;
     let personal401k = baseAnn * (cPct / 100);
     if (card.querySelector('[data-id="contribOnBonus"]')?.checked) personal401k += (bonusAnn * (cPct / 100));
@@ -213,18 +217,39 @@ function updateIncomeCardPreview(card) {
     const isExpMon = isExpMonHid ? isExpMonHid.value === 'true' : false;
     const expensesAnn = math.fromCurrency(expEl?.value || "0") * (isExpMon ? 12 : 1);
     
+    // Net Source Inflow (Take Home / Cash Contribution)
     const netSource = grossAnn - expensesAnn - personal401k;
     
     const display = card.querySelector('[data-id="netSourceDisplay"]');
-    if (display) display.textContent = math.toCurrency(netSource);
+    const footerLabel = card.querySelector('.text-[8px].font-black.text-slate-500');
+    
+    if (display) {
+        display.textContent = math.toCurrency(netSource);
+        display.classList.toggle('text-red-400', netSource < 0);
+        display.classList.toggle('text-white', netSource >= 0);
+    }
+    
+    if (footerLabel) {
+        footerLabel.textContent = netSource < 0 ? 'SOURCE NET LOSS' : 'CARD CASH INFLOW';
+        footerLabel.classList.toggle('text-red-500', netSource < 0);
+    }
     
     const progBase = card.querySelector('[data-id="progress-base"]');
     const progBonus = card.querySelector('[data-id="progress-bonus"]');
-    if (progBase && progBonus && grossAnn > 0) {
-        const basePct = (baseAnn / grossAnn) * 100;
-        const bonusPct = (bonusAnn / grossAnn) * 100;
-        progBase.style.width = `${basePct}%`;
-        progBonus.style.width = `${bonusPct}%`;
+    if (progBase && progBonus) {
+        if (grossAnn > 0) {
+            const basePct = (baseAnn / grossAnn) * 100;
+            const bonusPct = (bonusAnn / grossAnn) * 100;
+            progBase.style.width = `${basePct}%`;
+            progBonus.style.width = `${bonusPct}%`;
+            progBase.className = "h-full bg-teal-500";
+            progBonus.className = "h-full bg-emerald-400";
+        } else {
+            // Handle loss scenarios visually
+            progBase.style.width = "100%";
+            progBonus.style.width = "0%";
+            progBase.className = "h-full bg-red-900/40";
+        }
     }
 }
 
@@ -373,7 +398,7 @@ function attachDynamicRowListeners() {
             target.style.backgroundColor = '#0f172a';
         }
         if (target.dataset.id === 'contribOnBonus' || target.dataset.id === 'matchOnBonus') {
-            const row = target.closest('.card-container'); if (row) {
+            const row = target.closest('.removable-item'); if (row) {
                 checkIrsLimits(row);
                 updateIncomeCardPreview(row);
             }
@@ -418,7 +443,11 @@ export function showTab(tabId) {
 window.addRow = (containerId, type, data = {}) => {
     const container = document.getElementById(containerId); if (!container) return;
     let element = type === 'income' ? document.createElement('div') : document.createElement('tr');
-    if (type !== 'income') element.className = 'border-b border-slate-700/50 hover:bg-slate-800/20 transition-colors';
+    if (type === 'income') {
+        element.className = 'removable-item';
+    } else {
+        element.className = 'border-b border-slate-700/50 hover:bg-slate-800/20 transition-colors';
+    }
     
     if (data.isLocked) {
         element.classList.add('locked-row');
@@ -577,9 +606,9 @@ window.createAssumptionControls = (data) => {
         </div>
     `;
 
-    const renderAPY = (label, id, color, val) => {
+    const renderAPY = (label, id, color, val, max = 10, step = 0.1) => {
         if (!isAdv) {
-            return `<label class="block"><span class="label-std text-slate-500">${label} APY</span><div class="flex items-center gap-2 mt-1"><input data-id="${id}" data-decimals="1" type="range" min="0" max="10" step="0.1" value="${val}" class="input-range"><span class="${color} font-bold mono-numbers w-10 text-right">${val}%</span></div></label>`;
+            return `<label class="block"><span class="label-std text-slate-500">${label} APY</span><div class="flex items-center gap-2 mt-1"><input data-id="${id}" data-decimals="1" type="range" min="0" max="${max}" step="${step}" value="${val}" class="input-range"><span class="${color} font-bold mono-numbers w-10 text-right">${val}%</span></div></label>`;
         }
         const yrs = a[id + 'Years'] || 10;
         const perp = a[id + 'Perpetual'] || val;
@@ -587,9 +616,9 @@ window.createAssumptionControls = (data) => {
             <div class="p-3 bg-slate-900/50 rounded-xl border border-slate-700/50 space-y-3">
                 <div class="flex justify-between items-center"><span class="label-std ${color}">${label} Growth</span><span class="text-[8px] font-black text-slate-600">ADVANCED</span></div>
                 <div class="grid grid-cols-3 gap-2">
-                    <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Initial %</span><input data-id="${id}" data-decimals="1" type="number" step="0.1" value="${val}" class="input-base w-full text-[12px] font-bold ${color}"></div>
+                    <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Initial %</span><input data-id="${id}" data-decimals="1" type="number" step="${step}" value="${val}" class="input-base w-full text-[12px] font-bold ${color}"></div>
                     <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Years</span><input data-id="${id}Years" type="number" value="${yrs}" class="input-base w-full text-[12px] font-bold text-white"></div>
-                    <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Perpetual %</span><input data-id="${id}Perpetual" data-decimals="1" type="number" step="0.1" value="${perp}" class="input-base w-full text-[12px] font-bold ${color}"></div>
+                    <div class="flex flex-col"><span class="label-std text-[9px] font-black text-slate-500 uppercase mb-1">Perpetual %</span><input data-id="${id}Perpetual" data-decimals="1" type="number" step="${step}" value="${perp}" class="input-base w-full text-[12px] font-bold ${color}"></div>
                 </div>
             </div>`;
     };
@@ -632,10 +661,10 @@ window.createAssumptionControls = (data) => {
                 <h3 class="label-std text-slate-400 flex items-center gap-2"><i class="fas fa-chart-line text-emerald-400"></i> Market APY</h3>
                 <button id="btn-toggle-advanced-apy" class="px-2 py-0.5 bg-slate-700 text-[8px] font-black rounded uppercase tracking-widest text-slate-300 hover:text-white transition-colors">${isAdv ? 'Simple View' : 'Advanced APY'}</button>
             </div>
-            ${renderAPY('Stock', 'stockGrowth', 'text-emerald-400', a.stockGrowth)}
-            ${renderAPY('Crypto', 'cryptoGrowth', 'text-orange-400', a.cryptoGrowth)}
-            ${renderAPY('Metals', 'metalsGrowth', 'text-yellow-500', a.metalsGrowth)}
-            ${renderAPY('Real Estate', 'realEstateGrowth', 'text-indigo-400', a.realEstateGrowth)}
+            ${renderAPY('Stock', 'stockGrowth', 'text-emerald-400', a.stockGrowth, 15, 0.5)}
+            ${renderAPY('Crypto', 'cryptoGrowth', 'text-orange-400', a.cryptoGrowth, 20, 0.5)}
+            ${renderAPY('Metals', 'metalsGrowth', 'text-yellow-500', a.metalsGrowth, 15, 0.5)}
+            ${renderAPY('Real Estate', 'realEstateGrowth', 'text-indigo-400', a.realEstateGrowth, 10, 0.1)}
             
             <label class="block pt-2 border-t border-slate-700/30"><span class="label-std text-slate-500">Inflation</span><div class="flex items-center gap-2 mt-1"><input data-id="inflation" data-decimals="1" type="range" min="0" max="10" step="0.1" value="${a.inflation}" class="input-range"><span class="text-red-400 font-bold mono-numbers w-10 text-right">${a.inflation}%</span></div></label>
         </div>

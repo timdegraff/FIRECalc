@@ -81,17 +81,25 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero Spend</label>
                             <div id="card-dwz-val" class="text-2xl font-black text-white mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div class="text-[9px] font-medium text-slate-500">Max safe monthly spend to hit $0 at 100</div>
+                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase mono-numbers leading-none">--</div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">MAGI Strategy Target</label>
-                            <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[10px] uppercase tracking-widest bg-emerald-400/10 px-2 py-0.5 rounded border border-emerald-400/20">Platinum Zone</span>
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">MAGI Strategy</label>
+                            <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-400/20">Platinum Zone</span>
                         </div>
                         <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full">
+                    </div>
+
+                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cash Safety Net</label>
+                            <span id="label-cash-reserve" class="text-pink-400 font-black mono-numbers text-[10px]">$25,000</span>
+                        </div>
+                        <input type="range" id="input-cash-reserve" min="0" max="100000" step="1000" value="25000" class="input-range w-full">
                     </div>
                     
                     <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex items-center justify-between gap-4">
@@ -120,13 +128,16 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        ['input-strategy-dial', 'toggle-budget-sync', 'input-top-retire-age'].forEach(id => {
+        ['input-strategy-dial', 'toggle-budget-sync', 'input-top-retire-age', 'input-cash-reserve'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
                 if (id === 'input-strategy-dial') {
                     const lbl = document.getElementById('label-strategy-status');
                     const val = parseInt(el.value);
                     lbl.textContent = val <= 33 ? "Platinum Zone" : (val <= 66 ? "Silver CSR Zone" : "Budget Strategy");
+                }
+                if (id === 'input-cash-reserve') {
+                    document.getElementById('label-cash-reserve').textContent = math.toCurrency(parseInt(el.value));
                 }
                 if (id === 'input-top-retire-age') {
                     document.getElementById('label-top-retire-age').textContent = el.value;
@@ -231,6 +242,7 @@ export const burndown = {
         if (data) {
             sync('input-strategy-dial', data.strategyDial || 33);
             sync('toggle-budget-sync', data.useSync ?? true, true);
+            sync('input-cash-reserve', data.cashReserve ?? 25000);
             const fallbackRetAge = window.currentData?.assumptions?.retirementAge || 65;
             sync('input-top-retire-age', data.retirementAge || fallbackRetAge);
             const manualInput = document.getElementById('input-manual-budget');
@@ -243,7 +255,7 @@ export const burndown = {
     scrape: () => ({
         priority: burndown.priorityOrder,
         strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
-        cashReserve: 25000, 
+        cashReserve: parseInt(document.getElementById('input-cash-reserve')?.value || 25000), 
         useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
         retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
@@ -306,7 +318,7 @@ export const burndown = {
         const config = burndown.scrape();
         lastUsedRetirementAge = config.retirementAge; 
         
-        simulationTrace = {}; // Reset trace
+        simulationTrace = {}; 
         const results = burndown.simulateProjection(data, config);
         
         const runwayAge = firstInsolvencyAge ? firstInsolvencyAge : "100+";
@@ -320,7 +332,7 @@ export const burndown = {
         const infRate = (data.assumptions.inflation || 3) / 100;
         for (let a = data.assumptions.currentAge; a <= 80; a++) {
             const tempConfig = { ...config, retirementAge: a };
-            const tempResults = burndown.simulateProjection(data, tempConfig, true); // Silent run
+            const tempResults = burndown.simulateProjection(data, tempConfig, true); 
             const retYear = tempResults.find(r => r.age === a);
             const endYear = tempResults[tempResults.length - 1]; 
             if (retYear && endYear && !endYear.isInsolvent) {
@@ -331,25 +343,31 @@ export const burndown = {
         }
         document.getElementById('card-preservation-val').textContent = preservationAge;
 
-        const currentNW = results[0]?.netWorth || 0;
-        const searchCap = Math.max(500000, currentNW / 3); 
-        let low = 0, high = searchCap, bestBudget = 0;
-        for (let i = 0; i < 20; i++) {
+        // DIE WITH ZERO SEARCH
+        let low = 0, high = 2500000, bestBudget = 0;
+        for (let i = 0; i < 25; i++) {
             let mid = (low + high) / 2;
             const tempConfig = { ...config, manualBudget: mid, useSync: false }; 
-            const sim = burndown.simulateProjection(data, tempConfig, true); // Silent run
+            const sim = burndown.simulateProjection(data, tempConfig, true); 
             const last = sim[sim.length - 1];
             if (last.isInsolvent || last.netWorth < 1000) high = mid; 
             else { low = mid; bestBudget = mid; }
         }
-        document.getElementById('card-dwz-val').textContent = formatter.formatCurrency(bestBudget/12, true); 
+
+        const dwzValEl = document.getElementById('card-dwz-val');
+        const dwzSubEl = document.getElementById('card-dwz-sub');
+        if (dwzValEl && dwzSubEl) {
+            // DWZ display must respect real dollars toggle context
+            const displayBudget = isRealDollars ? bestBudget : bestBudget * Math.pow(1 + infRate, (100 - data.assumptions.currentAge));
+            dwzValEl.textContent = formatter.formatCurrency(bestBudget / 12, true);
+            dwzSubEl.textContent = `${formatter.formatCurrency(bestBudget, true)} / YEAR`;
+        }
 
         if (results.length > 0) {
             const firstRetYear = results.find(r => r.age >= config.retirementAge) || results[0];
             const snapInd = document.getElementById('est-snap-indicator');
             if (snapInd) snapInd.textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}`;
             
-            // Sync trace viewer to current age if not manually set
             const debugAgeInput = document.getElementById('input-debug-age');
             if (debugAgeInput && !traceAgeManuallySet) {
                 debugAgeInput.value = data.assumptions.currentAge;
@@ -571,7 +589,7 @@ export const burndown = {
         
         const header = isMobile 
             ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10 text-center">Age</th><th class="p-2 text-center">Spend</th><th class="p-2 text-center">MAGI</th><th class="p-2 text-center">Health</th><th class="p-2 text-center">Net Worth</th></tr>`
-            : `<tr class="sticky top-0 bg-[#1e293b] !text-slate-500 label-std z-20 border-b border-white/5"><th class="p-2 w-10 text-center !bg-[#1e293b]">Age</th><th class="p-2 text-center !bg-[#1e293b]">Budget</th><th class="p-2 text-center !bg-[#1e293b]">MAGI</th><th class="p-2 text-center !bg-[#1e293b]">Health Status</th><th class="p-2 text-center !bg-[#1e293b]">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-center text-[9px] !bg-[#1e293b]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-center !bg-[#1e293b]">Net Worth</th></tr>`;
+            : `<tr class="sticky top-0 bg-[#1e293b] !text-slate-500 label-std z-20 border-b border-white/5"><th class="p-2 w-10 text-center !bg-[#1e293b]">Age</th><th class="p-2 text-center !bg-[#1e293b]">Budget</th><th class="p-2 text-center !bg-[#1e293b]">MAGI</th><th class="p-2 text-center !bg-[#1e293b]">Health Status</th><th class="p-2 text-center !bg-[#1e293b]">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-center text-[9px] !bg-[#1e293b]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-center !bg-[#1e293b] text-blue-400">DRAW+SNAP</th><th class="p-2 text-center !bg-[#1e293b]">Net Worth</th></tr>`;
 
         const rows = results.map((r, i) => {
             const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
@@ -600,6 +618,9 @@ export const burndown = {
                     <div class="text-[8px] text-slate-500 font-medium mt-0.5">${formatCell(balVal)}</div>
                 </td>`;
             }).join('');
+
+            const totalYearDraws = Object.values(r.draws || {}).reduce((sum, val) => sum + val, 0);
+            const drawPlusSnap = (totalYearDraws + (r.snapBenefit || 0)) / inf;
             
             return `<tr class="border-b border-white/5 hover:bg-white/5 text-[10px] ${rowClass}">
                 <td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-500' : ''}">${r.age}</td>
@@ -608,6 +629,7 @@ export const burndown = {
                 <td class="p-2 text-center"><span class="px-3 py-1 rounded text-[9px] font-black uppercase tracking-wider ${badgeClass}">${r.status}</span>${retBadge}</td>
                 <td class="p-2 text-center text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>
                 ${draws}
+                <td class="p-2 text-center font-black text-blue-400 border-l border-white/5 bg-blue-400/5">${formatCell(drawPlusSnap)}</td>
                 <td class="p-2 text-center font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td>
             </tr>`;
         }).join('');
