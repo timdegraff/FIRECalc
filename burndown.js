@@ -90,17 +90,17 @@ export const burndown = {
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
                         <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strategy Persona</label>
                         <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5">
-                            <button data-mode="PLATINUM" class="py-2.5 rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
+                            <button data-mode="PLATINUM" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
                                 <span class="text-emerald-400">138% FPL</span>
-                                <span class="text-[8px] opacity-40">Handout Max</span>
+                                <span class="text-[9px] opacity-40">Handout Max</span>
                             </button>
-                            <button data-mode="SILVER" class="py-2.5 rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
+                            <button data-mode="SILVER" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
                                 <span class="text-blue-400">200% FPL</span>
-                                <span class="text-[8px] opacity-40">CSR Sweet Spot</span>
+                                <span class="text-[9px] opacity-40">CSR Sweet Spot</span>
                             </button>
-                            <button data-mode="UNCONSTRAINED" class="py-2.5 rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
+                            <button data-mode="UNCONSTRAINED" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
                                 <span class="text-slate-400">Pure Budget</span>
-                                <span class="text-[8px] opacity-40">No strategy</span>
+                                <span class="text-[9px] opacity-40">No strategy</span>
                             </button>
                         </div>
                     </div>

@@ -66,7 +66,6 @@ export async function initializeData(user) {
         if (local) {
             try {
                 const parsed = JSON.parse(local);
-                // Deep merge or check assumptions to ensure validity
                 window.currentData = { ...DEFAULTS, ...parsed };
                 if (!window.currentData.assumptions || isNaN(window.currentData.assumptions.currentAge)) {
                     window.currentData.assumptions = { ...DEFAULTS.assumptions };
@@ -79,7 +78,6 @@ export async function initializeData(user) {
         }
     }
 
-    // Initialize UI Modules
     loadUserDataIntoUI();
     if(window.updateSidebarChart) window.updateSidebarChart(window.currentData);
     if(window.createAssumptionControls) window.createAssumptionControls(window.currentData);
@@ -92,7 +90,6 @@ export async function initializeData(user) {
 function loadUserDataIntoUI() {
     if (!window.addRow) return; 
     
-    // Clear dynamic tables
     ['investment-rows', 'real-estate-rows', 'other-assets-rows', 'debt-rows', 'heloc-rows', 'budget-savings-rows', 'budget-expenses-rows', 'income-cards', 'stock-option-rows'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.innerHTML = '';
@@ -108,7 +105,6 @@ function loadUserDataIntoUI() {
     d.income?.forEach(i => window.addRow('income-cards', 'income', i));
     d.budget?.expenses?.forEach(i => window.addRow('budget-expenses-rows', 'budget-expense', i));
 
-    // Calculate Locked 401k Row
     const summaries = engine.calculateSummaries(d);
     window.addRow('budget-savings-rows', 'budget-savings', { 
         type: 'Pre-Tax (401k/IRA)', 
@@ -117,7 +113,6 @@ function loadUserDataIntoUI() {
         isLocked: true 
     });
 
-    // Add User Savings Rows
     d.budget?.savings?.forEach(i => {
         if (!i.isLocked) window.addRow('budget-savings-rows', 'budget-savings', i);
     });
@@ -126,7 +121,7 @@ function loadUserDataIntoUI() {
 function scrapeData() {
     const getData = (id, fields) => {
         const container = document.getElementById(id);
-        if (!container) return [];
+        if (!container) return null; // CRITICAL: Return null so we know it's missing from DOM
         const rows = Array.from(container.children).filter(row => !row.classList.contains('locked-row'));
         return rows.map(row => {
             const obj = {};
@@ -146,23 +141,43 @@ function scrapeData() {
         });
     };
 
+    // Safe merge: Only overwrite window.currentData if the DOM container exists
     const newData = {
-        assumptions: { ...window.currentData.assumptions }, 
-        investments: getData('investment-rows', ['name', 'type', 'value', 'costBasis']),
-        realEstate: getData('real-estate-rows', ['name', 'value', 'mortgage', 'principalPayment']),
-        otherAssets: getData('other-assets-rows', ['name', 'value', 'loan']),
-        helocs: getData('heloc-rows', ['name', 'balance', 'limit', 'rate']),
-        debts: getData('debt-rows', ['name', 'balance', 'principalPayment']),
-        stockOptions: getData('stock-option-rows', ['name', 'shares', 'strikePrice', 'currentPrice', 'growth', 'isLtcg']),
-        income: getData('income-cards', ['name', 'amount', 'increase', 'contribution', 'match', 'bonusPct', 'isMonthly', 'incomeExpenses', 'incomeExpensesMonthly', 'nonTaxableUntil', 'remainsInRetirement', 'contribOnBonus', 'matchOnBonus']),
-        budget: {
-            savings: getData('budget-savings-rows', ['type', 'monthly', 'annual', 'removedInRetirement']),
-            expenses: getData('budget-expenses-rows', ['name', 'monthly', 'annual', 'remainsInRetirement', 'isFixed'])
-        },
-        benefits: benefits.scrape(),
-        burndown: burndown.scrape(),
-        projectionSettings: projection.scrape()
+        ...window.currentData,
+        investments: getData('investment-rows', ['name', 'type', 'value', 'costBasis']) ?? window.currentData.investments,
+        realEstate: getData('real-estate-rows', ['name', 'value', 'mortgage', 'principalPayment']) ?? window.currentData.realEstate,
+        otherAssets: getData('other-assets-rows', ['name', 'value', 'loan']) ?? window.currentData.otherAssets,
+        helocs: getData('heloc-rows', ['name', 'balance', 'limit', 'rate']) ?? window.currentData.helocs,
+        debts: getData('debt-rows', ['name', 'balance', 'principalPayment']) ?? window.currentData.debts,
+        stockOptions: getData('stock-option-rows', ['name', 'shares', 'strikePrice', 'currentPrice', 'growth', 'isLtcg']) ?? window.currentData.stockOptions,
+        income: getData('income-cards', ['name', 'amount', 'increase', 'contribution', 'match', 'bonusPct', 'isMonthly', 'incomeExpenses', 'incomeExpensesMonthly', 'nonTaxableUntil', 'remainsInRetirement', 'contribOnBonus', 'matchOnBonus']) ?? window.currentData.income
     };
+
+    // Handle nested budget object safely
+    const budgetSavings = getData('budget-savings-rows', ['type', 'monthly', 'annual', 'removedInRetirement']);
+    const budgetExpenses = getData('budget-expenses-rows', ['name', 'monthly', 'annual', 'remainsInRetirement', 'isFixed']);
+    
+    newData.budget = {
+        savings: budgetSavings ?? window.currentData.budget?.savings,
+        expenses: budgetExpenses ?? window.currentData.budget?.expenses
+    };
+
+    // Assumptions, Benefits, Burndown, Projection - merge only if mounted
+    if (document.getElementById('assumptions-container')) {
+        newData.assumptions = { ...window.currentData.assumptions };
+    }
+    const benefitsData = benefits.scrape();
+    if (document.getElementById('benefits-module')) {
+        newData.benefits = benefitsData;
+    }
+    const burndownData = burndown.scrape();
+    if (document.getElementById('burndown-view-container')) {
+        newData.burndown = burndownData;
+    }
+    const projectionData = projection.scrape();
+    if (document.getElementById('projection-chart')) {
+        newData.projectionSettings = projectionData;
+    }
 
     return newData;
 }

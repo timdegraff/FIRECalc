@@ -11,7 +11,6 @@ import { formatter } from './formatter.js';
 // --- DEVELOPER / RESET MODE ---
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('reset') === 'true') {
-    // Aggressively clear all FIRECalc related local storage
     const keysToClear = [
         'firecalc_guest_data',
         'firecalc_guest_acknowledged',
@@ -19,17 +18,14 @@ if (urlParams.get('reset') === 'true') {
         'firecalc_app_version'
     ];
     keysToClear.forEach(k => localStorage.removeItem(k));
-    
-    // Redirect to root without params to ensure fresh state
     window.location.href = window.location.pathname;
 }
 
 // --- SAFE VERSION CHECK LOGIC ---
-const APP_VERSION = "3.0"; // Bumped version to force cache refresh
+const APP_VERSION = "3.0"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 if (currentSavedVersion !== APP_VERSION) {
     localStorage.setItem('firecalc_app_version', APP_VERSION);
-    // On version change, clear session storage which might hold stale UI state
     sessionStorage.clear();
 }
 
@@ -253,7 +249,6 @@ const MOBILE_TEMPLATES = {
     `,
     'burndown': () => `
         <div id="tab-burndown-mobile" class="w-full">
-            <!-- MAGI Strategy Target Slider (Sandbox Style) -->
             <div class="card-container bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg p-3 mb-2">
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-end">
@@ -267,7 +262,6 @@ const MOBILE_TEMPLATES = {
                 </div>
             </div>
 
-            <!-- Retirement Age Slider (Sandbox Style) -->
             <div class="card-container bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg p-3 mb-4">
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-end">
@@ -466,12 +460,9 @@ function attachGlobal() {
         currentTab = btn.dataset.tab; 
         document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active')); 
         btn.classList.add('active'); 
-        
-        // Ensure data is synced before switching to computation-heavy tabs
         if (currentTab === 'burndown' || currentTab === 'projection' || currentTab === 'benefits') {
             forceSyncData();
         }
-        
         renderTab(); 
     });
     document.body.addEventListener('input', (e) => {
@@ -547,7 +538,6 @@ function renderTab() {
     const main = document.getElementById('mobile-content'); main.innerHTML = MOBILE_TEMPLATES[currentTab]();
     if(!window.currentData) return;
     if (currentTab === 'assets-debts') {
-        ['investments', 'stockOptions', 'realEstate', 'otherAssets', 'helocs', 'debts'].forEach(t => { if (!window.currentData[t] || window.currentData[t].length === 0) window.addMobileItem(t); });
         window.currentData.investments?.forEach((i, idx) => addMobileRow('m-investment-cards', 'investment', i, idx, 'investments'));
         window.currentData.stockOptions?.forEach((i, idx) => addMobileRow('m-stock-option-cards', 'stockOption', i, idx, 'stockOptions'));
         window.currentData.realEstate?.forEach((i, idx) => addMobileRow('m-re-cards', 'realEstate', i, idx, 'realEstate'));
@@ -556,11 +546,9 @@ function renderTab() {
         window.currentData.debts?.forEach((d, idx) => addMobileRow('m-debt-cards', 'debt', d, idx, 'debts'));
         renderMobileAssetList();
     }
-    if (currentTab === 'income') { if (!window.currentData.income || window.currentData.income.length === 0) window.addMobileItem('income'); window.currentData.income?.forEach((i, idx) => addMobileRow('m-income-cards', 'income', i, idx, 'income')); }
+    if (currentTab === 'income') { window.currentData.income?.forEach((i, idx) => addMobileRow('m-income-cards', 'income', i, idx, 'income')); }
     if (currentTab === 'budget') {
         const s = engine.calculateSummaries(window.currentData); addMobileRow('m-budget-savings', 'savings', { type: 'Pre-Tax (401k/IRA)', annual: s.total401kContribution, isLocked: true });
-        if (!window.currentData.budget?.savings || window.currentData.budget.savings.length === 0) window.addMobileItem('budget.savings');
-        if (!window.currentData.budget?.expenses || window.currentData.budget.expenses.length === 0) window.addMobileItem('budget.expenses');
         window.currentData.budget?.savings?.filter(i => !i.isLocked).forEach((i, idx) => addMobileRow('m-budget-savings', 'savings', { ...i, monthly: i.annual/12 }, idx, 'budget.savings'));
         window.currentData.budget?.expenses?.forEach((i, idx) => addMobileRow('m-budget-expenses', 'expense', i, idx, 'budget.expenses'));
     }
@@ -584,6 +572,11 @@ function initSwipeHandlers() {
     let startX = 0, isSwiping = false, activeCard = null;
     document.querySelectorAll('.swipe-front').forEach(card => {
         card.addEventListener('touchstart', (e) => { 
+            // CRITICAL: If touching an input, don't initiate swipe logic so keyboard can open
+            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+                isSwiping = false;
+                return;
+            }
             document.querySelectorAll('.swipe-front').forEach(c => { if (c !== card) c.style.transform = 'translateX(0)'; }); 
             startX = e.touches[0].clientX; 
             isSwiping = true; 
