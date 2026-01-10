@@ -229,35 +229,46 @@ export function updateSummaries() {
     const retirementAge = parseFloat(data.assumptions?.retirementAge) || 65;
     const ssStartAge = parseFloat(data.assumptions?.ssStartAge) || 67;
     const inflation = (data.assumptions?.inflation || 3) / 100;
+    const currentYear = new Date().getFullYear();
 
     const yrsToRetire = Math.max(0, retirementAge - currentAge);
+    const retireYear = currentYear + yrsToRetire;
     set('sum-yrs-to-retire', yrsToRetire, false);
     set('sum-life-exp', engine.getLifeExpectancy(currentAge) + currentAge, false);
 
     const infFacRet = Math.pow(1 + inflation, yrsToRetire);
+    
+    // Retirement Income Calculation
     const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
         const growth = (parseFloat(inc.increase) / 100) || 0;
         return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly === true || inc.isMonthly === 'true' ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
     }, 0);
     const ssAtRet = (retirementAge >= ssStartAge) ? engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacRet) : 0;
-    
     const totalNominalFloor = streamsAtRet + ssAtRet;
     set('sum-retirement-income-floor', totalNominalFloor);
 
     // Update the Retirement Income title and sub-label
-    const retireYear = new Date().getFullYear() + yrsToRetire;
-    const titleEl = document.getElementById('label-retirement-income-title');
-    if (titleEl) titleEl.textContent = `Retirement Income in ${retireYear}`;
+    const incTitleEl = document.getElementById('label-retirement-income-title');
+    if (incTitleEl) incTitleEl.textContent = `Retirement Income in ${retireYear}`;
+    const incSubEl = document.getElementById('sum-retirement-income-sub');
+    if (incSubEl) incSubEl.textContent = `${math.toCurrency(totalNominalFloor / infFacRet)} in 2026 Dollars`;
 
-    const totalRealFloor = totalNominalFloor / infFacRet;
-    const subEl = document.getElementById('sum-retirement-income-sub');
-    if (subEl) subEl.textContent = `${math.toCurrency(totalRealFloor)} in 2026 Dollars`;
-
-    const retireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
+    // Retirement Budget Calculation
+    let totalRealRetireBudget = 0;
+    const totalNominalRetireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
         if (exp.remainsInRetirement === false) return sum;
         const base = math.fromCurrency(exp.annual);
+        totalRealRetireBudget += base;
         return sum + (exp.isFixed ? base : base * infFacRet);
     }, 0);
-    set('sum-retire-budget', retireBudget);
-    set('sum-budget-total', retireBudget); 
+
+    // Update the Retirement Budget card (top right of Budget tab)
+    const budTitleEl = document.getElementById('label-retirement-budget-title');
+    if (budTitleEl) budTitleEl.textContent = `Retirement Budget in ${retireYear}`;
+    set('sum-budget-total', totalNominalRetireBudget); 
+    const budSubEl = document.getElementById('sum-retirement-budget-sub');
+    if (budSubEl) budSubEl.textContent = `${math.toCurrency(totalNominalRetireBudget / infFacRet)} in 2026 Dollars`;
+
+    // Assumptions summary card (uses the nominal figure)
+    set('sum-retire-budget', totalNominalRetireBudget);
 }

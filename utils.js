@@ -319,7 +319,8 @@ export const engine = {
         let irsLimit = 23500;
         if (age >= 60 && age <= 63) irsLimit = 34750;
         else if (age >= 50) irsLimit = 31000;
-        let total401kContribution = 0, totalGrossInflow = 0, totalNetSource = 0;
+        let total401kContribution = 0, totalGrossInflow = 0, totalNetSource = 0, currentYearMagi = 0;
+        const currentYear = new Date().getFullYear();
         inc.forEach(x => {
             const isMon = x.isMonthly === true || x.isMonthly === 'true';
             let base = math.fromCurrency(x.amount) * (isMon ? 12 : 1);
@@ -333,6 +334,12 @@ export const engine = {
             const sourceExpenses = (math.fromCurrency(x.incomeExpenses) * (isExpMon ? 12 : 1));
             totalGrossInflow += sourceGross;
             totalNetSource += (sourceGross - sourceExpenses); 
+            
+            // Respect "No Tax Until" for the current year MAGI calculation
+            const taxableYear = parseInt(x.nonTaxableUntil);
+            if (isNaN(taxableYear) || currentYear >= taxableYear) {
+                currentYearMagi += (sourceGross - sourceExpenses - cappedIndividual401k);
+            }
         });
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         const manualSavingsSum = budget.savings?.filter(x => !x.isLocked).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
@@ -340,7 +347,7 @@ export const engine = {
             netWorth: totalAssets - totalLiabilities, 
             totalAssets, totalLiabilities, 
             totalGrossIncome: totalGrossInflow, 
-            magiBase: Math.max(0, totalNetSource - total401kContribution - hsaSavings), 
+            magiBase: Math.max(0, currentYearMagi - hsaSavings), 
             total401kContribution, 
             totalAnnualSavings: manualSavingsSum + total401kContribution + hsaSavings, 
             totalAnnualBudget: budget.expenses?.reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0 

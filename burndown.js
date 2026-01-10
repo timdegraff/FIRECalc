@@ -146,8 +146,16 @@ export const burndown = {
                     if (lbl) lbl.textContent = math.toCurrency(parseInt(el.value));
                 }
                 if (id === 'input-top-retire-age') {
+                    const val = parseInt(el.value);
                     const lbl = document.getElementById('label-top-retire-age');
-                    if (lbl) lbl.textContent = el.value;
+                    if (lbl) lbl.textContent = val;
+                    
+                    // Master Sync: Update global data and Assumptions UI
+                    if (window.currentData?.assumptions) {
+                        window.currentData.assumptions.retirementAge = val;
+                        const assumptionsInput = document.querySelector('#assumptions-container [data-id="retirementAge"]');
+                        if (assumptionsInput) assumptionsInput.value = val;
+                    }
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualInput = document.getElementById('input-manual-budget');
@@ -298,8 +306,17 @@ export const burndown = {
             }).join('');
             if (typeof Sortable !== 'undefined' && !burndown.sortable) { burndown.sortable = new Sortable(priorityList, { animation: 150, handle: '.drag-handle', ghostClass: 'bg-slate-700/30', onEnd: () => { burndown.priorityOrder = Array.from(priorityList.querySelectorAll('.drag-item')).map(el => el.dataset.pk); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } }); }
         }
+        
+        // Sync retirement age from master assumptions
+        lastUsedRetirementAge = parseFloat(data.assumptions.retirementAge) || 65;
+        const slider = document.getElementById('input-top-retire-age');
+        if (slider) {
+            slider.value = lastUsedRetirementAge;
+            const lbl = document.getElementById('label-top-retire-age');
+            if (lbl) lbl.textContent = lastUsedRetirementAge;
+        }
+
         const config = burndown.scrape(), inflation = (data.assumptions?.inflation || 3) / 100;
-        lastUsedRetirementAge = config.retirementAge; 
         let calculatedRetireBudget = config.manualBudget; 
         if (config.useSync) {
             const currentAge = data.assumptions?.currentAge || 40, yrsToRetire = Math.max(0, lastUsedRetirementAge - currentAge), infFacRet = Math.pow(1 + inflation, yrsToRetire);
@@ -311,7 +328,7 @@ export const burndown = {
         if (!results || results.length === 0) return;
         const runwayAge = firstInsolvencyAge ? firstInsolvencyAge : "100+";
         if (document.getElementById('card-runway-val')) { document.getElementById('card-runway-val').textContent = runwayAge; document.getElementById('card-runway-val').className = firstInsolvencyAge ? "text-3xl font-black text-red-400 mono-numbers tracking-tighter" : "text-3xl font-black text-blue-400 mono-numbers tracking-tighter"; }
-        const firstRetYear = results.find(r => r.age >= config.retirementAge) || results[0];
+        const firstRetYear = results.find(r => r.age >= lastUsedRetirementAge) || results[0];
         if (document.getElementById('est-snap-indicator')) document.getElementById('est-snap-indicator').textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}`;
         if (document.getElementById('burndown-table-container')) document.getElementById('burndown-table-container').innerHTML = burndown.renderTable(results);
         if (document.getElementById('input-debug-age')) burndown.showTrace(parseInt(document.getElementById('input-debug-age').value));
@@ -320,7 +337,7 @@ export const burndown = {
     simulateProjection: (data, configOverride = null, isSilent = false) => {
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = {}, debts = [] } = data;
         if (!assumptions || isNaN(parseFloat(assumptions.currentAge))) return [];
-        const config = configOverride || burndown.scrape(), inflationRate = (assumptions.inflation || 3) / 100, filingStatus = assumptions.filingStatus || 'Single', currentYear = new Date().getFullYear(), persona = config.strategyMode, rAge = config.retirementAge, cashFloor = config.cashReserve;
+        const config = configOverride || burndown.scrape(), inflationRate = (assumptions.inflation || 3) / 100, filingStatus = assumptions.filingStatus || 'Single', currentYear = new Date().getFullYear(), persona = config.strategyMode, rAge = parseFloat(assumptions.retirementAge) || 65, cashFloor = config.cashReserve;
         if (!isSilent) firstInsolvencyAge = null;
         const helocInterestRate = (helocs?.length > 0) ? (parseFloat(helocs[0].rate) || assumptions.helocRate || 7) / 100 : (assumptions.helocRate || 7) / 100;
         const bal = {
@@ -357,7 +374,13 @@ export const burndown = {
             let floorOrdIncome = 0, floorTotalIncome = 0, pretaxDed = 0;
             (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i), bonus = gross * (parseFloat(inc.bonusPct) / 100 || 0), sourceGross = gross + bonus, netSrc = sourceGross - (math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1));
-                if (!inc.nonTaxableUntil || parseInt(inc.nonTaxableUntil) < year) { floorOrdIncome += netSrc; if (!isRet) pretaxDed += Math.min(sourceGross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
+                
+                // Clear interpretation: NoTaxUntil 2030 means 2030 is the first year of tax.
+                const unt = parseInt(inc.nonTaxableUntil);
+                if (isNaN(unt) || year >= unt) { 
+                    floorOrdIncome += netSrc; 
+                    if (!isRet) pretaxDed += Math.min(sourceGross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); 
+                }
                 floorTotalIncome += netSrc;
             });
             if (age >= assumptions.ssStartAge) { const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac), taxableSS = engine.calculateTaxableSocialSecurity(ssGross, Math.max(0, floorOrdIncome), filingStatus); floorOrdIncome += taxableSS; floorTotalIncome += ssGross; }

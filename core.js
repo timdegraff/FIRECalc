@@ -178,6 +178,21 @@ function attachGlobalListeners() {
             if (incomeCard) {
                 checkIrsLimits(incomeCard);
             }
+            
+            // Master Sync for Retirement Age
+            if (dataId === 'retirementAge') {
+                const val = parseFloat(target.value);
+                const burndownSlider = document.getElementById('input-top-retire-age');
+                const burndownLabel = document.getElementById('label-top-retire-age');
+                if (burndownSlider) burndownSlider.value = val;
+                if (burndownLabel) burndownLabel.textContent = val;
+                
+                // If we are in the burndown tab, run it
+                if (document.querySelector('[data-tab="burndown"]').classList.contains('active')) {
+                    burndown.run();
+                }
+            }
+
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
