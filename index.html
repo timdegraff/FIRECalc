@@ -543,28 +543,58 @@
                         <!-- Stage 3 -->
                         <div class="space-y-6">
                             <div class="flex items-center gap-4">
-                                <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-black text-sm">3</div>
-                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 3: Legacy & Reinvestment</h4>
+                                <div class="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400 font-black text-sm">3</div>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 3: Benefit Recalculation Engine</h4>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Dynamic Dependent Recalculation</p>
+                                        <p class="text-sm text-slate-300">The simulator checks your <strong>Dependent Independence Dates</strong> for every year. When a child ages out, the household size (hhSize) decreases immediately.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: FPL Ratio Shift</p>
+                                        <p class="text-sm text-slate-300">A lower hhSize lowers your FPL threshold. An income that was 138% FPL (Platinum) for a family of 4 might become 220% FPL (Silver) for a family of 2.</p>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Automated Strategy Pivots</p>
+                                        <p class="text-sm text-slate-300">As thresholds shift, the engine automatically adjusts its withdrawal targets to stay within your selected Persona limits (Platinum/Silver), even as the rules change mid-retirement.</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: Benefit Cliff Visualization</p>
+                                        <p class="text-sm text-slate-300">The Burndown table's <strong>"Health Status"</strong> column will visually shift colors in the exact year your household composition changes, highlighting potential cost spikes.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stage 4 -->
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-black text-sm">4</div>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 4: Legacy & Reinvestment</h4>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
                                 <div class="space-y-4">
                                     <div class="space-y-1">
                                         <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Cash Surplus Recycling</p>
-                                        <p class="text-sm text-slate-300">In strategy years (like harvesting for "Platinum Max"), the engine draws extra funds. Any leftover cash is <strong>automatically recycled</strong> back to your Cash bucket for the following year.</p>
+                                        <p class="text-sm text-slate-300">In strategy years (like harvesting for "Platinum Max"), any leftover cash from mandatory RMDs or harvesting is <strong>recycled</strong> back into your Cash bucket.</p>
                                     </div>
                                     <div class="space-y-1">
                                         <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: Dynamic Debt Paydown</p>
-                                        <p class="text-sm text-slate-300">If year-end income (Social Security, Dividends) exceeds your budget, the engine applies the surplus to <strong>HELOC Principal</strong> before adding to savings.</p>
+                                        <p class="text-sm text-slate-300">If year-end income exceeds your budget, the engine applies the surplus to <strong>HELOC Principal</strong> before adding to savings.</p>
                                     </div>
                                 </div>
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Benefit Transition</p>
-                                        <p class="text-sm text-slate-300">At age 65, ACA subsidy logic is terminated and the engine transitions to standard Medicare health-cost logic.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Social Security Layering</p>
+                                        <p class="text-sm text-slate-300">The engine automatically calculates the taxable portion of SS based on provisional income rules, layering it over your strategy draws.</p>
                                     </div>
                                     <div class="space-y-1">
                                         <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: RMD Logic</p>
-                                        <p class="text-sm text-slate-300">At age 75, Required Minimum Distributions are forced. This may trigger extra taxable income and surplus recycling into your Cash account.</p>
+                                        <p class="text-sm text-slate-300">At age 75, Required Minimum Distributions are forced, potentially overriding your strategy targets to satisfy IRS compliance.</p>
                                     </div>
                                 </div>
                             </div>

@@ -32,7 +32,15 @@ const DEFAULTS = {
             { name: 'Living Expenses', annual: 48000, monthly: 4000, remainsInRetirement: true, isFixed: false }
         ]
     },
-    assumptions: { ...window.assumptions?.defaults },
+    assumptions: { 
+        currentAge: 42, retirementAge: 45, ssStartAge: 67, ssMonthly: 3000, 
+        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, 
+        inflation: 3, filingStatus: 'Married Filing Jointly', 
+        helocRate: 7, state: 'Michigan', workYearsAtRetirement: 35,
+        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
+        advancedGrowth: false,
+        ltcgRate: 15
+    },
     benefits: { dependents: [] }
 };
 
@@ -55,7 +63,20 @@ export async function initializeData(user) {
     } else {
         // Guest Mode Load
         const local = localStorage.getItem('firecalc_guest_data');
-        window.currentData = local ? JSON.parse(local) : JSON.parse(JSON.stringify(DEFAULTS));
+        if (local) {
+            try {
+                const parsed = JSON.parse(local);
+                // Deep merge or check assumptions to ensure validity
+                window.currentData = { ...DEFAULTS, ...parsed };
+                if (!window.currentData.assumptions || isNaN(window.currentData.assumptions.currentAge)) {
+                    window.currentData.assumptions = { ...DEFAULTS.assumptions };
+                }
+            } catch(e) {
+                window.currentData = JSON.parse(JSON.stringify(DEFAULTS));
+            }
+        } else {
+            window.currentData = JSON.parse(JSON.stringify(DEFAULTS));
+        }
     }
 
     // Initialize UI Modules
@@ -207,9 +228,9 @@ export function updateSummaries() {
     set('sum-budget-savings', s.totalAnnualSavings);
     set('sum-budget-annual', s.totalAnnualBudget);
     
-    const currentAge = data.assumptions?.currentAge || 40;
-    const retirementAge = data.assumptions?.retirementAge || 65;
-    const ssStartAge = data.assumptions?.ssStartAge || 67;
+    const currentAge = parseFloat(data.assumptions?.currentAge) || 40;
+    const retirementAge = parseFloat(data.assumptions?.retirementAge) || 65;
+    const ssStartAge = parseFloat(data.assumptions?.ssStartAge) || 67;
     const inflation = (data.assumptions?.inflation || 3) / 100;
 
     const yrsToRetire = Math.max(0, retirementAge - currentAge);

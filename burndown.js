@@ -79,7 +79,7 @@ export const burndown = {
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-skull text-4xl text-pink-400"></i></div>
                         <div>
-                            <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero Spend</label>
+                            <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero</label>
                             <div id="card-dwz-val" class="text-3xl font-black text-pink-400 mono-numbers tracking-tighter">--</div>
                         </div>
                         <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase tracking-tighter leading-none">MAX ANNUAL SPEND STARTING AT RETIREMENT</div>
@@ -327,7 +327,7 @@ export const burndown = {
 
     run: () => {
         const data = window.currentData;
-        if (!data || !data.assumptions) return;
+        if (!data || !data.assumptions || isNaN(data.assumptions.currentAge)) return;
 
         const priorityList = document.getElementById('draw-priority-list');
         if (priorityList) {
@@ -383,6 +383,7 @@ export const burndown = {
 
         simulationTrace = {}; 
         const results = burndown.simulateProjection(data, config);
+        if (!results || results.length === 0) return;
         
         const runwayAge = firstInsolvencyAge ? firstInsolvencyAge : "100+";
         const runwayEl = document.getElementById('card-runway-val');
@@ -397,6 +398,7 @@ export const burndown = {
         for (let a = data.assumptions.currentAge; a <= 80; a++) {
             const tempConfig = { ...config, retirementAge: a };
             const tempResults = burndown.simulateProjection(data, tempConfig, true); 
+            if (!tempResults || tempResults.length === 0) continue;
             const retYear = tempResults.find(r => r.age === a);
             const endYear = tempResults[tempResults.length - 1]; 
             if (retYear && endYear && !endYear.isInsolvent) {
@@ -413,6 +415,7 @@ export const burndown = {
             let mid = (low + high) / 2;
             const tempConfig = { ...config, manualBudget: mid, useSync: false }; 
             const sim = burndown.simulateProjection(data, tempConfig, true); 
+            if (!sim || sim.length === 0) break;
             const last = sim[sim.length - 1];
             if (last.isInsolvent || last.netWorth < 100) high = mid; 
             else { low = mid; bestBudget = mid; }
@@ -425,18 +428,16 @@ export const burndown = {
             dwzSubEl.textContent = `MAX ANNUAL SPEND STARTING AT AGE ${lastUsedRetirementAge}`;
         }
 
-        if (results.length > 0) {
-            const firstRetYear = results.find(r => r.age >= config.retirementAge) || results[0];
-            const snapInd = document.getElementById('est-snap-indicator');
-            if (snapInd) snapInd.textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}`;
-            
-            const debugAgeInput = document.getElementById('input-debug-age');
-            if (debugAgeInput && !traceAgeManuallySet) {
-                debugAgeInput.value = data.assumptions.currentAge;
-                burndown.showTrace(data.assumptions.currentAge);
-            } else if (debugAgeInput) {
-                burndown.showTrace(parseInt(debugAgeInput.value));
-            }
+        const firstRetYear = results.find(r => r.age >= config.retirementAge) || results[0];
+        const snapInd = document.getElementById('est-snap-indicator');
+        if (snapInd) snapInd.textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}`;
+        
+        const debugAgeInput = document.getElementById('input-debug-age');
+        if (debugAgeInput && !traceAgeManuallySet) {
+            debugAgeInput.value = data.assumptions.currentAge;
+            burndown.showTrace(data.assumptions.currentAge);
+        } else if (debugAgeInput) {
+            burndown.showTrace(parseInt(debugAgeInput.value));
         }
 
         const tableContainer = document.getElementById('burndown-table-container');
@@ -445,6 +446,8 @@ export const burndown = {
 
     simulateProjection: (data, configOverride = null, isSilent = false) => {
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = {}, debts = [] } = data;
+        if (!assumptions || isNaN(parseFloat(assumptions.currentAge))) return [];
+        
         const config = configOverride || burndown.scrape(); 
         const inflationRate = (assumptions.inflation || 3) / 100;
         const filingStatus = assumptions.filingStatus || 'Single';
@@ -478,10 +481,11 @@ export const burndown = {
         const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0);
         const results = [];
 
-        for (let i = 0; i <= (100 - assumptions.currentAge); i++) {
-            const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
+        const startAge = Math.max(18, Math.min(100, Math.floor(parseFloat(assumptions.currentAge) || 40)));
+
+        for (let i = 0; i <= (100 - startAge); i++) {
+            const age = startAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
             
-            // DYNAMIC HOUSEHOLD SIZE CALCULATION
             const dependCount = (benefits.dependents || []).filter(d => parseInt(d.independenceYear) >= year).length;
             const currentHhSize = 1 + (filingStatus === 'Married Filing Jointly' ? 1 : 0) + dependCount;
 
@@ -489,10 +493,10 @@ export const burndown = {
             traceStr += `--------------------------------------\n`;
             traceStr += `Household Size: ${currentHhSize} (${dependCount} dependents)\n`;
 
-            const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
-            const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
-            const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
-            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, assumptions.currentAge, assumptions);
+            const stockGrowth = math.getGrowthForAge('Stock', age, startAge, assumptions);
+            const cryptoGrowth = math.getGrowthForAge('Crypto', age, startAge, assumptions);
+            const metalsGrowth = math.getGrowthForAge('Metals', age, startAge, assumptions);
+            const realEstateGrowth = math.getGrowthForAge('RealEstate', age, startAge, assumptions);
 
             const totalMort = simRE.reduce((s, r) => s + (r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12)), 0);
             const totalOL = simOA.reduce((s, o) => s + (o.loan = Math.max(0, o.loan - (o.principalPayment || 0) * 12)), 0);
@@ -562,11 +566,10 @@ export const burndown = {
             const medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
             const silverLim = fpl * 2.5;
             
-            // PERSONA STRATEGY LOGIC
             let magiTarget = 0;
             if (persona === 'PLATINUM') magiTarget = medLim;
             else if (persona === 'SILVER') magiTarget = silverLim;
-            else magiTarget = 0; // Unconstrained pulls only for need
+            else magiTarget = 0; 
 
             traceStr += `MAGI Strategy Target (${persona}): ${math.toCurrency(magiTarget)}\n`;
 

@@ -16,27 +16,54 @@ export const benefits = {
                                 <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
                                     <i class="fas fa-users text-sm"></i>
                                 </div>
-                                <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Dependents</h3>
+                                <div>
+                                    <h3 class="text-sm font-black text-white uppercase tracking-widest">Dependents</h3>
+                                    <p class="text-[9px] text-slate-500 font-bold uppercase mt-0.5">Kids & Qualifying Relatives</p>
+                                </div>
                             </div>
                             <button id="btn-add-dependent" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
                                 <i class="fas fa-child mr-2"></i> Add Dependent
                             </button>
                         </div>
                         
-                        <div id="dependents-list" class="space-y-3 min-h-[100px]">
+                        <div id="dependents-list" class="space-y-3 min-h-[40px]">
                             <!-- Dependent items injected here -->
+                        </div>
+
+                        <!-- Household Summary Banner -->
+                        <div class="p-4 bg-black/40 rounded-2xl border border-white/5 flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <div class="flex -space-x-2">
+                                    <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 text-xs" title="You"><i class="fas fa-user"></i></div>
+                                    <div id="avatar-spouse" class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 text-xs hidden" title="Spouse"><i class="fas fa-user-friends"></i></div>
+                                </div>
+                                <div>
+                                    <p id="hh-composition-text" class="text-[10px] font-black text-white uppercase tracking-tight">Self Only</p>
+                                    <p class="text-[8px] text-slate-500 font-bold uppercase tracking-widest">Adults are derived from Filing Status</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Total Family Size</span>
+                                <div id="hh-total-size-badge" class="text-xl font-black text-blue-400 mono-numbers leading-none">1</div>
+                            </div>
                         </div>
 
                         <div class="pt-4 border-t border-white/5 space-y-4">
                             <div class="flex items-center justify-between">
-                                <label class="label-std text-slate-500">Pregnancy Adjustment</label>
+                                <div class="flex flex-col">
+                                    <label class="label-std text-slate-500">Pregnancy Adjustment</label>
+                                    <p class="text-[8px] text-slate-600 font-bold uppercase">Boosts Platinum Threshold (MI Only)</p>
+                                </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" data-benefit-id="isPregnant" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600 text-[10px] flex items-center px-1"></div>
                                 </label>
                             </div>
                             <div class="flex items-center justify-between">
-                                <label class="label-std text-slate-500">Utility Allowance (SUA)</label>
+                                <div class="flex flex-col">
+                                    <label class="label-std text-slate-500">Utility Allowance (SUA)</label>
+                                    <p class="text-[8px] text-slate-600 font-bold uppercase">Standard Deduction for SNAP</p>
+                                </div>
                                 <label class="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" data-benefit-id="hasSUA" class="sr-only peer" checked>
                                     <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
@@ -50,8 +77,8 @@ export const benefits = {
                         <div class="card-container p-6 bg-slate-800/40">
                             <div class="flex justify-between items-end mb-4">
                                 <div class="flex flex-col">
-                                    <label class="label-std text-blue-400">MAGI Sandbox</label>
-                                    <p class="text-[9px] text-slate-500 font-medium italic">Simulate benefit cliffs for current year</p>
+                                    <label class="label-std text-blue-400">Current Year Sandbox</label>
+                                    <p class="text-[9px] text-slate-500 font-medium italic">Simulate benefit cliffs for current household</p>
                                 </div>
                                 <div class="text-2xl font-black text-white mono-numbers leading-none" data-label="unifiedIncome">$0</div>
                             </div>
@@ -84,8 +111,8 @@ export const benefits = {
 
                 <div class="pt-8 text-center">
                     <p class="text-[10px] text-slate-500 leading-relaxed max-w-2xl mx-auto italic">
-                        The <strong>MAGI Sandbox</strong> tests your current household size. 
-                        Long-term simulations in the Burndown tab will automatically adjust your household size as dependents age out.
+                        The <strong>Current Year Sandbox</strong> tests your household size as it exists today. 
+                        Retirement simulations in the Burndown tab will automatically <strong>remove</strong> dependents in the years you specify above.
                     </p>
                 </div>
             </div>
@@ -134,14 +161,14 @@ export const benefits = {
         if (!list) return;
         
         const item = document.createElement('div');
-        item.className = 'dependent-item flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5';
+        item.className = 'dependent-item flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5 group';
         
         const currentYear = new Date().getFullYear();
         const yearVal = data.independenceYear || (currentYear + 10);
         const nameVal = data.name || 'Child';
 
         item.innerHTML = `
-            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400"><i class="fas fa-baby"></i></div>
+            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-blue-400 transition-colors"><i class="fas fa-baby"></i></div>
             <div class="flex-grow">
                 <input data-id="depName" type="text" value="${nameVal}" placeholder="Name" class="bg-transparent border-none outline-none font-bold text-white text-xs uppercase tracking-tight w-full placeholder:text-slate-700">
                 <div class="flex items-center gap-2 mt-1">
@@ -162,9 +189,26 @@ export const benefits = {
         c.querySelector('[data-label="unifiedIncome"]').textContent = math.toCurrency(data.unifiedIncome);
         c.querySelector('[data-label="shelterCosts"]').textContent = math.toCurrency(data.shelterCosts);
 
+        // Update Household Composition Banner
+        const filingStatus = window.currentData?.assumptions?.filingStatus || 'Single';
+        const isMFJ = filingStatus === 'Married Filing Jointly';
+        const avatarSpouse = document.getElementById('avatar-spouse');
+        const hhCompText = document.getElementById('hh-composition-text');
+        const hhTotalBadge = document.getElementById('hh-total-size-badge');
+
+        if (avatarSpouse) avatarSpouse.classList.toggle('hidden', !isMFJ);
+        
+        let adults = isMFJ ? 2 : 1;
+        let kids = data.dependents.length;
+        if (hhCompText) {
+            hhCompText.textContent = `${adults} Adult${adults > 1 ? 's' : ''} ${kids > 0 ? '+ ' + kids + ' Dependent' + (kids > 1 ? 's' : '') : ''}`;
+        }
+        if (hhTotalBadge) hhTotalBadge.textContent = adults + kids;
+
         const stateMeta = stateTaxRates[window.currentData?.assumptions?.state || 'Michigan'];
         const fplBase = stateMeta?.fplBase || 16060;
-        const fpl2026 = fplBase + (data.hhSize - 1) * 5650;
+        const totalSize = adults + kids;
+        const fpl2026 = fplBase + (totalSize - 1) * 5650;
         const isExpanded = stateMeta?.expanded !== false; 
         
         const ratio = data.unifiedIncome / fpl2026;
@@ -204,7 +248,7 @@ export const benefits = {
         else if (ratio <= silverRatio) setHealth("Silver CSR", "High Subsidy", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.4)");
         else setHealth("Standard ACA", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.1)");
 
-        const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled, window.currentData?.assumptions?.state || 'Michigan');
+        const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, window.currentData?.assumptions?.state || 'Michigan');
         const snapRes = document.getElementById('snap-result-value');
         const globalSnapRes = document.getElementById('sum-snap-amt');
         const snapCard = document.getElementById('card-snap');

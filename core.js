@@ -126,14 +126,18 @@ function attachGlobalListeners() {
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
         
-        if (id === 'hhSize') {
-            let val = parseInt(target.value) || 1;
-            if (val < 1) val = 1;
-            if (val > 20) val = 20;
-            target.value = val;
-            syncAllInputs('hhSize', val);
-            if (window.currentData?.benefits) window.currentData.benefits.hhSize = val;
-            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        if (id === 'filingStatus') {
+             if (window.currentData?.benefits) {
+                // Force a calculation of derived hhSize
+                const adults = (target.value === 'Married Filing Jointly' ? 2 : 1);
+                const kids = (window.currentData.benefits.dependents || []).length;
+                window.currentData.benefits.hhSize = adults + kids;
+                // Reflect this in the Assumptions UI if it's currently showing
+                const hhDisp = document.getElementById('assumptions-hh-display');
+                if (hhDisp) hhDisp.textContent = adults + kids;
+                const hhSub = document.getElementById('assumptions-hh-subtext');
+                if (hhSub) hhSub.textContent = `${adults} Adult${adults>1?'s':''} + ${kids} Kid${kids!==1?'s':''}`;
+             }
         }
     });
 
@@ -174,9 +178,6 @@ function attachGlobalListeners() {
                     if (id !== 'currentAge' && id !== 'retirementAge' || !isNaN(nVal)) {
                         window.currentData.assumptions[id] = nVal;
                     }
-                }
-                if (id === 'hhSize' && !isNaN(val) && window.currentData.benefits) {
-                    window.currentData.benefits.hhSize = val;
                 }
             }
             if (window.debouncedAutoSave) window.debouncedAutoSave();
@@ -608,7 +609,11 @@ window.createAssumptionControls = (data) => {
     const container = document.getElementById('assumptions-container'); if (!container) return;
     const a = data.assumptions || assumptions.defaults;
     const isAdv = !!a.advancedGrowth;
-    const hhSize = data.benefits?.hhSize || 1;
+    const filingStatus = a.filingStatus || 'Single';
+    const isMFJ = filingStatus === 'Married Filing Jointly';
+    const dependCount = (data.benefits?.dependents || []).length;
+    const adults = isMFJ ? 2 : 1;
+    const hhSize = adults + dependCount;
 
     const renderStepper = (id, val, step = 1, color = "text-white", decimals = "0") => `
         <div class="relative group/stepper mt-1">
@@ -659,9 +664,15 @@ window.createAssumptionControls = (data) => {
                         <option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
                     </select>
                 </label>
-                <label class="block"><span class="label-std text-slate-500">Family Size</span>
-                    ${renderStepper('hhSize', hhSize, 1, 'text-white', '0')}
-                </label>
+                <div class="flex flex-col">
+                    <span class="label-std text-slate-500">Total Family Size</span>
+                    <div class="mt-1 p-2 bg-black/20 rounded-lg border border-white/5 flex items-center justify-between">
+                         <div id="assumptions-hh-display" class="text-xl font-black text-blue-400 mono-numbers">${hhSize}</div>
+                         <div id="assumptions-hh-subtext" class="text-[8px] font-black text-slate-600 uppercase text-right leading-tight">
+                            ${adults} Adult${adults>1?'s':''}<br>+ ${dependCount} Kid${dependCount!==1?'s':''}
+                         </div>
+                    </div>
+                </div>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <label class="flex flex-col h-full"><span class="label-std text-slate-500">Current Age</span>${renderStepper('currentAge', a.currentAge, 1, 'text-white', '0')}</label>
