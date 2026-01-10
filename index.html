@@ -24,6 +24,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="index.css">
+    <style>
+        img:-moz-broken, img:invalid { display: none !important; }
+    </style>
     <script type="importmap">
     {
       "imports": {
@@ -75,67 +78,35 @@
                 <!-- 25 YO: The Starter -->
                 <button data-profile="25" class="group relative p-8 bg-slate-900/40 hover:bg-slate-800/60 border border-white/10 rounded-[32px] transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-teal-900/20 flex flex-col items-center">
                     <div class="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-rocket text-7xl text-teal-400"></i></div>
-                    
                     <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8 bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-teal-500/10 blur-2xl group-hover:bg-teal-500/20 transition-all"></div>
                         <div class="absolute inset-0 rounded-full border-2 border-teal-500/20 group-hover:border-teal-500/50 transition-all"></div>
-                        <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        
-                        <img src="./starter.png" alt="The Starter" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="./starter.png" alt="" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)]">
                     </div>
-
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">The Starter</h3>
                     <p class="text-[10px] text-teal-400 font-black uppercase tracking-widest mb-8">Age 25 • Single</p>
-                    
-                    <div class="w-full space-y-4 text-xs text-slate-400 border-t border-white/5 pt-8">
-                        <div class="flex justify-between items-center"><span class="font-medium">Income</span><span class="text-white font-black">$120k</span></div>
-                        <div class="flex justify-between items-center"><span class="font-medium">Net Worth</span><span class="text-white font-black">$40k</span></div>
-                        <div class="flex justify-between items-center"><span class="font-medium">Housing</span><span class="text-white font-black">Renting</span></div>
-                    </div>
                 </button>
-
                 <!-- 40 YO: The Accumulator -->
                 <button data-profile="40" class="group relative p-8 bg-slate-900/40 hover:bg-slate-800/60 border border-blue-500/30 rounded-[32px] transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-blue-900/30 flex flex-col items-center">
                     <div class="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-users text-7xl text-blue-400"></i></div>
-                    
                     <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8 bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-blue-500/10 blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
                         <div class="absolute inset-0 rounded-full border-2 border-blue-500/40 group-hover:border-blue-500/70 transition-all"></div>
-                        <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        
-                        <img src="./couple.png" alt="The Accumulator" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="./couple.png" alt="" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)]">
                     </div>
-
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">Accumulator</h3>
-                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-8">Age 40 • Married • 3 Kids</p>
-                    
-                    <div class="w-full space-y-4 text-xs text-slate-400 border-t border-white/5 pt-8">
-                        <div class="flex justify-between items-center"><span class="font-medium">HH Income</span><span class="text-white font-black">$325k</span></div>
-                        <div class="flex justify-between items-center"><span class="font-medium">Net Worth</span><span class="text-white font-black">$1.5M</span></div>
-                        <div class="flex justify-between items-center"><span class="font-medium">Housing</span><span class="text-white font-black">Mortgage</span></div>
-                    </div>
+                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest mb-8">Age 40 • Married</p>
                 </button>
-
                 <!-- 55 YO: Pre-Retiree -->
                 <button data-profile="55" class="group relative p-8 bg-slate-900/40 hover:bg-slate-800/60 border border-white/10 rounded-[32px] transition-all hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-900/20 flex flex-col items-center">
                     <div class="absolute top-6 right-8 opacity-5 group-hover:opacity-10 transition-opacity"><i class="fas fa-umbrella-beach text-7xl text-purple-400"></i></div>
-                    
                     <div class="relative w-40 h-40 rounded-full flex items-center justify-center mb-8 bg-black/20">
                         <div class="absolute inset-0 rounded-full bg-purple-500/10 blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
                         <div class="absolute inset-0 rounded-full border-2 border-purple-500/20 group-hover:border-purple-500/50 transition-all"></div>
-                        <div class="absolute inset-2 rounded-full bg-gradient-to-b from-white/5 to-transparent"></div>
-                        
-                        <img src="./retiree.png" alt="Pre-Retiree" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-110">
+                        <img src="./retiree.png" alt="" width="160" height="160" class="relative z-20 w-[85%] h-[85%] object-contain drop-shadow-[0_20px_20px_rgba(0,0,0,0.5)]">
                     </div>
-
                     <h3 class="text-2xl font-black text-white mb-1 tracking-tight">Pre-Retiree</h3>
                     <p class="text-[10px] text-purple-400 font-black uppercase tracking-widest mb-8">Age 55 • Married</p>
-                    
-                    <div class="w-full space-y-4 text-xs text-slate-400 border-t border-white/5 pt-8">
-                        <div class="flex justify-between items-center"><span class="font-medium">HH Income</span><span class="text-white font-black">$298k+</span></div>
-                        <div class="flex justify-between items-center"><span class="font-medium">Net Worth</span><span class="text-white font-black">$2.9M</span></div>
-                        <div class="flex justify-between items-center"><span class="font-medium">Housing</span><span class="text-white font-black">Paid Off</span></div>
-                    </div>
                 </button>
             </div>
         </div>
@@ -157,7 +128,7 @@
             </div>
             
             <nav class="flex-grow px-3 py-2 space-y-1 overflow-y-auto" id="main-nav">
-                <button data-tab="assets-debts" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-wallet w-5 text-center text-orange-400"></i><span>Assets</span></button>
+                <button data-tab="assets-debts" class="tab-btn w-full text-left p-3 flex items-center gap-3 active"><i class="fas fa-wallet w-5 text-center text-orange-400"></i><span>Assets</span></button>
                 <button data-tab="income" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-money-bill-wave w-5 text-center text-teal-400"></i><span>Income</span></button>
                 <button data-tab="budget" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-chart-pie w-5 text-center text-pink-500"></i><span>Budget</span></button>
                 <button data-tab="assumptions" class="tab-btn w-full text-left p-3 flex items-center gap-3"><i class="fas fa-sliders-h w-5 text-center text-emerald-400"></i><span>Assumptions</span></button>
@@ -186,6 +157,7 @@
         </aside>
 
         <main class="main-content flex-grow p-6 md:p-8 overflow-y-auto bg-[#0B0F19]">
+            <!-- ASSETS & DEBTS TAB -->
             <section id="tab-assets-debts" class="tab-content max-w-7xl mx-auto">
                  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                     <div class="card-container p-6 flex flex-col items-center justify-center h-28">
@@ -202,10 +174,200 @@
                         <p id="sum-networth" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight relative z-10">$0</p>
                     </div>
                 </div>
+
+                <div class="space-y-12">
+                    <!-- Investments Table -->
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-chart-line text-orange-400 mr-3"></i>Investments</h2>
+                            <button data-add-row="investment-rows" data-row-type="investment" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-900/20"><i class="fas fa-plus mr-2"></i>Add Account</button>
+                        </div>
+                        <div class="card-container overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr><th class="w-8"></th><th>Account</th><th>Type</th><th class="text-right">Value</th><th class="text-right">Cost Basis</th><th class="w-12 text-right"></th></tr>
+                                </thead>
+                                <tbody id="investment-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Private Equity Table -->
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-briefcase text-blue-400 mr-3"></i>Private Equity / Stock Options</h2>
+                            <button data-add-row="stock-option-rows" data-row-type="stockOption" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"><i class="fas fa-plus mr-2"></i>Add Grant</button>
+                        </div>
+                        <div class="card-container overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr><th>Grant Name</th><th class="text-right">Shares</th><th class="text-right">Strike</th><th class="text-right">Current Price</th><th class="text-center">APY%</th><th class="text-center">Tax Type</th><th class="text-right">Net Equity</th><th class="w-12 text-right"></th></tr>
+                                </thead>
+                                <tbody id="stock-option-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Real Estate -->
+                        <div>
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-home text-indigo-400 mr-3"></i>Real Estate</h2>
+                                <button data-add-row="real-estate-rows" data-row-type="realEstate" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"><i class="fas fa-plus mr-2"></i>Add Property</button>
+                            </div>
+                            <div class="card-container overflow-hidden">
+                                <table class="w-full text-left border-collapse">
+                                    <thead><tr><th>Property</th><th class="text-right">Value</th><th class="text-right">Mortgage</th><th class="text-right">Principal</th><th class="w-12 text-right"></th></tr></thead>
+                                    <tbody id="real-estate-rows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Other Assets -->
+                        <div>
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-gem text-teal-400 mr-3"></i>Other Assets</h2>
+                                <button data-add-row="other-assets-rows" data-row-type="otherAsset" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"><i class="fas fa-plus mr-2"></i>Add Asset</button>
+                            </div>
+                            <div class="card-container overflow-hidden">
+                                <table class="w-full text-left border-collapse">
+                                    <thead><tr><th>Asset</th><th class="text-right">Value</th><th class="text-right">Loan</th><th class="w-12 text-right"></th></tr></thead>
+                                    <tbody id="other-assets-rows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- HELOCs -->
+                        <div>
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-university text-orange-400 mr-3"></i>HELOCs</h2>
+                                <button data-add-row="heloc-rows" data-row-type="heloc" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"><i class="fas fa-plus mr-2"></i>Add HELOC</button>
+                            </div>
+                            <div class="card-container overflow-hidden">
+                                <table class="w-full text-left border-collapse">
+                                    <thead><tr><th>Name</th><th class="text-right">Balance</th><th class="text-right">Limit</th><th class="text-center">Rate%</th><th class="w-12 text-right"></th></tr></thead>
+                                    <tbody id="heloc-rows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- Debts -->
+                        <div>
+                            <div class="flex justify-between items-center mb-6">
+                                <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-credit-card text-red-500 mr-3"></i>Other Debts</h2>
+                                <button data-add-row="debt-rows" data-row-type="debt" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"><i class="fas fa-plus mr-2"></i>Add Debt</button>
+                            </div>
+                            <div class="card-container overflow-hidden">
+                                <table class="w-full text-left border-collapse">
+                                    <thead><tr><th>Name</th><th class="text-right">Balance</th><th class="text-right">Principal</th><th class="w-12 text-right"></th></tr></thead>
+                                    <tbody id="debt-rows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INCOME TAB -->
+            <section id="tab-income" class="tab-content max-w-7xl mx-auto hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                    <div class="card-container p-6 flex flex-col items-center justify-center">
+                        <p class="label-std mb-2 text-slate-500">Gross 2026 Inflow</p>
+                        <p id="sum-gross-income" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">$0</p>
+                    </div>
+                    <div class="card-container p-6 flex flex-col items-center justify-center">
+                        <p class="label-std mb-2 text-slate-500">MAGI (Taxable Floor)</p>
+                        <p id="sum-income-adjusted" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight">$0</p>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tight">Income Sources</h2>
+                    <button data-add-row="income-cards" data-row-type="income" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl"><i class="fas fa-plus mr-2"></i>Add Job/Source</button>
+                </div>
+                <div id="income-cards" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- BUDGET TAB -->
+            <section id="tab-budget" class="tab-content max-w-7xl mx-auto hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                    <div class="card-container p-6 flex flex-col items-center justify-center h-28">
+                        <p class="label-std mb-2 text-emerald-400">Monthly Savings</p>
+                        <p id="sum-budget-savings" class="text-4xl font-black text-emerald-400 mono-numbers tracking-tight">$0</p>
+                    </div>
+                    <div class="card-container p-6 flex flex-col items-center justify-center h-28">
+                        <p class="label-std mb-2 text-pink-500">Monthly Spend</p>
+                        <p id="sum-budget-annual" class="text-4xl font-black text-pink-500 mono-numbers tracking-tight">$0</p>
+                    </div>
+                </div>
+                <div class="space-y-12">
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-piggy-bank text-emerald-400 mr-3"></i>Savings Goals</h2>
+                            <button data-add-row="budget-savings-rows" data-row-type="budget-savings" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/20"><i class="fas fa-plus mr-2"></i>Add Goal</button>
+                        </div>
+                        <div class="card-container overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead><tr><th class="w-8"></th><th>Goal Type</th><th class="text-center">Stops at Retire</th><th class="text-right">Monthly</th><th class="text-right">Annual</th><th class="w-12 text-right"></th></tr></thead>
+                                <tbody id="budget-savings-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-black text-white uppercase tracking-tight"><i class="fas fa-chart-pie text-pink-500 mr-3"></i>Expense Ledger</h2>
+                            <button data-add-row="budget-expenses-rows" data-row-type="budget-expense" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-pink-900/20"><i class="fas fa-plus mr-2"></i>Add Expense</button>
+                        </div>
+                        <div class="card-container overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead><tr><th class="w-8"></th><th>Expense Name</th><th class="text-center">Lifecycle</th><th class="text-right">Monthly</th><th class="text-right">Annual</th><th class="w-12 text-right"></th></tr></thead>
+                                <tbody id="budget-expenses-rows"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ASSUMPTIONS TAB -->
+            <section id="tab-assumptions" class="tab-content max-w-5xl mx-auto hidden">
+                <div class="flex items-center gap-4 mb-8">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                        <i class="fas fa-sliders-h text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-white uppercase tracking-tight">Core Assumptions</h2>
+                        <p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Global simulation parameters</p>
+                    </div>
+                </div>
+                <div id="assumptions-container" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+            </section>
+
+            <!-- BENEFITS TAB -->
+            <section id="tab-benefits" class="tab-content max-w-7xl mx-auto hidden">
+                <div id="benefits-module"></div>
+            </section>
+
+            <!-- PROJECTION TAB -->
+            <section id="tab-projection" class="tab-content max-w-7xl mx-auto hidden">
+                <div class="flex justify-between items-center mb-8">
+                    <h2 class="text-2xl font-black text-white uppercase tracking-tight">Wealth Projection</h2>
+                    <button id="toggle-projection-real" class="px-4 py-2 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition-all">Nominal Dollars</button>
+                </div>
+                <div class="card-container p-6 h-[450px] mb-8">
+                    <canvas id="projection-chart"></canvas>
+                </div>
+                <div class="card-container overflow-hidden">
+                    <div id="projection-table-container"></div>
+                </div>
+            </section>
+
+            <!-- BURNDOWN TAB -->
+            <section id="tab-burndown" class="tab-content max-w-7xl mx-auto hidden">
+                <div id="burndown-view-container"></div>
             </section>
         </main>
     </div>
 
+    <!-- Dynamic import -->
     <script type="module">
         import "./main.js?v=3.0"; 
     </script>
