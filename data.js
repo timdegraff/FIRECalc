@@ -249,12 +249,4 @@ export function updateSummaries() {
     }, 0);
     set('sum-retire-budget', retireBudget);
     set('sum-budget-total', retireBudget); 
-
-    const floorDetails = document.getElementById('sum-floor-breakdown');
-    if (floorDetails) {
-        let details = [];
-        if (streamsAtRet > 0) details.push(`Inc: ${math.toSmartCompactCurrency(streamsAtRet)}`);
-        if (ssAtRet > 0) details.push(`SS: ${math.toSmartCompactCurrency(ssAtRet)}`);
-        floorDetails.textContent = details.join(' + ');
-    }
 }

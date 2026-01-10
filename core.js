@@ -162,6 +162,17 @@ function attachGlobalListeners() {
             }
         }
 
+        // Live calculation for Stock Options
+        const stockRow = target.closest('#stock-option-rows tr');
+        if (stockRow) {
+            const shares = parseFloat(stockRow.querySelector('[data-id="shares"]')?.value) || 0;
+            const strike = math.fromCurrency(stockRow.querySelector('[data-id="strikePrice"]')?.value || "0");
+            const fmv = math.fromCurrency(stockRow.querySelector('[data-id="currentPrice"]')?.value || "0");
+            const equity = Math.max(0, (fmv - strike) * shares);
+            const display = stockRow.querySelector('[data-id="netEquityDisplay"]');
+            if (display) display.textContent = math.toCurrency(equity);
+        }
+
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
             const incomeCard = target.closest('#income-cards .removable-item');
             if (incomeCard) {
@@ -301,9 +312,9 @@ window.createAssumptionControls = (data) => {
         </div>
 
         <!-- Card 2: Tax Configuration -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-emerald-500/20 space-y-6">
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-teal-500/20 space-y-6">
             <div class="flex items-center gap-3 border-b border-white/5 pb-4">
-                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <div class="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
                     <i class="fas fa-file-invoice-dollar text-xs"></i>
                 </div>
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Tax Configuration</h3>
@@ -323,7 +334,7 @@ window.createAssumptionControls = (data) => {
                         ${Object.keys(stateTaxRates).sort().map(s => `<option value="${s}" ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
                     </select>
                 </label>
-                ${renderField("LTCG Tax Rate (%)", "ltcgRate", a.ltcgRate || 15, "number", "text-emerald-400")}
+                ${renderField("LTCG Tax Rate (%)", "ltcgRate", a.ltcgRate || 15, "number", "text-teal-400")}
             </div>
         </div>
 

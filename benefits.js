@@ -65,7 +65,7 @@ export const benefits = {
                                     <label class="text-[8px] font-black text-slate-500 uppercase mb-1">Pregnancy</label>
                                     <label class="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" data-benefit-id="isPregnant" class="sr-only peer">
-                                        <div class="w-8 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-600"></div>
+                                        <div class="w-8 h-4 bg-slate-700 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-600"></div>
                                     </label>
                                 </div>
                                 <div class="flex flex-col items-center justify-center bg-black/20 p-2 rounded-xl border border-white/5">
@@ -115,7 +115,7 @@ export const benefits = {
                             </div>
                             <div id="card-snap" class="card-container p-4 flex flex-col border-l-4">
                                 <span class="label-std mb-1">SNAP Monthly</span>
-                                <div id="snap-result-value" class="text-3xl font-black text-emerald-400 mono-numbers tracking-tight">$0</div>
+                                <div id="snap-result-value" class="text-3xl font-black text-teal-400 mono-numbers tracking-tight">$0</div>
                                 <p class="text-[8px] text-slate-500 uppercase font-black mt-2">FY 2026 Standards</p>
                             </div>
                         </div>
@@ -212,7 +212,7 @@ export const benefits = {
             document.getElementById('card-healthcare').style.borderColor = borderColor;
         };
         if (ratio <= medRatio) {
-            if (stateMeta?.expanded !== false) setHealth("Platinum", "100% Full Coverage", "$0", "$0", "text-emerald-400", "rgba(52, 211, 153, 0.4)");
+            if (stateMeta?.expanded !== false) setHealth("Platinum", "100% Full Coverage", "$0", "$0", "text-teal-400", "rgba(20, 184, 166, 0.4)");
             else setHealth("Private (No Subsidy)", "State Not Expanded", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.1)");
         } else if (ratio <= silverRatio) setHealth("Silver CSR", "High Subsidy", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.4)");
         else setHealth("Standard ACA", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.1)");
@@ -228,7 +228,7 @@ export const benefits = {
         snapRes.textContent = snapVal;
         if (globalSnapRes) globalSnapRes.textContent = snapVal;
         if (estimatedBenefit <= 0) { snapRes.className = "text-3xl font-black text-slate-700 mono-numbers tracking-tight"; snapCard.style.borderColor = "rgba(255, 255, 255, 0.1)"; }
-        else { snapRes.className = "text-3xl font-black text-emerald-400 mono-numbers tracking-tight"; snapCard.style.borderColor = "rgba(52, 211, 153, 0.4)"; }
+        else { snapRes.className = "text-3xl font-black text-teal-400 mono-numbers tracking-tight"; snapCard.style.borderColor = "rgba(20, 184, 166, 0.4)"; }
     },
 
     scrape: () => {

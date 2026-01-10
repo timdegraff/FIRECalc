@@ -59,7 +59,7 @@ export const templates = {
     stockOption: (data) => `
         <td><input data-id="name" type="text" placeholder="Grant" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base text-right text-white font-bold mono-numbers"></td>
-        <td><input data-id="strikePrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-emerald-500 font-bold mono-numbers"></td>
+        <td><input data-id="strikePrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400/70 font-bold mono-numbers"></td>
         <td><input data-id="currentPrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="growth" data-decimals="1" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base text-center text-blue-400 font-bold mono-numbers"></td>
         <td class="text-center">
@@ -67,7 +67,7 @@ export const templates = {
                 <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg === true ? 'checked' : ''}>
                 <div class="w-12 py-1 rounded-md text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
                     bg-blue-500/10 border-blue-500/20 text-blue-400 
-                    peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400
+                    peer-checked:bg-teal-500/10 peer-checked:border-teal-500/20 peer-checked:text-teal-400
                     hover:border-white/20
                     peer-checked:[&>.ord-label]:hidden peer-checked:[&>.ltcg-label]:block">
                     <span class="ord-label block">ORD</span>
