@@ -78,12 +78,12 @@ export const benefits = {
                             </div>
                             <div class="flex justify-between items-end mb-4">
                                 <div class="flex flex-col">
-                                    <label class="label-std text-blue-400">Sandbox Monthly MAGI</label>
+                                    <label class="label-std text-blue-400">Sandbox MAGI (Combined)</label>
                                     <p class="text-[9px] text-slate-500 font-medium italic">Simulate benefit cliffs</p>
                                 </div>
-                                <div class="text-2xl font-black text-white mono-numbers leading-none" data-label="unifiedIncome">$2,083</div>
+                                <div class="text-2xl font-black text-teal-400 mono-numbers leading-none" data-label="unifiedIncome">$0/mo | $0K/yr</div>
                             </div>
-                            <input type="range" data-benefit-id="unifiedIncomeMonthly" min="0" max="15000" step="50" value="2083" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                            <input type="range" data-benefit-id="unifiedIncomeAnnual" min="0" max="250000" step="1000" value="25000" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500">
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -163,7 +163,7 @@ export const benefits = {
             <div class="flex-grow">
                 <input data-id="depName" type="text" value="${nameVal}" placeholder="Name" class="bg-transparent border-none outline-none font-bold text-white text-xs uppercase tracking-tight w-full placeholder:text-slate-600">
                 <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Independent in:</span>
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">YEAR CHILD BECOMES INDEPENDENT (19+):</span>
                     <input data-id="depYear" type="number" value="${yearVal}" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] font-bold text-blue-400 mono-numbers outline-none w-16">
                 </div>
             </div>
@@ -175,7 +175,13 @@ export const benefits = {
     refresh: () => {
         const data = benefits.scrape();
         const c = document.getElementById('benefits-module'); if (!c) return;
-        c.querySelector('[data-label="unifiedIncome"]').textContent = math.toCurrency(data.unifiedIncomeMonthly);
+        
+        const annualMAGI = data.unifiedIncomeAnnual;
+        const monthlyMAGI = Math.round(annualMAGI / 12);
+        const annualK = Math.round(annualMAGI / 1000);
+        
+        c.querySelector('[data-label="unifiedIncome"]').textContent = `${math.toCurrency(monthlyMAGI)}/mo | $${annualK}K/yr`;
+        
         const medWrap = document.getElementById('medical-input-wrap');
         if (medWrap) medWrap.classList.toggle('opacity-40', !data.isDisabled);
         const filingStatus = window.currentData?.assumptions?.filingStatus || 'Single';
@@ -190,12 +196,11 @@ export const benefits = {
         const stateMeta = stateTaxRates[window.currentData?.assumptions?.state || 'Michigan'];
         const fplBase = stateMeta?.fplBase || 16060;
         const fpl2026Annual = fplBase + (totalSize - 1) * 5650;
-        const annualIncome = data.unifiedIncomeMonthly * 12;
-        const ratio = annualIncome / fpl2026Annual;
+        const ratio = annualMAGI / fpl2026Annual;
         const medRatio = data.isPregnant ? 1.95 : 1.38;
         const silverRatio = 2.50;
         let expectedContributionPct = ratio <= 1.5 ? 0 : (ratio <= 2.0 ? 0.00 + ((ratio - 1.5) / 0.5) * 0.02 : (ratio <= 2.5 ? 0.02 + ((ratio - 2.0) / 0.5) * 0.02 : 0.085));
-        let dynamicPremium = ratio > medRatio ? (annualIncome * expectedContributionPct) / 12 : 0;
+        let dynamicPremium = ratio > medRatio ? (annualMAGI * expectedContributionPct) / 12 : 0;
         const setHealth = (main, sub, prem, ded, colorClass, borderColor) => {
             const mainDisp = document.getElementById('health-main-display');
             const globalMainDisp = document.getElementById('sum-health-plan');
@@ -212,8 +217,8 @@ export const benefits = {
         } else if (ratio <= silverRatio) setHealth("Silver CSR", "High Subsidy", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.4)");
         else setHealth("Standard ACA", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.1)");
 
-        const earned = data.isEarnedIncome ? data.unifiedIncomeMonthly : 0;
-        const unearned = data.isEarnedIncome ? 0 : data.unifiedIncomeMonthly;
+        const earned = data.isEarnedIncome ? monthlyMAGI : 0;
+        const unearned = data.isEarnedIncome ? 0 : monthlyMAGI;
         const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
         const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, window.currentData?.assumptions?.state || 'Michigan');
         const snapRes = document.getElementById('snap-result-value');
@@ -227,9 +232,9 @@ export const benefits = {
     },
 
     scrape: () => {
-        const c = document.getElementById('benefits-module'); if (!c) return { unifiedIncomeMonthly: 2083, dependents: [] };
+        const c = document.getElementById('benefits-module'); if (!c) return { unifiedIncomeAnnual: 25000, dependents: [] };
         const get = (id, bool = false) => { const el = c.querySelector(`[data-benefit-id="${id}"]`); if (!el) return bool ? false : 0; if (el.type === 'checkbox') return el.checked; if (el.dataset.type === 'currency') return math.fromCurrency(el.value); return parseFloat(el.value) || 0; };
-        return { unifiedIncomeMonthly: get('unifiedIncomeMonthly'), shelterCosts: get('shelterCosts'), childSupportPaid: get('childSupportPaid'), depCare: get('depCare'), medicalExps: get('medicalExps'), hasSUA: get('hasSUA'), isEarnedIncome: get('isEarnedIncome'), isDisabled: get('isDisabled'), isPregnant: get('isPregnant'), dependents: Array.from(c.querySelectorAll('.dependent-item')).map(item => ({ name: item.querySelector('[data-id="depName"]').value, independenceYear: item.querySelector('[data-id="depYear"]').value })) };
+        return { unifiedIncomeAnnual: get('unifiedIncomeAnnual'), shelterCosts: get('shelterCosts'), childSupportPaid: get('childSupportPaid'), depCare: get('depCare'), medicalExps: get('medicalExps'), hasSUA: get('hasSUA'), isEarnedIncome: get('isEarnedIncome'), isDisabled: get('isDisabled'), isPregnant: get('isPregnant'), dependents: Array.from(c.querySelectorAll('.dependent-item')).map(item => ({ name: item.querySelector('[data-id="depName"]').value, independenceYear: item.querySelector('[data-id="depYear"]').value })) };
     },
 
     load: (data) => {
