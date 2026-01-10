@@ -44,8 +44,8 @@ export const burndown = {
                          <div class="flex flex-col items-end gap-1">
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Annual Spend</label>
                             <div class="flex items-center gap-2">
-                                <div id="manual-budget-container" class="hidden">
-                                    <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-teal-400 font-bold text-right w-24 mono-numbers outline-none focus:border-blue-500">
+                                <div id="manual-budget-container" class="flex items-center">
+                                    <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-teal-400 font-bold text-right w-24 mono-numbers outline-none focus:border-blue-500 transition-all">
                                 </div>
                                 <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 border border-white/10 px-2 py-1 rounded-lg hover:border-slate-600 transition-all">
                                     <span class="text-[9px] font-black text-slate-400 uppercase">Sync Budget</span>
@@ -58,16 +58,16 @@ export const burndown = {
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-infinity text-4xl text-amber-400"></i></div>
+                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-infinity text-4xl text-amber-500"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-shield-alt"></i> Preservation Age</label>
-                            <div id="card-preservation-val" class="text-3xl font-black text-white mono-numbers tracking-tighter">--</div>
+                            <div id="card-preservation-val" class="text-3xl font-black text-amber-500 mono-numbers tracking-tighter">--</div>
                         </div>
                         <div class="text-[9px] font-medium text-slate-500">Retire here & wealth stays flat (real $) to 100</div>
                     </div>
 
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-road text-4xl text-blue-400"></i></div>
+                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-road text-4xl text-blue-400"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-flag-checkered"></i> Funds Last Until</label>
                             <div id="card-runway-val" class="text-3xl font-black text-white mono-numbers tracking-tighter">--</div>
@@ -76,12 +76,12 @@ export const burndown = {
                     </div>
 
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-skull text-4xl text-pink-400"></i></div>
+                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-skull text-4xl text-pink-400"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero Spend</label>
-                            <div id="card-dwz-val" class="text-2xl font-black text-white mono-numbers tracking-tighter">--</div>
+                            <div id="card-dwz-val" class="text-3xl font-black text-pink-400 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase mono-numbers leading-none">--</div>
+                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase mono-numbers leading-none">Starting at Retirement</div>
                     </div>
                 </div>
 
@@ -143,7 +143,12 @@ export const burndown = {
                     document.getElementById('label-top-retire-age').textContent = el.value;
                 }
                 if (id === 'toggle-budget-sync') {
-                    document.getElementById('manual-budget-container')?.classList.toggle('hidden', el.checked);
+                    const manualInput = document.getElementById('input-manual-budget');
+                    if (manualInput) {
+                        manualInput.disabled = el.checked;
+                        manualInput.classList.toggle('opacity-40', el.checked);
+                        manualInput.classList.toggle('cursor-not-allowed', el.checked);
+                    }
                 }
                 burndown.run();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
@@ -318,6 +323,28 @@ export const burndown = {
         const config = burndown.scrape();
         lastUsedRetirementAge = config.retirementAge; 
         
+        // Calculate the actual retirement year budget to show in the sync field
+        if (config.useSync) {
+            const currentAge = data.assumptions?.currentAge || 40;
+            const retirementAge = config.retirementAge;
+            const yrsToRetire = Math.max(0, retirementAge - currentAge);
+            const inflation = (data.assumptions?.inflation || 3) / 100;
+            const infFacRet = Math.pow(1 + inflation, yrsToRetire);
+            
+            const calculatedRetireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
+                if (exp.remainsInRetirement === false) return sum;
+                const base = math.fromCurrency(exp.annual);
+                return sum + (exp.isFixed ? base : base * infFacRet);
+            }, 0);
+            
+            const manualInput = document.getElementById('input-manual-budget');
+            if (manualInput) {
+                manualInput.value = math.toCurrency(calculatedRetireBudget);
+                manualInput.disabled = true;
+                manualInput.classList.add('opacity-40', 'cursor-not-allowed');
+            }
+        }
+
         simulationTrace = {}; 
         const results = burndown.simulateProjection(data, config);
         
@@ -350,7 +377,6 @@ export const burndown = {
             const tempConfig = { ...config, manualBudget: mid, useSync: false }; 
             const sim = burndown.simulateProjection(data, tempConfig, true); 
             const last = sim[sim.length - 1];
-            // In DWZ search, we care about the absolute last point of wealth
             if (last.isInsolvent || last.netWorth < 100) high = mid; 
             else { low = mid; bestBudget = mid; }
         }
@@ -358,9 +384,10 @@ export const burndown = {
         const dwzValEl = document.getElementById('card-dwz-val');
         const dwzSubEl = document.getElementById('card-dwz-sub');
         if (dwzValEl && dwzSubEl) {
-            // DWZ display must respect real dollars toggle context
-            dwzValEl.textContent = formatter.formatCurrency(bestBudget / 12, true);
-            dwzSubEl.textContent = `${formatter.formatCurrency(bestBudget, true)} / YEAR`;
+            // Respect real dollars toggle
+            const displayBudget = bestBudget;
+            dwzValEl.textContent = formatter.formatCurrency(displayBudget, true);
+            dwzSubEl.textContent = `Max annual spend starting at age ${lastUsedRetirementAge}`;
         }
 
         if (results.length > 0) {
@@ -473,7 +500,7 @@ export const burndown = {
             }
 
             const baseTax = engine.calculateTax(Math.max(0, floorOrdIncome - pretaxDed), 0, filingStatus, assumptions.state, infFac);
-            const baseSnap = engine.calculateSnapBenefit(floorOrdIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+            const baseSnap = engine.calculateSnapBenefit(OrdinaryIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
             floorNetCash = (floorTotalIncome - pretaxDed) - baseTax + baseSnap;
             traceStr += `Floor Net Cash: ${math.toCurrency(floorNetCash)} (Income - Tax + SNAP)\n`;
             
@@ -487,13 +514,10 @@ export const burndown = {
             let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget * 1.5));
             traceStr += `MAGI Strategy Target: ${math.toCurrency(magiTarget)}\n`;
 
-            // Sequential Simulator Pass
-            // Refined to be "Greedy" per bucket to prevent fragmented draws
             for (let pass = 0; pass < 3; pass++) {
                 if (deficit <= 5) break; 
 
                 for (const pk of burndown.priorityOrder) {
-                    // Check if we already hit both survival and strategy goals
                     if (deficit <= 5 && (currentOrdIncome + currentLtcgIncome) >= magiTarget) break;
 
                     let available = 0;
@@ -501,8 +525,6 @@ export const burndown = {
                     else available = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0);
                     if (available <= 1) continue;
 
-                    // Greedy Withdrawal Logic for this bucket
-                    // While this bucket has room and we still have a survival need, drain it.
                     while (deficit > 5 && available > 1) {
                         let marginalRate = 0;
                         if (burndown.assetMeta[pk].isTaxable) {
@@ -526,7 +548,6 @@ export const burndown = {
                             let grossNeeded = survivalNeed / (1 - marginalRate);
                             amountToTake = Math.min(grossNeeded, available);
                         } else {
-                            // If we hit here, survival is solved for this bucket, move to strategy
                             break;
                         }
 
@@ -562,7 +583,6 @@ export const burndown = {
                         deficit = targetBudget - ((floorTotalIncome - pretaxDed) + totalWithdrawn - currentTaxEstimate + currentSnapEstimate);
                     }
 
-                    // Strategy Harvesting Check (If Survival is met but Strategy isn't)
                     if (deficit <= 5 && (currentOrdIncome + currentLtcgIncome) < magiTarget && available > 1) {
                         let harvestNeed = Math.max(0, magiTarget - (currentOrdIncome + currentLtcgIncome));
                         if (['401k', 'taxable', 'crypto', 'metals'].includes(pk)) {
@@ -574,7 +594,7 @@ export const burndown = {
                                 if (gainRatio > 0.05) amountToHarvest = Math.min(harvestNeed / gainRatio, available);
                             }
 
-                            if (amountToHarvest > 100) { // Threshold to prevent tiny fragmented harvests
+                            if (amountToHarvest > 100) {
                                 traceStr += `> Strategy: Harvest ${math.toCurrency(amountToHarvest)} from ${pk.toUpperCase()}\n`;
                                 if (bal[pk+'Basis'] !== undefined) {
                                     bal[pk+'Basis'] -= bal[pk+'Basis'] * (amountToHarvest / bal[pk]);
