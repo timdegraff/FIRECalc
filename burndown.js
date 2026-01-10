@@ -21,8 +21,8 @@ export const burndown = {
         if (!viewContainer) return;
 
         viewContainer.innerHTML = `
-            <div class="flex flex-col gap-4">
-                <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-4 border-b border-white/5 pb-4">
+            <div class="flex flex-col gap-2.5">
+                <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-2 border-b border-white/5 pb-2">
                     <div class="flex items-center gap-4 px-1">
                         <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
                             <i class="fas fa-microchip text-sm"></i>
@@ -57,7 +57,7 @@ export const burndown = {
                 </div>
 
                 <!-- Primary Projection Cards -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
                     <!-- Card 1: Preservation Age -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-infinity text-4xl text-amber-500"></i></div>
@@ -89,7 +89,7 @@ export const burndown = {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
                         <div class="flex justify-between items-center mb-1">
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">MAGI Strategy</label>
@@ -122,7 +122,7 @@ export const burndown = {
                     <div id="draw-priority-list" class="flex flex-wrap items-center gap-2"></div>
                 </div>
 
-                <div class="card-container bg-black/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl mt-2">
+                <div class="card-container bg-black/20 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
                     <div id="burndown-table-container" class="max-h-[60vh] overflow-auto mono-numbers"></div>
                 </div>
             </div>
@@ -620,7 +620,20 @@ export const burndown = {
 
             const finalTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
             const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
-            const finalNetCash = (floorTotalIncome - pretaxDed) + totalWithdrawn - finalTax + finalSnap;
+            
+            // RECYCLING LOGIC: If total inflows exceed survival requirements (Budget + Taxes), recycle the surplus back to cash.
+            const grossInflowFromAssets = totalWithdrawn;
+            const grossInflowFromFixed = floorTotalIncome - pretaxDed;
+            const totalCashIn = grossInflowFromAssets + grossInflowFromFixed + finalSnap;
+            const netCashAvailable = totalCashIn - finalTax;
+            
+            const surplus = Math.max(0, netCashAvailable - targetBudget);
+            if (isRet && surplus > 100) {
+                traceStr += `Recycling Surplus: ${math.toCurrency(surplus)} back to Cash bucket.\n`;
+                bal['cash'] += surplus;
+            }
+
+            const finalNetCash = netCashAvailable; // This reflects the total that "lived on" before recycling
             const magi = currentOrdIncome + currentLtcgIncome;
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             const currentNW = (liquidAssets + realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0) + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0)) - (totalMort + totalOL + totalDebt + bal['heloc']);
