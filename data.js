@@ -4,45 +4,14 @@ import { engine, math } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
+import { PROFILE_40_COUPLE } from './profiles.js';
 
 const db = getFirestore();
 window.currentData = null;
 window.saveTimeout = null;
 
-// Default Data Structure
-const DEFAULTS = {
-    investments: [
-        { name: 'Vanguard 401k', type: 'Pre-Tax (401k/IRA)', value: 300000, costBasis: 0 },
-        { name: 'Roth IRA', type: 'Roth IRA', value: 200000, costBasis: 150000 },
-        { name: 'Emergency Fund', type: 'Cash', value: 25000, costBasis: 25000 },
-        { name: 'Brokerage', type: 'Taxable', value: 50000, costBasis: 40000 }
-    ],
-    realEstate: [
-        { name: 'Primary Home', value: 450000, mortgage: 250000, principalPayment: 900 }
-    ],
-    income: [
-        { name: 'Primary Salary', amount: 175000, increase: 3, contribution: 6, match: 4, bonusPct: 0, isMonthly: false, incomeExpenses: 0 }
-    ],
-    budget: {
-        savings: [
-            { type: 'Taxable', annual: 12000, monthly: 1000, removedInRetirement: true }
-        ],
-        expenses: [
-            { name: 'Mortgage', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: true },
-            { name: 'Living Expenses', annual: 48000, monthly: 4000, remainsInRetirement: true, isFixed: false }
-        ]
-    },
-    assumptions: { 
-        currentAge: 42, retirementAge: 45, ssStartAge: 67, ssMonthly: 3000, 
-        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, 
-        inflation: 3, filingStatus: 'Married Filing Jointly', 
-        helocRate: 7, state: 'Michigan', workYearsAtRetirement: 35,
-        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
-        advancedGrowth: false,
-        ltcgRate: 15
-    },
-    benefits: { dependents: [] }
-};
+// Default Data Structure (Fallback is 40yo Couple)
+const DEFAULTS = PROFILE_40_COUPLE;
 
 export async function initializeData(user) {
     if (user) {
@@ -67,6 +36,7 @@ export async function initializeData(user) {
             try {
                 const parsed = JSON.parse(local);
                 window.currentData = { ...DEFAULTS, ...parsed };
+                // Safety check for critical assumption data
                 if (!window.currentData.assumptions || isNaN(window.currentData.assumptions.currentAge)) {
                     window.currentData.assumptions = { ...DEFAULTS.assumptions };
                 }
@@ -121,7 +91,7 @@ function loadUserDataIntoUI() {
 function scrapeData() {
     const getData = (id, fields) => {
         const container = document.getElementById(id);
-        if (!container) return null; // CRITICAL: Return null so we know it's missing from DOM
+        if (!container) return null; 
         const rows = Array.from(container.children).filter(row => !row.classList.contains('locked-row'));
         return rows.map(row => {
             const obj = {};
@@ -141,7 +111,6 @@ function scrapeData() {
         });
     };
 
-    // Safe merge: Only overwrite window.currentData if the DOM container exists
     const newData = {
         ...window.currentData,
         investments: getData('investment-rows', ['name', 'type', 'value', 'costBasis']) ?? window.currentData.investments,
@@ -153,7 +122,6 @@ function scrapeData() {
         income: getData('income-cards', ['name', 'amount', 'increase', 'contribution', 'match', 'bonusPct', 'isMonthly', 'incomeExpenses', 'incomeExpensesMonthly', 'nonTaxableUntil', 'remainsInRetirement', 'contribOnBonus', 'matchOnBonus']) ?? window.currentData.income
     };
 
-    // Handle nested budget object safely
     const budgetSavings = getData('budget-savings-rows', ['type', 'monthly', 'annual', 'removedInRetirement']);
     const budgetExpenses = getData('budget-expenses-rows', ['name', 'monthly', 'annual', 'remainsInRetirement', 'isFixed']);
     
@@ -162,7 +130,6 @@ function scrapeData() {
         expenses: budgetExpenses ?? window.currentData.budget?.expenses
     };
 
-    // Assumptions, Benefits, Burndown, Projection - merge only if mounted
     if (document.getElementById('assumptions-container')) {
         newData.assumptions = { ...window.currentData.assumptions };
     }

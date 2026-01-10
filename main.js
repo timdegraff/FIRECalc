@@ -5,26 +5,24 @@ import { initializeUI } from './core.js';
 import { initializeData } from './data.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
+import { PROFILE_25_SINGLE, PROFILE_40_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
 
 // --- DEVELOPER / RESET MODE ---
-// Check for ?reset=true in URL to simulate a fresh user experience
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('reset') === 'true') {
-    // Aggressively clear all FIRECalc related local storage
     const keysToClear = [
         'firecalc_guest_data',
         'firecalc_guest_acknowledged',
         'firecalc_guest_mode',
+        'firecalc_guest_profile_selected',
         'firecalc_app_version'
     ];
     keysToClear.forEach(k => localStorage.removeItem(k));
-    
-    // Redirect to root without params to ensure fresh state
     window.location.href = window.location.pathname;
 }
 
 // --- VERSION CHECK LOGIC ---
-const APP_VERSION = "3.0"; // Bumped version to match mobile and force cache refresh
+const APP_VERSION = "3.0"; 
 const currentSavedVersion = localStorage.getItem('firecalc_app_version');
 
 if (currentSavedVersion !== APP_VERSION) {
@@ -45,29 +43,27 @@ onAuthStateChanged(auth, async (user) => {
 
     // 1. Authenticated User
     if (user) {
-        // Disable guest mode if we logged in
         localStorage.removeItem('firecalc_guest_mode');
-        
         setupAppHeader(user.photoURL, user.displayName, "Logout");
         await initializeData(user);
-        
         showApp();
     } 
     // 2. Guest Mode Active
     else if (guestModeActive) {
         setupAppHeader(null, null, "Exit Guest Mode");
-        await initializeData(null); // Initialize with null user -> triggers LocalStorage path
         
         // Hide the discrete indicator on desktop if guest
         const indicator = document.getElementById('save-indicator');
         if (indicator) {
             indicator.classList.add('hidden');
         }
-        
-        showApp();
 
-        // 2a. Check for Guest Acknowledgement
-        if (!localStorage.getItem('firecalc_guest_acknowledged')) {
+        // Logic Sequence: Warning -> Profile Selection -> App
+        const hasAcknowledged = localStorage.getItem('firecalc_guest_acknowledged') === 'true';
+        const hasSelectedProfile = localStorage.getItem('firecalc_guest_profile_selected') === 'true';
+
+        if (!hasAcknowledged) {
+            // Step 1: Show Warning
             const modal = document.getElementById('guest-modal');
             const btn = document.getElementById('ack-guest-btn');
             if (modal && btn) {
@@ -75,8 +71,17 @@ onAuthStateChanged(auth, async (user) => {
                 btn.onclick = () => {
                     localStorage.setItem('firecalc_guest_acknowledged', 'true');
                     modal.classList.add('hidden');
+                    // Step 2: Immediate trigger Profile Selection
+                    showProfileSelection();
                 };
             }
+        } else if (!hasSelectedProfile) {
+            // Step 2: Show Profile Selection (if acknowledged but not selected)
+            showProfileSelection();
+        } else {
+            // Step 3: Load Data & App
+            await initializeData(null);
+            showApp();
         }
     }
     // 3. Logged Out / Initial State
@@ -95,6 +100,40 @@ onAuthStateChanged(auth, async (user) => {
         if (loginScreen) loginScreen.classList.remove('hidden');
     }
 });
+
+function showProfileSelection() {
+    const profileModal = document.getElementById('profile-modal');
+    if (!profileModal) return;
+    
+    profileModal.classList.remove('hidden');
+    
+    const handleProfileSelect = async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        
+        const type = btn.dataset.profile;
+        let dataToLoad = PROFILE_40_COUPLE; // Default fallback
+        
+        if (type === '25') dataToLoad = PROFILE_25_SINGLE;
+        else if (type === '55') dataToLoad = PROFILE_55_RETIREE;
+        
+        // Save to local storage immediately
+        localStorage.setItem('firecalc_guest_data', JSON.stringify(dataToLoad));
+        localStorage.setItem('firecalc_guest_profile_selected', 'true');
+        
+        // Hide Modal
+        profileModal.classList.add('hidden');
+        
+        // Initialize App
+        await initializeData(null);
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('app-container').classList.remove('hidden');
+    };
+
+    profileModal.querySelectorAll('button').forEach(b => {
+        b.onclick = handleProfileSelect;
+    });
+}
 
 function setupAppHeader(avatarUrl, userName, logoutText) {
     const avatar = document.getElementById('user-avatar');

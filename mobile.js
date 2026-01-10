@@ -7,6 +7,7 @@ import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
 import { formatter } from './formatter.js';
+import { PROFILE_25_SINGLE, PROFILE_40_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
 
 // --- DEVELOPER / RESET MODE ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -15,6 +16,7 @@ if (urlParams.get('reset') === 'true') {
         'firecalc_guest_data',
         'firecalc_guest_acknowledged',
         'firecalc_guest_mode',
+        'firecalc_guest_profile_selected',
         'firecalc_app_version'
     ];
     keysToClear.forEach(k => localStorage.removeItem(k));
@@ -431,24 +433,75 @@ function init() {
             try { await initializeData(user); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden'); renderTab(); } catch (e) { console.error(e); }
         } else if (guestModeActive) {
             try {
-                await initializeData(null); document.getElementById('login-screen').classList.add('hidden'); document.getElementById('app-container').classList.remove('hidden');
-                const headerActions = document.querySelector('header .flex.items-center.gap-3');
-                if (headerActions && !document.getElementById('login-to-save-mobile')) {
-                    const btn = document.createElement('button');
-                    btn.id = 'login-to-save-mobile';
-                    btn.className = "px-2 py-1.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase tracking-tight active:scale-95";
-                    btn.textContent = "LOGIN TO SAVE"; btn.onclick = () => document.getElementById('login-btn').click();
-                    headerActions.insertBefore(btn, document.getElementById('save-indicator'));
-                }
-                const saveInd = document.getElementById('save-indicator'); if (saveInd) saveInd.classList.add('hidden');
-                renderTab();
-                if (!localStorage.getItem('firecalc_guest_acknowledged')) {
-                    const modal = document.getElementById('guest-modal'), btn = document.getElementById('ack-guest-btn');
-                    if (modal && btn) { modal.classList.remove('hidden'); btn.onclick = () => { localStorage.setItem('firecalc_guest_acknowledged', 'true'); modal.classList.add('hidden'); }; }
+                // Logic Sequence: Warning -> Profile Selection -> App
+                const hasAcknowledged = localStorage.getItem('firecalc_guest_acknowledged') === 'true';
+                const hasSelectedProfile = localStorage.getItem('firecalc_guest_profile_selected') === 'true';
+
+                if (!hasAcknowledged) {
+                    const modal = document.getElementById('guest-modal');
+                    const btn = document.getElementById('ack-guest-btn');
+                    if (modal && btn) {
+                        modal.classList.remove('hidden');
+                        btn.onclick = () => {
+                            localStorage.setItem('firecalc_guest_acknowledged', 'true');
+                            modal.classList.add('hidden');
+                            showProfileSelection();
+                        };
+                    }
+                } else if (!hasSelectedProfile) {
+                    showProfileSelection();
+                } else {
+                    await loadApp();
                 }
             } catch (e) { console.error(e); }
         } else { document.getElementById('login-screen').classList.remove('hidden'); document.getElementById('app-container').classList.add('hidden'); }
     });
+}
+
+function showProfileSelection() {
+    const profileModal = document.getElementById('profile-modal');
+    if (!profileModal) return;
+    
+    profileModal.classList.remove('hidden');
+    
+    const handleProfileSelect = async (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        
+        const type = btn.dataset.profile;
+        let dataToLoad = PROFILE_40_COUPLE; 
+        
+        if (type === '25') dataToLoad = PROFILE_25_SINGLE;
+        else if (type === '55') dataToLoad = PROFILE_55_RETIREE;
+        
+        localStorage.setItem('firecalc_guest_data', JSON.stringify(dataToLoad));
+        localStorage.setItem('firecalc_guest_profile_selected', 'true');
+        
+        profileModal.classList.add('hidden');
+        await loadApp();
+    };
+
+    profileModal.querySelectorAll('button').forEach(b => {
+        b.onclick = handleProfileSelect;
+    });
+}
+
+async function loadApp() {
+    await initializeData(null); 
+    document.getElementById('login-screen').classList.add('hidden'); 
+    document.getElementById('app-container').classList.remove('hidden');
+    
+    const headerActions = document.querySelector('header .flex.items-center.gap-3');
+    if (headerActions && !document.getElementById('login-to-save-mobile')) {
+        const btn = document.createElement('button');
+        btn.id = 'login-to-save-mobile';
+        btn.className = "px-2 py-1.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase tracking-tight active:scale-95";
+        btn.textContent = "LOGIN TO SAVE"; btn.onclick = () => document.getElementById('login-btn').click();
+        headerActions.insertBefore(btn, document.getElementById('save-indicator'));
+    }
+    const saveInd = document.getElementById('save-indicator'); if (saveInd) saveInd.classList.add('hidden');
+    
+    renderTab();
 }
 
 function attachGlobal() {

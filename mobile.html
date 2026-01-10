@@ -90,6 +90,48 @@
         </div>
     </div>
 
+    <!-- Profile Selection Modal Mobile -->
+    <div id="profile-modal" class="fixed inset-0 flex items-center justify-center bg-black/95 z-[250] hidden backdrop-blur-md px-6">
+        <div class="w-full max-w-sm flex flex-col h-full py-8">
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-black text-white mb-1 tracking-tight">Select Profile</h2>
+                <p class="text-xs text-slate-400">Choose a starting point.</p>
+            </div>
+            
+            <div class="space-y-3 flex-grow overflow-y-auto">
+                <button data-profile="25" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-teal-500/10">
+                    <div class="w-10 h-10 bg-teal-500/20 rounded-full flex items-center justify-center text-teal-400 flex-shrink-0">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-sm font-bold text-white">The Starter</h3>
+                        <p class="text-[9px] text-teal-400 font-bold uppercase tracking-wider">Age 25 • Single</p>
+                    </div>
+                </button>
+
+                <button data-profile="40" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-blue-500/10">
+                    <div class="w-10 h-10 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 flex-shrink-0">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-sm font-bold text-white">The Accumulator</h3>
+                        <p class="text-[9px] text-blue-400 font-bold uppercase tracking-wider">Age 40 • Married</p>
+                    </div>
+                </button>
+
+                <button data-profile="55" class="w-full p-4 bg-slate-900/80 border border-white/10 rounded-2xl flex items-center gap-4 active:scale-95 transition-all active:bg-purple-500/10">
+                    <div class="w-10 h-10 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 flex-shrink-0">
+                        <i class="fas fa-umbrella-beach"></i>
+                    </div>
+                    <div class="text-left">
+                        <h3 class="text-sm font-bold text-white">Pre-Retiree</h3>
+                        <p class="text-[9px] text-purple-400 font-bold uppercase tracking-wider">Age 55 • Married</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="app-container" class="hidden flex flex-col h-screen overflow-hidden">
         
         <!-- Mobile Header -->
