@@ -363,5 +363,42 @@ window.createAssumptionControls = (data) => {
 };
 
 function attachSortingListeners() {}
-function attachPasteListeners() {}
+
+function attachPasteListeners() {
+    const expensesContainer = document.getElementById('budget-expenses-rows');
+    if (!expensesContainer) return;
+
+    expensesContainer.addEventListener('paste', (e) => {
+        const pasteData = e.clipboardData.getData('text');
+        const rows = pasteData.split(/\r?\n/).filter(line => line.trim().length > 0);
+        
+        // If it's a multi-row or multi-column paste, handle it
+        if (rows.length > 1 || (rows.length === 1 && rows[0].includes('\t'))) {
+            e.preventDefault();
+            
+            rows.forEach(rowText => {
+                const cols = rowText.split('\t');
+                if (cols.length >= 2) {
+                    const name = cols[0].trim();
+                    const monthlyStr = cols[1].trim();
+                    const monthlyVal = math.fromCurrency(monthlyStr);
+                    
+                    if (name || !isNaN(monthlyVal)) {
+                        window.addRow('budget-expenses-rows', 'budget-expense', {
+                            name: name,
+                            monthly: monthlyVal,
+                            annual: monthlyVal * 12,
+                            remainsInRetirement: true,
+                            isFixed: false
+                        });
+                    }
+                }
+            });
+            
+            forceSyncData();
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        }
+    });
+}
+
 function handleLinkedBudgetValues() {}
