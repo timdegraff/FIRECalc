@@ -64,7 +64,6 @@ window.addRow = (containerId, type, data = {}) => {
         const expBtn = element.querySelector('button[data-target="incomeExpensesMonthly"]');
         if (expBtn) expBtn.textContent = !!data.incomeExpensesMonthly ? 'Monthly' : 'Annual';
         checkIrsLimits(element);
-        updateIncomeCardPreview(element);
     }
     if (type === 'investment') updateCostBasisVisibility(element);
 };
@@ -116,6 +115,13 @@ function attachGlobalListeners() {
     document.body.addEventListener('input', (e) => {
         const target = e.target;
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
+            
+            // Real-time Income Card Updates
+            const incomeCard = target.closest('#income-cards .removable-item');
+            if (incomeCard) {
+                checkIrsLimits(incomeCard);
+            }
+
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
@@ -134,6 +140,12 @@ function attachGlobalListeners() {
             // If this is an investment row, toggle cost basis visibility/interactivity
             const row = target.closest('tr');
             if (row) updateCostBasisVisibility(row);
+        }
+
+        // Trigger IRS check on checkbox change (Contrib on Bonus)
+        const incomeCard = target.closest('#income-cards .removable-item');
+        if (incomeCard && target.type === 'checkbox') {
+            checkIrsLimits(incomeCard);
         }
     });
 }
@@ -175,22 +187,29 @@ function attachDynamicRowListeners() {
 function checkIrsLimits(row) {
     const amountEl = row.querySelector('[data-id="amount"]');
     if (!amountEl) return;
-    const baseAnn = math.fromCurrency(amountEl.value) * (row.querySelector('input[data-id="isMonthly"]')?.value === 'true' ? 12 : 1);
+    
+    const isMonthly = row.querySelector('input[data-id="isMonthly"]')?.value === 'true';
+    const baseAnn = math.fromCurrency(amountEl.value) * (isMonthly ? 12 : 1);
     const cPct = parseFloat(row.querySelector('[data-id="contribution"]')?.value) || 0;
-    const age = window.currentData?.assumptions?.currentAge || 40, limit = age >= 50 ? 31000 : 23500;
-    const warning = row.querySelector('[data-id="capWarning"]');
-    if (warning) warning.classList.toggle('hidden', (baseAnn * (cPct/100)) <= limit);
-}
+    
+    const bonusPct = parseFloat(row.querySelector('[data-id="bonusPct"]')?.value) || 0;
+    const bonusAmt = baseAnn * (bonusPct / 100);
+    const contribOnBonus = row.querySelector('[data-id="contribOnBonus"]')?.checked;
+    
+    let totalContrib = baseAnn * (cPct / 100);
+    if (contribOnBonus) {
+        totalContrib += bonusAmt * (cPct / 100);
+    }
 
-function updateIncomeCardPreview(card) {
-    const amountEl = card.querySelector('[data-id="amount"]');
-    if (!amountEl) return;
-    const isMon = card.querySelector('input[data-id="isMonthly"]')?.value === 'true';
-    const baseAnn = math.fromCurrency(amountEl.value) * (isMon ? 12 : 1);
-    const bPct = parseFloat(card.querySelector('[data-id="bonusPct"]')?.value) || 0;
-    const grossAnn = baseAnn + (baseAnn * (bPct / 100));
-    const display = card.querySelector('[data-id="netSourceDisplay"]');
-    if (display) display.textContent = math.toCurrency(grossAnn);
+    const age = window.currentData?.assumptions?.currentAge || 40;
+    const limit = age >= 50 ? 31000 : 23500;
+    const warning = row.querySelector('[data-id="capWarning"]');
+    
+    if (warning) {
+        const isOver = totalContrib > limit;
+        warning.classList.toggle('hidden', !isOver);
+        warning.title = `You're over the IRS limit of ${math.toCurrency(limit)}`;
+    }
 }
 
 function updateCostBasisVisibility(row) {

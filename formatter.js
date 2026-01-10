@@ -30,6 +30,8 @@ export const formatter = {
                 e.target.value = decimals > 0 ? val.toFixed(decimals) : Math.round(val);
             }
             e.target.classList.remove('value-zero');
+            // Select all text so typing immediately replaces content
+            setTimeout(() => e.target.select(), 0);
         });
         
         // Initial state check
@@ -51,7 +53,13 @@ export const formatter = {
             else e.target.classList.remove('value-zero');
         });
         input.addEventListener('focus', (e) => {
+            const val = parseFloat(e.target.value) || 0;
+            if (val === 0) {
+                e.target.value = '';
+            }
             e.target.classList.remove('value-zero');
+            // Select all text so typing immediately replaces content
+            setTimeout(() => e.target.select(), 0);
         });
         const val = parseFloat(input.value) || 0;
         if (val === 0) input.classList.add('value-zero');

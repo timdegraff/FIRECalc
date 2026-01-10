@@ -168,20 +168,6 @@ export const templates = {
                     </label>
                 </div>
             </div>
-
-            <!-- Net Source Inflow Footer -->
-            <div class="mt-auto px-5 py-3 bg-black/40 border-t border-white/5">
-                <div class="flex justify-between items-center">
-                    <span data-id="footer-label" class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Net Card Contribution</span>
-                    <div data-id="netSourceDisplay" class="text-xs font-black text-white mono-numbers">$0</div>
-                </div>
-                <div class="flex items-center gap-1.5 mt-1">
-                    <div class="h-1 flex-grow bg-slate-800 rounded-full overflow-hidden flex">
-                        <div data-id="progress-base" class="h-full bg-teal-500" style="width: 0%"></div>
-                        <div data-id="progress-bonus" class="h-full bg-emerald-400" style="width: 0%"></div>
-                    </div>
-                </div>
-            </div>
         </div>
     `,
     "budget-savings": (data) => {
