@@ -303,7 +303,7 @@ export const burndown = {
         let calculatedRetireBudget = config.manualBudget; 
         if (config.useSync) {
             const currentAge = data.assumptions?.currentAge || 40, yrsToRetire = Math.max(0, lastUsedRetirementAge - currentAge), infFacRet = Math.pow(1 + inflation, yrsToRetire);
-            calculatedRetireBudget = (data.budget?.expenses || []).reduce((sum, exp) => (age >= lastUsedRetirementAge && exp.remainsInRetirement === false) ? sum : sum + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFacRet), 0);
+            calculatedRetireBudget = (data.budget?.expenses || []).reduce((sum, exp) => (exp.remainsInRetirement === false) ? sum : sum + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFacRet), 0);
             if (document.getElementById('input-manual-budget')) { document.getElementById('input-manual-budget').value = math.toCurrency(calculatedRetireBudget); document.getElementById('input-manual-budget').disabled = true; }
         }
         simulationTrace = {}; 
