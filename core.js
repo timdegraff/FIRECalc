@@ -368,7 +368,65 @@ window.createAssumptionControls = (data) => {
     container.querySelectorAll('input[type="number"]').forEach(formatter.bindNumberEventListeners);
 };
 
-function attachSortingListeners() {}
+function attachSortingListeners() {
+    document.querySelectorAll('[data-sort]').forEach(header => {
+        header.addEventListener('click', () => {
+            const targetId = header.dataset.target;
+            const sortKey = header.dataset.sort;
+            const container = document.getElementById(targetId);
+            if (!container) return;
+
+            const rows = Array.from(container.children);
+            const isAsc = header.dataset.direction === 'asc';
+            header.dataset.direction = isAsc ? 'desc' : 'asc';
+
+            // Update icons
+            header.parentElement.querySelectorAll('i.fas').forEach(i => {
+                i.classList.remove('fa-sort-up', 'fa-sort-down', 'text-blue-400');
+                i.classList.add('fa-sort', 'opacity-20');
+            });
+            const icon = header.querySelector('i');
+            if (icon) {
+                icon.classList.remove('fa-sort', 'opacity-20');
+                icon.classList.add(isAsc ? 'fa-sort-up' : 'fa-sort-down', 'text-blue-400');
+            }
+
+            const lockedRows = rows.filter(r => r.classList.contains('locked-row'));
+            const sortableRows = rows.filter(r => !r.classList.contains('locked-row'));
+
+            sortableRows.sort((a, b) => {
+                const aInput = a.querySelector(`[data-id="${sortKey}"]`);
+                const bInput = b.querySelector(`[data-id="${sortKey}"]`);
+                
+                let aVal = 0, bVal = 0;
+                
+                if (aInput) {
+                    if (aInput.dataset.type === 'currency') aVal = math.fromCurrency(aInput.value);
+                    else if (aInput.type === 'number') aVal = parseFloat(aInput.value) || 0;
+                    else aVal = aInput.value;
+                }
+                
+                if (bInput) {
+                    if (bInput.dataset.type === 'currency') bVal = math.fromCurrency(bInput.value);
+                    else if (bInput.type === 'number') bVal = parseFloat(bInput.value) || 0;
+                    else bVal = bInput.value;
+                }
+
+                if (typeof aVal === 'string' && typeof bVal === 'string') {
+                    return isAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                }
+                return isAsc ? aVal - bVal : bVal - aVal;
+            });
+
+            // Re-render
+            container.innerHTML = '';
+            lockedRows.forEach(row => container.appendChild(row));
+            sortableRows.forEach(row => container.appendChild(row));
+            
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        });
+    });
+}
 
 function attachPasteListeners() {
     const expensesContainer = document.getElementById('budget-expenses-rows');

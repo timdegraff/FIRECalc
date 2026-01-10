@@ -313,8 +313,9 @@
                         <p id="sum-budget-annual" class="text-4xl font-black text-pink-500 mono-numbers tracking-tight">$0</p>
                     </div>
                     <div class="card-container p-6 flex flex-col items-center justify-center h-28">
-                        <p class="label-std mb-2 text-slate-500">Total Outflow</p>
+                        <p class="label-std mb-1 text-slate-500">Retirement Base Budget</p>
                         <p id="sum-budget-total" class="text-4xl font-black text-blue-400 mono-numbers tracking-tight">$0</p>
+                        <p class="text-[8px] font-bold text-slate-600 uppercase tracking-widest">2026 Purchasing Power</p>
                     </div>
                 </div>
 
@@ -356,8 +357,15 @@
                     </div>
                     <div class="card-container overflow-hidden">
                         <table class="w-full text-xs">
-                            <thead>
-                                <tr><th class="w-10 pl-6"></th><th class="text-left">Item Name</th><th class="text-center w-36">RETIREMENT?</th><th class="text-right w-48">Monthly</th><th class="text-right w-48">Annual</th><th class="w-16 pr-8"></th></tr>
+                            <thead class="text-slate-500 label-std border-b border-white/5">
+                                <tr>
+                                    <th class="w-10 pl-6"></th>
+                                    <th class="text-left">Item Name</th>
+                                    <th class="text-center w-36">RETIREMENT?</th>
+                                    <th class="text-right w-48 group cursor-pointer" data-sort="monthly" data-target="budget-expenses-rows">Monthly <i class="fas fa-sort ml-1 opacity-20 group-hover:opacity-100 transition-opacity"></i></th>
+                                    <th class="text-right w-48 group cursor-pointer" data-sort="annual" data-target="budget-expenses-rows">Annual <i class="fas fa-sort ml-1 opacity-20 group-hover:opacity-100 transition-opacity"></i></th>
+                                    <th class="w-16 pr-8"></th>
+                                </tr>
                             </thead>
                             <tbody id="budget-expenses-rows" class="mono-numbers"></tbody>
                         </table>
