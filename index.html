@@ -422,7 +422,10 @@
                         <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
                             <i class="fas fa-chart-line text-sm"></i>
                         </div>
-                        <h2 class="text-xl font-bold text-white tracking-tight">Strategic Projection</h2>
+                        <div>
+                            <h2 class="text-xl font-bold text-white tracking-tight">Accumulation Projection</h2>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">What you'll HAVE (Growth & Savings Only)</p>
+                        </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <button id="toggle-projection-real" class="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg label-std text-slate-400 hover:text-white transition-all">
@@ -444,7 +447,7 @@
 
             <!-- Burndown -->
             <section id="tab-burndown" class="tab-content hidden max-w-7xl mx-auto">
-                <!-- NOTE: Old Solvency/Health summary cards removed to let burndown.js inject the new Dashboard (Preservation Age, etc.) -->
+                <!-- Dashboard (Preservation Age, etc.) injected here -->
                 <div id="burndown-view-container" class="mb-12"></div>
                 
                 <div id="burndown-debug-container" class="p-8 bg-black/20 border border-white/5 rounded-[24px] shadow-inner mb-6">
@@ -478,35 +481,27 @@
                         <div class="space-y-6">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-black text-sm">1</div>
-                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 1: Prior to Retirement (Accumulation Build)</h4>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 1: Accumulation Phase (The Build)</h4>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
                                 <div class="space-y-4">
                                     <div class="space-y-1">
                                         <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Gross Inflow</p>
-                                        <p class="text-sm text-slate-300">The engine sums all W2 and 1099 income streams based on your current age and projected growth percentages.</p>
+                                        <p class="text-sm text-slate-300">Sum of all W2/1099 streams based on current age and projected growth. Pre-tax contributions are subtracted to find the <strong>MAGI Base</strong>.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: The Siphon Effect</p>
-                                        <p class="text-sm text-slate-300">Pre-tax contributions (401k/HSA) are subtracted from gross income to calculate the <strong>MAGI Base</strong>. These funds are added directly to your account balances.</p>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Tax Leakage</p>
-                                        <p class="text-sm text-slate-300">Federal, State, and FICA taxes are calculated on the remaining taxable portion of your income.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: Tax Siphoning</p>
+                                        <p class="text-sm text-slate-300">Federal, State, and FICA taxes are calculated. Note: FICA is applied only to W2 gross portions.</p>
                                     </div>
                                 </div>
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: Strategic Savings Only</p>
-                                        <p class="text-sm text-slate-300">Only your defined savings (401k, HSA, Brokerage Table) are added to your accounts. To prevent unrealistic wealth growth, <strong>excess cash surplus is ignored</strong> by the engine.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Defined Savings Only</p>
+                                        <p class="text-sm text-slate-300">Only funds explicitly saved in the Savings table are added to accounts. Excess take-home pay is treated as "spent" to ensure conservative planning.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">E: The Compounding Loop</p>
-                                        <p class="text-sm text-slate-300">Each year, the engine applies your specific APY settings (Stock, Crypto, RE) to existing balances <em>before</em> adding the current year's contributions.</p>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">F: Inflation Scaling</p>
-                                        <p class="text-sm text-slate-300">Your budget, IRS contribution limits, and FPL benefit thresholds are increased annually according to your inflation setting.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: Compounding Loop</p>
+                                        <p class="text-sm text-slate-300">Each year applies your specific APY settings (Stock, Crypto, RE) to existing balances <em>before</em> adding the current year's contributions.</p>
                                     </div>
                                 </div>
                             </div>
@@ -516,29 +511,29 @@
                         <div class="space-y-6">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-black text-sm">2</div>
-                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 2: Starting Retirement (The Bridge Phase)</h4>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 2: The Decumulation Bridge</h4>
                             </div>
                             <div class="pl-14 space-y-6">
-                                <p class="text-sm text-blue-300 font-bold italic leading-relaxed">This phase is critical for FIRE planning. Since users are typically under age 59.5, the engine must solve for the cash shortfall without triggering early withdrawal penalties.</p>
+                                <p class="text-sm text-blue-300 font-bold italic leading-relaxed">This is the engine's core. It must solve for the annual budget while optimizing for tax brackets and healthcare subsidies.</p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <div class="space-y-4">
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: The Bridge Audit</p>
-                                            <p class="text-sm text-slate-300">Before touching the 401k, the tool performs a full audit of your other liquid pots (Cash, Brokerage, Crypto, Metals, Roth Basis, and HELOC). If these pots fail to cover the budget, a <strong>72(t) / SEPP</strong> systematic withdrawal is triggered.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Required Outflow</p>
+                                            <p class="text-sm text-slate-300">Calculates <strong>Budget + Taxes + HELOC Interest</strong>. The engine services debt interest as a priority expense to prevent balance spiraling.</p>
                                         </div>
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: Survival Mode vs Strategy</p>
-                                            <p class="text-sm text-slate-300">The engine prioritizes 'Survival' (meeting your budget) over 'Strategy' (tax optimization). If your MAGI target restricts access to funds needed for basic living expenses, the engine overrides the target to ensure solvency.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: MAGI Strategy Spiral</p>
+                                            <p class="text-sm text-slate-300">The engine performs a 3-pass calculation. Withdrawals create taxes, which create more shortfall. It iterates until the "Net Check" satisfies your bills.</p>
                                         </div>
                                     </div>
                                     <div class="space-y-4">
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: The Smart-Fill Waterfall</p>
-                                            <p class="text-sm text-slate-300">Assets are prioritized based on your custom drag-and-drop order. The engine calculates the exact deficit and withdraws only what is needed from each bucket, 'grossing up' for taxes on the fly.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: 72(t) / SEPP Logic</p>
+                                            <p class="text-sm text-slate-300">If you retire under 59.5, the engine calculates the maximum IRS-allowed Systematic Withdrawal (SEPP) to bridge the gap without penalties.</p>
                                         </div>
                                         <div class="space-y-1">
-                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: 3-Pass Tax Spiral</p>
-                                            <p class="text-sm text-slate-300">Withdrawals generate taxes, which create more shortfall. The engine runs 3 iterative passes per year to "gross up" the final withdrawal and cover the resulting tax bill.</p>
+                                            <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: Smart Fill Waterfall</p>
+                                            <p class="text-sm text-slate-300">Assets are drained in your custom drag-and-drop order. It prioritizes survival (meeting budget) over strategy (hitting tax targets).</p>
                                         </div>
                                     </div>
                                 </div>
@@ -549,27 +544,27 @@
                         <div class="space-y-6">
                             <div class="flex items-center gap-4">
                                 <div class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-black text-sm">3</div>
-                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 3: Social Security & Beyond (The Legacy Phase)</h4>
+                                <h4 class="text-xl font-black text-white tracking-tight uppercase">Stage 3: Legacy & Reinvestment</h4>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pl-14">
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Social Security Floor</p>
-                                        <p class="text-sm text-slate-300">The engine calculates your provisional income to determine how much of your Social Security benefit is taxable ordinary income.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">A: Cash Surplus Recycling</p>
+                                        <p class="text-sm text-slate-300">In strategy years (like harvesting for "Platinum Max"), the engine draws extra funds. Any leftover cash is <strong>automatically recycled</strong> back to your Cash bucket for the following year.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: RMD Triggering</p>
-                                        <p class="text-sm text-slate-300">At age 75, the engine triggers Required Minimum Distributions, forcing taxable withdrawals from Pre-Tax buckets regardless of cash need.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">B: Dynamic Debt Paydown</p>
+                                        <p class="text-sm text-slate-300">If year-end income (Social Security, Dividends) exceeds your budget, the engine applies the surplus to <strong>HELOC Principal</strong> before adding to savings.</p>
                                     </div>
                                 </div>
                                 <div class="space-y-4">
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Medicare Transition</p>
-                                        <p class="text-sm text-slate-300">Healthcare logic automatically switches from MAGI-based ACA subsidies to standard Medicare logic at age 65.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">C: Benefit Transition</p>
+                                        <p class="text-sm text-slate-300">At age 65, ACA subsidy logic is terminated and the engine transitions to standard Medicare health-cost logic.</p>
                                     </div>
                                     <div class="space-y-1">
-                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: True Solvency Validation</p>
-                                        <p class="text-sm text-slate-300">Insolvency is only declared if you have a cash deficit (> $100) AND zero accessible liquid assets remaining. This prevents false alarms when you have wealth but tax constraints.</p>
+                                        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">D: RMD Logic</p>
+                                        <p class="text-sm text-slate-300">At age 75, Required Minimum Distributions are forced. This may trigger extra taxable income and surplus recycling into your Cash account.</p>
                                     </div>
                                 </div>
                             </div>

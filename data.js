@@ -32,7 +32,8 @@ const DEFAULTS = {
             { name: 'Living Expenses', annual: 48000, monthly: 4000, remainsInRetirement: true, isFixed: false }
         ]
     },
-    assumptions: { ...window.assumptions?.defaults }
+    assumptions: { ...window.assumptions?.defaults },
+    benefits: { dependents: [] }
 };
 
 export async function initializeData(user) {
@@ -97,7 +98,6 @@ function loadUserDataIntoUI() {
 
     // Add User Savings Rows
     d.budget?.savings?.forEach(i => {
-        // Prevent loading locked rows if they accidentally got saved
         if (!i.isLocked) window.addRow('budget-savings-rows', 'budget-savings', i);
     });
 }
@@ -106,7 +106,6 @@ function scrapeData() {
     const getData = (id, fields) => {
         const container = document.getElementById(id);
         if (!container) return [];
-        // CRITICAL FIX: Ignore rows with class 'locked-row' to prevent duplicates
         const rows = Array.from(container.children).filter(row => !row.classList.contains('locked-row'));
         return rows.map(row => {
             const obj = {};
@@ -119,7 +118,6 @@ function scrapeData() {
                     else obj[field] = el.value;
                 }
             });
-            // Handle hidden inputs for row-specific settings
             row.querySelectorAll('input[type="hidden"]').forEach(h => {
                 if (fields.includes(h.dataset.id)) obj[h.dataset.id] = (h.value === 'true');
             });
@@ -128,7 +126,7 @@ function scrapeData() {
     };
 
     const newData = {
-        assumptions: { ...window.currentData.assumptions }, // Preserves assumption keys not in scraping list
+        assumptions: { ...window.currentData.assumptions }, 
         investments: getData('investment-rows', ['name', 'type', 'value', 'costBasis']),
         realEstate: getData('real-estate-rows', ['name', 'value', 'mortgage', 'principalPayment']),
         otherAssets: getData('other-assets-rows', ['name', 'value', 'loan']),
@@ -148,10 +146,6 @@ function scrapeData() {
     return newData;
 }
 
-/**
- * Force a synchronous refresh of the global data state from the UI.
- * Used before switching to tabs that depend on calculated projections.
- */
 export function forceSyncData() {
     const newData = scrapeData();
     window.currentData = newData;
@@ -163,7 +157,7 @@ export function autoSave(updateUI = true) {
     if (window.saveTimeout) clearTimeout(window.saveTimeout);
     window.saveTimeout = setTimeout(async () => {
         const newData = scrapeData();
-        window.currentData = newData; // Update local state immediately
+        window.currentData = newData; 
         
         if (updateUI) {
             updateSummaries();
@@ -173,7 +167,6 @@ export function autoSave(updateUI = true) {
         const isGuest = localStorage.getItem('firecalc_guest_mode') === 'true';
         const user = auth.currentUser;
 
-        // Persist Data
         if (user) {
             try {
                 await setDoc(doc(db, "users", user.uid), newData);
@@ -181,12 +174,11 @@ export function autoSave(updateUI = true) {
             } catch (e) { console.error("Save Error", e); }
         } else if (isGuest) {
             localStorage.setItem('firecalc_guest_data', JSON.stringify(newData));
-            showSaveIndicator(); // Mobile might use this
+            showSaveIndicator(); 
         }
     }, 1000);
 }
 
-// Global debounced save for UI events
 window.debouncedAutoSave = () => autoSave(true);
 
 function showSaveIndicator() {
@@ -224,10 +216,8 @@ export function updateSummaries() {
     set('sum-yrs-to-retire', yrsToRetire, false);
     set('sum-life-exp', engine.getLifeExpectancy(currentAge) + currentAge, false);
 
-    // Factors for retirement
     const infFacRet = Math.pow(1 + inflation, yrsToRetire);
 
-    // Income at retirement (Yr 1)
     const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
         const growth = (parseFloat(inc.increase) / 100) || 0;
         return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
@@ -236,17 +226,14 @@ export function updateSummaries() {
     const totalRetIncome = streamsAtRet + ssAtRet;
     set('sum-retirement-income-floor', totalRetIncome);
 
-    // Retirement Year 1 Budget Calculation
     const retireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
         if (exp.remainsInRetirement === false) return sum;
         const base = math.fromCurrency(exp.annual);
-        // If fixed, don't inflate. If not fixed, inflate to retirement year.
         return sum + (exp.isFixed ? base : base * infFacRet);
     }, 0);
     set('sum-retire-budget', retireBudget);
     set('sum-budget-total', retireBudget); 
 
-    // Income at SS start age breakdown
     const floorDetails = document.getElementById('sum-floor-breakdown');
     if (floorDetails) {
         let details = [];

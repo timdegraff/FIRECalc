@@ -58,7 +58,6 @@ export const burndown = {
 
                 <!-- Primary Projection Cards -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <!-- Card 1: Preservation Age -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-infinity text-4xl text-amber-500"></i></div>
                         <div>
@@ -68,7 +67,6 @@ export const burndown = {
                         <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">FLAT REAL WEALTH UNTIL AGE 100</div>
                     </div>
 
-                    <!-- Card 2: Retirement Runway -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-road text-4xl text-blue-400"></i></div>
                         <div>
@@ -78,7 +76,6 @@ export const burndown = {
                         <div id="card-runway-sub" class="text-[9px] font-bold text-blue-400/60 uppercase tracking-tighter leading-none">SUSTAINABLE UNTIL THIS AGE</div>
                     </div>
 
-                    <!-- Card 3: Die With Zero -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-skull text-4xl text-pink-400"></i></div>
                         <div>
@@ -91,11 +88,21 @@ export const burndown = {
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">MAGI Strategy</label>
-                            <span id="label-strategy-status" class="text-emerald-400 font-black mono-numbers text-[9px] uppercase tracking-widest bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-400/20">Platinum Zone</span>
+                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strategy Persona</label>
+                        <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5">
+                            <button data-mode="PLATINUM" class="py-2 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
+                                <span class="text-emerald-400">Handout Max</span>
+                                <span class="text-[6px] opacity-40">138% FPL</span>
+                            </button>
+                            <button data-mode="SILVER" class="py-2 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
+                                <span class="text-blue-400">CSR sweet spot</span>
+                                <span class="text-[6px] opacity-40">250% FPL</span>
+                            </button>
+                            <button data-mode="UNCONSTRAINED" class="py-2 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
+                                <span class="text-slate-400">No Strategy</span>
+                                <span class="text-[6px] opacity-40">Pure Budget</span>
+                            </button>
                         </div>
-                        <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="input-range w-full">
                     </div>
 
                     <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
@@ -132,14 +139,9 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        ['input-strategy-dial', 'toggle-budget-sync', 'input-top-retire-age', 'input-cash-reserve'].forEach(id => {
+        ['toggle-budget-sync', 'input-top-retire-age', 'input-cash-reserve'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
-                if (id === 'input-strategy-dial') {
-                    const lbl = document.getElementById('label-strategy-status');
-                    const val = parseInt(el.value);
-                    lbl.textContent = val <= 33 ? "Platinum Zone" : (val <= 66 ? "Silver CSR Zone" : "Budget Strategy");
-                }
                 if (id === 'input-cash-reserve') {
                     document.getElementById('label-cash-reserve').textContent = math.toCurrency(parseInt(el.value));
                 }
@@ -158,6 +160,32 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
+
+        // Persona Selection Logic
+        const personaContainer = document.getElementById('persona-selector');
+        if (personaContainer) {
+            personaContainer.onclick = (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                const mode = btn.dataset.mode;
+                
+                personaContainer.querySelectorAll('button').forEach(b => {
+                    b.classList.remove('bg-emerald-500/10', 'border-emerald-500/30', 'bg-blue-500/10', 'border-blue-500/30', 'bg-slate-500/10', 'border-slate-500/30');
+                });
+                
+                const styleMap = {
+                    'PLATINUM': 'bg-emerald-500/10 border-emerald-500/30',
+                    'SILVER': 'bg-blue-500/10 border-blue-500/30',
+                    'UNCONSTRAINED': 'bg-slate-500/10 border-slate-500/30'
+                };
+                
+                btn.classList.add(...styleMap[mode].split(' '));
+                personaContainer.dataset.value = mode;
+                
+                burndown.run();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            };
+        }
 
         const btnMinus = document.getElementById('btn-retire-minus');
         const btnPlus = document.getElementById('btn-retire-plus');
@@ -186,7 +214,6 @@ export const burndown = {
             };
         }
 
-        // Advanced Logic Trace Handlers
         const debugAgeInput = document.getElementById('input-debug-age');
         if (debugAgeInput) {
             debugAgeInput.oninput = (e) => {
@@ -211,7 +238,6 @@ export const burndown = {
             };
         }
 
-        // How It Works Toggle
         const btnDocToggle = document.getElementById('btn-toggle-engine-doc');
         const docPanel = document.getElementById('engine-logic-doc');
         if (btnDocToggle && docPanel) {
@@ -249,7 +275,13 @@ export const burndown = {
         };
 
         if (data) {
-            sync('input-strategy-dial', data.strategyDial || 33);
+            const mode = data.strategyMode || 'PLATINUM';
+            const personaSelector = document.getElementById('persona-selector');
+            if (personaSelector) {
+                const btn = personaSelector.querySelector(`[data-mode="${mode}"]`);
+                if (btn) btn.click();
+            }
+
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-cash-reserve', data.cashReserve ?? 25000);
             const fallbackRetAge = window.currentData?.assumptions?.retirementAge || 65;
@@ -263,7 +295,7 @@ export const burndown = {
 
     scrape: () => ({
         priority: burndown.priorityOrder,
-        strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
+        strategyMode: document.getElementById('persona-selector')?.dataset.value || 'PLATINUM',
         cashReserve: parseInt(document.getElementById('input-cash-reserve')?.value || 25000), 
         useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
@@ -330,7 +362,6 @@ export const burndown = {
         
         let calculatedRetireBudget = config.manualBudget; 
 
-        // Calculate the actual retirement year budget to show in the sync field
         if (config.useSync) {
             const currentAge = data.assumptions?.currentAge || 40;
             const yrsToRetire = Math.max(0, lastUsedRetirementAge - currentAge);
@@ -377,7 +408,6 @@ export const burndown = {
         document.getElementById('card-preservation-val').textContent = preservationAge;
         document.getElementById('card-preservation-sub').textContent = `FLAT REAL WEALTH UNTIL AGE 100`;
 
-        // DIE WITH ZERO SEARCH
         let low = 0, high = 2500000, bestBudget = 0;
         for (let i = 0; i < 30; i++) {
             let mid = (low + high) / 2;
@@ -418,11 +448,14 @@ export const burndown = {
         const config = configOverride || burndown.scrape(); 
         const inflationRate = (assumptions.inflation || 3) / 100;
         const filingStatus = assumptions.filingStatus || 'Single';
-        const hhSize = benefits.hhSize || 1; 
         const currentYear = new Date().getFullYear();
-        const dial = config.strategyDial, rAge = config.retirementAge, cashFloor = config.cashReserve;
+        const persona = config.strategyMode, rAge = config.retirementAge, cashFloor = config.cashReserve;
 
         if (!isSilent) firstInsolvencyAge = null;
+
+        const helocInterestRate = (helocs && helocs.length > 0) 
+            ? (parseFloat(helocs[0].rate) || assumptions.helocRate || 7) / 100
+            : (assumptions.helocRate || 7) / 100;
 
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -448,8 +481,13 @@ export const burndown = {
         for (let i = 0; i <= (100 - assumptions.currentAge); i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
             
+            // DYNAMIC HOUSEHOLD SIZE CALCULATION
+            const dependCount = (benefits.dependents || []).filter(d => parseInt(d.independenceYear) >= year).length;
+            const currentHhSize = 1 + (filingStatus === 'Married Filing Jointly' ? 1 : 0) + dependCount;
+
             let traceStr = `[ LOGIC TRACE: AGE ${age} (${year}) ]\n`;
             traceStr += `--------------------------------------\n`;
+            traceStr += `Household Size: ${currentHhSize} (${dependCount} dependents)\n`;
 
             const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
             const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
@@ -461,6 +499,13 @@ export const burndown = {
             const totalDebt = simDebts.reduce((s, d) => s + (d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12)), 0);
 
             let baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
+            
+            let yearlyHelocInterest = bal['heloc'] * helocInterestRate;
+            if (yearlyHelocInterest > 0) {
+                traceStr += `Auto HELOC Interest Added to Budget: ${math.toCurrency(yearlyHelocInterest)}\n`;
+                baseBudget += yearlyHelocInterest;
+            }
+
             let factor = 1.0;
             if (isRet) {
                 if (age < 50) factor = assumptions.slowGoFactor || 1.0; 
@@ -505,7 +550,7 @@ export const burndown = {
             }
 
             const baseTax = engine.calculateTax(Math.max(0, floorOrdIncome - pretaxDed), 0, filingStatus, assumptions.state, infFac);
-            const baseSnap = engine.calculateSnapBenefit(floorOrdIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+            const baseSnap = engine.calculateSnapBenefit(floorOrdIncome, currentHhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
             floorNetCash = (floorTotalIncome - pretaxDed) - baseTax + baseSnap;
             traceStr += `Floor Net Cash: ${math.toCurrency(floorNetCash)} (Income - Tax + SNAP)\n`;
             
@@ -513,11 +558,17 @@ export const burndown = {
             let deficit = targetBudget - floorNetCash;
             traceStr += `Deficit to solve: ${math.toCurrency(deficit)}\n`;
 
-            const fpl = (16060 + (hhSize - 1) * 5650) * infFac;
+            const fpl = (16060 + (currentHhSize - 1) * 5650) * infFac;
             const medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
             const silverLim = fpl * 2.5;
-            let magiTarget = dial <= 33 ? medLim * (dial / 33) : (dial <= 66 ? medLim + (silverLim - medLim) * ((dial - 33) / 33) : Math.max(silverLim, targetBudget * 1.5));
-            traceStr += `MAGI Strategy Target: ${math.toCurrency(magiTarget)}\n`;
+            
+            // PERSONA STRATEGY LOGIC
+            let magiTarget = 0;
+            if (persona === 'PLATINUM') magiTarget = medLim;
+            else if (persona === 'SILVER') magiTarget = silverLim;
+            else magiTarget = 0; // Unconstrained pulls only for need
+
+            traceStr += `MAGI Strategy Target (${persona}): ${math.toCurrency(magiTarget)}\n`;
 
             for (let pass = 0; pass < 3; pass++) {
                 if (deficit <= 5) break; 
@@ -584,11 +635,11 @@ export const burndown = {
                         }
 
                         const currentTaxEstimate = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                        const currentSnapEstimate = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+                        const currentSnapEstimate = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, currentHhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
                         deficit = targetBudget - ((floorTotalIncome - pretaxDed) + totalWithdrawn - currentTaxEstimate + currentSnapEstimate);
                     }
 
-                    if (deficit <= 5 && (currentOrdIncome + currentLtcgIncome) < magiTarget && available > 1) {
+                    if (persona !== 'UNCONSTRAINED' && deficit <= 5 && (currentOrdIncome + currentLtcgIncome) < magiTarget && available > 1) {
                         let harvestNeed = Math.max(0, magiTarget - (currentOrdIncome + currentLtcgIncome));
                         if (['401k', 'taxable', 'crypto', 'metals'].includes(pk)) {
                             let amountToHarvest = 0;
@@ -619,21 +670,28 @@ export const burndown = {
             }
 
             const finalTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, hhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
+            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, currentHhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, assumptions.state, infFac) * 12;
             
-            // RECYCLING LOGIC: If total inflows exceed survival requirements (Budget + Taxes), recycle the surplus back to cash.
             const grossInflowFromAssets = totalWithdrawn;
             const grossInflowFromFixed = floorTotalIncome - pretaxDed;
             const totalCashIn = grossInflowFromAssets + grossInflowFromFixed + finalSnap;
             const netCashAvailable = totalCashIn - finalTax;
             
-            const surplus = Math.max(0, netCashAvailable - targetBudget);
+            let surplus = Math.max(0, netCashAvailable - targetBudget);
             if (isRet && surplus > 100) {
-                traceStr += `Recycling Surplus: ${math.toCurrency(surplus)} back to Cash bucket.\n`;
-                bal['cash'] += surplus;
+                if (bal['heloc'] > 0) {
+                    const repayAmount = Math.min(bal['heloc'], surplus);
+                    traceStr += `Recycling Surplus: Repaying ${math.toCurrency(repayAmount)} HELOC principal.\n`;
+                    bal['heloc'] -= repayAmount;
+                    surplus -= repayAmount;
+                }
+                if (surplus > 100) {
+                    traceStr += `Recycling Surplus: Adding ${math.toCurrency(surplus)} back to Cash bucket.\n`;
+                    bal['cash'] += surplus;
+                }
             }
 
-            const finalNetCash = netCashAvailable; // This reflects the total that "lived on" before recycling
+            const finalNetCash = netCashAvailable;
             const magi = currentOrdIncome + currentLtcgIncome;
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             const currentNW = (liquidAssets + realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0) + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0)) - (totalMort + totalOL + totalDebt + bal['heloc']);
@@ -658,7 +716,6 @@ export const burndown = {
 
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); 
             bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth);
-            if (bal['heloc'] > 0) bal['heloc'] *= (1 + 0.07); 
             bal['roth-earnings'] += (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth;
         }
         return results;

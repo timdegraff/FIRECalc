@@ -6,92 +6,86 @@ export const benefits = {
         if (!container) return;
         
         container.innerHTML = `
-            <div class="max-w-7xl mx-auto space-y-2">
-                <!-- MAGI Sandbox Slider -->
-                <div class="card-container bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg p-3 mb-2">
-                    <div class="flex flex-col gap-1.5">
-                        <div class="flex justify-between items-end">
-                             <div class="flex flex-col">
-                                <label class="label-std text-blue-400">MAGI Sandbox</label>
-                                <p class="text-[7px] text-slate-500 font-medium italic">Simulate benefit cliffs</p>
-                             </div>
-                             <div class="text-xl font-black text-white mono-numbers leading-none" data-label="unifiedIncome">$0</div>
-                        </div>
-                        <input type="range" data-benefit-id="unifiedIncome" min="0" max="150000" step="1000" value="40000" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <!-- Healthcare Card -->
-                    <div id="card-healthcare" class="card-container bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg transition-all duration-300 flex flex-col">
-                        <div class="p-2.5 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
-                            <h3 class="text-xs font-bold text-white flex items-center gap-2 tracking-wide uppercase">
-                                <i class="fas fa-plus-square text-red-500 text-xs"></i> Healthcare
-                            </h3>
-                            <div class="flex items-center gap-2">
-                                <label class="flex items-center gap-1 cursor-pointer bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                                    <input type="checkbox" data-benefit-id="isPregnant" class="w-2.5 h-2.5 accent-pink-500">
-                                    <span class="text-[8px] font-bold uppercase text-slate-400">Preg</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="p-3 flex flex-col gap-1.5 flex-grow">
-                            <div class="text-center">
-                                <div id="health-main-display" class="text-2xl font-black text-white tracking-tighter leading-tight">Platinum</div>
-                                <div id="health-sub-display" class="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">100% Full Coverage</div>
-                            </div>
-                            <div class="relative h-1.5 bg-slate-950 rounded-full border border-slate-700 overflow-hidden flex w-full my-0.5">
-                                <div id="seg-medicaid" class="bg-emerald-500/80 h-full border-r border-slate-900/50"></div>
-                                <div id="seg-hmp" class="bg-emerald-400/60 h-full border-r border-slate-900/50"></div>
-                                <div id="seg-silver" class="bg-blue-500/60 h-full border-r border-slate-900/50"></div>
-                                <div id="seg-gold" class="bg-amber-500/60 h-full border-r border-slate-900/50"></div>
-                                <div id="health-marker" class="absolute top-0 w-1.5 h-full bg-white shadow-[0_0_10px_white] transition-all z-10 rounded-full"></div>
-                            </div>
-                            <div class="mt-auto">
-                                <table class="w-full text-[9px]">
-                                    <tbody>
-                                        <tr class="border-b border-slate-700/30"><td class="py-1 text-slate-500 font-medium">Premium</td><td class="py-1 text-right font-bold text-white mono-numbers" id="detail-premium">$0</td></tr>
-                                        <tr><td class="py-1 text-slate-500 font-medium">Deductible</td><td class="py-1 text-right text-slate-400 mono-numbers" id="detail-deductible">$0</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SNAP Card -->
-                    <div id="card-snap" class="card-container bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg transition-all duration-300 flex flex-col">
-                        <div class="p-2.5 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
-                            <h3 class="text-xs font-bold text-white flex items-center gap-2 tracking-wide uppercase">
-                                <i class="fas fa-utensils text-emerald-400 text-xs"></i> Food Assist
-                            </h3>
-                            <div class="flex gap-2">
-                                <label class="flex items-center gap-1 cursor-pointer bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                                    <input type="checkbox" data-benefit-id="hasSUA" checked class="w-2.5 h-2.5 accent-emerald-500">
-                                    <span class="text-[8px] font-bold uppercase text-slate-400">SUA</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="p-3 flex flex-col gap-1.5 flex-grow">
-                            <div class="flex-grow flex flex-col items-center justify-center text-center">
-                                <div id="snap-result-value" class="text-3xl font-black text-emerald-400 mono-numbers tracking-tighter leading-tight">$0</div>
-                                <div id="snap-hh-display" class="text-[7px] text-slate-500 font-medium italic">fam size of 1</div>
-                            </div>
-                            <div class="mt-auto">
-                                <div class="flex justify-between items-center mb-0.5">
-                                    <label class="text-[8px] font-black uppercase text-slate-500">Shelter</label>
-                                    <div class="text-[10px] font-bold text-white mono-numbers" data-label="shelterCosts">$700</div>
+            <div class="max-w-7xl mx-auto space-y-6">
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Household Section -->
+                    <div class="card-container p-6 space-y-6">
+                        <div class="flex items-center justify-between border-b border-white/5 pb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                    <i class="fas fa-users text-sm"></i>
                                 </div>
-                                <input type="range" data-benefit-id="shelterCosts" min="0" max="5000" step="50" value="700" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-400">
+                                <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Dependents</h3>
+                            </div>
+                            <button id="btn-add-dependent" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest transition-all">
+                                <i class="fas fa-child mr-2"></i> Add Dependent
+                            </button>
+                        </div>
+                        
+                        <div id="dependents-list" class="space-y-3 min-h-[100px]">
+                            <!-- Dependent items injected here -->
+                        </div>
+
+                        <div class="pt-4 border-t border-white/5 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <label class="label-std text-slate-500">Pregnancy Adjustment</label>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" data-benefit-id="isPregnant" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="label-std text-slate-500">Utility Allowance (SUA)</label>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" data-benefit-id="hasSUA" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sandbox & Results -->
+                    <div class="space-y-4">
+                        <div class="card-container p-6 bg-slate-800/40">
+                            <div class="flex justify-between items-end mb-4">
+                                <div class="flex flex-col">
+                                    <label class="label-std text-blue-400">MAGI Sandbox</label>
+                                    <p class="text-[9px] text-slate-500 font-medium italic">Simulate benefit cliffs for current year</p>
+                                </div>
+                                <div class="text-2xl font-black text-white mono-numbers leading-none" data-label="unifiedIncome">$0</div>
+                            </div>
+                            <input type="range" data-benefit-id="unifiedIncome" min="0" max="200000" step="1000" value="45000" class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- Healthcare Preview -->
+                            <div id="card-healthcare" class="card-container p-4 flex flex-col border-l-4">
+                                <span class="label-std mb-1">Health Status</span>
+                                <div id="health-main-display" class="text-xl font-black text-white tracking-tight">Platinum</div>
+                                <p id="health-sub-display" class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">100% Coverage</p>
+                                <div class="mt-4 pt-4 border-t border-white/5 space-y-1">
+                                    <div class="flex justify-between text-[10px]"><span class="text-slate-500">Premium</span><span id="detail-premium" class="font-bold text-white mono-numbers">$0</span></div>
+                                    <div class="flex justify-between text-[10px]"><span class="text-slate-500">Deductible</span><span id="detail-deductible" class="font-bold text-white mono-numbers">$0</span></div>
+                                </div>
+                            </div>
+                            <!-- SNAP Preview -->
+                            <div id="card-snap" class="card-container p-4 flex flex-col border-l-4">
+                                <span class="label-std mb-1">SNAP Monthly</span>
+                                <div id="snap-result-value" class="text-xl font-black text-emerald-400 mono-numbers tracking-tight">$0</div>
+                                <div class="mt-auto pt-4">
+                                    <div class="flex justify-between mb-1"><span class="label-std">Shelter Cost</span><span data-label="shelterCosts" class="text-[10px] font-bold text-white mono-numbers">$700</span></div>
+                                    <input type="range" data-benefit-id="shelterCosts" min="0" max="5000" step="50" value="700" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-400">
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="pt-8 pb-4 text-center">
+                <div class="pt-8 text-center">
                     <p class="text-[10px] text-slate-500 leading-relaxed max-w-2xl mx-auto italic">
-                        Disclaimer: The data on this page is for reference and sandbox simulation only. 
-                        Adjusting the <strong>MAGI Sandbox</strong> slider above does not modify your actual investment data or 
-                        influence calculations in other modules of this application.
+                        The <strong>MAGI Sandbox</strong> tests your current household size. 
+                        Long-term simulations in the Burndown tab will automatically adjust your household size as dependents age out.
                     </p>
                 </div>
             </div>
@@ -104,12 +98,60 @@ export const benefits = {
     attachListeners: () => {
         const container = document.getElementById('benefits-module');
         if (!container) return;
-        container.querySelectorAll('input').forEach(input => {
+        
+        container.querySelectorAll('input:not([data-id="depYear"])').forEach(input => {
             input.oninput = () => {
                 benefits.refresh();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
+
+        document.getElementById('btn-add-dependent').onclick = () => {
+            benefits.addDependent();
+            benefits.refresh();
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
+        };
+
+        container.addEventListener('click', (e) => {
+            const btn = e.target.closest('[data-action="remove-dependent"]');
+            if (btn) {
+                btn.closest('.dependent-item').remove();
+                benefits.refresh();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            }
+        });
+
+        container.addEventListener('input', (e) => {
+            if (e.target.dataset.id === 'depYear') {
+                benefits.refresh();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
+            }
+        });
+    },
+
+    addDependent: (data = {}) => {
+        const list = document.getElementById('dependents-list');
+        if (!list) return;
+        
+        const item = document.createElement('div');
+        item.className = 'dependent-item flex items-center gap-3 p-3 bg-black/20 rounded-xl border border-white/5';
+        
+        const currentYear = new Date().getFullYear();
+        const yearVal = data.independenceYear || (currentYear + 10);
+        const nameVal = data.name || 'Child';
+
+        item.innerHTML = `
+            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400"><i class="fas fa-baby"></i></div>
+            <div class="flex-grow">
+                <input data-id="depName" type="text" value="${nameVal}" placeholder="Name" class="bg-transparent border-none outline-none font-bold text-white text-xs uppercase tracking-tight w-full placeholder:text-slate-700">
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Turns 19 / Independent in:</span>
+                    <input data-id="depYear" type="number" value="${yearVal}" class="bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-[10px] font-bold text-blue-400 mono-numbers outline-none w-16">
+                </div>
+            </div>
+            <button data-action="remove-dependent" class="text-slate-600 hover:text-red-400 transition-colors p-1"><i class="fas fa-times text-xs"></i></button>
+        `;
+        list.appendChild(item);
     },
 
     refresh: () => {
@@ -126,49 +168,24 @@ export const benefits = {
         const isExpanded = stateMeta?.expanded !== false; 
         
         const ratio = data.unifiedIncome / fpl2026;
-        const sliderMax = 150000;
         const medRatio = data.isPregnant ? 1.95 : 1.38;
-        const hmpRatio = 1.60;
         const silverRatio = 2.50;
-        const goldRatio = 4.00;
-
-        const medLimit = medRatio * fpl2026;
-        const hmpLimit = hmpRatio * fpl2026;
-        const silverLimit = silverRatio * fpl2026;
-        const goldLimit = goldRatio * fpl2026;
 
         let expectedContributionPct = 0;
         if (ratio <= 1.5) expectedContributionPct = 0;
         else if (ratio <= 2.0) expectedContributionPct = 0.00 + ((ratio - 1.5) / 0.5) * 0.02;
         else if (ratio <= 2.5) expectedContributionPct = 0.02 + ((ratio - 2.0) / 0.5) * 0.02;
-        else if (ratio <= 3.0) expectedContributionPct = 0.04 + ((ratio - 2.5) / 0.5) * 0.02;
-        else if (ratio <= 4.0) expectedContributionPct = 0.06 + ((ratio - 3.0) / 1.0) * 0.025;
         else expectedContributionPct = 0.085;
 
         let dynamicPremium = 0;
         if (ratio > medRatio) dynamicPremium = (data.unifiedIncome * expectedContributionPct) / 12;
-
-        const setWidth = (id, start, end) => {
-            const el = document.getElementById(id);
-            if (!el) return;
-            const width = Math.max(0, (Math.min(sliderMax, end) - start) / sliderMax * 100);
-            el.style.width = `${width}%`;
-        };
-
-        setWidth('seg-medicaid', 0, medLimit);
-        setWidth('seg-hmp', medLimit, hmpLimit);
-        setWidth('seg-silver', hmpLimit, silverLimit);
-        setWidth('seg-gold', silverLimit, goldLimit);
-
-        const marker = document.getElementById('health-marker');
-        if (marker) marker.style.left = `${Math.min(99, (data.unifiedIncome / sliderMax) * 100)}%`;
 
         const setHealth = (main, sub, prem, ded, colorClass, borderColor) => {
             const mainDisp = document.getElementById('health-main-display');
             const globalMainDisp = document.getElementById('sum-health-plan');
             
             mainDisp.textContent = main;
-            mainDisp.className = `text-2xl font-black tracking-tighter ${colorClass}`;
+            mainDisp.className = `text-xl font-black tracking-tight ${colorClass}`;
             if (globalMainDisp) {
                 globalMainDisp.textContent = main;
                 globalMainDisp.className = `text-4xl font-black uppercase tracking-tight transition-colors ${colorClass}`;
@@ -182,12 +199,10 @@ export const benefits = {
 
         if (ratio <= medRatio) {
             if (isExpanded) setHealth("Platinum", "100% Full Coverage", "$0", "$0", "text-emerald-400", "rgba(52, 211, 153, 0.4)");
-            else setHealth("PRIVATE (No Gov Coverage)", "Non-Expansion State", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
+            else setHealth("Private (No Subsidy)", "State Not Expanded", math.toCurrency(dynamicPremium || 400), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.1)");
         }
-        else if (ratio <= hmpRatio) setHealth("HMP+", "Small Copay", "$20", "Low", "text-emerald-300", "rgba(110, 231, 183, 0.3)");
-        else if (ratio <= silverRatio) setHealth("Silver CSR", "Subsidized", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.3)");
-        else if (ratio <= goldRatio) setHealth("Gold Plan", "Subsidy Cap", math.toCurrency(dynamicPremium), "$1500", "text-amber-400", "rgba(251, 191, 36, 0.3)");
-        else setHealth("PRIVATE (No Gov Coverage)", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.05)");
+        else if (ratio <= silverRatio) setHealth("Silver CSR", "High Subsidy", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "rgba(96, 165, 250, 0.4)");
+        else setHealth("Standard ACA", "Full Cost", math.toCurrency(dynamicPremium), "$4000+", "text-slate-500", "rgba(255, 255, 255, 0.1)");
 
         const estimatedBenefit = engine.calculateSnapBenefit(data.unifiedIncome, data.hhSize, data.shelterCosts, data.hasSUA, data.isDisabled, window.currentData?.assumptions?.state || 'Michigan');
         const snapRes = document.getElementById('snap-result-value');
@@ -197,34 +212,54 @@ export const benefits = {
         const snapVal = math.toCurrency(estimatedBenefit);
         snapRes.textContent = snapVal;
         if (globalSnapRes) globalSnapRes.textContent = snapVal;
-
-        if (document.getElementById('snap-hh-display')) document.getElementById('snap-hh-display').textContent = `fam size of ${data.hhSize}`;
         
         if (estimatedBenefit <= 0) {
-            snapRes.className = "text-3xl font-black text-slate-700 mono-numbers tracking-tighter leading-tight";
-            snapCard.style.borderColor = "rgba(255, 255, 255, 0.05)";
+            snapRes.className = "text-xl font-black text-slate-700 mono-numbers tracking-tight";
+            snapCard.style.borderColor = "rgba(255, 255, 255, 0.1)";
         } else {
-            snapRes.className = "text-3xl font-black text-emerald-400 mono-numbers tracking-tighter leading-tight";
+            snapRes.className = "text-xl font-black text-emerald-400 mono-numbers tracking-tight";
             snapCard.style.borderColor = "rgba(52, 211, 153, 0.4)";
         }
     },
 
     scrape: () => {
         const c = document.getElementById('benefits-module');
-        if (!c) return { unifiedIncome: 0, shelterCosts: 0, hhSize: window.currentData?.benefits?.hhSize || 1 };
+        if (!c) return { unifiedIncome: 0, dependents: [] };
+        
+        const deps = Array.from(c.querySelectorAll('.dependent-item')).map(item => ({
+            name: item.querySelector('[data-id="depName"]').value,
+            independenceYear: item.querySelector('[data-id="depYear"]').value
+        }));
+
         const get = (id, bool = false) => {
             const el = c.querySelector(`[data-benefit-id="${id}"]`);
             return el ? (bool ? el.checked : parseFloat(el.value) || 0) : (bool ? false : 0);
         };
-        const hhSize = parseFloat(document.querySelector('[data-id="hhSize"]')?.value || window.currentData?.benefits?.hhSize || 1);
-        return { hhSize, unifiedIncome: get('unifiedIncome'), shelterCosts: get('shelterCosts'), hasSUA: get('hasSUA', true), isDisabled: get('isDisabled', true), isPregnant: get('isPregnant', true) };
+
+        const filingStatus = window.currentData?.assumptions?.filingStatus || 'Single';
+        const hhSize = 1 + (filingStatus === 'Married Filing Jointly' ? 1 : 0) + deps.length;
+
+        return { 
+            hhSize, 
+            unifiedIncome: get('unifiedIncome'), 
+            shelterCosts: get('shelterCosts'), 
+            hasSUA: get('hasSUA', true), 
+            isPregnant: get('isPregnant', true),
+            dependents: deps
+        };
     },
 
     load: (data) => {
         if (!data) return;
         const c = document.getElementById('benefits-module');
         if (!c) return;
+        
+        const list = document.getElementById('dependents-list');
+        if (list) list.innerHTML = '';
+        (data.dependents || []).forEach(d => benefits.addDependent(d));
+
         Object.entries(data).forEach(([key, val]) => {
+            if (key === 'dependents') return;
             const el = c.querySelector(`[data-benefit-id="${key}"]`);
             if (el) el[el.type === 'checkbox' ? 'checked' : 'value'] = val;
         });

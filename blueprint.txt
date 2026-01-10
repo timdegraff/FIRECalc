@@ -7,8 +7,10 @@ TO DO LIST
 - [x] Implement "Cash Ceiling" optimization in Burndown to prevent over-selling high-basis stock.
 - [x] Fix Brave/Safari login loops using signInWithRedirect and session-storage handshake.
 - [x] Sync "Nominal vs Real" toggles across Desktop and Mobile views.
-- [x] Align Gross Amount and Growth % in Income Cards.
-- [x] Replace non-taxable checkbox with "Non-Taxable Until (Year)" input.
+- [x] Implement "Automatic Surplus Recycling" to prevent wealth leakage in strategy years.
+- [x] Implement "Smart HELOC" logic (Auto-interest servicing + principal paydown).
+- [x] Implementation: "Strategy Personas" (Platinum Hunter vs Subsidized Bridge vs Unconstrained).
+- [x] Implementation: "Dynamic Household Size" (Kids aging out of FPL calculations).
 - [ ] Add "Net Income" preview to Income cards (Gross - Taxes - 401k - Match).
 - [ ] Implement "Educational Needs" section in Budget for 529 drawdown tracking.
 
@@ -17,8 +19,6 @@ PROJECT OVERVIEW: FIRECALC RETIREMENT PLANNER
 ================================================================================
 FIRECalc is a high-fidelity financial architecture tool designed for precision 
 planning, specifically optimized for the 2026 Michigan tax/benefit landscape. 
-It focuses on MAGI (Modified Adjusted Gross Income) manipulation to maximize 
-state benefits while simulating complex retirement bridges (72t/SEPP).
 
 --------------------------------------------------------------------------------
 CORE PHILOSOPHY & UI PREFERENCES
@@ -37,62 +37,17 @@ CORE PHILOSOPHY & UI PREFERENCES
     - Yellow (#eab308): Metals (Gold).
     - Indigo (#6366f1): Real Estate.
     - Rose (#fb7185): 529 Plan.
-    * NOTE: All Liabilities/Debt items must use Text-Red-400 or Text-Pink-400.
-3.  AUTH & COMPATIBILITY: 
-    - Uses Firebase Auth with Google Provider.
-    - Brave/Safari Safeguard: Uses `fc_redirect_active` sessionStorage flag to 
-      manage sign-in redirect handshakes and prevent infinite login loops.
-    - Version Control: Application tracks `APP_VERSION` to force clean reloads.
-
---------------------------------------------------------------------------------
-MOBILE ARCHITECTURE
---------------------------------------------------------------------------------
-1.  DETECTION: Redirect logic in index.html for viewport < 768px.
-2.  NAVIGATION: Fixed 6-tab bottom bar (Assets, Income, Budget, More, Burndown, Chart).
-3.  INPUTS: Global 16px font-size enforcement to bypass iOS auto-zoom behavior.
-4.  INTERACTIONS: Swipe-to-delete logic implemented for list items.
-5.  BURNDOWN: Vertical card-based layout with horizontal table for detailed views.
-
---------------------------------------------------------------------------------
-SPECIFIC USER PREFERENCES & ENGINE RULES
---------------------------------------------------------------------------------
-1.  PROJECTION TABLE:
-    - granularity: Annual for years 1-10, then 5-year steps to age 100.
-2.  BENEFITS LOGIC:
-    - Healthcare: Uses projected 2026 FPL ($16,060 for size 1 + $5,650/extra).
-    - Medicaid Ceiling: 138% FPL (Standard) or 195% FPL (Pregnant).
-    - SNAP: Includes SUA ($680) and standard deductions scaled by inflation.
-3.  TAX EFFICIENCY (EFF %):
-    - Roth/529: 100%
-    - Pre-Tax: 1 - (22% Fed + State Rate)
-    - Taxable: Calculated via Gain Ratio * (15% CapGains + State Rate).
 
 --------------------------------------------------------------------------------
 BURNDOWN ENGINE & DECUMULATION LOGIC
 --------------------------------------------------------------------------------
-A dual-loop sequential simulator:
-
-1.  CASH TARGETING: Calculates Budget + Taxes - Fixed Income - SNAP.
-2.  LOOP 1 (MAGI HARVESTING): Withdraws from taxable/pre-tax assets to reach 
-    the MAGI target (Platinum/Silver). 
-    - OPTIMIZATION: Stops harvesting immediately if cash needs are met, even 
-      if the MAGI target hasn't been reached (The "Cash Ceiling").
-3.  LOOP 2 (SHORTFALL): If Loop 1 failed to raise enough cash, it drains 
-    accounts in strict priority order regardless of tax impact.
-4.  ORDER: Cash -> Taxable -> Roth Basis -> 401k -> Crypto -> Metals -> Roth Gains.
-
---------------------------------------------------------------------------------
-PRE-POPULATED INITIAL DATA (CONSISTENCY REFERENCE)
---------------------------------------------------------------------------------
-- Assumptions: Age 40, Retire 45, SS Start 62, SS $3,000/mo. 
-- Growth: Stock 10%, Crypto 10%, Metals 8%, RE 3.5%, Inflation 3%.
-- Investments:
-    - Emergency Fund (Cash): $25,000
-    - Vanguard 401k (Pre-Tax): $300,000 (Basis: $200k)
-    - Roth IRA (Post-Tax): $200,000 (Basis: $150k)
-- Real Estate: Primary Home $450k (Mortgage: $250k, Principal: $900/mo).
-- Income: Primary Salary $175,000 (3% growth, 6% personal contrib, 4% match).
-- Budget Expenses: 
-    - Mortgage $2,000, Cars $1,000, Groceries $1,000, Utilities $400, Discretionary $2,000.
-- Benefits: Household size 5, Shelter costs $2,000.
+1.  DYNAMIC HOUSEHOLD SIZE: The engine checks the simulation year against 
+    "Dependent Independence Dates." Household size (hhSize) decreases over time, 
+    lowering the FPL (Federal Poverty Level) floors annually.
+2.  STRATEGY PERSONAS:
+    - MAX_SUBSIDY: Pulls to hit 138% FPL (Medicaid/SNAP max).
+    - SUBSIDIZED_BRIDGE: Pulls to hit 250% FPL (Silver CSR sweet spot).
+    - UNCONSTRAINED: No strategic harvesting; pulls for budget only.
+3.  SURPLUS RECYCLING: Strategic "over-pulls" are automatically applied to 
+    HELOC debt, then recycled into the liquid Cash bucket.
 ================================================================================
