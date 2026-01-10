@@ -35,7 +35,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Retirement Age</label>
                             <div class="flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/10">
                                 <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
-                                <span id="label-top-retire-age" class="text-blue-400 font-black mono-numbers text-sm w-6 text-center">--</span>
+                                <input type="number" id="input-retire-age-direct" class="bg-transparent border-none text-blue-400 font-black mono-numbers text-sm w-10 text-center outline-none" value="65">
                                 <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
                                 <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="hidden"> 
                             </div>
@@ -112,7 +112,7 @@ export const burndown = {
                         <input type="range" id="input-cash-reserve" min="0" max="100000" step="1000" value="25000" class="input-range w-full">
                     </div>
                     
-                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex items-center justify-between gap-4">
+                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 items-center justify-between gap-4 hidden md:flex">
                         <button id="toggle-burndown-real" class="flex-grow px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-all">
                             Nominal $
                         </button>
@@ -147,8 +147,8 @@ export const burndown = {
                 }
                 if (id === 'input-top-retire-age') {
                     const val = parseInt(el.value);
-                    const lbl = document.getElementById('label-top-retire-age');
-                    if (lbl) lbl.textContent = val;
+                    const directInp = document.getElementById('input-retire-age-direct');
+                    if (directInp) directInp.value = val;
                     
                     // Master Sync: Update global data and Assumptions UI
                     if (window.currentData?.assumptions) {
@@ -169,6 +169,30 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
+
+        // Specific listener for direct typing in the retirement age input
+        const directAgeInp = document.getElementById('input-retire-age-direct');
+        if (directAgeInp) {
+            // Recalculate only on Enter or Blur (commit)
+            directAgeInp.onchange = (e) => {
+                let val = parseInt(e.target.value);
+                if (isNaN(val)) val = lastUsedRetirementAge;
+                val = Math.max(30, Math.min(80, val));
+                e.target.value = val;
+                
+                const slider = document.getElementById('input-top-retire-age');
+                if (slider) {
+                    slider.value = val;
+                    slider.dispatchEvent(new Event('input'));
+                }
+            };
+            
+            directAgeInp.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    e.target.blur();
+                }
+            };
+        }
 
         const personaContainer = document.getElementById('persona-selector');
         if (personaContainer) {
@@ -312,8 +336,8 @@ export const burndown = {
         const slider = document.getElementById('input-top-retire-age');
         if (slider) {
             slider.value = lastUsedRetirementAge;
-            const lbl = document.getElementById('label-top-retire-age');
-            if (lbl) lbl.textContent = lastUsedRetirementAge;
+            const directInp = document.getElementById('input-retire-age-direct');
+            if (directInp) directInp.value = lastUsedRetirementAge;
         }
 
         const config = burndown.scrape(), inflation = (data.assumptions?.inflation || 3) / 100;
@@ -369,7 +393,15 @@ export const burndown = {
             simDebts.forEach(d => d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12));
             let baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
             baseBudget += (bal['heloc'] * helocInterestRate);
-            let factor = isRet ? (age < 50 ? (assumptions.slowGoFactor || 1.0) : (age < 80 ? (assumptions.midGoFactor || 0.9) : (assumptions.noGoFactor || 0.8))) : 1.0;
+            
+            // New Retirement Phase Logic: Go-Go (<60), Slow-Go (60-80), No-Go (80+)
+            let factor = 1.0;
+            if (isRet) {
+                if (age < 60) factor = (assumptions.slowGoFactor || 1.0); // slowGoFactor key is repurposed for Go-Go
+                else if (age < 80) factor = (assumptions.midGoFactor || 0.9);
+                else factor = (assumptions.noGoFactor || 0.8);
+            }
+            
             const targetBudget = baseBudget * factor;
             let floorOrdIncome = 0, floorTotalIncome = 0, pretaxDed = 0;
             (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {

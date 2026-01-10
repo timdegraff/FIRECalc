@@ -99,13 +99,23 @@ function attachGlobalListeners() {
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (btn && btn.dataset.step) {
-            const container = btn.closest('.relative') || btn.closest('.removable-item') || btn.closest('.grid');
+            const container = btn.closest('.relative') || btn.closest('.removable-item') || btn.closest('.grid') || btn.closest('.space-y-4') || btn.closest('.space-y-6');
             const input = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
             if (input) {
-                const currentVal = parseFloat(input.value) || 0;
+                const currentVal = input.dataset.type === 'currency' ? math.fromCurrency(input.value) : (parseFloat(input.value) || 0);
                 const step = parseFloat(input.step) || 0.5;
                 const newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
-                input.value = newVal.toFixed(parseInt(input.dataset.decimals) || 0);
+                
+                if (input.dataset.type === 'currency') {
+                    input.value = math.toCurrency(newVal);
+                } else {
+                    input.value = newVal.toFixed(parseInt(input.dataset.decimals) || 0);
+                }
+                
+                // Sync linked slider if exists
+                const slider = container.querySelector(`input[type="range"][data-id="${btn.dataset.target}"]`);
+                if (slider) slider.value = newVal;
+
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }
             return;
@@ -156,6 +166,19 @@ function attachGlobalListeners() {
         const target = e.target;
         const dataId = target.dataset.id;
 
+        // Sync Slider -> Number Input
+        if (target.type === 'range' && dataId) {
+            const container = target.closest('.space-y-4') || target.closest('.space-y-6') || target.closest('.grid');
+            const numInput = container.querySelector(`input:not([type="range"])[data-id="${dataId}"]`);
+            if (numInput) {
+                if (numInput.dataset.type === 'currency') {
+                    numInput.value = math.toCurrency(parseFloat(target.value));
+                } else {
+                    numInput.value = parseFloat(target.value).toFixed(parseInt(numInput.dataset.decimals) || 0);
+                }
+            }
+        }
+
         // Handle Monthly <-> Annual sync for Savings and Expenses
         if (dataId === 'monthly' || dataId === 'annual') {
             const row = target.closest('#budget-savings-rows tr, #budget-expenses-rows tr');
@@ -182,7 +205,7 @@ function attachGlobalListeners() {
             if (display) display.textContent = math.toCurrency(equity);
         }
 
-        if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
+        if (target.closest('.input-base, .input-range, .benefit-slider, .mobile-slider') || target.closest('input[data-id]')) {
             const incomeCard = target.closest('#income-cards .removable-item');
             if (incomeCard) {
                 checkIrsLimits(incomeCard);
@@ -192,12 +215,12 @@ function attachGlobalListeners() {
             if (dataId === 'retirementAge') {
                 const val = parseFloat(target.value);
                 const burndownSlider = document.getElementById('input-top-retire-age');
-                const burndownLabel = document.getElementById('label-top-retire-age');
+                const burndownDirectInput = document.getElementById('input-retire-age-direct');
                 if (burndownSlider) burndownSlider.value = val;
-                if (burndownLabel) burndownLabel.textContent = val;
+                if (burndownDirectInput) burndownDirectInput.value = val;
                 
                 // If we are in the burndown tab, run it
-                if (document.querySelector('[data-tab="burndown"]').classList.contains('active')) {
+                if (document.querySelector('[data-tab="burndown"]')?.classList.contains('active')) {
                     burndown.run();
                 }
             }
@@ -335,26 +358,30 @@ window.createAssumptionControls = (data) => {
     const a = data.assumptions || assumptions.defaults;
     const isAdv = !!a.advancedGrowth;
 
-    const renderField = (label, id, value, type = 'number', colorClass = 'text-white', decimals = "1") => `
-        <label class="block space-y-1.5">
-            <span class="label-std">${label}</span>
-            <input data-id="${id}" data-decimals="${decimals}" type="${type}" value="${value}" class="input-base w-full ${colorClass}">
-        </label>
-    `;
-
-    const renderCurrencyField = (label, id, value, colorClass = 'text-teal-400') => `
-        <label class="block space-y-1.5">
-            <span class="label-std">${label}</span>
-            <input data-id="${id}" data-type="currency" type="text" value="${math.toCurrency(value)}" class="input-base w-full font-bold mono-numbers ${colorClass}">
-        </label>
+    const renderComplexField = (label, id, value, min, max, step, colorClass, decimals = "1", isCurrency = false, isPercent = false) => `
+        <div class="space-y-4">
+            <div class="flex justify-between items-center h-4">
+                <label class="label-std ${colorClass}">${label}</label>
+                <div class="w-28">
+                    ${isCurrency ? 
+                        templates.helpers.renderStepper(id, value, `text-right ${colorClass}`, "0", isCurrency, step) :
+                        (isPercent ? 
+                            templates.helpers.renderStepper(id, value * 100, `text-center ${colorClass}`, "0", false, step * 100) :
+                            templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, decimals, false, step)
+                        )
+                    }
+                </div>
+            </div>
+            <input type="range" data-id="${id}" min="${min}" max="${max}" step="${step}" value="${value}" class="input-range w-full">
+        </div>
     `;
 
     const renderAdvancedAPYRow = (label, prefix, colorClass) => {
         if (!isAdv) {
-            return renderField(label, `${prefix}Growth`, a[`${prefix}Growth`], "number", colorClass);
+            return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass);
         }
         return `
-            <div class="col-span-2 space-y-2 border-l-2 border-white/5 pl-4 py-1">
+            <div class="col-span-1 md:col-span-2 lg:col-span-1 space-y-4 border-l-2 border-white/5 pl-4 py-1">
                 <div class="flex items-center justify-between">
                     <span class="label-std ${colorClass}">${label} (Phased)</span>
                 </div>
@@ -378,50 +405,21 @@ window.createAssumptionControls = (data) => {
 
     container.innerHTML = `
         <!-- Card 1: Household & Timing -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-blue-500/20 space-y-6">
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-blue-500/20 space-y-8">
             <div class="flex items-center gap-3 border-b border-white/5 pb-4">
                 <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
                     <i class="fas fa-clock text-xs"></i>
                 </div>
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Timing</h3>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                ${renderField("Current Age", "currentAge", a.currentAge, "number", "text-white", "0")}
-                ${renderField("Retire Age", "retirementAge", a.retirementAge, "number", "text-blue-400", "0")}
-                ${renderField("SS Start Age", "ssStartAge", a.ssStartAge, "number", "text-white", "0")}
-                ${renderCurrencyField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly)}
-            </div>
+            ${renderComplexField("Current Age", "currentAge", a.currentAge, 18, 90, 1, "text-white", "0")}
+            ${renderComplexField("Retire Age", "retirementAge", a.retirementAge, 30, 80, 1, "text-blue-400", "0")}
+            ${renderComplexField("SS Start Age", "ssStartAge", a.ssStartAge, 62, 72, 1, "text-white", "0")}
+            ${renderComplexField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly, 0, 8000, 100, "text-teal-400", "0", true)}
         </div>
 
-        <!-- Card 2: Tax Configuration -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-teal-500/20 space-y-6">
-            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
-                <div class="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400">
-                    <i class="fas fa-file-invoice-dollar text-xs"></i>
-                </div>
-                <h3 class="text-sm font-black text-white uppercase tracking-widest">Tax Configuration</h3>
-            </div>
-            <div class="space-y-4">
-                <label class="block space-y-1.5">
-                    <span class="label-std">Filing Status</span>
-                    <select data-id="filingStatus" class="input-base w-full font-bold">
-                        <option value="Single" ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
-                        <option value="Married Filing Jointly" ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
-                        <option value="Head of Household" ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
-                    </select>
-                </label>
-                <label class="block space-y-1.5">
-                    <span class="label-std">State of Residence</span>
-                    <select data-id="state" class="input-base w-full font-bold">
-                        ${Object.keys(stateTaxRates).sort().map(s => `<option value="${s}" ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
-                    </select>
-                </label>
-                ${renderField("LTCG Tax Rate (%)", "ltcgRate", a.ltcgRate || 15, "number", "text-teal-400")}
-            </div>
-        </div>
-
-        <!-- Card 3: Market & Inflation -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-orange-500/20 space-y-6">
+        <!-- Card 2: Market & Inflation -->
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-orange-500/20 space-y-8">
             <div class="flex items-center justify-between border-b border-white/5 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
@@ -433,35 +431,54 @@ window.createAssumptionControls = (data) => {
                     <i class="fas fa-cog text-xs"></i>
                 </button>
             </div>
-            <div class="grid grid-cols-2 gap-x-4 gap-y-6">
-                ${renderAdvancedAPYRow("Stock APY (%)", "stock", "text-blue-400")}
-                ${renderAdvancedAPYRow("Crypto APY (%)", "crypto", "text-slate-400")}
-                ${renderAdvancedAPYRow("Metals APY (%)", "metals", "text-amber-500")}
-                ${renderAdvancedAPYRow("Real Estate (%)", "realEstate", "text-indigo-400")}
-                <div class="col-span-2 pt-2 border-t border-white/5">
-                    ${renderField("Annual Inflation (%)", "inflation", a.inflation, "number", "text-red-400")}
-                </div>
+            ${renderAdvancedAPYRow("Stock APY (%)", "stock", "text-blue-400")}
+            ${renderAdvancedAPYRow("Crypto APY (%)", "crypto", "text-slate-400")}
+            ${renderAdvancedAPYRow("Metals APY (%)", "metals", "text-amber-500")}
+            ${renderComplexField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, 0, 10, 0.1, "text-indigo-400")}
+            <div class="pt-4 border-t border-white/5">
+                ${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400")}
             </div>
         </div>
 
-        <!-- Card 4: Phase Multipliers -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-purple-500/20 space-y-6">
+        <!-- Card 3: Tax & Phases -->
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-purple-500/20 space-y-8">
             <div class="flex items-center gap-3 border-b border-white/5 pb-4">
                 <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
                     <i class="fas fa-walking text-xs"></i>
                 </div>
-                <h3 class="text-sm font-black text-white uppercase tracking-widest">Retirement Phase Factors</h3>
+                <h3 class="text-sm font-black text-white uppercase tracking-widest">Tax & Lifestyle Phases</h3>
             </div>
-            <div class="grid grid-cols-3 gap-3">
-                ${renderField("Slow-Go", "slowGoFactor", a.slowGoFactor || 1.0, "number", "text-purple-400")}
-                ${renderField("Mid-Go", "midGoFactor", a.midGoFactor || 0.9, "number", "text-purple-400")}
-                ${renderField("No-Go", "noGoFactor", a.noGoFactor || 0.8, "number", "text-purple-400")}
+            
+            <div class="space-y-4">
+                <label class="block space-y-1.5">
+                    <span class="label-std">State of Residence</span>
+                    <select data-id="state" class="input-base w-full font-bold">
+                        ${Object.keys(stateTaxRates).sort().map(s => `<option value="${s}" ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+                </label>
+                <label class="block space-y-1.5">
+                    <span class="label-std">Filing Status</span>
+                    <select data-id="filingStatus" class="input-base w-full font-bold">
+                        <option value="Single" ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
+                        <option value="Married Filing Jointly" ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
+                        <option value="Head of Household" ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
+                    </select>
+                </label>
             </div>
-            <p class="text-[9px] text-slate-500 italic text-center font-medium">Multipliers applied to your baseline budget during different stages of retirement.</p>
+
+            <div class="space-y-6 pt-4 border-t border-white/5">
+                <div class="space-y-1 mb-2">
+                    <p class="text-[10px] font-black text-white uppercase tracking-widest">Spend Multipliers (% of Budget)</p>
+                    <p class="text-[9px] text-slate-500 italic leading-relaxed">Simulates lifestyle shifts: high activity (Go-Go), moderate (Slow), and essential focus (No-Go).</p>
+                </div>
+                ${renderComplexField("Go-Go (Age 30-60)", "slowGoFactor", a.slowGoFactor || 1.0, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+                ${renderComplexField("Slow-Go (Age 60-80)", "midGoFactor", a.midGoFactor || 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+                ${renderComplexField("No-Go (Age 80+)", "noGoFactor", a.noGoFactor || 0.8, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+            </div>
         </div>
     `;
 
-    // Re-bind formatters to new elements
+    // Re-bind formatters
     container.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
     container.querySelectorAll('input[type="number"]').forEach(formatter.bindNumberEventListeners);
 };

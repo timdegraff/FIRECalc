@@ -149,7 +149,11 @@ function scrapeData() {
             else if (el.dataset.type === 'currency') aObj[key] = math.fromCurrency(el.value);
             else if (el.tagName === 'SELECT') aObj[key] = el.value;
             else {
-                const val = parseFloat(el.value);
+                let val = parseFloat(el.value);
+                // Special case for Spend Multipliers which are percentages in UI
+                if (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(key)) {
+                    val = val / 100;
+                }
                 aObj[key] = isNaN(val) ? el.value : val;
             }
         });
