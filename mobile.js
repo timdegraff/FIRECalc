@@ -566,6 +566,7 @@ function renderTab() {
     }
     if (currentTab === 'benefits') { benefits.init(); benefits.load(window.currentData.benefits); }
     if (currentTab === 'burndown') {
+        burndown.init();
         const dial = document.getElementById('input-strategy-dial'); if (dial && window.currentData.burndown?.strategyDial !== undefined) { dial.value = window.currentData.burndown.strategyDial; const val = parseInt(dial.value); document.getElementById('mobile-strategy-status').textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Private"); }
         const retireInp = document.getElementById('input-top-retire-age'); if (retireInp && window.currentData.assumptions?.retirementAge) { retireInp.value = window.currentData.assumptions.retirementAge; document.getElementById('label-top-retire-age').textContent = window.currentData.assumptions.retirementAge; retireInp.oninput = (e) => { window.currentData.assumptions.retirementAge = parseInt(e.target.value); document.getElementById('label-top-retire-age').textContent = e.target.value; burndown.run(); if(window.debouncedAutoSave) window.debouncedAutoSave(); } }
         burndown.run(); 

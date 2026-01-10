@@ -143,10 +143,12 @@ export const burndown = {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
                 if (id === 'input-cash-reserve') {
-                    document.getElementById('label-cash-reserve').textContent = math.toCurrency(parseInt(el.value));
+                    const lbl = document.getElementById('label-cash-reserve');
+                    if (lbl) lbl.textContent = math.toCurrency(parseInt(el.value));
                 }
                 if (id === 'input-top-retire-age') {
-                    document.getElementById('label-top-retire-age').textContent = el.value;
+                    const lbl = document.getElementById('label-top-retire-age');
+                    if (lbl) lbl.textContent = el.value;
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualInput = document.getElementById('input-manual-budget');
@@ -407,8 +409,11 @@ export const burndown = {
                 if (realEndNW >= retYear.netWorth * 0.95) { preservationAge = a; break; }
             }
         }
-        document.getElementById('card-preservation-val').textContent = preservationAge;
-        document.getElementById('card-preservation-sub').textContent = `FLAT REAL WEALTH UNTIL AGE 100`;
+        
+        const preservationValEl = document.getElementById('card-preservation-val');
+        const preservationSubEl = document.getElementById('card-preservation-sub');
+        if (preservationValEl) preservationValEl.textContent = preservationAge;
+        if (preservationSubEl) preservationSubEl.textContent = `FLAT REAL WEALTH UNTIL AGE 100`;
 
         let low = 0, high = 2500000, bestBudget = 0;
         for (let i = 0; i < 30; i++) {
