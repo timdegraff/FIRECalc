@@ -60,7 +60,7 @@ export const PROFILE_25_SINGLE = {
     ],
     realEstate: [],
     income: [
-        { name: 'Salary', amount: 95000, increase: 5, contribution: 10, match: 3, bonusPct: 8, isMonthly: false, incomeExpenses: 0, contribOnBonus: true }
+        { name: 'Salary', amount: 120000, increase: 5, contribution: 10, match: 3, bonusPct: 8, isMonthly: false, incomeExpenses: 0, contribOnBonus: true }
     ],
     debts: [
         { name: 'Student Loans', balance: 12000, principalPayment: 250 }
