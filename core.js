@@ -252,26 +252,56 @@ function updateCostBasisVisibility(row) {
 
 window.updateSidebarChart = (data) => {
     if (!data) return;
-    const totals = {}; let totalSum = 0;
+    const totals = {}; 
+    
+    // 1. Group Investments by Type
     data.investments?.forEach(i => { 
-        const v = math.fromCurrency(i.value); totals[i.type] = (totals[i.type] || 0) + v; totalSum += v; 
+        const v = math.fromCurrency(i.value); 
+        if (v !== 0) totals[i.type] = (totals[i.type] || 0) + v; 
     });
+
+    // 2. Private Equity (Options)
+    const optionsEquity = data.stockOptions?.reduce((s, x) => {
+        const shares = parseFloat(x.shares) || 0;
+        const strike = math.fromCurrency(x.strikePrice);
+        const fmv = math.fromCurrency(x.currentPrice);
+        return s + Math.max(0, (fmv - strike) * shares);
+    }, 0) || 0;
+    if (optionsEquity !== 0) totals['Stock Options'] = optionsEquity;
+
+    // 3. Real Estate Net Equity
+    const reEquity = data.realEstate?.reduce((s, r) => s + (math.fromCurrency(r.value) - math.fromCurrency(r.mortgage)), 0) || 0;
+    if (reEquity !== 0) totals['Real Estate'] = reEquity;
+
+    // 4. Other Assets Net Equity
+    const oaEquity = data.otherAssets?.reduce((s, o) => s + (math.fromCurrency(o.value) - math.fromCurrency(o.loan)), 0) || 0;
+    if (oaEquity !== 0) totals['Other'] = oaEquity;
+
+    // 5. HELOCs (Negative)
+    const helocTotal = data.helocs?.reduce((s, h) => s + math.fromCurrency(h.balance), 0) || 0;
+    if (helocTotal !== 0) totals['HELOC'] = -helocTotal;
+
+    // 6. Other Debts (Negative)
+    const debtTotal = data.debts?.reduce((s, d) => s + math.fromCurrency(d.balance), 0) || 0;
+    if (debtTotal !== 0) totals['Debt'] = -debtTotal;
+
     const legendContainer = document.getElementById('sidebar-asset-legend');
-    if (legendContainer && totalSum !== lastChartSum) {
-        lastChartSum = totalSum;
+    if (legendContainer) {
         legendContainer.innerHTML = '';
-        Object.entries(totals).forEach(([type, value]) => {
-            const item = document.createElement('div');
-            item.className = 'flex items-center justify-between gap-1 text-[9px] font-bold text-slate-400 truncate w-full pr-1';
-            item.innerHTML = `
-                <div class="flex items-center gap-1.5 truncate">
-                    <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${assetColors[type] || '#fff'}"></div>
-                    <span class="truncate">${type}</span>
-                </div>
-                <span class="text-white mono-numbers ml-auto">${math.toSmartCompactCurrency(value)}</span>
-            `;
-            legendContainer.appendChild(item);
-        });
+        Object.entries(totals)
+            .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)) // Sort by absolute magnitude
+            .forEach(([type, value]) => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between gap-1 text-[9px] font-bold text-slate-400 truncate w-full pr-1';
+                item.innerHTML = `
+                    <div class="flex items-center gap-1.5 truncate">
+                        <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${assetColors[type] || '#fff'}"></div>
+                        <span class="truncate">${type}</span>
+                    </div>
+                    <span class="text-white mono-numbers ml-auto">${math.toSmartCompactCurrency(value)}</span>
+                `;
+                legendContainer.appendChild(item);
+            });
     }
 };
 

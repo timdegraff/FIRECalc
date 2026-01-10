@@ -114,14 +114,15 @@ export const math = {
     },
     toSmartCompactCurrency: (value) => {
         if (isNaN(value) || value === null) return '$0';
+        const sign = value < 0 ? '-' : '';
         const absVal = Math.abs(value);
-        if (absVal >= 1000000000000) return '$999B';
+        if (absVal >= 1000000000000) return sign + '$999B';
         if (absVal < 1000) return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-        if (absVal < 1000000) return '$' + Math.round(absVal / 1000) + 'K';
-        if (absVal < 10000000) return '$' + (absVal / 1000000).toFixed(1) + 'M';
-        if (absVal < 1000000000) return '$' + Math.round(absVal / 1000000) + 'M';
-        if (absVal < 10000000000) return '$' + (absVal / 1000000000).toFixed(1) + 'B';
-        return '$' + Math.round(absVal / 1000000000) + 'B';
+        if (absVal < 1000000) return sign + '$' + Math.round(absVal / 1000) + 'K';
+        if (absVal < 10000000) return sign + '$' + (absVal / 1000000).toFixed(1) + 'M';
+        if (absVal < 1000000000) return sign + '$' + Math.round(absVal / 1000000) + 'M';
+        if (absVal < 10000000000) return sign + '$' + (absVal / 1000000000).toFixed(1) + 'B';
+        return sign + '$' + Math.round(absVal / 1000000000) + 'B';
     },
     fromCurrency: (value) => {
         if (typeof value === 'number') return value;

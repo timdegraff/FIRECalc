@@ -241,7 +241,18 @@ export function updateSummaries() {
     }, 0);
     const ssAtRet = (retirementAge >= ssStartAge) ? engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacRet) : 0;
     
-    set('sum-retirement-income-floor', streamsAtRet + ssAtRet);
+    const totalNominalFloor = streamsAtRet + ssAtRet;
+    set('sum-retirement-income-floor', totalNominalFloor);
+
+    // Update the Retirement Income title and sub-label
+    const retireYear = new Date().getFullYear() + yrsToRetire;
+    const titleEl = document.getElementById('label-retirement-income-title');
+    if (titleEl) titleEl.textContent = `Retirement Income in ${retireYear}`;
+
+    const totalRealFloor = totalNominalFloor / infFacRet;
+    const subEl = document.getElementById('sum-retirement-income-sub');
+    if (subEl) subEl.textContent = `${math.toCurrency(totalRealFloor)} in 2026 Dollars`;
+
     const retireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
         if (exp.remainsInRetirement === false) return sum;
         const base = math.fromCurrency(exp.annual);
