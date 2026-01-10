@@ -416,13 +416,19 @@ const ITEM_TEMPLATES = {
                     <option value="529" ${data.type === '529' ? 'selected' : ''}>529</option>
                 </select>
             </div>
-            <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-1/2 text-right bg-transparent text-emerald-400 font-black text-lg mono-numbers outline-none">
+            <div class="w-1/2 flex flex-col items-end">
+                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400/70 font-bold text-xs mono-numbers outline-none" placeholder="Monthly">
+                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-emerald-400 font-black text-lg mono-numbers outline-none" placeholder="Annual">
+            </div>
         </div>`;
     },
     expense: (data) => `
         <div class="mobile-card py-1 px-3 flex justify-between items-center">
             <input data-id="name" value="${data.name || ''}" class="bg-transparent font-bold text-white uppercase text-[9px] outline-none w-1/2" placeholder="Expense">
-            <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-1/2 text-right bg-transparent text-pink-400 font-black text-lg mono-numbers outline-none">
+            <div class="w-1/2 flex flex-col items-end">
+                <input data-id="monthly" data-type="currency" value="${math.toCurrency(data.monthly || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-pink-400 font-black text-lg mono-numbers outline-none" placeholder="Monthly">
+                <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" inputmode="decimal" class="block w-full text-right bg-transparent text-pink-400/70 font-bold text-xs mono-numbers outline-none" placeholder="Annual">
+            </div>
         </div>`
 };
 
@@ -540,12 +546,31 @@ function attachGlobal() {
         if (wrapper && wrapper.dataset.index !== undefined) {
             const arrName = wrapper.dataset.array, idx = parseInt(wrapper.dataset.index), key = input.dataset.id; let val = input.value;
             if (input.type === 'checkbox') val = input.checked; else if (input.dataset.type === 'currency') val = math.fromCurrency(val); else if (input.type === 'number') val = parseFloat(val);
+            
             if (arrName === 'budget.savings' && window.currentData.budget?.savings?.[idx]) {
                 window.currentData.budget.savings[idx][key] = val;
-                if (key === 'monthly') window.currentData.budget.savings[idx].annual = val * 12; if (key === 'annual') window.currentData.budget.savings[idx].monthly = val / 12;
+                if (key === 'monthly') {
+                    window.currentData.budget.savings[idx].annual = val * 12;
+                    const annInp = wrapper.querySelector('input[data-id="annual"]');
+                    if (annInp) { annInp.value = math.toCurrency(val * 12); formatter.updateZeroState(annInp); }
+                } 
+                if (key === 'annual') {
+                    window.currentData.budget.savings[idx].monthly = val / 12;
+                    const monInp = wrapper.querySelector('input[data-id="monthly"]');
+                    if (monInp) { monInp.value = math.toCurrency(val / 12); formatter.updateZeroState(monInp); }
+                }
             } else if (arrName === 'budget.expenses' && window.currentData.budget?.expenses?.[idx]) {
                 window.currentData.budget.expenses[idx][key] = val;
-                if (key === 'monthly') window.currentData.budget.expenses[idx].annual = val * 12; if (key === 'annual') window.currentData.budget.expenses[idx].monthly = val / 12;
+                if (key === 'monthly') {
+                    window.currentData.budget.expenses[idx].annual = val * 12;
+                    const annInp = wrapper.querySelector('input[data-id="annual"]');
+                    if (annInp) { annInp.value = math.toCurrency(val * 12); formatter.updateZeroState(annInp); }
+                } 
+                if (key === 'annual') {
+                    window.currentData.budget.expenses[idx].monthly = val / 12;
+                    const monInp = wrapper.querySelector('input[data-id="monthly"]');
+                    if (monInp) { monInp.value = math.toCurrency(val / 12); formatter.updateZeroState(monInp); }
+                }
             } else if (window.currentData[arrName] && window.currentData[arrName][idx]) window.currentData[arrName][idx][key] = val;
         }
 

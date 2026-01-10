@@ -145,6 +145,23 @@ function attachGlobalListeners() {
 
     document.body.addEventListener('input', (e) => {
         const target = e.target;
+        const dataId = target.dataset.id;
+
+        // Handle Monthly <-> Annual sync for Savings and Expenses
+        if (dataId === 'monthly' || dataId === 'annual') {
+            const row = target.closest('#budget-savings-rows tr, #budget-expenses-rows tr');
+            if (row) {
+                const otherId = dataId === 'monthly' ? 'annual' : 'monthly';
+                const otherInput = row.querySelector(`input[data-id="${otherId}"]`);
+                if (otherInput) {
+                    const currentVal = math.fromCurrency(target.value);
+                    const newVal = dataId === 'monthly' ? currentVal * 12 : currentVal / 12;
+                    otherInput.value = math.toCurrency(newVal);
+                    formatter.updateZeroState(otherInput);
+                }
+            }
+        }
+
         if (target.closest('.input-base, .input-range, .benefit-slider') || target.closest('input[data-id]')) {
             const incomeCard = target.closest('#income-cards .removable-item');
             if (incomeCard) {
