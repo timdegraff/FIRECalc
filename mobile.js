@@ -1,6 +1,6 @@
 import { onAuthStateChanged, GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
 import { auth } from './firebase-config.js';
-import { initializeData, autoSave } from './data.js';
+import { initializeData, autoSave, forceSyncData } from './data.js';
 import { logoutUser } from './auth.js';
 import { math, engine, assumptions, stateTaxRates, assetColors } from './utils.js';
 import { benefits } from './benefits.js';
@@ -458,10 +458,22 @@ function init() {
 }
 
 function attachGlobal() {
-    document.getElementById('login-btn').onclick = async () => { try { await setPersistence(auth, browserLocalPersistence); await signInWithPopup(auth, provider); } catch (error) { if(error.code !== 'auth/popup-closed-by-user') alert(error.message); } };
+    document.getElementById('login-btn').onclick = async () => { try { await setPersistence(auth, browserLocalPersistence); await signInWithPopup(auth, provider); } catch (error) { if(error.code !== 'auth/popup-blocked' || error.code !== 'auth/popup-closed-by-user') alert(error.message); } };
     const guestBtn = document.getElementById('guest-btn'); if (guestBtn) guestBtn.onclick = () => { localStorage.setItem('firecalc_guest_mode', 'true'); window.location.reload(); };
     document.getElementById('logout-btn').onclick = async () => { if (localStorage.getItem('firecalc_guest_mode') === 'true') { localStorage.removeItem('firecalc_guest_mode'); window.location.reload(); } else await logoutUser(); };
-    document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.onclick = () => { triggerHaptic(); currentTab = btn.dataset.tab; document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); renderTab(); });
+    document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.onclick = () => { 
+        triggerHaptic(); 
+        currentTab = btn.dataset.tab; 
+        document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active')); 
+        btn.classList.add('active'); 
+        
+        // Ensure data is synced before switching to computation-heavy tabs
+        if (currentTab === 'burndown' || currentTab === 'projection' || currentTab === 'benefits') {
+            forceSyncData();
+        }
+        
+        renderTab(); 
+    });
     document.body.addEventListener('input', (e) => {
         triggerHaptic(); const input = e.target;
         if (input.dataset.id && document.getElementById('m-assumptions-container') && input.closest('#m-assumptions-container')) {

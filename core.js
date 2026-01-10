@@ -1,9 +1,11 @@
 import { signInWithGoogle, logoutUser } from './auth.js';
 import { templates } from './templates.js';
-import { autoSave, updateSummaries } from './data.js';
+import { autoSave, updateSummaries, forceSyncData } from './data.js';
 import { math, engine, assetColors, assumptions, stateTaxRates } from './utils.js';
 import { formatter } from './formatter.js';
 import { projection } from './projection.js';
+import { burndown } from './burndown.js';
+import { benefits } from './benefits.js';
 
 let assetChart = null;
 let lastChartSum = 0;
@@ -437,7 +439,19 @@ export function showTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
     document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
-    if ((tabId === 'burndown' || tabId === 'projection') && window.debouncedAutoSave) window.debouncedAutoSave(); 
+    
+    // Performance optimization: Force a synchronous sync before running high-computation tabs
+    if (tabId === 'burndown' || tabId === 'projection' || tabId === 'benefits') {
+        forceSyncData();
+        
+        if (tabId === 'burndown') {
+            burndown.run();
+        } else if (tabId === 'projection') {
+            projection.run(window.currentData);
+        } else if (tabId === 'benefits') {
+            benefits.refresh();
+        }
+    }
 }
 
 window.addRow = (containerId, type, data = {}) => {

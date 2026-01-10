@@ -148,6 +148,17 @@ function scrapeData() {
     return newData;
 }
 
+/**
+ * Force a synchronous refresh of the global data state from the UI.
+ * Used before switching to tabs that depend on calculated projections.
+ */
+export function forceSyncData() {
+    const newData = scrapeData();
+    window.currentData = newData;
+    updateSummaries();
+    if(window.updateSidebarChart) window.updateSidebarChart(newData);
+}
+
 export function autoSave(updateUI = true) {
     if (window.saveTimeout) clearTimeout(window.saveTimeout);
     window.saveTimeout = setTimeout(async () => {
