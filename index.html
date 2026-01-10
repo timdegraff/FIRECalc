@@ -379,7 +379,7 @@
                     <div class="card-container p-6 flex flex-col items-center justify-center h-28">
                         <p class="label-std mb-2 text-slate-500">Est. Life Expectancy</p>
                         <p id="sum-life-exp" class="text-4xl font-black text-teal-400 mono-numbers tracking-none mb-2">0</p>
-                        <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Per SSA Table</p>
+                        <p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">SSA Table Reference</p>
                     </div>
                 </div>
 
@@ -417,14 +417,29 @@
 
             <!-- Projection -->
             <section id="tab-projection" class="tab-content hidden max-w-7xl mx-auto">
+                <!-- accumulation-only warning banner -->
+                <div class="p-5 mb-8 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 flex-shrink-0">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-black text-white uppercase tracking-widest mb-1">Accumulation View (Gross Growth)</h4>
+                        <p class="text-sm text-slate-400 leading-relaxed">
+                            This is the typical "mountain chart" seen on financial calculators. <strong>It assumes you live off nothing!</strong> 
+                            It only tracks compound growth and savings, without subtracting bills, taxes, or health costs. 
+                            Switch to the <button onclick="document.querySelector('[data-tab=\'burndown\']').click()" class="text-blue-400 font-bold hover:underline">Burndown tab</button> for a realistic survival simulation.
+                        </p>
+                    </div>
+                </div>
+
                 <div class="flex justify-between items-center mb-8 px-1">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
                             <i class="fas fa-chart-line text-sm"></i>
                         </div>
                         <div>
-                            <h2 class="text-xl font-bold text-white tracking-tight">Accumulation Projection</h2>
-                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">What you'll HAVE (Growth & Savings Only)</p>
+                            <h2 class="text-xl font-bold text-white tracking-tight">Asset Growth Projection</h2>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Compounding Power (Pre-Withdrawal)</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-4">
