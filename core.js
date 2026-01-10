@@ -99,7 +99,7 @@ function attachGlobalListeners() {
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (btn && btn.dataset.step) {
-            const container = btn.closest('.relative') || btn.closest('.removable-item');
+            const container = btn.closest('.relative') || btn.closest('.removable-item') || btn.closest('.grid');
             const input = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
             if (input) {
                 const currentVal = parseFloat(input.value) || 0;
@@ -108,6 +108,15 @@ function attachGlobalListeners() {
                 input.value = newVal.toFixed(parseInt(input.dataset.decimals) || 0);
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }
+            return;
+        }
+
+        // Handle Advanced Growth Toggle
+        if (btn && btn.id === 'toggle-advanced-growth') {
+            const isNowAdvanced = !window.currentData.assumptions.advancedGrowth;
+            window.currentData.assumptions.advancedGrowth = isNowAdvanced;
+            window.createAssumptionControls(window.currentData);
+            if (window.debouncedAutoSave) window.debouncedAutoSave();
             return;
         }
         
@@ -324,11 +333,12 @@ window.createAssumptionControls = (data) => {
     const container = document.getElementById('assumptions-container'); 
     if (!container || !data) return;
     const a = data.assumptions || assumptions.defaults;
+    const isAdv = !!a.advancedGrowth;
 
-    const renderField = (label, id, value, type = 'number', colorClass = 'text-white') => `
+    const renderField = (label, id, value, type = 'number', colorClass = 'text-white', decimals = "1") => `
         <label class="block space-y-1.5">
             <span class="label-std">${label}</span>
-            <input data-id="${id}" type="${type}" value="${value}" class="input-base w-full ${colorClass}">
+            <input data-id="${id}" data-decimals="${decimals}" type="${type}" value="${value}" class="input-base w-full ${colorClass}">
         </label>
     `;
 
@@ -338,6 +348,33 @@ window.createAssumptionControls = (data) => {
             <input data-id="${id}" data-type="currency" type="text" value="${math.toCurrency(value)}" class="input-base w-full font-bold mono-numbers ${colorClass}">
         </label>
     `;
+
+    const renderAdvancedAPYRow = (label, prefix, colorClass) => {
+        if (!isAdv) {
+            return renderField(label, `${prefix}Growth`, a[`${prefix}Growth`], "number", colorClass);
+        }
+        return `
+            <div class="col-span-2 space-y-2 border-l-2 border-white/5 pl-4 py-1">
+                <div class="flex items-center justify-between">
+                    <span class="label-std ${colorClass}">${label} (Phased)</span>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="space-y-1">
+                        <span class="text-[8px] font-black text-slate-600 uppercase">Phase 1 %</span>
+                        ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass)}
+                    </div>
+                    <div class="space-y-1">
+                        <span class="text-[8px] font-black text-slate-600 uppercase">For Yrs</span>
+                        ${templates.helpers.renderStepper(`${prefix}GrowthYears`, a[`${prefix}GrowthYears`] || 10, 'text-white', '0')}
+                    </div>
+                    <div class="space-y-1">
+                        <span class="text-[8px] font-black text-slate-600 uppercase">Then %</span>
+                        ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass)}
+                    </div>
+                </div>
+            </div>
+        `;
+    };
 
     container.innerHTML = `
         <!-- Card 1: Household & Timing -->
@@ -349,9 +386,9 @@ window.createAssumptionControls = (data) => {
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Timing</h3>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                ${renderField("Current Age", "currentAge", a.currentAge, "number", "text-white")}
-                ${renderField("Retire Age", "retirementAge", a.retirementAge, "number", "text-blue-400")}
-                ${renderField("SS Start Age", "ssStartAge", a.ssStartAge, "number", "text-white")}
+                ${renderField("Current Age", "currentAge", a.currentAge, "number", "text-white", "0")}
+                ${renderField("Retire Age", "retirementAge", a.retirementAge, "number", "text-blue-400", "0")}
+                ${renderField("SS Start Age", "ssStartAge", a.ssStartAge, "number", "text-white", "0")}
                 ${renderCurrencyField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly)}
             </div>
         </div>
@@ -385,18 +422,23 @@ window.createAssumptionControls = (data) => {
 
         <!-- Card 3: Market & Inflation -->
         <div class="p-6 bg-slate-900/40 rounded-2xl border border-orange-500/20 space-y-6">
-            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
-                <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
-                    <i class="fas fa-chart-line text-xs"></i>
+            <div class="flex items-center justify-between border-b border-white/5 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
+                        <i class="fas fa-chart-line text-xs"></i>
+                    </div>
+                    <h3 class="text-sm font-black text-white uppercase tracking-widest">Market Projections</h3>
                 </div>
-                <h3 class="text-sm font-black text-white uppercase tracking-widest">Market Projections</h3>
+                <button id="toggle-advanced-growth" class="w-8 h-8 rounded-lg ${isAdv ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-white/5 text-slate-500'} flex items-center justify-center hover:bg-orange-500/20 transition-all" title="Toggle Advanced Multi-Stage APY">
+                    <i class="fas fa-cog text-xs"></i>
+                </button>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-                ${renderField("Stock APY (%)", "stockGrowth", a.stockGrowth, "number", "text-blue-400")}
-                ${renderField("Crypto APY (%)", "cryptoGrowth", a.cryptoGrowth, "number", "text-slate-400")}
-                ${renderField("Metals APY (%)", "metalsGrowth", a.metalsGrowth, "number", "text-amber-500")}
-                ${renderField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, "number", "text-indigo-400")}
-                <div class="col-span-2">
+            <div class="grid grid-cols-2 gap-x-4 gap-y-6">
+                ${renderAdvancedAPYRow("Stock APY (%)", "stock", "text-blue-400")}
+                ${renderAdvancedAPYRow("Crypto APY (%)", "crypto", "text-slate-400")}
+                ${renderAdvancedAPYRow("Metals APY (%)", "metals", "text-amber-500")}
+                ${renderAdvancedAPYRow("Real Estate (%)", "realEstate", "text-indigo-400")}
+                <div class="col-span-2 pt-2 border-t border-white/5">
                     ${renderField("Annual Inflation (%)", "inflation", a.inflation, "number", "text-red-400")}
                 </div>
             </div>
