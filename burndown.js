@@ -181,19 +181,6 @@ export const burndown = {
         }
     },
 
-    updateTraceLog: () => {
-        const debugAgeInp = document.getElementById('input-debug-age');
-        const log = document.getElementById('burndown-trace-log');
-        if (!debugAgeInp || !log) return;
-        
-        const focusAge = parseInt(debugAgeInp.value);
-        if (simulationTrace[focusAge]) {
-            log.innerHTML = simulationTrace[focusAge].join('\n');
-        } else {
-            log.innerHTML = `No data found for age ${focusAge}. Select an age between 30 and 100.`;
-        }
-    },
-
     updateToggleStyle: (btn) => {
         if (!btn) return;
         const isMobile = window.innerWidth < 768;
@@ -210,7 +197,6 @@ export const burndown = {
     load: (data) => {
         if (data?.priority) burndown.priorityOrder = [...new Set(data.priority)];
         isRealDollars = !!data?.isRealDollars;
-        traceAgeManuallySet = !!data?.traceAgeManuallySet;
         
         const sync = (id, val, isCheck = false) => {
             const el = document.getElementById(id);
@@ -237,25 +223,23 @@ export const burndown = {
     scrape: () => ({
         priority: burndown.priorityOrder,
         strategyDial: parseInt(document.getElementById('input-strategy-dial')?.value || 33),
-        cashReserve: 25000, // Fixed default for simplicity as requested logic change removed the slider
+        cashReserve: 25000, 
         useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
         retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
-        isRealDollars,
-        traceAge: 65,
-        traceAgeManuallySet: false
+        isRealDollars
     }),
 
     assetMeta: {
-        'cash': { label: 'Cash', short: 'Cash', color: assetColors['Cash'], isTaxable: false, isMagi: false },
-        'taxable': { label: 'Taxable Brokerage', short: 'Brokerage', color: assetColors['Taxable'], isTaxable: true, isMagi: true }, 
-        'roth-basis': { label: 'Roth Basis', short: 'Roth Basis', color: assetColors['Roth IRA'], isTaxable: false, isMagi: false },
-        'heloc': { label: 'HELOC', short: 'HELOC', color: assetColors['HELOC'], isTaxable: false, isMagi: false },
-        '401k': { label: '401k/IRA', short: '401k/IRA', color: assetColors['Pre-Tax (401k/IRA)'], isTaxable: true, isMagi: true },
-        'roth-earnings': { label: 'Roth Gains', short: 'Roth Gains', color: assetColors['Roth Gains'], isTaxable: false, isMagi: true },
-        'crypto': { label: 'Crypto', short: 'Crypto', color: assetColors['Crypto'], isTaxable: true, isMagi: true },
-        'metals': { label: 'Metals', short: 'Metals', color: assetColors['Metals'], isTaxable: true, isMagi: true },
-        'hsa': { label: 'HSA', short: 'HSA', color: assetColors['HSA'], isTaxable: false, isMagi: false }
+        'cash': { label: 'Cash', short: 'Cash', color: assetColors['Cash'], isTaxable: false },
+        'taxable': { label: 'Taxable Brokerage', short: 'Brokerage', color: assetColors['Taxable'], isTaxable: true }, 
+        'roth-basis': { label: 'Roth Basis', short: 'Roth Basis', color: assetColors['Roth IRA'], isTaxable: false },
+        'heloc': { label: 'HELOC', short: 'HELOC', color: assetColors['HELOC'], isTaxable: false },
+        '401k': { label: '401k/IRA', short: '401k/IRA', color: assetColors['Pre-Tax (401k/IRA)'], isTaxable: true },
+        'roth-earnings': { label: 'Roth Gains', short: 'Roth Gains', color: assetColors['Roth Gains'], isTaxable: false },
+        'crypto': { label: 'Crypto', short: 'Crypto', color: assetColors['Crypto'], isTaxable: true },
+        'metals': { label: 'Metals', short: 'Metals', color: assetColors['Metals'], isTaxable: true },
+        'hsa': { label: 'HSA', short: 'HSA', color: assetColors['HSA'], isTaxable: false }
     },
 
     run: () => {
@@ -290,7 +274,7 @@ export const burndown = {
         const config = burndown.scrape();
         lastUsedRetirementAge = config.retirementAge; 
         
-        // 1. MAIN SIMULATION (Runs table and Card 2: Runway)
+        // 1. MAIN SIMULATION
         const results = burndown.simulateProjection(data, config);
         
         // Update Card 2: Runway
@@ -301,25 +285,23 @@ export const burndown = {
             runwayEl.className = firstInsolvencyAge ? "text-3xl font-black text-red-400 mono-numbers tracking-tighter" : "text-3xl font-black text-blue-400 mono-numbers tracking-tighter";
         }
 
-        // 2. CALCULATE CARD 1: PRESERVATION AGE (Background Loop)
-        // Find earliest age where Real NW at 100 >= Real NW at Retirement Age
+        // 2. CALCULATE CARD 1: PRESERVATION AGE
         let preservationAge = "Never";
         const infRate = (data.assumptions.inflation || 3) / 100;
         
         for (let a = data.assumptions.currentAge; a <= 80; a++) {
-            // Create hypothetical config
             const tempConfig = { ...config, retirementAge: a };
             const tempResults = burndown.simulateProjection(data, tempConfig);
             
             const retYear = tempResults.find(r => r.age === a);
-            const endYear = tempResults[tempResults.length - 1]; // Age 100
+            const endYear = tempResults[tempResults.length - 1]; 
             
             if (retYear && endYear && !endYear.isInsolvent) {
                 const yrsDiff = 100 - a;
-                const realEndNW = endYear.netWorth / Math.pow(1 + infRate, yrsDiff); // Approximate check relative to start
+                const realEndNW = endYear.netWorth / Math.pow(1 + infRate, yrsDiff);
                 const realStartNW = retYear.netWorth; 
                 
-                // If ending real wealth is at least 95% of starting real wealth, we consider it "flat/preserved"
+                // If ending real wealth is at least 95% of starting real wealth
                 if (realEndNW >= realStartNW * 0.95) {
                     preservationAge = a;
                     break;
@@ -328,28 +310,32 @@ export const burndown = {
         }
         document.getElementById('card-preservation-val').textContent = preservationAge;
 
-        // 3. CALCULATE CARD 3: DIE WITH ZERO (Max Spend)
-        // Binary search for budget that lands NW at ~0 at age 100
-        let low = 0, high = 1000000, bestBudget = 0;
-        for (let i = 0; i < 15; i++) {
+        // 3. CALCULATE CARD 3: DIE WITH ZERO
+        // Sanity Check Cap: Limit search to (Current Net Worth / 5) or $500k, whichever is higher
+        // This prevents runaway values if HELOC logic is loose.
+        const currentNW = results[0]?.netWorth || 0;
+        const searchCap = Math.max(500000, currentNW / 3); 
+        
+        let low = 0, high = searchCap, bestBudget = 0;
+        for (let i = 0; i < 20; i++) {
             let mid = (low + high) / 2;
-            const tempConfig = { ...config, manualBudget: mid, useSync: false }; // Override sync to use manual
+            const tempConfig = { ...config, manualBudget: mid, useSync: false }; 
             const sim = burndown.simulateProjection(data, tempConfig);
             const last = sim[sim.length - 1];
             
-            if (last.isInsolvent) {
-                high = mid; // Too much spending
-            } else if (last.netWorth > 10000) {
-                low = mid; // Too little spending
-                bestBudget = mid;
+            // Stricter insolvency check for DWZ optimization
+            const depleted = last.isInsolvent || last.netWorth < 1000;
+            
+            if (depleted) {
+                high = mid; 
             } else {
+                low = mid;
                 bestBudget = mid;
-                break;
             }
         }
-        document.getElementById('card-dwz-val').textContent = formatter.formatCurrency(bestBudget/12, true); // Monthly
+        document.getElementById('card-dwz-val').textContent = formatter.formatCurrency(bestBudget/12, true); 
 
-        // Update UI
+        // Update SNAP Indicator
         if (results.length > 0) {
             const firstRetYear = results.find(r => r.age >= config.retirementAge) || results[0];
             const snapInd = document.getElementById('est-snap-indicator');
@@ -369,9 +355,7 @@ export const burndown = {
         const currentYear = new Date().getFullYear();
         const dial = config.strategyDial, rAge = config.retirementAge, cashFloor = config.cashReserve;
 
-        // Reset insolvency tracker only if this is the main run (no override)
         if (!configOverride) firstInsolvencyAge = null;
-        if (!configOverride) simulationTrace = {};
 
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -397,9 +381,8 @@ export const burndown = {
         // Always simulate to age 100
         for (let i = 0; i <= (100 - assumptions.currentAge); i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
-            const trace = []; // Local trace
 
-            // Apply Growth (Moved to top of loop for valuation)
+            // Apply Growth
             const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
             const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
             const metalsGrowth = math.getGrowthForAge('Metals', age, assumptions.currentAge, assumptions);
@@ -491,7 +474,15 @@ export const burndown = {
                 for (const pk of burndown.priorityOrder) {
                     if (deficit <= 1) break; 
 
-                    let available = (pk === 'heloc') ? Math.max(0, helocLimit - bal['heloc']) : ((pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0));
+                    // HELOC Availability Check: Strict Enforcement
+                    let available = 0;
+                    if (pk === 'heloc') {
+                        // If no limit or 0 limit, treat as 0 available
+                        available = (helocLimit > 0) ? Math.max(0, helocLimit - bal['heloc']) : 0;
+                    } else {
+                        available = (pk === 'cash') ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0);
+                    }
+                    
                     if (available <= 0) continue;
 
                     let marginalRate = 0;
@@ -552,6 +543,10 @@ export const burndown = {
             const magi = currentOrdIncome + currentLtcgIncome;
             
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
+            
+            // INSOLVENCY LOGIC REFINED:
+            // 1. True Insolvency: Cash shortfall (> $100) AND no liquid assets left.
+            // 2. HELOC Saturation: If shortfall exists, it implies HELOC (if used) maxed out or liquid assets gone.
             const isActuallyInsolvent = (targetBudget - finalNetCash) > 100 && liquidAssets < 1000;
 
             const currentREVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
@@ -572,7 +567,6 @@ export const burndown = {
             yearRes.status = yearRes.isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (magi <= medLim ? 'Platinum' : (magi <= silverLim ? 'Silver' : 'Private')));
 
             if (!configOverride && yearRes.isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
-            if (!configOverride) simulationTrace[age] = trace;
             
             results.push(yearRes);
 
@@ -616,8 +610,18 @@ export const burndown = {
                     </td>
                 </tr>`;
             }
-            const draws = burndown.priorityOrder.map(k => `<td class="p-1.5 text-center border-l border-white/5"><div class="${r.draws?.[k] > 0 ? 'font-bold' : 'text-slate-700'}" style="color:${r.draws?.[k] > 0 ? burndown.assetMeta[k]?.color : ''}">${formatCell((r.draws?.[k] || 0) / inf)}</div><div class="text-[8px] opacity-40">${formatCell(r.balances[k] / inf)}</div></td>`).join('');
-            return `<tr class="border-b border-white/5 hover:bg-white/5 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : (isRetYear ? 'bg-blue-900/10' : '')}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-center text-slate-400">${formatCell(r.budget / inf)}</td><td class="p-2 text-center font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>${retBadge}</td><td class="p-2 text-center text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-center font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
+            // Desktop Cell: Top = Draw (Bold), Bottom = Balance (Dim)
+            const draws = burndown.priorityOrder.map(k => {
+                const drawVal = (r.draws?.[k] || 0) / inf;
+                const balVal = r.balances[k] / inf;
+                const drawHtml = drawVal > 0 ? `<div class="font-black" style="color:${burndown.assetMeta[k]?.color}">${formatCell(drawVal)}</div>` : `<div class="text-slate-700">-</div>`;
+                return `<td class="p-1.5 text-center border-l border-white/5 bg-black/10 hover:bg-black/20 transition-colors">
+                    ${drawHtml}
+                    <div class="text-[8px] text-slate-500 font-medium mt-0.5">${formatCell(balVal)}</div>
+                </td>`;
+            }).join('');
+            
+            return `<tr class="border-b border-white/5 hover:bg-white/5 text-[10px] ${r.isInsolvent ? 'bg-red-900/10' : (isRetYear ? 'bg-blue-900/10' : '')}"><td class="p-2 text-center font-bold ${r.isInsolvent ? 'text-red-400' : ''}">${r.age}</td><td class="p-2 text-center text-slate-400 font-medium">${formatCell(r.budget / inf)}</td><td class="p-2 text-center font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${badgeClass}">${r.status}</span>${retBadge}</td><td class="p-2 text-center text-emerald-500 font-bold">${formatCell(r.snapBenefit / inf)}</td>${draws}<td class="p-2 text-center font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</td></tr>`;
         }).join('');
 
         return `<table class="w-full text-left border-collapse table-auto">${header}<tbody>${rows}</tbody></table>`;
