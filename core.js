@@ -64,7 +64,6 @@ window.addRow = (containerId, type, data = {}) => {
         const expBtn = element.querySelector('button[data-target="incomeExpensesMonthly"]');
         if (expBtn) expBtn.textContent = !!data.incomeExpensesMonthly ? 'Monthly' : 'Annual';
         checkIrsLimits(element);
-        updateIncomeCardPreview(element);
     }
     if (type === 'investment') updateCostBasisVisibility(element);
 };
@@ -140,9 +139,6 @@ function attachGlobalListeners() {
                 forceSyncData();
                 
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
-                if (container.classList.contains('removable-item')) {
-                    updateIncomeCardPreview(container);
-                }
             }
         }
     });
@@ -153,7 +149,6 @@ function attachGlobalListeners() {
             const incomeCard = target.closest('#income-cards .removable-item');
             if (incomeCard) {
                 checkIrsLimits(incomeCard);
-                updateIncomeCardPreview(incomeCard);
             }
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
@@ -216,15 +211,6 @@ function checkIrsLimits(row) {
     const limit = age >= 50 ? 31000 : 23500;
     const warning = row.querySelector('[data-id="capWarning"]');
     if (warning) warning.classList.toggle('hidden', (annual * (cPct / 100)) <= limit);
-}
-
-function updateIncomeCardPreview(card) {
-    const amount = math.fromCurrency(card.querySelector('[data-id="amount"]')?.value || "0");
-    const isMon = card.querySelector('input[data-id="isMonthly"]')?.value === 'true';
-    const bPct = parseFloat(card.querySelector('[data-id="bonusPct"]')?.value) || 0;
-    const annGross = (amount * (isMon ? 12 : 1)) * (1 + (bPct / 100));
-    const display = card.querySelector('[data-id="netSourceDisplay"]');
-    if (display) display.textContent = math.toCurrency(annGross);
 }
 
 function updateCostBasisVisibility(row) {

@@ -80,7 +80,7 @@ export const templates = {
     `,
 
     income: (data) => `
-        <div class="card-container flex flex-col relative group shadow-lg overflow-hidden h-full">
+        <div class="card-container flex flex-col relative group shadow-lg overflow-hidden h-full pb-5">
             <div class="px-5 py-3 border-b border-white/5 flex justify-between items-center bg-black/20">
                 <div class="flex items-center gap-3 w-full">
                     <div class="w-6 h-6 rounded-lg bg-teal-500/20 flex items-center justify-center text-teal-400 flex-shrink-0">
@@ -166,17 +166,6 @@ export const templates = {
                         <input data-id="remainsInRetirement" type="checkbox" class="w-3.5 h-3.5 accent-blue-500 rounded bg-slate-900 border-white/20" ${data.remainsInRetirement ? 'checked' : ''}>
                         <span class="text-[9px] font-black text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Retirement Income</span>
                     </label>
-                </div>
-            </div>
-
-            <!-- Net Source Inflow Footer -->
-            <div class="mt-auto px-5 py-3 bg-black/40 border-t border-white/5">
-                <div class="flex justify-between items-end mb-1">
-                    <span class="label-std text-slate-500">Gross Card Contribution</span>
-                    <span data-id="netSourceDisplay" class="text-xs font-black text-white mono-numbers">$0</span>
-                </div>
-                <div class="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                    <div class="bg-gradient-to-r from-teal-500 to-blue-500 h-full w-[45%]"></div>
                 </div>
             </div>
         </div>

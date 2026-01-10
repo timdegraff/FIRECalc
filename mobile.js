@@ -473,7 +473,7 @@ function showProfileSelection() {
         const type = btn.dataset.profile;
         let dataToLoad = PROFILE_40_COUPLE; 
         
-        if (type === '25' dataToLoad = PROFILE_25_SINGLE;
+        if (type === '25') dataToLoad = PROFILE_25_SINGLE;
         else if (type === '55') dataToLoad = PROFILE_55_RETIREE;
         
         localStorage.setItem('firecalc_guest_data', JSON.stringify(dataToLoad));
