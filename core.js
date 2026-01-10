@@ -10,7 +10,6 @@ let lastChartSum = 0;
 let investmentSortable = null;
 
 export function initializeUI() {
-    injectFavicon();
     attachGlobalListeners();
     attachNavigationListeners();
     attachDynamicRowListeners();
@@ -18,16 +17,6 @@ export function initializeUI() {
     attachPasteListeners();
     initializeDragAndDrop();
     showTab('assets-debts');
-}
-
-function injectFavicon() {
-    if (!document.querySelector("link[rel*='icon']")) {
-        const link = document.createElement('link');
-        link.type = 'image/svg+xml';
-        link.rel = 'icon';
-        link.href = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>';
-        document.head.appendChild(link);
-    }
 }
 
 function initializeDragAndDrop() {
