@@ -67,36 +67,54 @@
 
     <!-- Profile Selection Modal -->
     <div id="profile-modal" class="fixed inset-0 flex items-center justify-center bg-black/90 z-[65] hidden backdrop-blur-md">
-        <div class="glass-panel p-8 rounded-[24px] shadow-2xl max-w-4xl w-full mx-4 text-center">
+        <div class="glass-panel p-8 rounded-[24px] shadow-2xl max-w-5xl w-full mx-4 text-center">
             <h2 class="text-2xl font-black text-white mb-2 tracking-tight">Choose Your Starting Point</h2>
             <p class="text-slate-400 text-sm mb-8">Select a profile to pre-populate the simulation.</p>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button data-profile="25" class="group p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-left transition-all hover:scale-[1.02]">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- 25 YO -->
+                <button data-profile="25" class="group p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-left transition-all hover:scale-[1.02] relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-rocket text-6xl text-teal-400"></i></div>
                     <div class="w-12 h-12 bg-teal-500/20 rounded-full flex items-center justify-center text-teal-400 mb-4 group-hover:bg-teal-500 group-hover:text-white transition-colors">
                         <i class="fas fa-rocket text-xl"></i>
                     </div>
                     <h3 class="text-lg font-bold text-white">The Starter</h3>
-                    <p class="text-[10px] text-teal-400 font-bold uppercase tracking-wider mb-2">Age 25 • Single</p>
-                    <p class="text-xs text-slate-400">High growth potential. Crypto & Stocks heavy. Renting.</p>
+                    <p class="text-[10px] text-teal-400 font-bold uppercase tracking-wider mb-3">Age 25 • Single</p>
+                    <div class="space-y-1 text-xs text-slate-400">
+                        <p><i class="fas fa-briefcase w-5 text-center opacity-50"></i> $95k Income</p>
+                        <p><i class="fas fa-piggy-bank w-5 text-center opacity-50"></i> $40k Net Worth</p>
+                        <p><i class="fas fa-home w-5 text-center opacity-50"></i> Renting</p>
+                    </div>
                 </button>
 
-                <button data-profile="40" class="group p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-left transition-all hover:scale-[1.02]">
+                <!-- 40 YO -->
+                <button data-profile="40" class="group p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-left transition-all hover:scale-[1.02] relative overflow-hidden ring-1 ring-blue-500/30">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-users text-6xl text-blue-400"></i></div>
                     <div class="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 mb-4 group-hover:bg-blue-500 group-hover:text-white transition-colors">
                         <i class="fas fa-users text-xl"></i>
                     </div>
                     <h3 class="text-lg font-bold text-white">The Accumulator</h3>
-                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-2">Age 40 • Married</p>
-                    <p class="text-xs text-slate-400">Balanced portfolio. Homeowner. Mixed Tax Buckets.</p>
+                    <p class="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-3">Age 40 • Married • 2 Kids</p>
+                    <div class="space-y-1 text-xs text-slate-400">
+                        <p><i class="fas fa-briefcase w-5 text-center opacity-50"></i> $325k HHI</p>
+                        <p><i class="fas fa-piggy-bank w-5 text-center opacity-50"></i> $1.5M Net Worth</p>
+                        <p><i class="fas fa-home w-5 text-center opacity-50"></i> Home Equity $300k</p>
+                    </div>
                 </button>
 
-                <button data-profile="55" class="group p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-left transition-all hover:scale-[1.02]">
+                <!-- 55 YO -->
+                <button data-profile="55" class="group p-6 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-left transition-all hover:scale-[1.02] relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity"><i class="fas fa-umbrella-beach text-6xl text-purple-400"></i></div>
                     <div class="w-12 h-12 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400 mb-4 group-hover:bg-purple-500 group-hover:text-white transition-colors">
                         <i class="fas fa-umbrella-beach text-xl"></i>
                     </div>
                     <h3 class="text-lg font-bold text-white">Pre-Retiree</h3>
-                    <p class="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-2">Age 55 • Married</p>
-                    <p class="text-xs text-slate-400">Conservative growth. High Assets. Catch-up contributions.</p>
+                    <p class="text-[10px] text-purple-400 font-bold uppercase tracking-wider mb-3">Age 55 • Married</p>
+                    <div class="space-y-1 text-xs text-slate-400">
+                        <p><i class="fas fa-briefcase w-5 text-center opacity-50"></i> Pension + $298k</p>
+                        <p><i class="fas fa-piggy-bank w-5 text-center opacity-50"></i> $2.9M Net Worth</p>
+                        <p><i class="fas fa-home w-5 text-center opacity-50"></i> Paid Off ($600k)</p>
+                    </div>
                 </button>
             </div>
         </div>

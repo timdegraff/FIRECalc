@@ -1,64 +1,89 @@
 
 export const PROFILE_40_COUPLE = {
     investments: [
-        { name: 'Vanguard 401k', type: 'Pre-Tax (401k/IRA)', value: 300000, costBasis: 0 },
-        { name: 'Roth IRA', type: 'Roth IRA', value: 200000, costBasis: 150000 },
-        { name: 'Emergency Fund', type: 'Cash', value: 25000, costBasis: 25000 },
-        { name: 'Brokerage', type: 'Taxable', value: 50000, costBasis: 40000 }
+        { name: 'His 401k (Vanguard)', type: 'Pre-Tax (401k/IRA)', value: 350000, costBasis: 0 },
+        { name: 'Her 403b (Fidelity)', type: 'Pre-Tax (401k/IRA)', value: 250000, costBasis: 0 },
+        { name: 'Roth IRA (His)', type: 'Roth IRA', value: 150000, costBasis: 100000 },
+        { name: 'Roth IRA (Hers)', type: 'Roth IRA', value: 150000, costBasis: 100000 },
+        { name: 'Joint Brokerage', type: 'Taxable', value: 200000, costBasis: 150000 },
+        { name: 'HSA (Invested)', type: 'HSA', value: 50000, costBasis: 35000 },
+        { name: 'Emergency Cash', type: 'Cash', value: 30000, costBasis: 30000 }
+    ],
+    stockOptions: [
+        { name: 'RSUs (Unvested)', shares: 100, strikePrice: 0, currentPrice: 150, growth: 10, isLtcg: false }
     ],
     realEstate: [
-        { name: 'Primary Home', value: 450000, mortgage: 250000, principalPayment: 900 }
+        { name: 'Family Home', value: 550000, mortgage: 250000, principalPayment: 1400 }
     ],
     income: [
-        { name: 'Primary Salary', amount: 175000, increase: 3, contribution: 6, match: 4, bonusPct: 0, isMonthly: false, incomeExpenses: 0 }
+        { name: 'Tech Manager', amount: 200000, increase: 3, contribution: 12, match: 4, bonusPct: 15, isMonthly: false, incomeExpenses: 0, contribOnBonus: true },
+        { name: 'Medical Prof', amount: 125000, increase: 3, contribution: 10, match: 3, bonusPct: 0, isMonthly: false, incomeExpenses: 0 }
     ],
     budget: {
         savings: [
-            { type: 'Taxable', annual: 12000, monthly: 1000, removedInRetirement: true }
+            { type: 'Taxable', annual: 36000, monthly: 3000, removedInRetirement: true },
+            { type: 'HSA', annual: 8300, monthly: 691, removedInRetirement: true }
         ],
         expenses: [
-            { name: 'Mortgage', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: true },
-            { name: 'Living Expenses', annual: 48000, monthly: 4000, remainsInRetirement: true, isFixed: false }
+            { name: 'Mortgage P&I', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: true },
+            { name: 'Property Tax/Ins', annual: 10000, monthly: 833, remainsInRetirement: true, isFixed: false },
+            { name: 'Childcare/Activities', annual: 24000, monthly: 2000, remainsInRetirement: false, isFixed: false },
+            { name: 'Groceries & Dining', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: false },
+            { name: 'Travel & Leisure', annual: 18000, monthly: 1500, remainsInRetirement: true, isFixed: false },
+            { name: 'Utilities/Services', annual: 8400, monthly: 700, remainsInRetirement: true, isFixed: false }
         ]
     },
     assumptions: { 
-        currentAge: 40, retirementAge: 55, ssStartAge: 67, ssMonthly: 3000, 
-        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, 
+        currentAge: 40, retirementAge: 55, ssStartAge: 62, ssMonthly: 3200, 
+        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 4, realEstateGrowth: 3.5, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
-        helocRate: 7, state: 'Michigan', workYearsAtRetirement: 35,
+        helocRate: 7.5, state: 'California', workYearsAtRetirement: 30,
         slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
         advancedGrowth: false,
         ltcgRate: 15
     },
-    benefits: { dependents: [] }
+    benefits: { 
+        dependents: [
+            { name: "Kid 1", independenceYear: new Date().getFullYear() + 10 },
+            { name: "Kid 2", independenceYear: new Date().getFullYear() + 14 }
+        ],
+        hhSize: 4 
+    }
 };
 
 export const PROFILE_25_SINGLE = {
     investments: [
-        { name: 'Robinhood', type: 'Taxable', value: 15000, costBasis: 12000 },
-        { name: 'Work 401k', type: 'Pre-Tax (401k/IRA)', value: 10000, costBasis: 0 },
-        { name: 'Bitcoin', type: 'Crypto', value: 5000, costBasis: 2000 }
+        { name: 'Work 401k', type: 'Pre-Tax (401k/IRA)', value: 18000, costBasis: 0 },
+        { name: 'Robinhood', type: 'Taxable', value: 12000, costBasis: 10000 },
+        { name: 'Coinbase', type: 'Crypto', value: 8000, costBasis: 4000 },
+        { name: 'HYSA', type: 'Cash', value: 10000, costBasis: 10000 }
     ],
     realEstate: [],
     income: [
-        { name: 'Salary', amount: 85000, increase: 4, contribution: 10, match: 3, bonusPct: 5, isMonthly: false, incomeExpenses: 0 }
+        { name: 'Salary', amount: 95000, increase: 5, contribution: 10, match: 3, bonusPct: 8, isMonthly: false, incomeExpenses: 0, contribOnBonus: true }
+    ],
+    debts: [
+        { name: 'Student Loans', balance: 12000, principalPayment: 250 }
     ],
     budget: {
         savings: [
             { type: 'Roth IRA', annual: 7000, monthly: 583, removedInRetirement: true },
-            { type: 'Taxable', annual: 5000, monthly: 416, removedInRetirement: true }
+            { type: 'Taxable', annual: 6000, monthly: 500, removedInRetirement: true }
         ],
         expenses: [
-            { name: 'Rent', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: false },
-            { name: 'Lifestyle', annual: 30000, monthly: 2500, remainsInRetirement: true, isFixed: false }
+            { name: 'Rent', annual: 26400, monthly: 2200, remainsInRetirement: true, isFixed: false },
+            { name: 'Loan Payment', annual: 3000, monthly: 250, remainsInRetirement: false, isFixed: true },
+            { name: 'Social/Dining', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false },
+            { name: 'Travel', annual: 5000, monthly: 416, remainsInRetirement: true, isFixed: false },
+            { name: 'Shopping/Tech', annual: 4000, monthly: 333, remainsInRetirement: true, isFixed: false }
         ]
     },
     assumptions: { 
-        currentAge: 25, retirementAge: 50, ssStartAge: 70, ssMonthly: 2500, 
-        stockGrowth: 9, cryptoGrowth: 12, metalsGrowth: 6, realEstateGrowth: 3, 
+        currentAge: 25, retirementAge: 50, ssStartAge: 62, ssMonthly: 2800, 
+        stockGrowth: 9, cryptoGrowth: 10, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Single', 
-        helocRate: 7, state: 'California', workYearsAtRetirement: 25,
-        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
+        helocRate: 7, state: 'New York', workYearsAtRetirement: 23,
+        slowGoFactor: 1.1, midGoFactor: 0.9, noGoFactor: 0.8,
         advancedGrowth: false,
         ltcgRate: 15
     },
@@ -67,35 +92,38 @@ export const PROFILE_25_SINGLE = {
 
 export const PROFILE_55_RETIREE = {
     investments: [
-        { name: 'IRA Rollover', type: 'Pre-Tax (401k/IRA)', value: 850000, costBasis: 0 },
-        { name: 'Roth IRA', type: 'Roth IRA', value: 150000, costBasis: 100000 },
-        { name: 'HYSA', type: 'Cash', value: 100000, costBasis: 100000 },
-        { name: 'Brokerage', type: 'Taxable', value: 300000, costBasis: 200000 }
+        { name: '401k (Career)', type: 'Pre-Tax (401k/IRA)', value: 1900000, costBasis: 0 },
+        { name: 'Roth IRA', type: 'Roth IRA', value: 400000, costBasis: 250000 },
+        { name: 'Money Market', type: 'Cash', value: 50000, costBasis: 50000 }
     ],
     realEstate: [
-        { name: 'Paid Off Home', value: 600000, mortgage: 0, principalPayment: 0 }
+        { name: 'Forever Home (Paid Off)', value: 600000, mortgage: 0, principalPayment: 0 }
     ],
     income: [
-        { name: 'Senior Role', amount: 200000, increase: 2, contribution: 15, match: 4, bonusPct: 10, isMonthly: false, incomeExpenses: 0 }
+        { name: 'Executive Salary', amount: 250000, increase: 2, contribution: 20, match: 4, bonusPct: 15, isMonthly: false, incomeExpenses: 0, remainsInRetirement: false },
+        { name: 'Corporate Pension', amount: 48000, increase: 0, contribution: 0, match: 0, bonusPct: 0, isMonthly: false, incomeExpenses: 0, remainsInRetirement: true }
     ],
     budget: {
         savings: [
-            { type: 'Pre-Tax (401k/IRA)', annual: 30500, monthly: 2541, removedInRetirement: true } 
+            { type: 'Pre-Tax (401k/IRA)', annual: 30500, monthly: 2541, removedInRetirement: true }, 
+            { type: 'Taxable', annual: 60000, monthly: 5000, removedInRetirement: true } 
         ],
         expenses: [
             { name: 'Property Tax/Ins', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false },
+            { name: 'Healthcare (Pre-Med)', annual: 18000, monthly: 1500, remainsInRetirement: true, isFixed: false },
             { name: 'Living Expenses', annual: 72000, monthly: 6000, remainsInRetirement: true, isFixed: false },
-            { name: 'Healthcare (Pre-Med)', annual: 18000, monthly: 1500, remainsInRetirement: true, isFixed: false }
+            { name: 'Travel & Leisure', annual: 36000, monthly: 3000, remainsInRetirement: true, isFixed: false },
+            { name: 'Club Dues', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false }
         ]
     },
     assumptions: { 
-        currentAge: 55, retirementAge: 62, ssStartAge: 67, ssMonthly: 3800, 
-        stockGrowth: 6, cryptoGrowth: 5, metalsGrowth: 4, realEstateGrowth: 3, 
+        currentAge: 55, retirementAge: 60, ssStartAge: 62, ssMonthly: 4200, 
+        stockGrowth: 6.5, cryptoGrowth: 4, metalsGrowth: 4, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
         helocRate: 7, state: 'Florida', workYearsAtRetirement: 38,
-        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
+        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.75,
         advancedGrowth: false,
-        ltcgRate: 15
+        ltcgRate: 20 
     },
     benefits: { dependents: [] }
 };
