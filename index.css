@@ -156,15 +156,15 @@ tbody td { padding: 4px 6px !important; vertical-align: middle; } /* Tightened v
 ::-webkit-scrollbar-thumb { background: #334155; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-/* Asset Colors */
-.text-type-cash { color: #f472b6 !important; }
-.text-type-taxable { color: #34d399 !important; }
-.text-type-pretax { color: #60a5fa !important; }
-.text-type-posttax { color: #c084fc !important; }
-.text-type-crypto { color: #94a3b8 !important; }
-.text-type-metals { color: #facc15 !important; }
-.text-type-hsa { color: #2dd4bf !important; }
-.text-type-529 { color: #fb7185 !important; }
+/* Asset Colors (Updated for extreme vibrancy) */
+.text-type-cash { color: #f472b6 !important; }      /* Pink */
+.text-type-taxable { color: #10b981 !important; }   /* Emerald/Green */
+.text-type-pretax { color: #3b82f6 !important; }    /* Blue */
+.text-type-posttax { color: #a855f7 !important; }   /* Purple */
+.text-type-crypto { color: #94a3b8 !important; }    /* Slate */
+.text-type-metals { color: #eab308 !important; }    /* Yellow/Gold */
+.text-type-hsa { color: #14b8a6 !important; }       /* Teal */
+.text-type-529 { color: #fb7185 !important; }       /* Rose */
 
 /* Utility Classes */
 .glass-panel {

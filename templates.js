@@ -6,15 +6,19 @@ export const templates = {
             const map = {
                 'Cash': 'text-type-cash',
                 'Taxable': 'text-type-taxable',
+                'Brokerage': 'text-type-taxable',
                 'Pre-Tax (401k/IRA)': 'text-type-pretax',
+                'Pre-Tax': 'text-type-pretax',
                 'Roth IRA': 'text-type-posttax',
+                'Post-Tax': 'text-type-posttax',
+                'Roth Basis': 'text-type-posttax',
+                'Roth Gains': 'text-type-posttax',
                 'Crypto': 'text-type-crypto',
                 'Metals': 'text-type-metals',
                 'HSA': 'text-type-hsa',
-                '529': 'text-type-529',
-                'Stock Options': 'text-type-taxable'
+                '529': 'text-type-529'
             };
-            return map[type] || 'text-type-taxable';
+            return map[type] || 'text-white';
         },
         renderStepper: (id, value, colorClass = "text-white", decimals = "1") => `
             <div class="relative group/stepper">

@@ -295,7 +295,8 @@ const MOBILE_TEMPLATES = {
 
 const ITEM_TEMPLATES = {
     investment: (data) => {
-        const tc = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400', '529': 'text-type-529' }[data.type] || 'text-white';
+        const tcMap = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400', '529': 'text-type-529' };
+        const tc = tcMap[data.type] || 'text-white';
         return `
         <div class="mobile-card flex flex-col gap-0.5">
             <div class="flex justify-between items-center">
@@ -399,7 +400,8 @@ const ITEM_TEMPLATES = {
                 <div class="text-blue-400 font-black text-[8px] uppercase tracking-widest">401k from Income</div>
                 <input data-id="annual" data-type="currency" value="${math.toCurrency(data.annual || 0)}" class="block text-right bg-transparent text-blue-400 font-black text-lg mono-numbers outline-none" readonly>
             </div>`;
-        const tc = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', '529': 'text-type-529' }[data.type] || 'text-white';
+        const tcMap = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', '529': 'text-type-529' };
+        const tc = tcMap[data.type] || 'text-white';
         return `
         <div class="mobile-card flex justify-between items-center py-1 px-3">
             <div class="w-1/2">
@@ -471,7 +473,7 @@ function showProfileSelection() {
         const type = btn.dataset.profile;
         let dataToLoad = PROFILE_40_COUPLE; 
         
-        if (type === '25') dataToLoad = PROFILE_25_SINGLE;
+        if (type === '25' dataToLoad = PROFILE_25_SINGLE;
         else if (type === '55') dataToLoad = PROFILE_55_RETIREE;
         
         localStorage.setItem('firecalc_guest_data', JSON.stringify(dataToLoad));
@@ -546,6 +548,15 @@ function attachGlobal() {
                 if (key === 'monthly') window.currentData.budget.expenses[idx].annual = val * 12; if (key === 'annual') window.currentData.budget.expenses[idx].monthly = val / 12;
             } else if (window.currentData[arrName] && window.currentData[arrName][idx]) window.currentData[arrName][idx][key] = val;
         }
+
+        // Dynamic Color for Mobile Selects
+        if (input.tagName === 'SELECT' && input.dataset.id === 'type') {
+            const tcMap = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', '529': 'text-type-529' };
+            const tc = tcMap[input.value] || 'text-white';
+            input.classList.forEach(c => { if(c.startsWith('text-type-')) input.classList.remove(c); });
+            input.classList.add(tc);
+        }
+
         if (window.debouncedAutoSave) window.debouncedAutoSave();
         updateMobileSummaries(); updateMobileNW();
     });

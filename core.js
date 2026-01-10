@@ -119,6 +119,23 @@ function attachGlobalListeners() {
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
+
+    // Dynamic Color and Logic Updating for Asset Selects
+    document.body.addEventListener('change', (e) => {
+        const target = e.target;
+        if (target.tagName === 'SELECT' && target.dataset.id === 'type') {
+            const newClass = templates.helpers.getTypeClass(target.value);
+            // Remove any existing text-type classes
+            target.classList.forEach(cls => {
+                if (cls.startsWith('text-type-')) target.classList.remove(cls);
+            });
+            target.classList.add(newClass);
+            
+            // If this is an investment row, toggle cost basis visibility/interactivity
+            const row = target.closest('tr');
+            if (row) updateCostBasisVisibility(row);
+        }
+    });
 }
 
 export function showTab(tabId) {
@@ -179,8 +196,14 @@ function updateIncomeCardPreview(card) {
 function updateCostBasisVisibility(row) {
     const typeSel = row.querySelector('[data-id="type"]'), cbIn = row.querySelector('[data-id="costBasis"]');
     if (!typeSel || !cbIn) return;
-    const isIrr = (['Pre-Tax (401k/IRA)', 'Cash', 'HSA', '529'].includes(typeSel.value));
-    cbIn.style.visibility = isIrr ? 'hidden' : 'visible';
+    // HSA and 529 are tax-free, Pre-Tax and Cash have no applicable basis for capital gains tracking
+    const isBasisExempt = (['Pre-Tax (401k/IRA)', 'Cash', 'HSA', '529'].includes(typeSel.value));
+    cbIn.style.visibility = isBasisExempt ? 'hidden' : 'visible';
+    cbIn.disabled = isBasisExempt;
+    cbIn.tabIndex = isBasisExempt ? -1 : 0;
+    if (isBasisExempt) {
+        cbIn.value = '';
+    }
 }
 
 window.updateSidebarChart = (data) => {
