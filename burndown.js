@@ -56,32 +56,36 @@ export const burndown = {
                     </div>
                 </div>
 
+                <!-- Primary Projection Cards -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <!-- Card 1: Preservation Age -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-infinity text-4xl text-amber-500"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-shield-alt"></i> Preservation Age</label>
                             <div id="card-preservation-val" class="text-3xl font-black text-amber-500 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div class="text-[9px] font-medium text-slate-500">Retire here & wealth stays flat (real $) to 100</div>
+                        <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">FLAT REAL WEALTH UNTIL AGE 100</div>
                     </div>
 
+                    <!-- Card 2: Retirement Runway -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-road text-4xl text-blue-400"></i></div>
                         <div>
-                            <label class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-flag-checkered"></i> Funds Last Until</label>
-                            <div id="card-runway-val" class="text-3xl font-black text-white mono-numbers tracking-tighter">--</div>
+                            <label class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-flag-checkered"></i> Retirement Runway</label>
+                            <div id="card-runway-val" class="text-3xl font-black text-blue-400 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div class="text-[9px] font-medium text-slate-500">Based on selected retirement age</div>
+                        <div id="card-runway-sub" class="text-[9px] font-bold text-blue-400/60 uppercase tracking-tighter leading-none">SUSTAINABLE UNTIL THIS AGE</div>
                     </div>
 
+                    <!-- Card 3: Die With Zero -->
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-skull text-4xl text-pink-400"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero Spend</label>
                             <div id="card-dwz-val" class="text-3xl font-black text-pink-400 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase tracking-tighter leading-none">Starting at Retirement</div>
+                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase tracking-tighter leading-none">MAX ANNUAL SPEND STARTING AT RETIREMENT</div>
                     </div>
                 </div>
 
@@ -321,17 +325,18 @@ export const burndown = {
         }
 
         const config = burndown.scrape();
+        const inflation = (data.assumptions?.inflation || 3) / 100;
         lastUsedRetirementAge = config.retirementAge; 
         
+        let calculatedRetireBudget = config.manualBudget; 
+
         // Calculate the actual retirement year budget to show in the sync field
         if (config.useSync) {
             const currentAge = data.assumptions?.currentAge || 40;
-            const retirementAge = config.retirementAge;
-            const yrsToRetire = Math.max(0, retirementAge - currentAge);
-            const inflation = (data.assumptions?.inflation || 3) / 100;
+            const yrsToRetire = Math.max(0, lastUsedRetirementAge - currentAge);
             const infFacRet = Math.pow(1 + inflation, yrsToRetire);
             
-            const calculatedRetireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
+            calculatedRetireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
                 if (exp.remainsInRetirement === false) return sum;
                 const base = math.fromCurrency(exp.annual);
                 return sum + (exp.isFixed ? base : base * infFacRet);
@@ -350,13 +355,14 @@ export const burndown = {
         
         const runwayAge = firstInsolvencyAge ? firstInsolvencyAge : "100+";
         const runwayEl = document.getElementById('card-runway-val');
-        if (runwayEl) {
+        const runwaySubEl = document.getElementById('card-runway-sub');
+        if (runwayEl && runwaySubEl) {
             runwayEl.textContent = runwayAge;
             runwayEl.className = firstInsolvencyAge ? "text-3xl font-black text-red-400 mono-numbers tracking-tighter" : "text-3xl font-black text-blue-400 mono-numbers tracking-tighter";
+            runwaySubEl.textContent = `SUSTAINABLE AT ${formatter.formatCurrency(calculatedRetireBudget, true)} SPEND`;
         }
 
         let preservationAge = "Never";
-        const infRate = (data.assumptions.inflation || 3) / 100;
         for (let a = data.assumptions.currentAge; a <= 80; a++) {
             const tempConfig = { ...config, retirementAge: a };
             const tempResults = burndown.simulateProjection(data, tempConfig, true); 
@@ -364,11 +370,12 @@ export const burndown = {
             const endYear = tempResults[tempResults.length - 1]; 
             if (retYear && endYear && !endYear.isInsolvent) {
                 const yrsDiff = 100 - a;
-                const realEndNW = endYear.netWorth / Math.pow(1 + infRate, yrsDiff);
+                const realEndNW = endYear.netWorth / Math.pow(1 + inflation, yrsDiff);
                 if (realEndNW >= retYear.netWorth * 0.95) { preservationAge = a; break; }
             }
         }
         document.getElementById('card-preservation-val').textContent = preservationAge;
+        document.getElementById('card-preservation-sub').textContent = `FLAT REAL WEALTH UNTIL AGE 100`;
 
         // DIE WITH ZERO SEARCH
         let low = 0, high = 2500000, bestBudget = 0;
@@ -384,10 +391,8 @@ export const burndown = {
         const dwzValEl = document.getElementById('card-dwz-val');
         const dwzSubEl = document.getElementById('card-dwz-sub');
         if (dwzValEl && dwzSubEl) {
-            // Respect real dollars toggle
-            const displayBudget = bestBudget;
-            dwzValEl.textContent = formatter.formatCurrency(displayBudget, true);
-            dwzSubEl.textContent = `Max annual spend starting at age ${lastUsedRetirementAge}`;
+            dwzValEl.textContent = formatter.formatCurrency(bestBudget, true);
+            dwzSubEl.textContent = `MAX ANNUAL SPEND STARTING AT AGE ${lastUsedRetirementAge}`;
         }
 
         if (results.length > 0) {
