@@ -209,7 +209,6 @@ window.createAssumptionControls = (data) => {
 };
 
 // Placeholder handlers for required UI hooks
-function attachNavigationListeners() {}
 function attachSortingListeners() {}
 function attachPasteListeners() {}
 function handleLinkedBudgetValues() {}
