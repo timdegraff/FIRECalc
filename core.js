@@ -126,10 +126,8 @@ function attachGlobalListeners() {
                 if (valInput) {
                     let val = math.fromCurrency(valInput.value);
                     if (isMonthlyBefore) {
-                        // Monthly -> Annual
                         val = val * 12;
                     } else {
-                        // Annual -> Monthly
                         val = val / 12;
                     }
                     valInput.value = math.toCurrency(val);
@@ -255,9 +253,107 @@ window.updateSidebarChart = (data) => {
 };
 
 window.createAssumptionControls = (data) => {
-    const container = document.getElementById('assumptions-container'); if (!container || !data) return;
+    const container = document.getElementById('assumptions-container'); 
+    if (!container || !data) return;
     const a = data.assumptions || assumptions.defaults;
-    container.innerHTML = `<div class="col-span-full p-4 bg-slate-900/40 rounded-xl border border-white/5"><h3 class="label-std mb-4">Core Assumptions</h3><div class="grid grid-cols-2 gap-4"><label class="block"><span class="label-std">Current Age</span><input data-id="currentAge" type="number" value="${a.currentAge}" class="input-base w-full"></label><label class="block"><span class="label-std">Retirement Age</span><input data-id="retirementAge" type="number" value="${a.retirementAge}" class="input-base w-full"></label></div></div>`;
+
+    const renderField = (label, id, value, type = 'number', colorClass = 'text-white') => `
+        <label class="block space-y-1.5">
+            <span class="label-std">${label}</span>
+            <input data-id="${id}" type="${type}" value="${value}" class="input-base w-full ${colorClass}">
+        </label>
+    `;
+
+    const renderCurrencyField = (label, id, value, colorClass = 'text-teal-400') => `
+        <label class="block space-y-1.5">
+            <span class="label-std">${label}</span>
+            <input data-id="${id}" data-type="currency" type="text" value="${math.toCurrency(value)}" class="input-base w-full font-bold mono-numbers ${colorClass}">
+        </label>
+    `;
+
+    container.innerHTML = `
+        <!-- Card 1: Household & Timing -->
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-blue-500/20 space-y-6">
+            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i class="fas fa-clock text-xs"></i>
+                </div>
+                <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Timing</h3>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                ${renderField("Current Age", "currentAge", a.currentAge, "number", "text-white")}
+                ${renderField("Retire Age", "retirementAge", a.retirementAge, "number", "text-blue-400")}
+                ${renderField("SS Start Age", "ssStartAge", a.ssStartAge, "number", "text-white")}
+                ${renderCurrencyField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly)}
+            </div>
+        </div>
+
+        <!-- Card 2: Tax Configuration -->
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-emerald-500/20 space-y-6">
+            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <i class="fas fa-file-invoice-dollar text-xs"></i>
+                </div>
+                <h3 class="text-sm font-black text-white uppercase tracking-widest">Tax Configuration</h3>
+            </div>
+            <div class="space-y-4">
+                <label class="block space-y-1.5">
+                    <span class="label-std">Filing Status</span>
+                    <select data-id="filingStatus" class="input-base w-full font-bold">
+                        <option value="Single" ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option>
+                        <option value="Married Filing Jointly" ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option>
+                        <option value="Head of Household" ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option>
+                    </select>
+                </label>
+                <label class="block space-y-1.5">
+                    <span class="label-std">State of Residence</span>
+                    <select data-id="state" class="input-base w-full font-bold">
+                        ${Object.keys(stateTaxRates).sort().map(s => `<option value="${s}" ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+                </label>
+                ${renderField("LTCG Tax Rate (%)", "ltcgRate", a.ltcgRate || 15, "number", "text-emerald-400")}
+            </div>
+        </div>
+
+        <!-- Card 3: Market & Inflation -->
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-orange-500/20 space-y-6">
+            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+                <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
+                    <i class="fas fa-chart-line text-xs"></i>
+                </div>
+                <h3 class="text-sm font-black text-white uppercase tracking-widest">Market Projections</h3>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                ${renderField("Stock APY (%)", "stockGrowth", a.stockGrowth, "number", "text-blue-400")}
+                ${renderField("Crypto APY (%)", "cryptoGrowth", a.cryptoGrowth, "number", "text-slate-400")}
+                ${renderField("Metals APY (%)", "metalsGrowth", a.metalsGrowth, "number", "text-amber-500")}
+                ${renderField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, "number", "text-indigo-400")}
+                <div class="col-span-2">
+                    ${renderField("Annual Inflation (%)", "inflation", a.inflation, "number", "text-red-400")}
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Phase Multipliers -->
+        <div class="p-6 bg-slate-900/40 rounded-2xl border border-purple-500/20 space-y-6">
+            <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                    <i class="fas fa-walking text-xs"></i>
+                </div>
+                <h3 class="text-sm font-black text-white uppercase tracking-widest">Retirement Phase Factors</h3>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                ${renderField("Slow-Go", "slowGoFactor", a.slowGoFactor || 1.0, "number", "text-purple-400")}
+                ${renderField("Mid-Go", "midGoFactor", a.midGoFactor || 0.9, "number", "text-purple-400")}
+                ${renderField("No-Go", "noGoFactor", a.noGoFactor || 0.8, "number", "text-purple-400")}
+            </div>
+            <p class="text-[9px] text-slate-500 italic text-center font-medium">Multipliers applied to your baseline budget during different stages of retirement.</p>
+        </div>
+    `;
+
+    // Re-bind formatters to new elements
+    container.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
+    container.querySelectorAll('input[type="number"]').forEach(formatter.bindNumberEventListeners);
 };
 
 function attachSortingListeners() {}

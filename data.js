@@ -21,8 +21,7 @@ export async function initializeData(user) {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const remoteData = docSnap.data();
-                // Deep merge logic to ensure new schema fields (like stock options) 
-                // exist even for old users
+                // Deep merge logic to ensure new schema fields exist
                 window.currentData = {
                     ...JSON.parse(JSON.stringify(DEFAULTS)),
                     ...remoteData,
@@ -97,7 +96,7 @@ function loadUserDataIntoUI() {
 }
 
 function scrapeData() {
-    if (!window.currentData) return null; // CRITICAL FIX: Prevent crash if scraping before initialization
+    if (!window.currentData) return null; 
 
     const getData = (id, fields) => {
         const container = document.getElementById(id);
@@ -137,7 +136,23 @@ function scrapeData() {
         expenses: budgetExpenses ?? window.currentData.budget?.expenses
     };
 
-    if (document.getElementById('assumptions-container')) newData.assumptions = { ...window.currentData.assumptions };
+    // Correctly scrape global parameters from the Assumptions container
+    const assumptionsContainer = document.getElementById('assumptions-container');
+    if (assumptionsContainer) {
+        const aObj = { ...window.currentData.assumptions };
+        assumptionsContainer.querySelectorAll('[data-id]').forEach(el => {
+            const key = el.dataset.id;
+            if (el.type === 'checkbox') aObj[key] = el.checked;
+            else if (el.dataset.type === 'currency') aObj[key] = math.fromCurrency(el.value);
+            else if (el.tagName === 'SELECT') aObj[key] = el.value;
+            else {
+                const val = parseFloat(el.value);
+                aObj[key] = isNaN(val) ? el.value : val;
+            }
+        });
+        newData.assumptions = aObj;
+    }
+
     if (document.getElementById('benefits-module')) newData.benefits = benefits.scrape();
     if (document.getElementById('burndown-view-container')) newData.burndown = burndown.scrape();
     if (document.getElementById('projection-chart')) newData.projectionSettings = projection.scrape();
@@ -154,7 +169,7 @@ export function forceSyncData() {
 }
 
 export function autoSave(updateUI = true) {
-    if (!window.currentData) return; // Don't save empty states
+    if (!window.currentData) return; 
     if (window.saveTimeout) clearTimeout(window.saveTimeout);
     window.saveTimeout = setTimeout(async () => {
         const newData = scrapeData();
