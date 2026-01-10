@@ -90,17 +90,17 @@ export const burndown = {
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
                         <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strategy Persona</label>
                         <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5">
-                            <button data-mode="PLATINUM" class="py-2 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
-                                <span class="text-emerald-400">Handout Max</span>
-                                <span class="text-[6px] opacity-40">138% FPL</span>
+                            <button data-mode="PLATINUM" class="py-2.5 rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
+                                <span class="text-emerald-400">138% FPL</span>
+                                <span class="text-[8px] opacity-40">Handout Max</span>
                             </button>
-                            <button data-mode="SILVER" class="py-2 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
-                                <span class="text-blue-400">CSR sweet spot</span>
-                                <span class="text-[6px] opacity-40">250% FPL</span>
+                            <button data-mode="SILVER" class="py-2.5 rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
+                                <span class="text-blue-400">200% FPL</span>
+                                <span class="text-[8px] opacity-40">CSR Sweet Spot</span>
                             </button>
-                            <button data-mode="UNCONSTRAINED" class="py-2 rounded-md text-[8px] font-black uppercase tracking-tighter transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
-                                <span class="text-slate-400">No Strategy</span>
-                                <span class="text-[6px] opacity-40">Pure Budget</span>
+                            <button data-mode="UNCONSTRAINED" class="py-2.5 rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
+                                <span class="text-slate-400">Pure Budget</span>
+                                <span class="text-[8px] opacity-40">No strategy</span>
                             </button>
                         </div>
                     </div>
@@ -311,7 +311,7 @@ export const burndown = {
         'roth-basis': { label: 'Roth Basis', short: 'Roth Basis', color: assetColors['Roth IRA'], isTaxable: false },
         'heloc': { label: 'HELOC', short: 'HELOC', color: assetColors['HELOC'], isTaxable: false },
         '401k': { label: '401k/IRA', short: '401k/IRA', color: assetColors['Pre-Tax (401k/IRA)'], isTaxable: true },
-        'roth-earnings': { label: 'Roth Gains', short: 'Roth Gains', color: assetColors['Roth Gains'], isTaxable: false },
+        'roth-earnings': { label: 'Roth Gains', short: 'Roth Gains', color: assetColors['Roth IRA'], isTaxable: false },
         'crypto': { label: 'Crypto', short: 'Crypto', color: assetColors['Crypto'], isTaxable: true },
         'metals': { label: 'Metals', short: 'Metals', color: assetColors['Metals'], isTaxable: true },
         'hsa': { label: 'HSA', short: 'HSA', color: assetColors['HSA'], isTaxable: false }
@@ -569,7 +569,7 @@ export const burndown = {
 
             const fpl = (16060 + (currentHhSize - 1) * 5650) * infFac;
             const medLim = fpl * (data.benefits?.isPregnant ? 1.95 : 1.38);
-            const silverLim = fpl * 2.5;
+            const silverLim = fpl * 2.0;
             
             let magiTarget = 0;
             if (persona === 'PLATINUM') magiTarget = medLim;
