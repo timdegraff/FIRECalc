@@ -113,8 +113,12 @@ export const projection = {
         const inflationRate = (assumptions.inflation || 3) / 100;
         const labels = [], datasets = Object.keys(buckets).map(key => ({ label: key, data: [], backgroundColor: assetColors[key] || '#ccc', borderColor: 'transparent', fill: true, pointRadius: 0 })), tableData = [];
 
+        // Pre-calculate baseline summaries for 401k growth (W2 based)
+        const summarySnapshot = engine.calculateSummaries(data);
+
         for (let i = 0; i <= duration; i++) {
             const age = assumptions.currentAge + i, year = currentYear + i, infFac = Math.pow(1 + inflationRate, i);
+            const isRet = age >= assumptions.retirementAge;
             
             const stockGrowth = math.getGrowthForAge('Stock', age, assumptions.currentAge, assumptions);
             const cryptoGrowth = math.getGrowthForAge('Crypto', age, assumptions.currentAge, assumptions);
@@ -141,19 +145,28 @@ export const projection = {
             buckets['Stock Options'] = getTotalOptionsValue();
 
             if (i < 10 || age % 5 === 0 || age === maxSimAge) tableData.push({ age, year: currentYear + i, ...currentYearBuckets });
-            if (age < assumptions.retirementAge) {
-                const s = engine.calculateSummaries(data); buckets['Pre-Tax'] += s.total401kContribution;
-                (budget.savings || []).forEach(sav => {
-                    const amt = math.fromCurrency(sav.annual);
-                    if (sav.type === 'Taxable') buckets['Brokerage'] += amt;
-                    else if (sav.type === 'Roth IRA') buckets['Post-Tax'] += amt;
-                    else if (sav.type === 'Cash') buckets['Cash'] += amt;
-                    else if (sav.type === 'HSA') buckets['HSA'] += amt;
-                    else if (sav.type === 'Crypto') buckets['Crypto'] += amt;
-                    else if (sav.type === 'Metals') buckets['Metals'] += amt;
-                    else if (sav.type === '529') buckets['529'] += amt;
-                });
+
+            // INFLOW LOGIC:
+            // 1. 401k from active income (W2)
+            if (!isRet) {
+                buckets['Pre-Tax'] += summarySnapshot.total401kContribution;
             }
+
+            // 2. Manual Savings (respecting the "Stop in Retirement" flag)
+            (budget.savings || []).forEach(sav => {
+                // If we are retired AND this item is marked to be removed in retirement, skip it.
+                if (isRet && sav.removedInRetirement) return;
+
+                const amt = math.fromCurrency(sav.annual);
+                if (sav.type === 'Taxable') buckets['Brokerage'] += amt;
+                else if (sav.type === 'Roth IRA') buckets['Post-Tax'] += amt;
+                else if (sav.type === 'Cash') buckets['Cash'] += amt;
+                else if (sav.type === 'HSA') buckets['HSA'] += amt;
+                else if (sav.type === 'Crypto') buckets['Crypto'] += amt;
+                else if (sav.type === 'Metals') buckets['Metals'] += amt;
+                else if (sav.type === '529') buckets['529'] += amt;
+                else if (sav.type === 'Pre-Tax (401k/IRA)') buckets['Pre-Tax'] += amt;
+            });
         }
         renderChart(labels, datasets);
         renderTable(tableData);
