@@ -21,7 +21,6 @@ export async function initializeData(user) {
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const remoteData = docSnap.data();
-                // Deep merge logic to ensure new schema fields exist
                 window.currentData = {
                     ...JSON.parse(JSON.stringify(DEFAULTS)),
                     ...remoteData,
@@ -111,7 +110,6 @@ function scrapeData() {
                     else if (el.dataset.type === 'currency') obj[field] = math.fromCurrency(el.value);
                     else if (el.type === 'number') obj[field] = parseFloat(el.value) || 0;
                     else {
-                        // Correctly handle boolean strings from hidden inputs
                         let val = el.value;
                         if (val === 'true') val = true;
                         else if (val === 'false') val = false;
@@ -142,7 +140,6 @@ function scrapeData() {
         expenses: budgetExpenses ?? window.currentData.budget?.expenses
     };
 
-    // Correctly scrape global parameters from the Assumptions container
     const assumptionsContainer = document.getElementById('assumptions-container');
     if (assumptionsContainer) {
         const aObj = { ...window.currentData.assumptions };

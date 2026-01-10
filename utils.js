@@ -115,38 +115,60 @@ export const math = {
         };
         const key = keyMap[type];
         if (!key) return 0;
-
         const initial = parseFloat(assumptions[key]) || 0;
         const isAdvanced = !!assumptions.advancedGrowth;
-        
         if (!isAdvanced) return initial / 100;
-
         const years = parseFloat(assumptions[key + 'Years']) || 0;
         const perpetual = parseFloat(assumptions[key + 'Perpetual'] || initial);
-
-        if (age < currentAge + years) {
-            return initial / 100;
-        }
+        if (age < currentAge + years) return initial / 100;
         return perpetual / 100;
     }
 };
 
-export const assumptions = {
-    defaults: { 
-        currentAge: 42, retirementAge: 45, ssStartAge: 67, ssMonthly: 3000, 
-        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, 
-        inflation: 3, filingStatus: 'Married Filing Jointly', benefitCeiling: 1.38, 
-        helocRate: 7, state: 'Michigan', workYearsAtRetirement: 35,
-        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
-        advancedGrowth: false,
-        stockGrowthYears: 10, stockGrowthPerpetual: 4,
-        cryptoGrowthYears: 5, cryptoGrowthPerpetual: 5,
-        metalsGrowthYears: 10, metalsGrowthPerpetual: 3,
-        realEstateGrowthYears: 15, realEstateGrowthPerpetual: 2,
-        ltcgRate: 15,
-        collectiblesRate: 28,
-        ordRateMarried: 12,
-        ordRateSingle: 22
+const SNAP_CONFIG = {
+    states: {
+        'TX': { limit: 1.65, assetTest: true, assetLimit: 5000 },
+        'GA': { limit: 1.30, assetTest: false },
+        'NH': { limit: 1.30, assetTest: false },
+        'UT': { limit: 1.30, assetTest: false },
+        'ID': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500 },
+        'IN': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500 },
+        'IA': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500, maha: true },
+        'KS': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500 },
+        'MS': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500 },
+        'MO': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500, maha: true },
+        'SD': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500 },
+        'TN': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500, maha: true },
+        'WY': { limit: 1.30, assetTest: true, assetLimit: 3000, assetLimitDisabled: 4500 },
+        'NE': { limit: 2.00, assetTest: false, maha: true },
+        'CO': { limit: 2.00, assetTest: false, maha: true },
+        'HI': { limit: 2.00, assetTest: false, maha: true },
+        'ND': { limit: 2.00, assetTest: false, maha: true },
+        'SC': { limit: 2.00, assetTest: false, maha: true },
+        'VA': { limit: 2.00, assetTest: false, maha: true }
+    },
+    constants: {
+        federal: {
+            fpl100: [1305, 1763, 2221, 2680, 3138, 3596, 4055, 4513],
+            stdDed: [209, 209, 209, 223, 261, 299],
+            maxShelter: 744,
+            maxAllotment: [292, 536, 768, 975, 1183, 1390, 1536, 1756],
+            sua: 682
+        },
+        alaska: {
+            fpl100: [1630, 2203, 2776, 3349, 3923, 4496, 5069, 5642],
+            stdDed: [287, 287, 287, 306, 358, 410],
+            maxShelter: 1189,
+            maxAllotment: [377, 692, 992, 1260, 1529, 1797, 1986, 2270],
+            sua: 900 // Est
+        },
+        hawaii: {
+            fpl100: [1501, 2028, 2555, 3083, 3610, 4138, 4665, 5192],
+            stdDed: [240, 240, 240, 256, 300, 344],
+            maxShelter: 1003,
+            maxAllotment: [497, 911, 1305, 1657, 2010, 2362, 2611, 2985],
+            sua: 850 // Est
+        }
     }
 };
 
@@ -198,25 +220,13 @@ export const engine = {
         let taxableOrdinary = Math.max(0, ordinaryIncome - stdDed);
         let taxableLtcg = Math.max(0, ltcgIncome - Math.max(0, stdDed - ordinaryIncome));
         let tax = 0;
-
         const a = window.currentData?.assumptions || {};
         const userLtcgRate = (a.ltcgRate || 15) / 100;
-        
         const brackets = {
-            'Single': [
-                [11925, 0.10], [48475, 0.12], [103350, 0.22], [197300, 0.24],
-                [250525, 0.32], [626350, 0.35], [Infinity, 0.37]
-            ],
-            'Married Filing Jointly': [
-                [23850, 0.10], [96950, 0.12], [206700, 0.22], [394600, 0.24],
-                [501050, 0.32], [751600, 0.35], [Infinity, 0.37]
-            ],
-            'Head of Household': [
-                [17000, 0.10], [64850, 0.12], [103350, 0.22], [197300, 0.24],
-                [250525, 0.32], [626350, 0.35], [Infinity, 0.37]
-            ]
+            'Single': [[11925, 0.10], [48475, 0.12], [103350, 0.22], [197300, 0.24], [250525, 0.32], [626350, 0.35], [Infinity, 0.37]],
+            'Married Filing Jointly': [[23850, 0.10], [96950, 0.12], [206700, 0.22], [394600, 0.24], [501050, 0.32], [751600, 0.35], [Infinity, 0.37]],
+            'Head of Household': [[17000, 0.10], [64850, 0.12], [103350, 0.22], [197300, 0.24], [250525, 0.32], [626350, 0.35], [Infinity, 0.37]]
         };
-        
         const baseBrackets = brackets[status] || brackets['Single'];
         let prev = 0, remainingOrdinary = taxableOrdinary;
         for (const [limitBase, rate] of baseBrackets) {
@@ -227,103 +237,84 @@ export const engine = {
             prev = limit;
             if (remainingOrdinary <= 0) break;
         }
-
         const ltcgZeroLimit = (status === 'Married Filing Jointly' ? 94000 : (status === 'Head of Household' ? 63000 : 47000)) * inflationFactor;
         const ltcgInTaxableRange = Math.max(0, taxableLtcg - Math.max(0, ltcgZeroLimit - taxableOrdinary));
         tax += (ltcgInTaxableRange * userLtcgRate);
         tax += ((ordinaryIncome + ltcgIncome) * (stateTaxRates[state]?.rate || 0));
         return tax;
     },
-    calculateSnapBenefit: (income, hhSize, shelterCosts, hasSUA, isDisabled, state = 'Michigan', inflationFactor = 1) => {
-        const monthlyGross = Math.max(0, income / 12);
-        const fplBaseline = stateTaxRates[state]?.fplBase || 16060;
-        const snapFpl = (fplBaseline + (hhSize - 1) * 5650) * inflationFactor;
+    calculateSnapBenefit: (earnedMonthly, unearnedMonthly, liquidAssets, hhSize, shelterCosts, hasSUA, isDisabledOrElderly, childSupportPaid = 0, depCare = 0, medicalExps = 0, stateId = 'Michigan', inflationFactor = 1) => {
+        const isAK = stateId === 'Alaska', isHI = stateId === 'Hawaii';
+        const geoSet = isAK ? SNAP_CONFIG.constants.alaska : (isHI ? SNAP_CONFIG.constants.hawaii : SNAP_CONFIG.constants.federal);
+        const stateConfig = SNAP_CONFIG.states[stateId] || { limit: 2.00, assetTest: false };
         
-        // 200% Gross Test for categorical eligibility in Michigan and most states
-        if (monthlyGross > (snapFpl * 2.0) / 12) return 0;
+        // Gate 1: Gross Income Test
+        if (!isDisabledOrElderly) {
+            const fpl100Value = (geoSet.fpl100[hhSize - 1] || (geoSet.fpl100[7] + (hhSize - 8) * (geoSet.fpl100[7] - geoSet.fpl100[6]))) * inflationFactor;
+            const grossLimit = fpl100Value * stateConfig.limit;
+            if ((earnedMonthly + unearnedMonthly) > grossLimit) return 0;
+        }
+
+        // Gate 2: Asset Test
+        if (stateConfig.assetTest) {
+            const limit = isDisabledOrElderly ? (stateConfig.assetLimitDisabled || stateConfig.assetLimit) : stateConfig.assetLimit;
+            if (liquidAssets > limit) return 0;
+        }
+
+        // Gate 3: The Math
+        const stdDed = (geoSet.stdDed[hhSize - 1] || geoSet.stdDed[5]) * inflationFactor;
+        const earnedDed = earnedMonthly * 0.20;
+        const medicalDed = isDisabledOrElderly ? Math.max(0, medicalExps - 35) : 0;
         
-        // Standard Deduction 2025/2026 values
-        const stdDed = (hhSize <= 3 ? 205 : (hhSize === 4 ? 220 : (hhSize === 5 ? 255 : 295))) * inflationFactor;
+        const adjustedIncome = Math.max(0, (earnedMonthly - earnedDed) + unearnedMonthly - stdDed - childSupportPaid - depCare - medicalDed);
+        const totalShelterCosts = shelterCosts + (hasSUA ? geoSet.sua * inflationFactor : 0);
+        const shelterThreshold = adjustedIncome * 0.50;
+        let excessShelter = Math.max(0, totalShelterCosts - shelterThreshold);
         
-        // Earned Income Deduction (20%)
-        const earnedDed = monthlyGross * 0.20;
+        if (!isDisabledOrElderly) excessShelter = Math.min(excessShelter, geoSet.maxShelter * inflationFactor);
         
-        // Net Income before shelter
-        const netBeforeShelter = Math.max(0, monthlyGross - stdDed - earnedDed);
+        const netIncome = Math.max(0, adjustedIncome - excessShelter);
+        const maxAllotment = (geoSet.maxAllotment[hhSize - 1] || (geoSet.maxAllotment[7] + (hhSize - 8) * (geoSet.maxAllotment[7] - geoSet.maxAllotment[6]))) * inflationFactor;
         
-        // Shelter Deduction Calculation
-        // Threshold is 50% of the Net Income (after other deductions)
-        const shelterThreshold = netBeforeShelter / 2;
-        const actualShelterCosts = shelterCosts + (hasSUA ? 680 * inflationFactor : 0);
-        const rawExcessShelter = Math.max(0, actualShelterCosts - shelterThreshold);
+        const benefit = Math.floor(Math.max(0, maxAllotment - (netIncome * 0.30)));
+        if (hhSize <= 2 && (earnedMonthly + unearnedMonthly) <= 0 && benefit < 23) return 23;
         
-        // Cap the shelter deduction unless disabled/elderly
-        const finalShelterDeduction = (isDisabled) ? rawExcessShelter : Math.min(rawExcessShelter, 712 * inflationFactor);
-        
-        // Final Net Income for SNAP
-        const finalNetIncome = Math.max(0, netBeforeShelter - finalShelterDeduction);
-        
-        // Max Benefit (2025 COLA)
-        const maxBenefit = (291 + (hhSize - 1) * 211) * inflationFactor;
-        
-        // Standard 30% contribution rule
-        const benefit = Math.floor(Math.max(0, maxBenefit - (finalNetIncome * 0.3)));
-        
-        // Minimum benefit rule ($23 for 1-2 person households)
-        if (benefit > 0) return benefit;
-        if (hhSize <= 2 && monthlyGross <= (snapFpl / 12)) return 23 * inflationFactor;
-        
-        return 0;
+        return benefit;
     },
     calculateSummaries: (data) => {
         const inv = data.investments || [], options = data.stockOptions || [], re = data.realEstate || [], oa = data.otherAssets || [], helocs = data.helocs || [], debts = data.debts || [], inc = data.income || [], budget = data.budget || { savings: [], expenses: [] };
-        
         const optionsEquity = options.reduce((s, x) => {
             const shares = parseFloat(x.shares) || 0;
             const strike = math.fromCurrency(x.strikePrice);
             const fmv = math.fromCurrency(x.currentPrice);
             return s + Math.max(0, (fmv - strike) * shares);
         }, 0);
-
         const totalAssets = inv.reduce((s, x) => s + math.fromCurrency(x.value), 0) + optionsEquity + re.reduce((s, x) => s + math.fromCurrency(x.value), 0) + oa.reduce((s, x) => s + math.fromCurrency(x.value), 0);
         const totalLiabilities = re.reduce((s, x) => s + math.fromCurrency(x.mortgage), 0) + oa.reduce((s, x) => s + math.fromCurrency(x.loan), 0) + helocs.reduce((s, h) => s + math.fromCurrency(h.balance), 0) + debts.reduce((s, x) => s + math.fromCurrency(x.balance), 0);
-        
         const age = data.assumptions?.currentAge || 40;
         let irsLimit = 23500;
         if (age >= 60 && age <= 63) irsLimit = 34750;
         else if (age >= 50) irsLimit = 31000;
-
-        let total401kContribution = 0;
-        let totalGrossInflow = 0; // True Top Line (Amount + Bonus)
-        let totalNetSource = 0; // After business expenses (Amount + Bonus - Deductions)
-        
+        let total401kContribution = 0, totalGrossInflow = 0, totalNetSource = 0;
         inc.forEach(x => {
-            // Safety check for both boolean and string types
             const isMon = x.isMonthly === true || x.isMonthly === 'true';
             let base = math.fromCurrency(x.amount) * (isMon ? 12 : 1);
             const bonus = (base * (parseFloat(x.bonusPct) / 100 || 0));
             const sourceGross = base + bonus;
-            
             let personal401kRaw = base * (parseFloat(x.contribution) / 100 || 0);
             if (x.contribOnBonus) personal401kRaw += (bonus * (parseFloat(x.contribution) / 100 || 0));
-            
             const cappedIndividual401k = Math.min(personal401kRaw, irsLimit);
             total401kContribution += cappedIndividual401k;
-            
             const isExpMon = x.incomeExpensesMonthly === true || x.incomeExpensesMonthly === 'true';
             const sourceExpenses = (math.fromCurrency(x.incomeExpenses) * (isExpMon ? 12 : 1));
-            
             totalGrossInflow += sourceGross;
             totalNetSource += (sourceGross - sourceExpenses); 
         });
-        
         const hsaSavings = budget.savings?.filter(s => s.type === 'HSA').reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
         const manualSavingsSum = budget.savings?.filter(x => !x.isLocked).reduce((s, x) => s + math.fromCurrency(x.annual), 0) || 0;
-        
         return { 
             netWorth: totalAssets - totalLiabilities, 
-            totalAssets, 
-            totalLiabilities, 
+            totalAssets, totalLiabilities, 
             totalGrossIncome: totalGrossInflow, 
             magiBase: Math.max(0, totalNetSource - total401kContribution - hsaSavings), 
             total401kContribution, 
