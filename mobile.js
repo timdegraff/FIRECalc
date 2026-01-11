@@ -273,7 +273,7 @@ const MOBILE_TEMPLATES = {
                          </div>
                          <div id="label-top-retire-age" class="text-xl font-black text-white mono-numbers leading-none">65</div>
                     </div>
-                    <input type="range" id="input-top-retire-age" min="30" max="72" step="1" value="65" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                    <input type="range" id="input-top-retire-age" min="18" max="72" step="1" value="65" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
                 </div>
             </div>
 
@@ -295,7 +295,7 @@ const MOBILE_TEMPLATES = {
 
 const ITEM_TEMPLATES = {
     investment: (data) => {
-        const tcMap = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', 'Real Estate': 'text-indigo-400', 'Debt': 'text-red-400', '529': 'text-type-529' };
+        const tcMap = { 'Taxable': 'text-type-taxable', 'Pre-Tax (401k/IRA)': 'text-type-pretax', 'Roth IRA': 'text-type-posttax', 'Cash': 'text-type-cash', 'Crypto': 'text-type-crypto', 'Metals': 'text-type-metals', 'HSA': 'text-type-hsa', '529': 'text-type-529' };
         const tc = tcMap[data.type] || 'text-white';
         return `
         <div class="mobile-card flex flex-col gap-0.5">
@@ -504,7 +504,10 @@ async function loadApp() {
         const btn = document.createElement('button');
         btn.id = 'login-to-save-mobile';
         btn.className = "px-2 py-1.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-lg text-[8px] font-black uppercase tracking-tight active:scale-95";
-        btn.textContent = "LOGIN TO SAVE"; btn.onclick = () => document.getElementById('login-btn').click();
+        btn.textContent = "LOGIN TO SAVE"; btn.onclick = () => {
+            const loginBtn = document.getElementById('login-btn');
+            if (loginBtn) loginBtn.click();
+        };
         headerActions.insertBefore(btn, document.getElementById('save-indicator'));
     }
     const saveInd = document.getElementById('save-indicator'); if (saveInd) saveInd.classList.add('hidden');
@@ -513,9 +516,38 @@ async function loadApp() {
 }
 
 function attachGlobal() {
-    document.getElementById('login-btn').onclick = async () => { try { await setPersistence(auth, browserLocalPersistence); await signInWithPopup(auth, provider); } catch (error) { if(error.code !== 'auth/popup-blocked' || error.code !== 'auth/popup-closed-by-user') alert(error.message); } };
-    const guestBtn = document.getElementById('guest-btn'); if (guestBtn) guestBtn.onclick = () => { localStorage.setItem('firecalc_guest_mode', 'true'); window.location.reload(); };
-    document.getElementById('logout-btn').onclick = async () => { if (localStorage.getItem('firecalc_guest_mode') === 'true') { localStorage.removeItem('firecalc_guest_mode'); window.location.reload(); } else await logoutUser(); };
+    const loginBtn = document.getElementById('login-btn');
+    if (loginBtn) {
+        loginBtn.onclick = async () => { 
+            try { 
+                await setPersistence(auth, browserLocalPersistence); 
+                await signInWithPopup(auth, provider); 
+            } catch (error) { 
+                if(error.code !== 'auth/popup-blocked' || error.code !== 'auth/popup-closed-by-user') alert(error.message); 
+            } 
+        };
+    }
+
+    const guestBtn = document.getElementById('guest-btn'); 
+    if (guestBtn) {
+        guestBtn.onclick = () => { 
+            localStorage.setItem('firecalc_guest_mode', 'true'); 
+            window.location.reload(); 
+        };
+    }
+
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = async () => { 
+            if (localStorage.getItem('firecalc_guest_mode') === 'true') { 
+                localStorage.removeItem('firecalc_guest_mode'); 
+                window.location.reload(); 
+            } else {
+                await logoutUser(); 
+            }
+        };
+    }
+
     document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.onclick = () => { 
         triggerHaptic(); 
         currentTab = btn.dataset.tab; 
@@ -526,6 +558,7 @@ function attachGlobal() {
         }
         renderTab(); 
     });
+
     document.body.addEventListener('input', (e) => {
         triggerHaptic(); const input = e.target;
         if (input.dataset.id && document.getElementById('m-assumptions-container') && input.closest('#m-assumptions-container')) {
@@ -585,7 +618,14 @@ function attachGlobal() {
         if (window.debouncedAutoSave) window.debouncedAutoSave();
         updateMobileSummaries(); updateMobileNW();
     });
-    document.getElementById('close-inspector').onclick = () => document.getElementById('inspector-overlay').classList.add('hidden');
+
+    const closeInspector = document.getElementById('close-inspector');
+    if (closeInspector) {
+        closeInspector.onclick = () => {
+            const overlay = document.getElementById('inspector-overlay');
+            if (overlay) overlay.classList.add('hidden');
+        };
+    }
 }
 
 function updateMobileNW() { if(!window.currentData) return; const s = engine.calculateSummaries(window.currentData), lbl = document.getElementById('mobile-nw-label'); if (lbl) lbl.textContent = `${math.toSmartCompactCurrency(s.netWorth)} Net Worth`; }
@@ -624,7 +664,9 @@ function renderMobileAssetList() {
 }
 
 function renderTab() {
-    const main = document.getElementById('mobile-content'); main.innerHTML = MOBILE_TEMPLATES[currentTab]();
+    const main = document.getElementById('mobile-content');
+    if (!main) return;
+    main.innerHTML = MOBILE_TEMPLATES[currentTab]();
     if(!window.currentData) return;
     if (currentTab === 'assets-debts') {
         window.currentData.investments?.forEach((i, idx) => addMobileRow('m-investment-cards', 'investment', i, idx, 'investments'));
@@ -651,8 +693,14 @@ function renderTab() {
     if (currentTab === 'projection') { projection.load(window.currentData.projectionSettings); projection.run(window.currentData); }
     if (currentTab === 'assumptions') {
         renderMobileAssumptions();
-        document.getElementById('btn-reset-market-defaults-mobile').onclick = () => { triggerHaptic(); if (confirm('Reset market defaults?')) { const marketDefaults = { stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 }; Object.entries(marketDefaults).forEach(([id, val]) => { if (window.currentData.assumptions) { window.currentData.assumptions[id] = val; window.currentData.assumptions[id + 'Perpetual'] = val; } }); renderMobileAssumptions(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } };
-        document.getElementById('btn-factory-reset-mobile').onclick = () => { triggerHaptic(); if(confirm("Factory Reset App?")) window.location.href = window.location.pathname + '?reset=true'; };
+        const resetMkt = document.getElementById('btn-reset-market-defaults-mobile');
+        if (resetMkt) {
+            resetMkt.onclick = () => { triggerHaptic(); if (confirm('Reset market defaults?')) { const marketDefaults = { stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3, inflation: 3 }; Object.entries(marketDefaults).forEach(([id, val]) => { if (window.currentData.assumptions) { window.currentData.assumptions[id] = val; window.currentData.assumptions[id + 'Perpetual'] = val; } }); renderMobileAssumptions(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } };
+        }
+        const resetFac = document.getElementById('btn-factory-reset-mobile');
+        if (resetFac) {
+            resetFac.onclick = () => { triggerHaptic(); if(confirm("Factory Reset App?")) window.location.href = window.location.pathname + '?reset=true'; };
+        }
     }
     updateMobileSummaries(); updateMobileNW(); initSwipeHandlers();
 }
@@ -720,7 +768,7 @@ function renderMobileAssumptions() {
     const container = document.getElementById('m-assumptions-container'); if (!container) return;
     const a = window.currentData.assumptions || assumptions.defaults, hhSize = window.currentData.benefits?.hhSize || 1;
     const slider = (label, id, min, max, step, val, suffix = '', colorClass = 'text-blue-400') => `<label class="block space-y-0.5"><div class="flex justify-between items-center"><span class="mobile-label ${colorClass}">${label}</span></div><div class="flex items-center gap-2"><input data-id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${val}" class="mobile-slider"><span class="${colorClass} font-bold mono-numbers w-10 text-right text-[9px]">${val}${suffix}</span></div></label>`;
-    container.innerHTML = `<div class="mobile-card space-y-2">${slider("Current Age", "currentAge", 18, 72, 1, a.currentAge, "", "text-white")}${slider("Retirement Age", "retirementAge", 30, 72, 1, a.retirementAge, "", "text-blue-400")}<div class="space-y-0.5"><div class="flex justify-between items-center"><span class="mobile-label text-white">Family Size</span></div><div class="flex items-center gap-2"><input data-id="hhSize" type="range" min="1" max="10" step="1" value="${hhSize}" class="mobile-slider"><span class="text-white font-bold mono-numbers w-10 text-right text-[9px]">${hhSize}</span></div></div></div><div class="mobile-card space-y-2"><div class="flex items-center justify-between"><span class="mobile-label">State</span><select data-id="state" class="bg-slate-900 border border-slate-700 rounded py-0.5 px-2 font-bold text-[9px] text-white outline-none w-32">${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="flex items-center justify-between"><span class="mobile-label">Filing Status</span><select data-id="filingStatus" class="bg-slate-900 border border-slate-700 rounded py-0.5 px-2 font-bold text-[9px] text-white outline-none w-32"><option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option><option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option><option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option></select></div></div><div class="mobile-card space-y-2"><h3 class="text-[7px] font-black uppercase text-slate-500 tracking-widest mb-1">Market Assumptions</h3>${slider("Stocks", "stockGrowth", 0, 15, 0.5, a.stockGrowth, "%")}${slider("Crypto", "cryptoGrowth", 0, 20, 0.5, a.cryptoGrowth, "%")}${slider("Metals", "metalsGrowth", 0, 15, 0.5, a.metalsGrowth, "%")}${slider("Real Estate", "realEstateGrowth", 0, 10, 0.1, a.realEstateGrowth, "%")}<div class="pt-1 border-t border-slate-700">${slider("Inflation", "inflation", 0, 10, 0.1, a.inflation, "%", "text-red-400")}</div></div><div class="mobile-card space-y-2"><div class="grid grid-cols-2 gap-4"><div class="space-y-0.5"><span class="mobile-label">SS Start</span><input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded p-1 font-black text-white outline-none text-center text-xs"></div><div class="space-y-0.5"><span class="mobile-label">SS Monthly</span><input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded p-1 font-black text-teal-400 outline-none text-center text-xs"></div></div></div>`;
+    container.innerHTML = `<div class="mobile-card space-y-2">${slider("Current Age", "currentAge", 18, 72, 1, a.currentAge, "", "text-white")}${slider("Retirement Age", "retirementAge", 18, 72, 1, a.retirementAge, "", "text-blue-400")}<div class="space-y-0.5"><div class="flex justify-between items-center"><span class="mobile-label text-white">Family Size</span></div><div class="flex items-center gap-2"><input data-id="hhSize" type="range" min="1" max="10" step="1" value="${hhSize}" class="mobile-slider"><span class="text-white font-bold mono-numbers w-10 text-right text-[9px]">${hhSize}</span></div></div></div><div class="mobile-card space-y-2"><div class="flex items-center justify-between"><span class="mobile-label">State</span><select data-id="state" class="bg-slate-900 border border-slate-700 rounded py-0.5 px-2 font-bold text-[9px] text-white outline-none w-32">${Object.keys(stateTaxRates).sort().map(s => `<option ${a.state === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div><div class="flex items-center justify-between"><span class="mobile-label">Filing Status</span><select data-id="filingStatus" class="bg-slate-900 border border-slate-700 rounded py-0.5 px-2 font-bold text-[9px] text-white outline-none w-32"><option ${a.filingStatus === 'Single' ? 'selected' : ''}>Single</option><option ${a.filingStatus === 'Married Filing Jointly' ? 'selected' : ''}>Married Filing Jointly</option><option ${a.filingStatus === 'Head of Household' ? 'selected' : ''}>Head of Household</option></select></div></div><div class="mobile-card space-y-2"><h3 class="text-[7px] font-black uppercase text-slate-500 tracking-widest mb-1">Market Assumptions</h3>${slider("Stocks", "stockGrowth", 0, 15, 0.5, a.stockGrowth, "%")}${slider("Crypto", "cryptoGrowth", 0, 20, 0.5, a.cryptoGrowth, "%")}${slider("Metals", "metalsGrowth", 0, 15, 0.5, a.metalsGrowth, "%")}${slider("Real Estate", "realEstateGrowth", 0, 10, 0.1, a.realEstateGrowth, "%")}<div class="pt-1 border-t border-slate-700">${slider("Inflation", "inflation", 0, 10, 0.1, a.inflation, "%", "text-red-400")}</div></div><div class="mobile-card space-y-2"><div class="grid grid-cols-2 gap-4"><div class="space-y-0.5"><span class="mobile-label">SS Start</span><input data-id="ssStartAge" type="number" value="${a.ssStartAge}" class="block w-full bg-slate-900 border border-slate-700 rounded p-1 font-black text-white outline-none text-center text-xs"></div><div class="space-y-0.5"><span class="mobile-label">SS Monthly</span><input data-id="ssMonthly" data-type="currency" value="${math.toCurrency(a.ssMonthly)}" class="block w-full bg-slate-900 border border-slate-700 rounded p-1 font-black text-teal-400 outline-none text-center text-xs"></div></div></div>`;
     const hhInput = container.querySelector('[data-id="hhSize"]'); if (hhInput) hhInput.oninput = (e) => { const val = parseInt(e.target.value); e.target.nextElementSibling.textContent = val; if (!window.currentData.benefits) window.currentData.benefits = {}; window.currentData.benefits.hhSize = val; if (window.debouncedAutoSave) window.debouncedAutoSave(); };
     const ssInput = container.querySelector('[data-id="ssMonthly"]'); if (ssInput) formatter.bindCurrencyEventListeners(ssInput);
 }

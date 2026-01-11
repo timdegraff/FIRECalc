@@ -9,6 +9,15 @@ import { benefits } from './benefits.js';
 
 let lastChartSum = 0;
 
+// Keys that should be synchronized globally across all matching data-id attributes
+const GLOBAL_SYNC_KEYS = [
+    'currentAge', 'retirementAge', 'ssStartAge', 'ssMonthly', 
+    'stockGrowth', 'cryptoGrowth', 'metalsGrowth', 'realEstateGrowth', 
+    'inflation', 'filingStatus', 'helocRate', 'state', 
+    'workYearsAtRetirement', 'phaseGo1', 'phaseGo2', 'phaseGo3', 
+    'advancedGrowth', 'ltcgRate'
+];
+
 // Initialize global addRow
 window.addRow = (containerId, type, data = {}) => {
     const container = document.getElementById(containerId); if (!container) return;
@@ -170,7 +179,9 @@ function attachGlobalListeners() {
         const target = e.target;
         const dataId = target.dataset.id;
 
-        if (dataId) {
+        // CRITICAL FIX: Only sync if the ID is a designated Global Sync key.
+        // This prevents repeating items (like multiple kids or account names) from linking.
+        if (dataId && GLOBAL_SYNC_KEYS.includes(dataId)) {
             const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
             let logicVal = (target.dataset?.type === 'currency' || target.dataset?.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
             
@@ -438,7 +449,7 @@ window.createAssumptionControls = (data) => {
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Timing</h3>
             </div>
             ${renderComplexField("Current Age", "currentAge", a.currentAge, 18, 72, 1, "text-white", "0")}
-            ${renderComplexField("Retire Age", "retirementAge", a.retirementAge, 30, 72, 1, "text-blue-400", "0")}
+            ${renderComplexField("Retire Age", "retirementAge", a.retirementAge, 18, 72, 1, "text-blue-400", "0")}
             ${renderComplexField("SS Start Age", "ssStartAge", a.ssStartAge, 62, 72, 1, "text-white", "0")}
             ${renderComplexField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly, 0, 8000, 100, "text-teal-400", "0", true)}
         </div>

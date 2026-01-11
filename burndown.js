@@ -37,7 +37,7 @@ export const burndown = {
                                 <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
                                 <input type="number" id="input-retire-age-direct" data-id="retirementAge" class="bg-transparent border-none text-blue-400 font-black mono-numbers text-sm w-10 text-center outline-none" value="65">
                                 <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
-                                <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="72" step="1" class="hidden"> 
+                                <input type="range" id="input-top-retire-age" data-id="retirementAge" min="18" max="72" step="1" class="hidden"> 
                             </div>
                          </div>
                          
@@ -255,7 +255,7 @@ export const burndown = {
 
         const btnDebugMinus = document.getElementById('btn-debug-minus'), btnDebugPlus = document.getElementById('btn-debug-plus');
         if (btnDebugMinus && btnDebugPlus && debugAgeInput) {
-            btnDebugMinus.onclick = () => { debugAgeInput.value = Math.max(30, parseInt(debugAgeInput.value || 40) - 1); debugAgeInput.dispatchEvent(new Event('input')); };
+            btnDebugMinus.onclick = () => { debugAgeInput.value = Math.max(18, parseInt(debugAgeInput.value || 40) - 1); debugAgeInput.dispatchEvent(new Event('input')); };
             btnDebugPlus.onclick = () => { debugAgeInput.value = Math.min(100, parseInt(debugAgeInput.value || 40) + 1); debugAgeInput.dispatchEvent(new Event('input')); };
         }
 

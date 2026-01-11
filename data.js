@@ -205,11 +205,11 @@ window.debouncedAutoSave = () => autoSave(true);
 function showSaveIndicator() {
     const el = document.getElementById('save-indicator');
     if (!el) return;
-    const user = auth.currentUser;
-    if (user) {
-        el.classList.add('text-emerald-400');
-        setTimeout(() => el.classList.remove('text-emerald-400'), 50);
-    }
+    // Highlight the cloud icon green for 100ms
+    el.classList.add('text-emerald-400');
+    setTimeout(() => {
+        el.classList.remove('text-emerald-400');
+    }, 100);
 }
 
 export function updateSummaries() {
