@@ -33,21 +33,29 @@ export const formatter = {
 
     bindNumberEventListeners: (input) => {
         if (!input) return;
+        const isPercent = input.dataset.type === 'percent';
+
         input.addEventListener('blur', (e) => {
             const decimals = e.target.dataset.decimals !== undefined ? parseInt(e.target.dataset.decimals) : null;
-            let val = parseFloat(e.target.value) || 0;
+            let val = parseFloat(e.target.value.replace(/[^0-9.-]+/g, "")) || 0;
             if (decimals !== null) {
                 val = parseFloat(val.toFixed(decimals));
-                e.target.value = val;
             }
+            e.target.value = isPercent ? val + '%' : val;
             if (val === 0) e.target.classList.add('value-zero');
             else e.target.classList.remove('value-zero');
         });
+
         input.addEventListener('focus', (e) => {
+            const val = parseFloat(e.target.value.replace(/[^0-9.-]+/g, "")) || 0;
+            e.target.value = val;
             e.target.classList.remove('value-zero');
             setTimeout(() => e.target.select(), 0);
         });
-        const val = parseFloat(input.value) || 0;
-        if (val === 0) input.classList.add('value-zero');
+
+        // Initial Formatting
+        const initialVal = parseFloat(input.value.replace(/[^0-9.-]+/g, "")) || 0;
+        input.value = isPercent ? initialVal + '%' : initialVal;
+        if (initialVal === 0) input.classList.add('value-zero');
     }
 };

@@ -20,15 +20,16 @@ export const templates = {
             };
             return map[type] || 'text-white';
         },
-        renderStepper: (id, value, colorClass = "text-white", decimals = "1", isCurrency = false, step = 0.5) => `
+        renderStepper: (id, value, colorClass = "text-white", decimals = "1", isCurrency = false, step = 0.5, isPercent = false) => `
             <div class="relative group/stepper">
                 <input data-id="${id}" 
                        data-decimals="${decimals}" 
                        ${isCurrency ? 'data-type="currency"' : ''} 
-                       type="${isCurrency ? 'text' : 'number'}" 
+                       ${isPercent ? 'data-type="percent"' : ''} 
+                       type="${(isCurrency || isPercent) ? 'text' : 'number'}" 
                        step="${step}" 
                        placeholder="0" 
-                       value="${isCurrency ? math.toCurrency(value) : (value !== undefined ? (decimals === "0" && !isCurrency && value % 1 !== 0 ? Math.round(value) : value) : 0)}" 
+                       value="${isCurrency ? math.toCurrency(value) : (isPercent ? (value + '%') : (value !== undefined ? (decimals === "0" && value % 1 !== 0 ? Math.round(value) : value) : 0))}" 
                        class="input-base text-center font-bold mono-numbers ${colorClass} pr-6">
                 <div class="absolute right-1 top-0 bottom-0 flex flex-col justify-center gap-0.5 opacity-0 group-hover/stepper:opacity-100 transition-opacity">
                     <button data-step="up" data-target="${id}" class="text-[8px] text-slate-500 hover:text-white leading-none"><i class="fas fa-chevron-up"></i></button>
