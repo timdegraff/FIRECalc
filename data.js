@@ -107,7 +107,7 @@ function scrapeData() {
                 const el = row.querySelector(`[data-id="${field}"]`);
                 if (el) {
                     if (el.type === 'checkbox') obj[field] = el.checked;
-                    else if (el.dataset.type === 'currency') obj[field] = math.fromCurrency(el.value);
+                    else if (el.dataset.type === 'currency' || el.dataset.type === 'percent') obj[field] = math.fromCurrency(el.value);
                     else if (el.type === 'number') obj[field] = parseFloat(el.value) || 0;
                     else {
                         let val = el.value;
@@ -146,14 +146,10 @@ function scrapeData() {
         assumptionsContainer.querySelectorAll('[data-id]').forEach(el => {
             const key = el.dataset.id;
             if (el.type === 'checkbox') aObj[key] = el.checked;
-            else if (el.dataset.type === 'currency') aObj[key] = math.fromCurrency(el.value);
+            else if (el.dataset.type === 'currency' || el.dataset.type === 'percent') aObj[key] = math.fromCurrency(el.value);
             else if (el.tagName === 'SELECT') aObj[key] = el.value;
             else {
                 let val = parseFloat(el.value);
-                // Multipliers are percentages in UI, decimals in state
-                if (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(key)) {
-                    val = val / 100;
-                }
                 aObj[key] = isNaN(val) ? el.value : val;
             }
         });

@@ -207,7 +207,7 @@ function attachGlobalListeners() {
                     el.value = math.toCurrency(logicVal);
                 } else if (el.dataset.type === 'percent') {
                     const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
-                    el.value = (isMultiplier ? Math.round(logicVal * 100) : logicVal) + '%';
+                    el.value = (isMultiplier ? Math.round(logicVal * 100) : (logicVal * 100)) + '%';
                 } else if (el.type === 'number' || el.classList.contains('input-base')) {
                     el.value = logicVal;
                 }
@@ -225,7 +225,7 @@ function attachGlobalListeners() {
                         if (numInput.dataset.type === 'currency') numInput.value = math.toCurrency(logicVal);
                         else if (numInput.dataset.type === 'percent') {
                             const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
-                            numInput.value = (isMultiplier ? Math.round(logicVal * 100) : logicVal) + '%';
+                            numInput.value = (isMultiplier ? Math.round(logicVal * 100) : (logicVal * 100)) + '%';
                         } else {
                             numInput.value = logicVal;
                         }
@@ -437,7 +437,7 @@ window.createAssumptionControls = (data) => {
                     ${isCurrency ? 
                         templates.helpers.renderStepper(id, value, `text-right ${colorClass}`, "0", isCurrency, step) :
                         (isPercent ? 
-                            templates.helpers.renderStepper(id, Math.round(value * 100) / 100, `text-center ${colorClass}`, "0", false, 0.1, true) :
+                            templates.helpers.renderStepper(id, (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id) ? (value * 100) : (value * 100)), `text-center ${colorClass}`, "0", false, (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id) ? 10 : step), true) :
                             templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, decimals, false, step)
                         )
                     }
@@ -449,7 +449,7 @@ window.createAssumptionControls = (data) => {
 
     const renderAdvancedAPYRow = (label, prefix, colorClass) => {
         if (!isAdv) {
-            return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass, "1", false, false);
+            return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass, "1", false, true);
         }
         return `
             <div class="space-y-2 border-l border-white/10 pl-3">
@@ -457,7 +457,7 @@ window.createAssumptionControls = (data) => {
                 <div class="grid grid-cols-3 gap-2 items-end">
                     <div class="space-y-1">
                         <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Rate</span>
-                        ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5)}
+                        ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
                     </div>
                     <div class="space-y-1">
                          <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">For Yrs</span>
@@ -465,7 +465,7 @@ window.createAssumptionControls = (data) => {
                     </div>
                     <div class="space-y-1">
                         <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Final</span>
-                        ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5)}
+                        ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
                     </div>
                 </div>
             </div>
@@ -509,9 +509,9 @@ window.createAssumptionControls = (data) => {
                 ${renderAdvancedAPYRow("Crypto APY (%)", "crypto", "text-slate-400")}
                 ${renderAdvancedAPYRow("Metals APY (%)", "metals", "text-amber-500")}
             </div>
-            ${renderComplexField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, 0, 10, 0.1, "text-indigo-400", "1", false, false)}
+            ${renderComplexField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, 0, 10, 0.1, "text-indigo-400", "1", false, true)}
             <div class="pt-4 border-t border-white/5">
-                ${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400", "1", false, false)}
+                ${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400", "1", false, true)}
             </div>
         </div>
 

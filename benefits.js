@@ -66,10 +66,12 @@ export const benefits = {
                             </div>
                         </div>
                         
-                        <div class="mb-6">
-                            <input type="range" data-benefit-id="unifiedIncomeAnnual" min="0" max="200000" step="1000" value="25000" class="input-range w-full h-1 accent-teal-500">
-                            <p class="text-[7px] text-slate-500 font-bold uppercase mt-2 tracking-widest">Adjust annual household income for simulation</p>
+                        <div class="mb-6 relative h-6 flex items-center">
+                            <style id="dynamic-slider-style"></style>
+                            <input type="range" id="benefit-magi-slider" data-benefit-id="unifiedIncomeAnnual" min="0" max="200000" step="1000" value="25000" class="benefit-slider w-full !bg-transparent z-10">
+                            <div id="slider-track-visual" class="absolute left-0 right-0 h-1 rounded-full overflow-hidden pointer-events-none"></div>
                         </div>
+                        <p class="text-[7px] text-slate-500 font-bold uppercase tracking-widest text-center">Adjust annual household income for simulation</p>
                         
                         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
                             <div>
@@ -244,28 +246,49 @@ export const benefits = {
         if (document.getElementById('hh-composition-text')) document.getElementById('hh-composition-text').textContent = `${adults} Adult${adults > 1 ? 's' : ''} ${kids > 0 ? '+ ' + kids + ' Dependent' + (kids > 1 ? 's' : '') : ''}`;
         if (document.getElementById('hh-total-size-badge')) document.getElementById('hh-total-size-badge').textContent = totalSize;
         
-        const stateMeta = stateTaxRates[window.currentData?.assumptions?.state || 'Michigan'];
+        const stateId = window.currentData?.assumptions?.state || 'Michigan';
+        const stateMeta = stateTaxRates[stateId];
         const fplBase = stateMeta?.fplBase || 16060;
         const fpl2026Annual = fplBase + (totalSize - 1) * 5650;
         const ratio = annualMAGI / fpl2026Annual;
         const medRatio = data.isPregnant ? 1.95 : 1.38;
         const silverRatio = 2.50;
+
+        // Dynamic Slider Track Styling
+        const sliderMax = 200000;
+        const platBoundary = (fpl2026Annual * medRatio / sliderMax) * 100;
+        const silverBoundary = (fpl2026Annual * silverRatio / sliderMax) * 100;
+        const trackVisual = document.getElementById('slider-track-visual');
+        if (trackVisual) {
+            trackVisual.style.background = `linear-gradient(to right, #10b981 0%, #10b981 ${platBoundary}%, #3b82f6 ${platBoundary}%, #3b82f6 ${silverBoundary}%, #475569 ${silverBoundary}%, #475569 100%)`;
+        }
         
         let expectedContributionPct = ratio <= 1.5 ? 0 : (ratio <= 2.0 ? 0.00 + ((ratio - 1.5) / 0.5) * 0.02 : (ratio <= 2.5 ? 0.02 + ((ratio - 2.0) / 0.5) * 0.02 : 0.085));
         let dynamicPremium = ratio > medRatio ? (annualMAGI * expectedContributionPct) / 12 : 0;
 
-        const updateTopCard = (name, sub, prem, ded, colorClass, borderColor) => {
+        const earned = data.isEarnedIncome ? monthlyMAGI : 0;
+        const unearned = data.isEarnedIncome ? 0 : monthlyMAGI;
+        const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
+        const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, stateId);
+
+        // Update Top Cards with correct logic
+        const healthCard = document.getElementById('benefit-summary-health');
+        const snapCardBorder = document.querySelector('#tab-benefits .grid-cols-1.md\\:grid-cols-2 .card-container:last-child');
+        
+        const updateTopCard = (name, sub, prem, ded, theme) => {
             const planEl = document.getElementById('sum-health-plan');
-            const summaryHealthCard = document.getElementById('benefit-summary-health');
             if (planEl) {
                 planEl.innerHTML = `
                     <div class="flex flex-col items-center text-center">
-                        <span class="text-xl font-black uppercase tracking-tight ${colorClass}">${name}</span>
+                        <span class="text-xl font-black uppercase tracking-tight ${theme.text}">${name}</span>
                         <span class="text-[10px] font-black uppercase tracking-widest opacity-60 mt-1">${sub}</span>
                     </div>
                 `;
             }
-            if (summaryHealthCard) summaryHealthCard.style.borderLeftColor = borderColor;
+            if (healthCard) {
+                healthCard.className = `card-container p-6 flex flex-col items-center justify-center h-28 border-2 ${theme.border} transition-all duration-300`;
+                healthCard.style.background = 'rgba(30, 41, 59, 0.4)'; // Explicit fallback
+            }
             
             const premEl = document.getElementById('sum-health-prem');
             const dedEl = document.getElementById('sum-health-ded');
@@ -273,19 +296,31 @@ export const benefits = {
             if (dedEl) dedEl.textContent = ded;
         };
 
-        if (ratio <= medRatio) {
-            if (stateMeta?.expanded !== false) updateTopCard("Platinum (Medicaid)", "100% Full Coverage", "$0", "$0", "text-teal-400", "#14b8a6");
-            else updateTopCard("Private (State Limited)", "No Subsidy", math.toCurrency(dynamicPremium || 400), "$4,000+", "text-slate-500", "#64748b");
-        } else if (ratio <= silverRatio) updateTopCard("Silver CSR (High Subsidy)", "Low Copays", math.toCurrency(dynamicPremium), "$800", "text-blue-400", "#3b82f6");
-        else updateTopCard("Standard ACA", "Full Cost Market", math.toCurrency(dynamicPremium), "$4,000+", "text-slate-500", "#64748b");
+        const themes = {
+            platinum: { text: 'text-emerald-400', border: 'border-emerald-500/50' },
+            silver: { text: 'text-blue-400', border: 'border-blue-500/50' },
+            standard: { text: 'text-slate-500', border: 'border-white/5' }
+        };
 
-        const earned = data.isEarnedIncome ? monthlyMAGI : 0;
-        const unearned = data.isEarnedIncome ? 0 : monthlyMAGI;
-        const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
-        const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, window.currentData?.assumptions?.state || 'Michigan');
-        
+        if (ratio <= medRatio && stateMeta?.expanded !== false) {
+            updateTopCard("Platinum (Medicaid)", "100% Full Coverage", "$0", "$0", themes.platinum);
+        } else if (ratio <= silverRatio) {
+            updateTopCard("Silver CSR (High Subsidy)", "Low Copays", math.toCurrency(dynamicPremium), "$800", themes.silver);
+        } else {
+            updateTopCard("Standard ACA", "Full Cost Market", math.toCurrency(dynamicPremium), "$4,000+", themes.standard);
+        }
+
         const globalSnapRes = document.getElementById('sum-snap-amt');
-        if (globalSnapRes) globalSnapRes.textContent = math.toCurrency(estimatedBenefit);
+        if (globalSnapRes) {
+            globalSnapRes.textContent = math.toCurrency(estimatedBenefit);
+            const isSnapActive = estimatedBenefit > 1;
+            globalSnapRes.className = `text-4xl font-black ${isSnapActive ? 'text-emerald-400' : 'text-slate-500'} mono-numbers tracking-tight`;
+            
+            // Sync SNAP Card Border
+            if (snapCardBorder) {
+                snapCardBorder.className = `card-container p-6 flex flex-col items-center justify-center h-28 border-2 ${isSnapActive ? 'border-emerald-500/50' : 'border-white/5'} transition-all duration-300`;
+            }
+        }
     },
 
     scrape: () => {
