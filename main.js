@@ -6,7 +6,7 @@ import { initializeData, updateSummaries } from './data.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
-import { PROFILE_25_SINGLE, PROFILE_40_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
+import { PROFILE_25_SINGLE, PROFILE_45_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
 
 // --- DEVELOPER / RESET MODE ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -74,7 +74,7 @@ function showProfileSelection() {
     modal.querySelectorAll('button').forEach(b => {
         b.onclick = async () => {
             const type = b.dataset.profile;
-            const data = type === '25' ? PROFILE_25_SINGLE : (type === '55' ? PROFILE_55_RETIREE : PROFILE_40_COUPLE);
+            const data = type === '25' ? PROFILE_25_SINGLE : (type === '55' ? PROFILE_55_RETIREE : PROFILE_45_COUPLE);
             localStorage.setItem('firecalc_guest_data', JSON.stringify(data));
             localStorage.setItem('firecalc_guest_profile_selected', 'true');
             modal.classList.add('hidden');

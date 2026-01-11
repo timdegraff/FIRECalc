@@ -4,13 +4,13 @@ import { engine, math } from './utils.js';
 import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
-import { PROFILE_40_COUPLE } from './profiles.js';
+import { PROFILE_45_COUPLE } from './profiles.js';
 
 const db = getFirestore();
 window.currentData = null;
 window.saveTimeout = null;
 
-const DEFAULTS = PROFILE_40_COUPLE;
+const DEFAULTS = PROFILE_45_COUPLE;
 
 export async function initializeData(user) {
     if (user) {

@@ -7,7 +7,7 @@ import { benefits } from './benefits.js';
 import { burndown } from './burndown.js';
 import { projection } from './projection.js';
 import { formatter } from './formatter.js';
-import { PROFILE_25_SINGLE, PROFILE_40_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
+import { PROFILE_25_SINGLE, PROFILE_45_COUPLE, PROFILE_55_RETIREE } from './profiles.js';
 
 // --- DEVELOPER / RESET MODE ---
 const urlParams = new URLSearchParams(window.location.search);
@@ -477,7 +477,7 @@ function showProfileSelection() {
         if (!btn) return;
         
         const type = btn.dataset.profile;
-        let dataToLoad = PROFILE_40_COUPLE; 
+        let dataToLoad = PROFILE_45_COUPLE; 
         
         if (type === '25') dataToLoad = PROFILE_25_SINGLE;
         else if (type === '55') dataToLoad = PROFILE_55_RETIREE;
