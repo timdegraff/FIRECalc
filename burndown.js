@@ -88,7 +88,7 @@ export const burndown = {
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
                         <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Draw Strategy</label>
-                        <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5">
+                        <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5 mb-3">
                             <button data-mode="PLATINUM" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
                                 <span class="text-emerald-400">138% FPL</span>
                                 <span class="text-[9px] opacity-40">Handout Max</span>
@@ -102,6 +102,11 @@ export const burndown = {
                                 <span class="text-[9px] opacity-40">No strategy</span>
                             </button>
                         </div>
+                        <div class="flex justify-between items-center mb-1 px-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Preserve SNAP</label>
+                            <span id="label-snap-preserve" class="text-emerald-400 font-black mono-numbers text-[9px]">$0</span>
+                        </div>
+                        <input type="range" id="input-snap-preserve" min="0" max="1500" step="50" value="0" class="input-range w-full accent-emerald-500">
                     </div>
 
                     <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
@@ -138,12 +143,16 @@ export const burndown = {
     },
 
     attachListeners: () => {
-        ['toggle-budget-sync', 'input-top-retire-age', 'input-cash-reserve'].forEach(id => {
+        ['toggle-budget-sync', 'input-top-retire-age', 'input-cash-reserve', 'input-snap-preserve'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.oninput = () => {
                 if (id === 'input-cash-reserve') {
                     const lbl = document.getElementById('label-cash-reserve');
                     if (lbl) lbl.textContent = math.toCurrency(parseInt(el.value));
+                }
+                if (id === 'input-snap-preserve') {
+                    const lbl = document.getElementById('label-snap-preserve');
+                    if (lbl) lbl.textContent = parseInt(el.value) > 0 ? `${math.toCurrency(parseInt(el.value))}/mo` : '$0 (Ignore)';
                 }
                 if (id === 'input-top-retire-age') {
                     let val = parseInt(el.value);
@@ -268,6 +277,7 @@ export const burndown = {
             if (personaSelector) { const btn = personaSelector.querySelector(`[data-mode="${mode}"]`); if (btn) btn.click(); }
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-cash-reserve', data.cashReserve ?? 25000);
+            sync('input-snap-preserve', data.snapPreserve ?? 0);
             
             const globalRetAge = window.currentData?.assumptions?.retirementAge || 65;
             sync('input-top-retire-age', Math.min(72, globalRetAge));
@@ -281,7 +291,8 @@ export const burndown = {
     scrape: () => ({
         priority: burndown.priorityOrder,
         strategyMode: document.getElementById('persona-selector')?.dataset.value || 'PLATINUM',
-        cashReserve: parseInt(document.getElementById('input-cash-reserve')?.value || 25000), 
+        cashReserve: parseInt(document.getElementById('input-cash-reserve')?.value || 25000),
+        snapPreserve: parseInt(document.getElementById('input-snap-preserve')?.value || 0), 
         useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
         isRealDollars
@@ -410,6 +421,7 @@ export const burndown = {
         const persona = config.strategyMode;
         const rAge = parseFloat(assumptions.retirementAge) || 65;
         const cashFloor = config.cashReserve;
+        const snapPreserveMonthly = config.snapPreserve || 0;
         
         if (!isSilent) firstInsolvencyAge = null;
 
@@ -578,6 +590,22 @@ export const burndown = {
                     if (pk === '401k' && age < 59.5) {
                         const seppLimit = engine.calculateMaxSepp(bal['401k'], age);
                         pull = Math.min(pull, Math.max(0, seppLimit - (currentDraws['401k'] || 0)));
+                    }
+
+                    // SNAP Constraint Logic
+                    if (strategyPull && snapPreserveMonthly > 0) {
+                        // Estimate if this pull kills SNAP below threshold
+                        const testOrdIncome = currentOrdIncome + (pk === '401k' ? pull : 0);
+                        const testLtcgIncome = currentLtcgIncome + (['taxable', 'crypto', 'metals'].includes(pk) ? (pull * (1 - currentBasisRatio)) : 0);
+                        const testSnap = engine.calculateSnapBenefit(testOrdIncome, 0, liquidForSnap, currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac)*12;
+                        
+                        if ((testSnap / 12) < snapPreserveMonthly) {
+                            // If this pull destroys SNAP, we stop harvesting here.
+                            // We do NOT reduce the pull if we needed it for deficit (survival).
+                            // But since this block is `if (strategyPull)`, it implies we are pulling optional money.
+                            if (!isSilent) trace += `Harvest Capped by SNAP Constraint ($${snapPreserveMonthly}/mo). Stopping harvest.\n`;
+                            break; 
+                        }
                     }
 
                     if (pull <= 1) continue;
