@@ -100,7 +100,8 @@ function setupAppHeader(avatarUrl, userName, logoutText, isLoggedIn) {
             icon.className = "fas fa-cloud text-xs";
             saveInd.title = "Cloud Synced";
         } else {
-            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center gap-1 border border-white/5 text-amber-500/40 transition-colors duration-200";
+            // Guest mode: Red cloud with diagonal line
+            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center gap-1 border border-white/5 text-red-500 transition-colors duration-200";
             icon.className = "fas fa-cloud-slash text-xs";
             saveInd.title = "Local Only (No Cloud Sync)";
         }

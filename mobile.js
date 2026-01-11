@@ -510,7 +510,7 @@ async function loadApp() {
         };
         headerActions.insertBefore(btn, document.getElementById('save-indicator'));
     }
-    const saveInd = document.getElementById('save-indicator'); if (saveInd) saveInd.classList.add('hidden');
+    // We don't hide the indicator anymore so it can show the cloud-slash status
     
     renderTab();
 }

@@ -1,22 +1,22 @@
-export const PROFILE_40_COUPLE = {
+export const PROFILE_45_COUPLE = {
     investments: [
-        { name: 'His 401k (Fidelity)', type: 'Pre-Tax (401k/IRA)', value: 350000, costBasis: 0 },
-        { name: 'Her 401k (Schwab)', type: 'Pre-Tax (401k/IRA)', value: 250000, costBasis: 0 },
-        { name: 'Joint Brokerage', type: 'Taxable', value: 200000, costBasis: 150000 },
-        { name: 'Roth IRA (His)', type: 'Roth IRA', value: 150000, costBasis: 100000 },
-        { name: 'Roth IRA (Hers)', type: 'Roth IRA', value: 150000, costBasis: 100000 },
-        { name: 'HSA (Invested)', type: 'HSA', value: 50000, costBasis: 35000 },
-        { name: 'Emergency Cash', type: 'Cash', value: 30000, costBasis: 30000 }
+        { name: 'His 401k', type: 'Pre-Tax (401k/IRA)', value: 350000, costBasis: 0 },
+        { name: 'Her 401k', type: 'Pre-Tax (401k/IRA)', value: 250000, costBasis: 0 },
+        { name: 'Brokerage', type: 'Taxable', value: 200000, costBasis: 120000 },
+        { name: 'His Roth', type: 'Roth IRA', value: 150000, costBasis: 100000 },
+        { name: 'Her Roth', type: 'Roth IRA', value: 150000, costBasis: 100000 },
+        { name: 'HSA', type: 'HSA', value: 50000, costBasis: 30000 },
+        { name: 'Checking', type: 'Cash', value: 25000, costBasis: 25000 }
     ],
     stockOptions: [
-        { name: 'Company RSUs', shares: 1000, strikePrice: 0, currentPrice: 250, growth: 8, isLtcg: false }
+        { name: 'Company RSUs', shares: 20000, strikePrice: 1, currentPrice: 23, growth: 10, isLtcg: false }
     ],
     realEstate: [
         { name: 'Tennessee Home', value: 550000, mortgage: 250000, principalPayment: 1400 }
     ],
     income: [
-        { name: 'Primary Income', amount: 125000, increase: 3, contribution: 12, match: 4, bonusPct: 10, isMonthly: false, incomeExpenses: 0, contribOnBonus: false },
-        { name: 'Secondary Income', amount: 125000, increase: 3, contribution: 10, match: 3, bonusPct: 0, isMonthly: false, incomeExpenses: 0, contribOnBonus: false }
+        { name: 'Primary Income', amount: 175000, increase: 3, contribution: 12, match: 4, bonusPct: 10, isMonthly: false, incomeExpenses: 0, contribOnBonus: true, remainsInRetirement: false },
+        { name: 'Secondary Income', amount: 125000, increase: 3, contribution: 10, match: 3, bonusPct: 0, isMonthly: false, incomeExpenses: 0, contribOnBonus: true, remainsInRetirement: false }
     ],
     budget: {
         savings: [
@@ -35,10 +35,10 @@ export const PROFILE_40_COUPLE = {
         ]
     },
     assumptions: { 
-        currentAge: 40, retirementAge: 55, ssStartAge: 67, ssMonthly: 3200, 
+        currentAge: 45, retirementAge: 55, ssStartAge: 62, ssMonthly: 3400, 
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
-        helocRate: 7.5, state: 'Tennessee', workYearsAtRetirement: 30,
+        helocRate: 6.5, state: 'Tennessee', workYearsAtRetirement: 30,
         phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
         advancedGrowth: false,
         ltcgRate: 15
@@ -48,21 +48,24 @@ export const PROFILE_40_COUPLE = {
             { name: "Kid 1", birthYear: 2019 },
             { name: "Kid 2", birthYear: 2017 },
             { name: "Kid 3", birthYear: 2015 }
-        ],
-        hhSize: 5 
+        ]
     }
 };
 
 export const PROFILE_25_SINGLE = {
     investments: [
-        { name: 'Work 401k', type: 'Pre-Tax (401k/IRA)', value: 18000, costBasis: 0 },
-        { name: 'Robinhood', type: 'Taxable', value: 12000, costBasis: 10000 },
-        { name: 'HYSA', type: 'Cash', value: 10000, costBasis: 10000 },
-        { name: 'Coinbase', type: 'Crypto', value: 8000, costBasis: 4000 }
+        { name: 'Work 401k', type: 'Pre-Tax (401k/IRA)', value: 40000, costBasis: 0 },
+        { name: 'Robinhood', type: 'Taxable', value: 15000, costBasis: 12000 },
+        { name: 'Coinbase (Bitcoin)', type: 'Crypto', value: 15000, costBasis: 10000 },
+        { name: 'Checking Account', type: 'Cash', value: 10000, costBasis: 10000 }
+    ],
+    stockOptions: [
+        { name: 'Series E RSUs', shares: 2200, strikePrice: 75, currentPrice: 100, growth: 10, isLtcg: false },
+        { name: 'Series D RSUs', shares: 500, strikePrice: 40, currentPrice: 100, growth: 10, isLtcg: true }
     ],
     realEstate: [],
     income: [
-        { name: 'Salary', amount: 125000, increase: 3, contribution: 10, match: 3, bonusPct: 8, isMonthly: false, incomeExpenses: 0, contribOnBonus: false }
+        { name: 'Tech Salary', amount: 125000, increase: 3, contribution: 18.8, match: 3, bonusPct: 10, isMonthly: false, incomeExpenses: 0, contribOnBonus: false }
     ],
     debts: [
         { name: 'Student Loans', balance: 12000, principalPayment: 250 }
@@ -70,25 +73,25 @@ export const PROFILE_25_SINGLE = {
     budget: {
         savings: [
             { type: 'Roth IRA', annual: 7000, monthly: 583, removedInRetirement: true },
-            { type: 'Taxable', annual: 6000, monthly: 500, removedInRetirement: true }
+            { type: 'HSA', annual: 4150, monthly: 346, removedInRetirement: true }
         ],
         expenses: [
-            { name: 'Rent', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: false },
-            { name: 'Social/Dining', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false },
-            { name: 'Car Payment & Ins', annual: 7800, monthly: 650, remainsInRetirement: false, isFixed: true },
+            { name: 'Rent (NY)', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: false },
+            { name: 'Social & Dining', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false },
+            { name: 'Travel & Lifestyle', annual: 8000, monthly: 666, remainsInRetirement: true, isFixed: false },
             { name: 'Groceries', annual: 6000, monthly: 500, remainsInRetirement: true, isFixed: false },
-            { name: 'Travel', annual: 5000, monthly: 416, remainsInRetirement: true, isFixed: false },
-            { name: 'Utilities & Internet', annual: 4200, monthly: 350, remainsInRetirement: true, isFixed: false },
-            { name: 'Shopping/Tech', annual: 4000, monthly: 333, remainsInRetirement: true, isFixed: false },
-            { name: 'Loan Payment', annual: 3000, monthly: 250, remainsInRetirement: false, isFixed: true },
-            { name: 'Gym & Subscriptions', annual: 1800, monthly: 150, remainsInRetirement: true, isFixed: false }
+            { name: 'Shopping & Tech', annual: 6000, monthly: 500, remainsInRetirement: true, isFixed: false },
+            { name: 'Utilities & Internet', annual: 4000, monthly: 333, remainsInRetirement: true, isFixed: false },
+            { name: 'Gym & Misc', annual: 4000, monthly: 333, remainsInRetirement: true, isFixed: false },
+            { name: 'Student Loan Payment', annual: 3000, monthly: 250, remainsInRetirement: false, isFixed: true },
+            { name: 'Health Insurance Premium', annual: 3000, monthly: 250, remainsInRetirement: true, isFixed: false }
         ]
     },
     assumptions: { 
-        currentAge: 25, retirementAge: 50, ssStartAge: 67, ssMonthly: 2800, 
+        currentAge: 25, retirementAge: 50, ssStartAge: 62, ssMonthly: 2800, 
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Single', 
-        helocRate: 7, state: 'Texas', workYearsAtRetirement: 23,
+        helocRate: 6.5, state: 'New York', workYearsAtRetirement: 25,
         phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
         advancedGrowth: false,
         ltcgRate: 15
@@ -106,7 +109,7 @@ export const PROFILE_55_RETIREE = {
         { name: 'Florida Home (Paid Off)', value: 600000, mortgage: 0, principalPayment: 0 }
     ],
     income: [
-        { name: 'Executive Salary', amount: 250000, increase: 2, contribution: 20, match: 4, bonusPct: 15, isMonthly: false, incomeExpenses: 0, remainsInRetirement: false, contribOnBonus: false },
+        { name: 'Executive Salary', amount: 250000, increase: 2, contribution: 20, match: 4, bonusPct: 15, isMonthly: false, incomeExpenses: 0, remainsInRetirement: false, contribOnBonus: true },
         { name: 'Corporate Pension', amount: 48000, increase: 0, contribution: 0, match: 0, bonusPct: 0, isMonthly: false, incomeExpenses: 0, remainsInRetirement: true }
     ],
     budget: {
@@ -126,10 +129,10 @@ export const PROFILE_55_RETIREE = {
         currentAge: 55, retirementAge: 60, ssStartAge: 67, ssMonthly: 4200, 
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
-        helocRate: 7, state: 'Florida', workYearsAtRetirement: 38,
+        helocRate: 6.5, state: 'Florida', workYearsAtRetirement: 38,
         phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
         advancedGrowth: false,
-        ltcgRate: 20 
+        ltcgRate: 15 
     },
     benefits: { dependents: [] }
 };
