@@ -135,25 +135,25 @@ export const benefits = {
 
                 <!-- Advanced Explanation Notes -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
-                    <div class="p-6 bg-blue-900/10 rounded-3xl border border-blue-500/20">
+                    <div class="p-2">
                          <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-info-circle"></i> Child Support & Care Logic</h4>
                          <div class="space-y-3">
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Child Support Paid:</strong> This is a direct income deduction for SNAP. Every dollar you are legally obligated to pay someone outside your home lowers your "countable income," often increasing your food benefits.
+                                <strong class="text-white">Child Support Paid:</strong> Direct income deduction for SNAP. Legally obligated payments to non-household members reduce countable income, potentially increasing benefits.
                             </p>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Dependent Care:</strong> Costs for accredited care (like Montessori, accredited hybrid homeschools, or after-school care) are subtracted from income if they enable you to work, study, or train. This significantly boosts SNAP eligibility.
+                                <strong class="text-white">Dependent Care:</strong> Costs for accredited care are subtracted from income if required for work, study, or training. Boosts SNAP eligibility by lowering net income.
                             </p>
                          </div>
                     </div>
-                    <div class="p-6 bg-orange-900/10 rounded-3xl border border-orange-500/20">
+                    <div class="p-2">
                          <h4 class="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-shield-virus"></i> Medicaid Expansion Logic</h4>
                          <div class="space-y-3">
                             <p class="text-[11px] text-slate-400 leading-relaxed">
                                 <strong class="text-white">Expansion States:</strong> Cover adults up to 138% FPL ($0 cost). 
                             </p>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Non-Expansion (TX, FL, GA, etc):</strong> Early retirees often hit the "Medicaid Gap." If your income is under 100% FPL, you get NO ACA subsidy and NO Medicaid. In these states, making "too little" is a massive financial liability.
+                                <strong class="text-white">Non-Expansion:</strong> Adults under 100% FPL receive no ACA subsidy and no Medicaid. States include: Alabama, Florida, Georgia, Kansas, Mississippi, South Carolina, Tennessee, Texas, Wisconsin, and Wyoming.
                             </p>
                          </div>
                     </div>
