@@ -366,12 +366,13 @@ export const burndown = {
         }
         if (document.getElementById('card-preservation-val')) document.getElementById('card-preservation-val').textContent = preservationAge;
 
+        // FIXED SOLVER: Solve target spend ONLY during retirement years.
         let dwzSpend = 0;
         let low = 10000, high = 1000000;
         for (let j = 0; j < 15; j++) {
             let mid = (low + high) / 2;
-            const testConfig = { ...config, useSync: false, manualBudget: mid };
-            const testRes = burndown.simulateProjection(data, testConfig, true);
+            // The solver uses 'retirementSpendOverride' to ensure we don't over-spend during working years
+            const testRes = burndown.simulateProjection(data, { ...config, useSync: false }, true, mid);
             const isTestSolvent = !testRes.some(r => r.isInsolvent);
             if (isTestSolvent) { dwzSpend = mid; low = mid; } else { high = mid; }
         }
@@ -386,7 +387,7 @@ export const burndown = {
         else burndown.showTrace(results[0].age);
     },
 
-    simulateProjection: (data, configOverride = null, isSilent = false) => {
+    simulateProjection: (data, configOverride = null, isSilent = false, retirementSpendOverride = null) => {
         const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = {}, debts = [], stockOptions = [] } = data;
         if (!assumptions || isNaN(parseFloat(assumptions.currentAge))) return [];
         
@@ -451,13 +452,19 @@ export const burndown = {
             simRE.forEach(r => r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12));
             simDebts.forEach(d => d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12));
 
-            let baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
+            // Budget Selection: If retired and override exists, use it. Otherwise use synced/manual config.
+            let baseBudget = 100000;
+            if (isRet && retirementSpendOverride !== null) {
+                baseBudget = retirementSpendOverride * infFac;
+            } else {
+                baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
+            }
             baseBudget += (bal['heloc'] * helocInterestRate);
             
             let factor = isRet ? (age < 60 ? (assumptions.phaseGo1 ?? 1.0) : (age < 80 ? (assumptions.phaseGo2 ?? 0.9) : (assumptions.phaseGo3 ?? 0.8))) : 1.0;
             const targetBudget = baseBudget * factor;
             
-            const budgetBaseNominal = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + math.fromCurrency(exp.annual), 0) : config.manualBudget;
+            const budgetBaseNominal = (isRet && retirementSpendOverride !== null) ? retirementSpendOverride : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + math.fromCurrency(exp.annual), 0) : config.manualBudget);
             trace += `Target Budget: ${math.toCurrency(targetBudget)} (Base: ${math.toCurrency(budgetBaseNominal)} * ${inflationRate*100}% inflation ^ ${i} years)\n`;
 
             let floorOrdIncome = 0, floorTotalIncome = 0, floorUntaxedMAGI = 0, pretaxDed = 0;
@@ -499,7 +506,9 @@ export const burndown = {
             let currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed), currentLtcgIncome = 0, totalWithdrawn = 0, currentDraws = {};
             let floorNetCash = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + baseSnap;
             let deficit = targetBudget - floorNetCash;
-            const magiTarget = persona === 'PLATINUM' ? fpl100 * 1.38 : (persona === 'SILVER' ? fpl100 * 2.50 : 0);
+            
+            // MAGI TARGET with SAFETY BUFFER (targeting slightly under limit to avoid rounding into Silver)
+            const magiTarget = persona === 'PLATINUM' ? fpl100 * 1.375 : (persona === 'SILVER' ? fpl100 * 2.49 : 0);
             
             trace += `Initial Shortfall: ${math.toCurrency(deficit)} (Budget ${math.toCurrency(targetBudget)} - Inflow ${math.toCurrency(floorNetCash)})\n`;
 
@@ -510,7 +519,6 @@ export const burndown = {
                     ...zeroMAGIBuckets.filter(b => effectiveOrder.includes(b)),
                     ...effectiveOrder.filter(b => !zeroMAGIBuckets.includes(b))
                 ];
-                trace += `Strategy Active: Prioritizing non-MAGI sources (Cash/Roth Basis/HELOC).\n`;
             }
 
             for (let pass = 0; pass < 3; pass++) {
@@ -535,7 +543,7 @@ export const burndown = {
                     if (burndown.assetMeta[pk].isTaxable) {
                         const bracketBoundary = (filingStatus === 'Married Filing Jointly' ? 96950 : 48475) * infFac;
                         const baseRate = currentOrdIncome > bracketBoundary ? 0.22 : 0.12;
-                        const stateRate = stateMeta.rate;
+                        const stateRate = stateTaxRates[assumptions.state]?.rate || 0.0425;
                         if (pk === '401k') marginalRate = baseRate + stateRate; 
                         else marginalRate = (1 - currentBasisRatio) * (0.15 + stateRate); 
                     }
@@ -551,7 +559,7 @@ export const burndown = {
                     let strategyPull = false;
 
                     if (pull <= 1 && curMAGI < magiTarget && pk !== 'heloc' && persona !== 'UNCONSTRAINED') {
-                        pull = Math.min(available, (magiTarget - curMAGI) / (pk === '401k' ? 1 : Math.max(0.1, (1 - currentBasisRatio))));
+                        pull = Math.min(available, (magiTarget - curMAGI) / Math.max(0.1, (pk === '401k' ? 1 : (1 - currentBasisRatio))));
                         strategyPull = true;
                     }
 
@@ -586,7 +594,7 @@ export const burndown = {
                     deficit = targetBudget + healthCost - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curTax + curSnap);
                     
                     const reason = strategyPull ? `(Harvesting for strategy: Target ${math.toCurrency(magiTarget)})` : `(Deficit Coverage)`;
-                    trace += `Pulled ${math.toCurrency(pull)} from ${pk} ${reason}. New deficit: ${math.toCurrency(deficit)}\n`;
+                    if (!isSilent) trace += `Pulled ${math.toCurrency(pull)} from ${pk} ${reason}. New deficit: ${math.toCurrency(deficit)}\n`;
                 }
             }
 
@@ -610,7 +618,7 @@ export const burndown = {
                 } 
                 if (surplus > 100) {
                     bal['cash'] += surplus; 
-                    trace += `Recycled surplus ${math.toCurrency(surplus)} back to Cash.\n`;
+                    if (!isSilent) trace += `Recycled surplus ${math.toCurrency(surplus)} back to Cash.\n`;
                 }
             }
 
@@ -625,27 +633,26 @@ export const burndown = {
             if (isInsolvent) status = 'INSOLVENT';
             else if (age >= 65) status = 'Medicare';
             else if (!stateMeta.expanded && finalRatio < 1.0) status = 'No Cov';
-            else if (finalRatio <= 1.38 && stateMeta.expanded) status = 'Platinum';
-            else if (finalRatio <= 2.5) status = 'Silver';
+            else if (finalRatio <= 1.385 && stateMeta.expanded) status = 'Platinum'; // Slight tolerance for rounding
+            else if (finalRatio <= 2.505) status = 'Silver';
             else if (finalRatio > 4.0) status = 'Private';
 
-            trace += `Final MAGI: ${math.toCurrency(healthMAGI)} (${Math.round(finalRatio * 100)}% FPL)\n`;
-            trace += `Status: ${status} | Health Cost: ${math.toCurrency(finalHealthCost)}\n`;
-            
-            // Year-end Growth trace
-            trace += `Market Performance:\n`;
-            const grow = (name, b, rate) => {
-                const gain = b * rate;
-                trace += `  - ${name}: ${math.toCurrency(b)} -> ${math.toCurrency(b + gain)} (+${(rate*100).toFixed(1)}%)\n`;
-            };
-            if (bal['taxable'] > 0) grow('Brokerage', bal['taxable'], stockGrowth);
-            if (bal['401k'] > 0) grow('Pre-Tax', bal['401k'], stockGrowth);
-            if (bal['crypto'] > 0) grow('Crypto', bal['crypto'], cryptoGrowth);
-            
-            trace += `Ending Net Worth: ${math.toCurrency(currentNW)}\n`;
-            trace += `  Sum: ${math.toCurrency(liquidAssets)} (Liquid) + ${math.toCurrency(reValTotal)} (RE) - ${math.toCurrency(debtTotal)} (Debt) = ${math.toCurrency(currentNW)}\n`;
+            if (!isSilent) {
+                trace += `Final MAGI: ${math.toCurrency(healthMAGI)} (${Math.round(finalRatio * 100)}% FPL)\n`;
+                trace += `Status: ${status} | Health Cost: ${math.toCurrency(finalHealthCost)}\n`;
+                trace += `Market Performance:\n`;
+                const grow = (name, b, rate) => {
+                    const gain = b * rate;
+                    trace += `  - ${name}: ${math.toCurrency(b)} -> ${math.toCurrency(b + gain)} (+${(rate*100).toFixed(1)}%)\n`;
+                };
+                if (bal['taxable'] > 0) grow('Brokerage', bal['taxable'], stockGrowth);
+                if (bal['401k'] > 0) grow('Pre-Tax', bal['401k'], stockGrowth);
+                if (bal['crypto'] > 0) grow('Crypto', bal['crypto'], cryptoGrowth);
+                trace += `Ending Net Worth: ${math.toCurrency(currentNW)}\n`;
+                trace += `  Sum: ${math.toCurrency(liquidAssets)} (Liquid) + ${math.toCurrency(reValTotal)} (RE) - ${math.toCurrency(debtTotal)} (Debt) = ${math.toCurrency(currentNW)}\n`;
+                simulationTrace[age] = trace;
+            }
 
-            if (!isSilent) simulationTrace[age] = trace;
             results.push({ age, year, budget: targetBudget, magi: healthMAGI, netWorth: currentNW, isInsolvent, balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap, taxes: finalTax, liquid: liquidAssets, netCash, status });
             if (!isSilent && isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
 
