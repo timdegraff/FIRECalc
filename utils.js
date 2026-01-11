@@ -45,9 +45,38 @@ export const assumptions = {
     }
 };
 
+// 2025 FPL Table (Used for 2026 Health Eligibility)
+// Source: Department of Health and Human Services
+export const FPL_TABLE = {
+    base: {
+        1: 15648,
+        2: 21156,
+        3: 26652,
+        4: 32148,
+        5: 37656,
+        addl: 5508
+    },
+    alaska: {
+        1: 19560,
+        2: 26460,
+        3: 33360,
+        4: 40260,
+        5: 47160,
+        addl: 6900
+    },
+    hawaii: {
+        1: 17988,
+        2: 24324,
+        3: 30660,
+        4: 36996,
+        5: 43332,
+        addl: 6336
+    }
+};
+
 export const stateTaxRates = {
     'Alabama': { rate: 0.04, taxesSS: false, expanded: false },
-    'Alaska': { rate: 0.00, taxesSS: false, expanded: true, fplBase: 20080 },
+    'Alaska': { rate: 0.00, taxesSS: false, expanded: true },
     'Arizona': { rate: 0.025, taxesSS: false, expanded: true },
     'Arkansas': { rate: 0.044, taxesSS: false, expanded: true },
     'California': { rate: 0.093, taxesSS: false, expanded: true },
@@ -57,7 +86,7 @@ export const stateTaxRates = {
     'District of Columbia': { rate: 0.08, taxesSS: false, expanded: true },
     'Florida': { rate: 0.00, taxesSS: false, expanded: false },
     'Georgia': { rate: 0.0575, taxesSS: false, expanded: false },
-    'Hawaii': { rate: 0.08, taxesSS: false, expanded: true, fplBase: 18470 },
+    'Hawaii': { rate: 0.08, taxesSS: false, expanded: true },
     'Idaho': { rate: 0.058, taxesSS: false, expanded: true },
     'Illinois': { rate: 0.0495, taxesSS: false, expanded: true },
     'Indiana': { rate: 0.0305, taxesSS: false, expanded: true },
@@ -95,11 +124,16 @@ export const stateTaxRates = {
     'Virginia': { rate: 0.0575, taxesSS: false, expanded: true },
     'Washington': { rate: 0.00, taxesSS: false, expanded: true },
     'West Virginia': { rate: 0.04, taxesSS: true, expanded: true },
-    'Wisconsin': { rate: 0.053, taxesSS: false, expanded: true },
+    'Wisconsin': { rate: 0.053, taxesSS: false, expanded: false },
     'Wyoming': { rate: 0.00, taxesSS: false, expanded: false }
 };
 
 export const math = {
+    getFPL: (hhSize, stateId) => {
+        const table = (stateId === 'Alaska') ? FPL_TABLE.alaska : (stateId === 'Hawaii' ? FPL_TABLE.hawaii : FPL_TABLE.base);
+        if (hhSize <= 5) return table[hhSize];
+        return table[5] + (hhSize - 5) * table.addl;
+    },
     toCurrency: (value, isCompact = false, decimals = 0) => {
         if (isNaN(value) || value === null) return '$0';
         const absVal = Math.abs(value);
@@ -275,8 +309,8 @@ export const engine = {
         const stateConfig = SNAP_CONFIG.states[stateId] || { limit: 2.00, assetTest: false };
         
         // Gate 1: Gross Income Test
+        const fpl100Value = (geoSet.fpl100[hhSize - 1] || (geoSet.fpl100[7] + (hhSize - 8) * (geoSet.fpl100[7] - geoSet.fpl100[6]))) * inflationFactor;
         if (!isDisabledOrElderly) {
-            const fpl100Value = (geoSet.fpl100[hhSize - 1] || (geoSet.fpl100[7] + (hhSize - 8) * (geoSet.fpl100[7] - geoSet.fpl100[6]))) * inflationFactor;
             const grossLimit = fpl100Value * stateConfig.limit;
             if ((earnedMonthly + unearnedMonthly) > grossLimit) return 0;
         }
@@ -337,7 +371,6 @@ export const engine = {
             totalGrossInflow += sourceGross;
             totalNetSource += (sourceGross - sourceExpenses); 
             
-            // Respect "No Tax Until" for the current year MAGI calculation
             const taxableYear = parseInt(x.nonTaxableUntil);
             if (isNaN(taxableYear) || currentYear >= taxableYear) {
                 currentYearMagi += (sourceGross - sourceExpenses - cappedIndividual401k);

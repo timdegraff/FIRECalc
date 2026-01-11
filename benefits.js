@@ -9,8 +9,9 @@ export const benefits = {
             <div class="max-w-7xl mx-auto space-y-4">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <!-- Household Section -->
-                    <div class="card-container p-5 flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-6">
+                    <div class="card-container p-5 flex flex-col justify-between relative overflow-hidden">
+                        <div id="gap-alert-bg" class="absolute inset-0 bg-red-500/5 opacity-0 transition-opacity pointer-events-none"></div>
+                        <div class="flex items-center justify-between mb-6 relative z-10">
                             <div>
                                 <h3 class="text-xs font-black text-white uppercase tracking-widest">Household Structure</h3>
                                 <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Define dependents and their independence year</p>
@@ -21,7 +22,7 @@ export const benefits = {
                             </button>
                         </div>
 
-                        <div id="hh-visual-strip" class="flex flex-wrap items-center gap-4 min-h-[80px] mb-4">
+                        <div id="hh-visual-strip" class="flex flex-wrap items-center gap-4 min-h-[80px] mb-4 relative z-10">
                             <!-- Adults -->
                             <div id="adult-icons" class="flex items-center gap-4"></div>
                             <!-- Kids -->
@@ -29,7 +30,7 @@ export const benefits = {
                         </div>
 
                         <!-- Household Specific Costs -->
-                        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
+                        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5 relative z-10">
                             <div>
                                 <label class="text-[8px] font-bold text-slate-600 uppercase block mb-1">Child Support Paid</label>
                                 <input type="text" data-benefit-id="childSupportPaid" data-type="currency" class="input-base text-xs font-bold text-pink-400 mono-numbers h-8" value="$0">
@@ -86,6 +87,17 @@ export const benefits = {
                     </div>
                 </div>
 
+                <!-- Warnings / State Alerts -->
+                <div id="state-policy-alert" class="hidden p-4 bg-red-900/20 border border-red-500/30 rounded-2xl flex items-center gap-4 animate-pulse">
+                    <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400 flex-shrink-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-black text-red-400 uppercase tracking-widest">Medicaid Coverage Gap Alert</h4>
+                        <p id="state-alert-text" class="text-[11px] text-slate-300 leading-tight mt-0.5">Your state did not expand Medicaid. Making less than 100% FPL means NO subsidy and NO Medicaid.</p>
+                    </div>
+                </div>
+
                 <!-- Footer Strip -->
                 <div class="card-container px-6 py-3 flex items-center justify-between bg-black/20">
                     <div class="flex items-center gap-3">
@@ -121,19 +133,29 @@ export const benefits = {
                     </div>
                 </div>
 
-                <!-- Glossary -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-white/5 opacity-50">
-                    <div class="space-y-1">
-                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">Independence Year</p>
-                        <p class="text-[8px] text-slate-500 font-medium">The year the child turns 19. They are removed from household size calculations after this date.</p>
+                <!-- Advanced Explanation Notes -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
+                    <div class="p-6 bg-blue-900/10 rounded-3xl border border-blue-500/20">
+                         <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-info-circle"></i> Child Support & Care Logic</h4>
+                         <div class="space-y-3">
+                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                <strong class="text-white">Child Support Paid:</strong> This is a direct income deduction for SNAP. Every dollar you are legally obligated to pay someone outside your home lowers your "countable income," often increasing your food benefits.
+                            </p>
+                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                <strong class="text-white">Dependent Care:</strong> Costs for accredited care (like Montessori, accredited hybrid homeschools, or after-school care) are subtracted from income if they enable you to work, study, or train. This significantly boosts SNAP eligibility.
+                            </p>
+                         </div>
                     </div>
-                    <div class="space-y-1">
-                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">Utility Allowance (SUA)</p>
-                        <p class="text-[8px] text-slate-500 font-medium">Fixed deduction for heating/cooling. Almost always beneficial to check if you pay for utilities.</p>
-                    </div>
-                    <div class="space-y-1">
-                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">W2/1099 vs Unearned</p>
-                        <p class="text-[8px] text-slate-500 font-medium">Earned income (work) gets a 20% deduction in SNAP math. Unearned (Dividends/SS) does not.</p>
+                    <div class="p-6 bg-orange-900/10 rounded-3xl border border-orange-500/20">
+                         <h4 class="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-shield-virus"></i> Medicaid Expansion Logic</h4>
+                         <div class="space-y-3">
+                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                <strong class="text-white">Expansion States:</strong> Cover adults up to 138% FPL ($0 cost). 
+                            </p>
+                            <p class="text-[11px] text-slate-400 leading-relaxed">
+                                <strong class="text-white">Non-Expansion (TX, FL, GA, etc):</strong> Early retirees often hit the "Medicaid Gap." If your income is under 100% FPL, you get NO ACA subsidy and NO Medicaid. In these states, making "too little" is a massive financial liability.
+                            </p>
+                         </div>
                     </div>
                 </div>
             </div>
@@ -173,7 +195,6 @@ export const benefits = {
             }
         });
 
-        // Allow direct editing of the year inputs
         container.addEventListener('input', (e) => {
             if (e.target.dataset.id === 'depYear') {
                 benefits.refresh();
@@ -185,7 +206,6 @@ export const benefits = {
     addDependent: (data = {}) => {
         const list = document.getElementById('dependents-list'); if (!list) return;
         
-        // Enforce SNAP total size limit (Adults + Kids <= 8)
         const filingStatus = window.currentData?.assumptions?.filingStatus || 'Single';
         const adults = filingStatus === 'Married Filing Jointly' ? 2 : 1;
         const currentKids = list.querySelectorAll('.dependent-visual-item').length;
@@ -256,7 +276,6 @@ export const benefits = {
         if (document.getElementById('hh-composition-text')) document.getElementById('hh-composition-text').textContent = `${adults} Adult${adults > 1 ? 's' : ''} ${kids > 0 ? '+ ' + kids + ' Dependent' + (kids > 1 ? 's' : '') : ''}`;
         if (document.getElementById('hh-total-size-badge')) document.getElementById('hh-total-size-badge').textContent = totalSize;
         
-        // Handle "Add Child" button state based on SNAP 8-person limit
         const addBtn = document.getElementById('btn-add-dependent');
         if (addBtn) {
             const isLimitReached = totalSize >= 8;
@@ -267,32 +286,45 @@ export const benefits = {
 
         const stateId = window.currentData?.assumptions?.state || 'Michigan';
         const stateMeta = stateTaxRates[stateId];
-        const fplBase = stateMeta?.fplBase || 16060;
-        const fpl2026Annual = fplBase + (totalSize - 1) * 5650;
-        const ratio = annualMAGI / fpl2026Annual;
-        const medRatio = data.isPregnant ? 1.95 : 1.38;
+        const fpl100Annual = math.getFPL(totalSize, stateId);
+        const ratio = annualMAGI / fpl100Annual;
+        const medRatio = data.isPregnant ? 2.0 : 1.38;
         const silverRatio = 2.50;
+        const cliffRatio = 4.0;
 
         // Dynamic Slider Track Styling
         const sliderMax = 200000;
-        const platBoundary = (fpl2026Annual * medRatio / sliderMax) * 100;
-        const silverBoundary = (fpl2026Annual * silverRatio / sliderMax) * 100;
+        const platBoundary = (fpl100Annual * medRatio / sliderMax) * 100;
+        const silverBoundary = (fpl100Annual * silverRatio / sliderMax) * 100;
         const trackVisual = document.getElementById('slider-track-visual');
         if (trackVisual) {
             trackVisual.style.background = `linear-gradient(to right, #10b981 0%, #10b981 ${platBoundary}%, #3b82f6 ${platBoundary}%, #3b82f6 ${silverBoundary}%, #475569 ${silverBoundary}%, #475569 100%)`;
         }
         
-        let expectedContributionPct = ratio <= 1.5 ? 0 : (ratio <= 2.0 ? 0.00 + ((ratio - 1.5) / 0.5) * 0.02 : (ratio <= 2.5 ? 0.02 + ((ratio - 2.0) / 0.5) * 0.02 : 0.085));
+        // 2026 Standard ACA sliding scale (2.1% to 9.5% of income)
+        let expectedContributionPct = 0;
+        if (ratio > medRatio) {
+            if (ratio < cliffRatio) {
+                // Approximate standard sliding scale for 2026: 2.1% at 100% FPL to 9.5% at 400% FPL
+                const minScale = 0.021, maxScale = 0.095;
+                expectedContributionPct = minScale + (ratio - 1) * (maxScale - minScale) / (cliffRatio - 1);
+            } else {
+                expectedContributionPct = 1.0; // Over cliff
+            }
+        }
+        
         let dynamicPremium = ratio > medRatio ? (annualMAGI * expectedContributionPct) / 12 : 0;
+        if (ratio >= cliffRatio) dynamicPremium = 1100; // Estimated monthly sticker price for family
 
         const earned = data.isEarnedIncome ? monthlyMAGI : 0;
         const unearned = data.isEarnedIncome ? 0 : monthlyMAGI;
         const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
         const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, stateId);
 
-        // Update Top Cards with correct logic - Use clean base classes to avoid misaligned borders
         const healthCard = document.getElementById('benefit-summary-health');
         const snapCard = document.getElementById('benefit-summary-snap');
+        const stateAlert = document.getElementById('state-policy-alert');
+        const gapAlertBg = document.getElementById('gap-alert-bg');
         
         const updateTopCard = (name, sub, prem, ded, theme) => {
             const planEl = document.getElementById('sum-health-plan');
@@ -317,15 +349,26 @@ export const benefits = {
         const themes = {
             platinum: { text: 'text-emerald-400', border: 'border-emerald-500/50' },
             silver: { text: 'text-blue-400', border: 'border-blue-500/50' },
-            standard: { text: 'text-slate-500', border: 'border-white/5' }
+            standard: { text: 'text-slate-500', border: 'border-white/5' },
+            danger: { text: 'text-red-400', border: 'border-red-500/50' }
         };
 
-        if (ratio <= medRatio && stateMeta?.expanded !== false) {
+        const isExpandedState = stateMeta?.expanded !== false;
+        const isInMedicaidGap = !isExpandedState && ratio < 1.0;
+
+        if (stateAlert) stateAlert.classList.toggle('hidden', !isInMedicaidGap);
+        if (gapAlertBg) gapAlertBg.classList.toggle('opacity-100', isInMedicaidGap);
+
+        if (isInMedicaidGap) {
+            updateTopCard("MEDICAID GAP", "NO COVERAGE", math.toCurrency(1100), "$10,000+", themes.danger);
+        } else if (ratio <= medRatio && isExpandedState) {
             updateTopCard("Platinum (Medicaid)", "100% Full Coverage", "$0", "$0", themes.platinum);
         } else if (ratio <= silverRatio) {
             updateTopCard("Silver CSR (High Subsidy)", "Low Copays", math.toCurrency(dynamicPremium), "$800", themes.silver);
+        } else if (ratio < cliffRatio) {
+            updateTopCard("Standard ACA", "Market Subsidy", math.toCurrency(dynamicPremium), "$4,000+", themes.standard);
         } else {
-            updateTopCard("Standard ACA", "Full Cost Market", math.toCurrency(dynamicPremium), "$4,000+", themes.standard);
+            updateTopCard("Market (Off-Exchange)", "No Subsidy / Cliff", math.toCurrency(dynamicPremium), "$6,000+", themes.standard);
         }
 
         const globalSnapRes = document.getElementById('sum-snap-amt');

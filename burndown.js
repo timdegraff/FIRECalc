@@ -147,19 +147,13 @@ export const burndown = {
                 }
                 if (id === 'input-top-retire-age') {
                     let val = parseInt(el.value);
-                    // Ensure retirement age is not less than current age
                     const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
                     if (val < curAge) val = curAge;
                     if (val > 72) val = 72;
                     el.value = val;
-
                     const directInp = document.getElementById('input-retire-age-direct');
                     if (directInp) directInp.value = val;
-                    
-                    // Master Sync: Update global data
-                    if (window.currentData?.assumptions) {
-                        window.currentData.assumptions.retirementAge = val;
-                    }
+                    if (window.currentData?.assumptions) window.currentData.assumptions.retirementAge = val;
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualInput = document.getElementById('input-manual-budget');
@@ -174,30 +168,18 @@ export const burndown = {
             };
         });
 
-        // Specific listener for direct typing in the retirement age input
         const directAgeInp = document.getElementById('input-retire-age-direct');
         if (directAgeInp) {
-            // Recalculate only on Enter or Blur (commit)
             directAgeInp.onchange = (e) => {
                 let val = parseInt(e.target.value);
                 const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
                 if (isNaN(val)) val = lastUsedRetirementAge;
                 val = Math.max(curAge, Math.min(72, val));
                 e.target.value = val;
-                
                 const slider = document.getElementById('input-top-retire-age');
-                if (slider) {
-                    slider.value = val;
-                    // Trigger input event to fire the sync and run logic attached in the loop above
-                    slider.dispatchEvent(new Event('input'));
-                }
+                if (slider) { slider.value = val; slider.dispatchEvent(new Event('input')); }
             };
-            
-            directAgeInp.onkeydown = (e) => {
-                if (e.key === 'Enter') {
-                    e.target.blur();
-                }
-            };
+            directAgeInp.onkeydown = (e) => { if (e.key === 'Enter') e.target.blur(); };
         }
 
         const personaContainer = document.getElementById('persona-selector');
@@ -221,9 +203,7 @@ export const burndown = {
             };
         }
 
-        const btnMinus = document.getElementById('btn-retire-minus');
-        const btnPlus = document.getElementById('btn-retire-plus');
-        const topRetireSlider = document.getElementById('input-top-retire-age');
+        const btnMinus = document.getElementById('btn-retire-minus'), btnPlus = document.getElementById('btn-retire-plus'), topRetireSlider = document.getElementById('input-top-retire-age');
         if (btnMinus && btnPlus && topRetireSlider) {
             btnMinus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) - 1; topRetireSlider.dispatchEvent(new Event('input')); };
             btnPlus.onclick = () => { topRetireSlider.value = parseInt(topRetireSlider.value) + 1; topRetireSlider.dispatchEvent(new Event('input')); };
@@ -231,41 +211,19 @@ export const burndown = {
 
         const realBtn = document.getElementById('toggle-burndown-real');
         if (realBtn) {
-            realBtn.onclick = () => {
-                isRealDollars = !isRealDollars;
-                burndown.updateToggleStyle(realBtn);
-                burndown.run();
-                if (window.debouncedAutoSave) window.debouncedAutoSave();
-            };
+            realBtn.onclick = () => { isRealDollars = !isRealDollars; burndown.updateToggleStyle(realBtn); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
         }
 
         const manualInput = document.getElementById('input-manual-budget');
-        if (manualInput) {
-            formatter.bindCurrencyEventListeners(manualInput);
-            manualInput.oninput = () => { burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); };
-        }
+        if (manualInput) { formatter.bindCurrencyEventListeners(manualInput); manualInput.oninput = () => { burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); }; }
 
         const debugAgeInput = document.getElementById('input-debug-age');
-        if (debugAgeInput) {
-            debugAgeInput.oninput = (e) => {
-                const age = parseInt(e.target.value);
-                if (age) { traceAgeManuallySet = true; burndown.showTrace(age); }
-            };
-        }
+        if (debugAgeInput) { debugAgeInput.oninput = (e) => { const age = parseInt(e.target.value); if (age) { traceAgeManuallySet = true; burndown.showTrace(age); } }; }
 
         const btnDebugMinus = document.getElementById('btn-debug-minus'), btnDebugPlus = document.getElementById('btn-debug-plus');
         if (btnDebugMinus && btnDebugPlus && debugAgeInput) {
             btnDebugMinus.onclick = () => { debugAgeInput.value = Math.max(18, parseInt(debugAgeInput.value || 40) - 1); debugAgeInput.dispatchEvent(new Event('input')); };
             btnDebugPlus.onclick = () => { debugAgeInput.value = Math.min(100, parseInt(debugAgeInput.value || 40) + 1); debugAgeInput.dispatchEvent(new Event('input')); };
-        }
-
-        const btnDocToggle = document.getElementById('btn-toggle-engine-doc'), docPanel = document.getElementById('engine-logic-doc');
-        if (btnDocToggle && docPanel) {
-            btnDocToggle.onclick = () => {
-                docPanel.classList.toggle('hidden');
-                btnDocToggle.classList.toggle('text-white', !docPanel.classList.contains('hidden'));
-                btnDocToggle.classList.toggle('bg-slate-700', !docPanel.classList.contains('hidden'));
-            };
         }
     },
 
@@ -337,14 +295,9 @@ export const burndown = {
             if (typeof Sortable !== 'undefined' && !burndown.sortable) { burndown.sortable = new Sortable(priorityList, { animation: 150, handle: '.drag-handle', ghostClass: 'bg-slate-700/30', onEnd: () => { burndown.priorityOrder = Array.from(priorityList.querySelectorAll('.drag-item')).map(el => el.dataset.pk); burndown.run(); } }); }
         }
         
-        // SYNC: Ensure Burndown inputs match global source of truth
         lastUsedRetirementAge = parseFloat(data.assumptions.retirementAge) || 65;
         const slider = document.getElementById('input-top-retire-age');
-        if (slider) {
-            slider.value = lastUsedRetirementAge;
-            const directInp = document.getElementById('input-retire-age-direct');
-            if (directInp) directInp.value = lastUsedRetirementAge;
-        }
+        if (slider) { slider.value = lastUsedRetirementAge; const directInp = document.getElementById('input-retire-age-direct'); if (directInp) directInp.value = lastUsedRetirementAge; }
 
         const config = burndown.scrape(), inflation = (data.assumptions?.inflation || 3) / 100;
         let calculatedRetireBudget = config.manualBudget; 
@@ -370,6 +323,7 @@ export const burndown = {
         const config = configOverride || burndown.scrape(), inflationRate = (assumptions.inflation || 3) / 100, filingStatus = assumptions.filingStatus || 'Single', currentYear = new Date().getFullYear(), persona = config.strategyMode, rAge = parseFloat(assumptions.retirementAge) || 65, cashFloor = config.cashReserve;
         if (!isSilent) firstInsolvencyAge = null;
         const helocInterestRate = (helocs?.length > 0) ? (parseFloat(helocs[0].rate) || assumptions.helocRate || 7) / 100 : (assumptions.helocRate || 7) / 100;
+        const stateMeta = stateTaxRates[assumptions.state] || { rate: 0.04, expanded: true };
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
@@ -386,68 +340,61 @@ export const burndown = {
         };
         const simRE = realEstate.map(r => ({ ...r, mortgage: math.fromCurrency(r.mortgage), principalPayment: math.fromCurrency(r.principalPayment) }));
         const simDebts = debts.map(d => ({ ...d, balance: math.fromCurrency(d.balance), principalPayment: math.fromCurrency(d.principalPayment) }));
-        const simOA = otherAssets.map(o => ({ ...o, loan: math.fromCurrency(o.loan), principalPayment: math.fromCurrency(o.principalPayment) }));
         const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0), results = [], startAge = Math.max(18, Math.min(72, Math.floor(parseFloat(assumptions.currentAge) || 40)));
 
         for (let i = 0; i <= (100 - startAge); i++) {
             const age = startAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
             const dependCount = (benefits.dependents || []).filter(d => parseInt(d.independenceYear) >= year).length;
             const currentHhSize = 1 + (filingStatus === 'Married Filing Jointly' ? 1 : 0) + dependCount;
-            let traceStr = `[ AGE ${age} ]\n----------------\nHhSize: ${currentHhSize}\n`;
+            const fpl100 = math.getFPL(currentHhSize, assumptions.state) * infFac;
             const stockGrowth = math.getGrowthForAge('Stock', age, startAge, assumptions), cryptoGrowth = math.getGrowthForAge('Crypto', age, startAge, assumptions), metalsGrowth = math.getGrowthForAge('Metals', age, startAge, assumptions), realEstateGrowth = math.getGrowthForAge('RealEstate', age, startAge, assumptions);
             simRE.forEach(r => r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12));
             simDebts.forEach(d => d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12));
             let baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
             baseBudget += (bal['heloc'] * helocInterestRate);
-            
-            // Retirement Phase Logic: Go-Go (<60), Slow-Go (60-80), No-Go (80+)
-            let factor = 1.0;
-            if (isRet) {
-                if (age < 60) factor = (assumptions.phaseGo1 ?? 1.0);
-                else if (age < 80) factor = (assumptions.phaseGo2 ?? 0.9);
-                else factor = (assumptions.phaseGo3 ?? 0.8);
-            }
-            
+            let factor = isRet ? (age < 60 ? (assumptions.phaseGo1 ?? 1.0) : (age < 80 ? (assumptions.phaseGo2 ?? 0.9) : (assumptions.phaseGo3 ?? 0.8))) : 1.0;
             const targetBudget = baseBudget * factor;
-            let floorOrdIncome = 0, floorTotalIncome = 0, pretaxDed = 0;
+            let floorOrdIncome = 0, floorTotalIncome = 0, floorUntaxedMAGI = 0, pretaxDed = 0;
             (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i), bonus = gross * (parseFloat(inc.bonusPct) / 100 || 0), sourceGross = gross + bonus, netSrc = sourceGross - (math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1));
-                
-                // Clear interpretation: NoTaxUntil 2030 means 2030 is the first year of tax.
                 const unt = parseInt(inc.nonTaxableUntil);
-                if (isNaN(unt) || year >= unt) { 
-                    floorOrdIncome += netSrc; 
-                    if (!isRet) pretaxDed += Math.min(sourceGross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); 
-                }
+                if (isNaN(unt) || year >= unt) { floorOrdIncome += netSrc; if (!isRet) pretaxDed += Math.min(sourceGross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
                 floorTotalIncome += netSrc;
             });
-            if (age >= assumptions.ssStartAge) { const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac), taxableSS = engine.calculateTaxableSocialSecurity(ssGross, Math.max(0, floorOrdIncome), filingStatus); floorOrdIncome += taxableSS; floorTotalIncome += ssGross; }
+            if (age >= assumptions.ssStartAge) { const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac), taxableSS = engine.calculateTaxableSocialSecurity(ssGross, Math.max(0, floorOrdIncome), filingStatus); floorOrdIncome += taxableSS; floorTotalIncome += ssGross; floorUntaxedMAGI += (ssGross - taxableSS); }
             if (age >= 75) { let rmd = engine.calculateRMD(bal['401k'], age); bal['401k'] -= rmd; floorOrdIncome += rmd; floorTotalIncome += rmd; }
-            if (!isRet) {
-                bal['401k'] += pretaxDed; (budget.savings || []).forEach(sav => {
-                    const amt = math.fromCurrency(sav.annual) * infFac, keyMap = { 'Cash': 'cash', 'Taxable': 'taxable', 'Roth IRA': 'roth-basis', 'HSA': 'hsa', 'Crypto': 'crypto', 'Metals': 'metals' }, key = keyMap[sav.type];
-                    if (key) { bal[key] += amt; if (['taxable', 'crypto', 'metals'].includes(key)) bal[key + 'Basis'] += amt; }
-                });
-            }
+            if (!isRet) { bal['401k'] += pretaxDed; (budget.savings || []).forEach(sav => { const amt = math.fromCurrency(sav.annual) * infFac, keyMap = { 'Cash': 'cash', 'Taxable': 'taxable', 'Roth IRA': 'roth-basis', 'HSA': 'hsa', 'Crypto': 'crypto', 'Metals': 'metals' }, key = keyMap[sav.type]; if (key) { bal[key] += amt; if (['taxable', 'crypto', 'metals'].includes(key)) bal[key + 'Basis'] += amt; } }); }
             const liquidForSnap = bal['cash'] + bal['taxable'] + bal['crypto'];
             const baseSnap = engine.calculateSnapBenefit(floorOrdIncome, 0, liquidForSnap, currentHhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac) * 12;
             let currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed), currentLtcgIncome = 0, totalWithdrawn = 0, currentDraws = {};
             let floorNetCash = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + baseSnap;
             let deficit = targetBudget - floorNetCash;
-            const fpl = (16060 + (currentHhSize - 1) * 5650) * infFac, magiTarget = persona === 'PLATINUM' ? fpl * 1.38 : (persona === 'SILVER' ? fpl * 2.0 : 0);
+            const magiTarget = persona === 'PLATINUM' ? fpl100 * 1.38 : (persona === 'SILVER' ? fpl100 * 2.0 : 0);
             
             for (let pass = 0; pass < 3; pass++) {
                 if (deficit <= 5) break;
                 for (const pk of burndown.priorityOrder) {
-                    if (deficit <= 5 && (currentOrdIncome + currentLtcgIncome) >= magiTarget) break;
+                    if (deficit <= 5 && (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI) >= magiTarget) break;
                     let available = (pk === 'heloc') ? Math.max(0, helocLimit - bal['heloc']) : (pk === 'cash' ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0));
                     if (available <= 1) continue;
                     while (deficit > 5 && available > 1) {
                         let marginalRate = 0; if (burndown.assetMeta[pk].isTaxable) {
-                            const bracketBoundary = (filingStatus === 'Married Filing Jointly' ? 96950 : 48475) * infFac, baseRate = currentOrdIncome > bracketBoundary ? 0.22 : 0.12, stateRate = stateTaxRates[assumptions.state]?.rate || 0.04;
+                            const bracketBoundary = (filingStatus === 'Married Filing Jointly' ? 96950 : 48475) * infFac, baseRate = currentOrdIncome > bracketBoundary ? 0.22 : 0.12, stateRate = stateMeta.rate;
                             if (pk === '401k') marginalRate = baseRate + stateRate; else { const ratio = bal[pk] > 0 ? (bal[pk+'Basis'] / bal[pk]) : 1; marginalRate = (1 - ratio) * (0.15 + stateRate); }
                         }
-                        let amt = Math.min(Math.max(0, deficit / (1 - marginalRate)), available);
+                        // Add Health Care Cost Logic for 2026 CLIFF & GAP
+                        const curMAGI = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI;
+                        const curRatio = curMAGI / fpl100;
+                        let healthCost = 0;
+                        if (!stateMeta.expanded && curRatio < 1.0) healthCost = 13200 * infFac; // Sticker Price in Gap
+                        else if (curRatio > 4.0) healthCost = 13200 * infFac; // Subsidy Cliff
+                        else if (curRatio > 1.38) {
+                            const minScale = 0.021, maxScale = 0.095;
+                            const expPct = minScale + (curRatio - 1) * (maxScale - minScale) / 3;
+                            healthCost = curMAGI * expPct;
+                        }
+                        
+                        let amt = Math.min(Math.max(0, (deficit + (healthCost/12)) / (1 - marginalRate)), available);
                         if (amt <= 1) break;
                         if (pk === '401k' && age < 59.5) amt = Math.min(amt, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
                         if (amt <= 1) break;
@@ -456,20 +403,35 @@ export const burndown = {
                         if (pk === '401k') currentOrdIncome += amt; else if (['taxable', 'crypto', 'metals'].includes(pk)) { const gainRatio = (bal[pk] + amt > 0) ? (1 - (bal[pk+'Basis'] / (bal[pk] + amt))) : 1; currentLtcgIncome += amt * gainRatio; }
                         const curTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
                         const curSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, benefits.shelterCosts||700, benefits.hasSUA!==false, benefits.isDisabled!==false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac)*12;
-                        deficit = targetBudget - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curTax + curSnap);
+                        deficit = targetBudget + healthCost - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curTax + curSnap);
                     }
                 }
             }
             const finalTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac), finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, benefits.shelterCosts||700, benefits.hasSUA!==false, benefits.isDisabled!==false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac)*12;
-            const netCash = (floorTotalIncome - pretaxDed) + totalWithdrawn + finalSnap - finalTax;
+            const healthMAGI = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI;
+            const finalRatio = healthMAGI / fpl100;
+            let finalHealthCost = 0;
+            if (!stateMeta.expanded && finalRatio < 1.0) finalHealthCost = 13200 * infFac;
+            else if (finalRatio > 4.0) finalHealthCost = 13200 * infFac;
+            else if (finalRatio > 1.38) finalHealthCost = healthMAGI * (0.021 + (finalRatio - 1) * 0.074 / 3);
+
+            const netCash = (floorTotalIncome - pretaxDed) + totalWithdrawn + finalSnap - finalTax - finalHealthCost;
             let surplus = Math.max(0, netCash - targetBudget);
             if (isRet && surplus > 100) { if (bal['heloc'] > 0) { const rep = Math.min(bal['heloc'], surplus); bal['heloc'] -= rep; surplus -= rep; } if (surplus > 100) bal['cash'] += surplus; }
             const liquidAssets = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
-            const currentNW = (liquidAssets + realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0) + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0)) - (simRE.reduce((s,r)=>s+r.mortgage,0) + simOA.reduce((s,o)=>s+o.loan,0) + simDebts.reduce((s,d)=>s+d.balance,0) + bal['heloc']);
-            const isInsolvent = (targetBudget - netCash) > 100 || currentNW < 100;
-            results.push({ age, year, budget: targetBudget, magi: currentOrdIncome + currentLtcgIncome, netWorth: currentNW, isInsolvent, balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap, taxes: finalTax, liquid: liquidAssets, netCash, status: isInsolvent ? 'INSOLVENT' : (age >= 65 ? 'Medicare' : (currentOrdIncome + currentLtcgIncome <= fpl * 1.38 ? 'Platinum' : (currentOrdIncome + currentLtcgIncome <= fpl * 2.0 ? 'Silver' : 'Private'))) });
+            const currentNW = (liquidAssets + realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0) + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0)) - (simRE.reduce((s,r)=>s+r.mortgage,0) + simDebts.reduce((s,d)=>s+d.balance,0) + bal['heloc']);
+            const isInsolvent = (targetBudget - netCash) > 500 || currentNW < 100;
+            
+            let status = 'Standard';
+            if (isInsolvent) status = 'INSOLVENT';
+            else if (age >= 65) status = 'Medicare';
+            else if (!stateMeta.expanded && finalRatio < 1.0) status = 'GAP';
+            else if (finalRatio <= 1.38 && stateMeta.expanded) status = 'Platinum';
+            else if (finalRatio <= 2.5) status = 'Silver';
+            else if (finalRatio > 4.0) status = 'CLIFF';
+
+            results.push({ age, year, budget: targetBudget, magi: healthMAGI, netWorth: currentNW, isInsolvent, balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap, taxes: finalTax, liquid: liquidAssets, netCash, status });
             if (!isSilent && isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
-            if (!isSilent) simulationTrace[age] = traceStr;
             ['taxable', '401k', 'hsa'].forEach(k => bal[k] *= (1 + stockGrowth)); bal['crypto'] *= (1 + cryptoGrowth); bal['metals'] *= (1 + metalsGrowth); bal['roth-earnings'] += (bal['roth-basis'] + bal['roth-earnings']) * stockGrowth;
         }
         return results;
@@ -480,7 +442,14 @@ export const burndown = {
         const formatCell = (v) => isMobile ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 0 }).format(v) : formatter.formatCurrency(v, 0);
         const header = isMobile ? `<tr class="sticky top-0 bg-slate-800 text-slate-500 label-std z-20"><th class="p-2 w-10 text-center">Age</th><th class="p-2 text-center">Spend</th><th class="p-2 text-center">MAGI</th><th class="p-2 text-center">Health</th><th class="p-2 text-center">Net Worth</th></tr>` : `<tr class="sticky top-0 bg-[#1e293b] !text-slate-500 label-std z-20 border-b border-white/5"><th class="p-2 w-10 text-center !bg-[#1e293b]">Age</th><th class="p-2 text-center !bg-[#1e293b]">Budget</th><th class="p-2 text-center !bg-[#1e293b]">MAGI</th><th class="p-2 text-center !bg-[#1e293b]">Health Status</th><th class="p-2 text-center !bg-[#1e293b]">SNAP</th>${burndown.priorityOrder.map(k => `<th class="p-2 text-center text-[9px] !bg-[#1e293b]" style="color:${burndown.assetMeta[k]?.color}">${burndown.assetMeta[k]?.short}</th>`).join('')}<th class="p-2 text-center !bg-[#1e293b] text-teal-400">LIVE ON</th><th class="p-2 text-center !bg-[#1e293b]">Net Worth</th></tr>`;
         const rows = results.map((r, i) => {
-            const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1, badgeClass = r.status === 'INSOLVENT' ? 'bg-red-600 text-white animate-pulse' : (r.status === 'Medicare' ? 'bg-slate-600 text-white' : (r.status === 'Platinum' ? 'bg-emerald-500 text-white' : (r.status === 'Silver' ? 'bg-blue-500 text-white' : 'bg-slate-500 text-white')));
+            const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
+            let badgeClass = 'bg-slate-500 text-white';
+            if (r.status === 'INSOLVENT') badgeClass = 'bg-red-600 text-white animate-pulse';
+            else if (r.status === 'GAP' || r.status === 'CLIFF') badgeClass = 'bg-red-500 text-white';
+            else if (r.status === 'Medicare') badgeClass = 'bg-slate-600 text-white';
+            else if (r.status === 'Platinum') badgeClass = 'bg-emerald-500 text-white';
+            else if (r.status === 'Silver') badgeClass = 'bg-blue-500 text-white';
+            
             const rowClass = r.isInsolvent ? 'bg-red-500/20' : (r.age === lastUsedRetirementAge ? 'bg-blue-900/10' : '');
             if (isMobile) { if (r.age > 70 && r.age % 5 !== 0) return ''; return `<tr class="border-b border-slate-800/50 text-[10px] ${rowClass}"><td class="p-2 text-center font-bold">${r.age}</td><td class="p-2 text-center"><div class="text-slate-400">${formatCell(r.budget / inf)}</div><div class="text-[8px] text-red-400/70 font-bold">+${formatCell(r.taxes / inf)} Tax</div></td><td class="p-2 text-center font-black text-white">${formatCell(r.magi / inf)}</td><td class="p-2 text-center"><span class="px-1.5 py-0.5 rounded text-[8px] font-black uppercase ${badgeClass}">${r.status}</span></td><td class="p-2 text-center"><div class="font-black ${r.isInsolvent ? 'text-red-400' : 'text-teal-400'}">${formatCell(r.netWorth / inf)}</div></td></tr>`; }
             const draws = burndown.priorityOrder.map(k => { const drawVal = (r.draws?.[k] || 0) / inf, balVal = r.balances[k] / inf; return `<td class="p-1.5 text-center border-l border-white/5 bg-black/10">${drawVal > 0 ? `<div class="font-black" style="color:${burndown.assetMeta[k]?.color}">${formatCell(drawVal)}</div>` : `<div class="text-slate-700">-</div>`}<div class="text-[8px] text-slate-500 font-medium mt-0.5">${formatCell(balVal)}</div></td>`; }).join('');
