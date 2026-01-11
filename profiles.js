@@ -47,7 +47,7 @@ export const PROFILE_45_COUPLE = {
     },
     benefits: { 
         unifiedIncomeAnnual: 45000,
-        shelterCosts: 5317,
+        shelterCosts: 3250,
         dependents: [
             { name: "Kid 1", birthYear: 2019 },
             { name: "Kid 2", birthYear: 2017 },
@@ -68,7 +68,7 @@ export const PROFILE_25_SINGLE = {
     ],
     stockOptions: [
         { name: 'Series E RSUs', shares: 2200, strikePrice: 75, currentPrice: 100, growth: 10, isLtcg: false },
-        { name: 'Series D RSUs', shares: 500, strikePrice: 40, currentPrice: 100, growth: 10, isLtcg: false }
+        { name: 'Series D RSUs', shares: 400, strikePrice: 40, currentPrice: 100, growth: 10, isLtcg: false }
     ],
     realEstate: [],
     income: [
@@ -150,7 +150,7 @@ export const PROFILE_55_RETIREE = {
     },
     benefits: { 
         unifiedIncomeAnnual: 30000,
-        shelterCosts: 2700,
+        shelterCosts: 2200,
         dependents: [] 
     },
     burndown: {

@@ -513,15 +513,15 @@ export const burndown = {
             }
 
             const liquidForSnap = bal['cash'] + bal['taxable'] + bal['crypto'];
-            const initialSnap = engine.calculateSnapBenefit(floorOrdIncome, 0, liquidForSnap, currentHhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac) * 12;
+            const initialSnap = engine.calculateSnapBenefit(floorOrdIncome, 0, liquidForSnap, currentHhSize, (benefits.shelterCosts || 700) * infFac, benefits.hasSUA !== false, benefits.isDisabled !== false, (benefits.childSupportPaid || 0) * infFac, (benefits.depCare || 0) * infFac, (benefits.medicalExps || 0) * infFac, assumptions.state, infFac) * 12;
             
             let currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed), currentLtcgIncome = 0, totalWithdrawn = 0, currentDraws = {};
-            let floorNetCash = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + initialSnap;
-            let deficit = targetBudget - floorNetCash; 
+            let currentNetCheck = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + initialSnap;
+            let deficit = targetBudget - currentNetCheck; 
             
-            const magiTarget = persona === 'PLATINUM' ? fpl100 * 1.375 : (persona === 'SILVER' ? fpl100 * 2.49 : 0);
+            const magiTarget = persona === 'PLATINUM' ? fpl100 * 1.37 : (persona === 'SILVER' ? fpl100 * 2.48 : 0);
             
-            trace += `Initial Shortfall: ${math.toCurrency(deficit)} (Budget ${math.toCurrency(targetBudget)} - Work Inflow ${math.toCurrency(floorTotalIncome - pretaxDed)} - Snap Inflow ${math.toCurrency(initialSnap)} - Taxes)\n`;
+            trace += `Initial Shortfall: ${math.toCurrency(deficit)} (Budget ${math.toCurrency(targetBudget)} - Work Inflow ${math.toCurrency(floorTotalIncome - pretaxDed)} - Benefit Inflow ${math.toCurrency(initialSnap)} - Taxes)\n`;
 
             let effectiveOrder = [...burndown.priorityOrder];
             if (persona !== 'UNCONSTRAINED') {
@@ -601,7 +601,7 @@ export const burndown = {
                     else if (newRatio > 4.0) healthCost = 13200 * infFac; 
                     else if (newRatio > 1.38) healthCost = newMAGI * (0.021 + (newRatio - 1) * 0.074 / 3);
 
-                    const curSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, benefits.shelterCosts||700, benefits.hasSUA!==false, benefits.isDisabled!==false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac)*12;
+                    const curSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac)*12;
                     deficit = targetBudget + healthCost - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curTax + curSnap);
                     
                     const reason = strategyPull ? `(Harvesting for strategy: Target ${math.toCurrency(magiTarget)})` : `(Deficit Coverage)`;
@@ -617,7 +617,7 @@ export const burndown = {
             else if (finalRatio > 4.0) finalHealthCost = 13200 * infFac;
             else if (finalRatio > 1.38) finalHealthCost = healthMAGI * (0.021 + (finalRatio - 1) * 0.074 / 3);
 
-            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, benefits.shelterCosts||700, benefits.hasSUA!==false, benefits.isDisabled!==false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac)*12;
+            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac)*12;
             const netCash = (floorTotalIncome - pretaxDed) + totalWithdrawn + finalSnap - finalTax - finalHealthCost;
             
             let surplus = Math.max(0, netCash - targetBudget);
@@ -664,7 +664,6 @@ export const burndown = {
                 simulationTrace[age] = trace;
             }
 
-            // Sync Table Benefit display to actual benefit received after harvesting
             results.push({ age, year, budget: targetBudget, magi: healthMAGI, netWorth: currentNW, isInsolvent, balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap, taxes: finalTax, liquid: liquidAssets, netCash, status });
             if (!isSilent && isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
 
