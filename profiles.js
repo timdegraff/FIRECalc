@@ -44,6 +44,7 @@ export const PROFILE_45_COUPLE = {
         ltcgRate: 15
     },
     benefits: { 
+        shelterCosts: 5317,
         dependents: [
             { name: "Kid 1", birthYear: 2019 },
             { name: "Kid 2", birthYear: 2017 },
@@ -96,7 +97,10 @@ export const PROFILE_25_SINGLE = {
         advancedGrowth: false,
         ltcgRate: 15
     },
-    benefits: { dependents: [] }
+    benefits: { 
+        shelterCosts: 2333,
+        dependents: [] 
+    }
 };
 
 export const PROFILE_55_RETIREE = {
@@ -134,5 +138,8 @@ export const PROFILE_55_RETIREE = {
         advancedGrowth: false,
         ltcgRate: 15 
     },
-    benefits: { dependents: [] }
+    benefits: { 
+        shelterCosts: 2700,
+        dependents: [] 
+    }
 };
