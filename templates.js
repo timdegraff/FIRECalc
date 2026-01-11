@@ -141,11 +141,11 @@ export const templates = {
                     <div class="flex items-center gap-4 pt-2 border-t border-white/5">
                          <label class="flex items-center gap-2 cursor-pointer group">
                             <input data-id="contribOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600" ${data.contribOnBonus ? 'checked' : ''}>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Contrib Bonus</span>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">401k on Bonus</span>
                          </label>
                          <label class="flex items-center gap-2 cursor-pointer group">
                             <input data-id="matchOnBonus" type="checkbox" class="w-3 h-3 accent-blue-500 rounded bg-slate-900 border-slate-600" ${data.matchOnBonus ? 'checked' : ''}>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Match Bonus</span>
+                            <span class="text-[9px] font-bold text-slate-500 uppercase group-hover:text-blue-400 transition-colors">Match on Bonus</span>
                          </label>
                     </div>
                 </div>
