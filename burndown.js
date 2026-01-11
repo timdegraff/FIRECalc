@@ -63,7 +63,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-shield-alt"></i> Preservation Age</label>
                             <div id="card-preservation-val" class="text-3xl font-black text-amber-500 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">FLAT REAL WEALTH UNTIL AGE 100</div>
+                        <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">MAINTAINS FLAT REAL WEALTH</div>
                     </div>
 
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
@@ -322,19 +322,23 @@ export const burndown = {
 
         const config = burndown.scrape();
         
-        // Auto-Calc Budget Logic (Visual Update only)
-        let calculatedBaseAnnual = 0;
+        // Base Annual Budget (Real 2026 Dollars)
+        let testedRealBudget = 0;
         if (config.useSync) {
-            calculatedBaseAnnual = (data.budget?.expenses || []).reduce((sum, exp) => {
+            testedRealBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
                 if (exp.remainsInRetirement === false) return sum;
                 return sum + math.fromCurrency(exp.annual);
             }, 0);
             const budgetInput = document.getElementById('input-manual-budget');
             if (budgetInput) {
-                budgetInput.value = math.toCurrency(calculatedBaseAnnual);
+                budgetInput.value = math.toCurrency(testedRealBudget);
                 formatter.updateZeroState(budgetInput);
             }
+        } else {
+            testedRealBudget = config.manualBudget;
         }
+
+        const compactBudgetStr = math.toSmartCompactCurrency(testedRealBudget);
 
         simulationTrace = {}; 
         const results = burndown.simulateProjection(data, config);
@@ -352,6 +356,9 @@ export const burndown = {
             document.getElementById('card-runway-val').textContent = runwayAge; 
             document.getElementById('card-runway-val').className = firstInsolvencyAge ? "text-3xl font-black text-red-400 mono-numbers tracking-tighter" : "text-3xl font-black text-blue-400 mono-numbers tracking-tighter"; 
         }
+        if (document.getElementById('card-runway-sub')) {
+            document.getElementById('card-runway-sub').textContent = `SUSTAINS ${compactBudgetStr} BUDGET IN 2026 DOLLARS UNTIL THIS AGE`;
+        }
 
         let preservationAge = "--";
         const startNWReal = results[0].netWorth;
@@ -365,18 +372,23 @@ export const burndown = {
             if (i === results.length - 1) preservationAge = "100+";
         }
         if (document.getElementById('card-preservation-val')) document.getElementById('card-preservation-val').textContent = preservationAge;
+        if (document.getElementById('card-preservation-sub')) {
+            document.getElementById('card-preservation-sub').textContent = `MAINTAINS FLAT REAL WEALTH AT ${compactBudgetStr} BUDGET UNTIL THIS AGE`;
+        }
 
         // FIXED SOLVER: Solve target spend ONLY during retirement years.
         let dwzSpend = 0;
         let low = 10000, high = 1000000;
         for (let j = 0; j < 15; j++) {
             let mid = (low + high) / 2;
-            // The solver uses 'retirementSpendOverride' to ensure we don't over-spend during working years
             const testRes = burndown.simulateProjection(data, { ...config, useSync: false }, true, mid);
             const isTestSolvent = !testRes.some(r => r.isInsolvent);
             if (isTestSolvent) { dwzSpend = mid; low = mid; } else { high = mid; }
         }
         if (document.getElementById('card-dwz-val')) document.getElementById('card-dwz-val').textContent = math.toSmartCompactCurrency(dwzSpend);
+        if (document.getElementById('card-dwz-sub')) {
+            document.getElementById('card-dwz-sub').textContent = `MAX SUSTAINABLE SPEND OF ${math.toSmartCompactCurrency(dwzSpend)} STARTING AT RETIREMENT`;
+        }
 
         const firstRetYear = results.find(r => r.age >= lastUsedRetirementAge) || results[0];
         if (document.getElementById('est-snap-indicator')) document.getElementById('est-snap-indicator').textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}`;
@@ -505,12 +517,12 @@ export const burndown = {
             
             let currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed), currentLtcgIncome = 0, totalWithdrawn = 0, currentDraws = {};
             let floorNetCash = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + baseSnap;
-            let deficit = targetBudget - floorNetCash;
-            
+            let deficit = targetBudget - floorNetCheck; // This refers to the shortfall after taxes
+
             // MAGI TARGET with SAFETY BUFFER (targeting slightly under limit to avoid rounding into Silver)
             const magiTarget = persona === 'PLATINUM' ? fpl100 * 1.375 : (persona === 'SILVER' ? fpl100 * 2.49 : 0);
             
-            trace += `Initial Shortfall: ${math.toCurrency(deficit)} (Budget ${math.toCurrency(targetBudget)} - Inflow ${math.toCurrency(floorNetCash)})\n`;
+            trace += `Initial Shortfall: ${math.toCurrency(targetBudget - floorNetCash)} (Budget ${math.toCurrency(targetBudget)} - Inflow ${math.toCurrency(floorNetCash)})\n`;
 
             let effectiveOrder = [...burndown.priorityOrder];
             if (persona !== 'UNCONSTRAINED') {
@@ -520,6 +532,8 @@ export const burndown = {
                     ...effectiveOrder.filter(b => !zeroMAGIBuckets.includes(b))
                 ];
             }
+
+            deficit = targetBudget - floorNetCash;
 
             for (let pass = 0; pass < 3; pass++) {
                 if (deficit <= 5 && (persona === 'UNCONSTRAINED' || (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI) >= magiTarget)) break;
@@ -633,7 +647,7 @@ export const burndown = {
             if (isInsolvent) status = 'INSOLVENT';
             else if (age >= 65) status = 'Medicare';
             else if (!stateMeta.expanded && finalRatio < 1.0) status = 'No Cov';
-            else if (finalRatio <= 1.385 && stateMeta.expanded) status = 'Platinum'; // Slight tolerance for rounding
+            else if (finalRatio <= 1.385 && stateMeta.expanded) status = 'Platinum'; 
             else if (finalRatio <= 2.505) status = 'Silver';
             else if (finalRatio > 4.0) status = 'Private';
 

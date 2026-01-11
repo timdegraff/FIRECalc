@@ -177,16 +177,21 @@ export const templates = {
         const typeClass = templates.helpers.getTypeClass(type);
         const selectorHtml = data.isLocked 
             ? `<div class="flex items-center gap-2 w-full"><div class="w-2 h-2 rounded-full bg-blue-500"></div><span class="font-black uppercase tracking-wider text-[10px] text-blue-400">401k from Income</span></div><input type="hidden" data-id="type" value="Pre-Tax (401k/IRA)">` 
-            : `<select data-id="type" class="input-base uppercase tracking-wider text-[10px] ${typeClass} cursor-pointer">
-                        <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
-                        <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
-                        <option value="Roth IRA" ${type === 'Roth IRA' ? 'selected' : ''}>Roth IRA</option>
-                        <option value="Cash" ${type === 'Cash' ? 'selected' : ''}>Cash</option>
-                        <option value="Crypto" ${type === 'Crypto' ? 'selected' : ''}>Crypto</option>
-                        <option value="Metals" ${type === 'Metals' ? 'selected' : ''}>Metals</option>
-                        <option value="HSA" ${type === 'HSA' ? 'selected' : ''}>HSA</option>
-                        <option value="529" ${type === '529' ? 'selected' : ''}>529</option>
-                    </select>`;
+            : `<div class="flex items-center gap-2 w-full">
+                <select data-id="type" class="input-base uppercase tracking-wider text-[10px] ${typeClass} cursor-pointer">
+                    <option value="Taxable" ${type === 'Taxable' ? 'selected' : ''}>Taxable</option>
+                    <option value="Pre-Tax (401k/IRA)" ${type === 'Pre-Tax (401k/IRA)' ? 'selected' : ''}>Pre-Tax</option>
+                    <option value="Roth IRA" ${type === 'Roth IRA' ? 'selected' : ''}>Roth IRA</option>
+                    <option value="Cash" ${type === 'Cash' ? 'selected' : ''}>Cash</option>
+                    <option value="Crypto" ${type === 'Crypto' ? 'selected' : ''}>Crypto</option>
+                    <option value="Metals" ${type === 'Metals' ? 'selected' : ''}>Metals</option>
+                    <option value="HSA" ${type === 'HSA' ? 'selected' : ''}>HSA</option>
+                    <option value="529" ${type === '529' ? 'selected' : ''}>529</option>
+                </select>
+                <div data-id="capWarning" class="hidden text-yellow-500 text-[10px] cursor-help animate-pulse" title="Exceeds Annual IRS Family Limit ($8,550)">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>`;
 
         return `
             <td class="w-8 text-center">

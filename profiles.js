@@ -21,17 +21,19 @@ export const PROFILE_45_COUPLE = {
     budget: {
         savings: [
             { type: 'Taxable', annual: 36000, monthly: 3000, removedInRetirement: true },
-            { type: 'HSA', annual: 8300, monthly: 691, removedInRetirement: true }
+            { type: 'HSA', annual: 7200, monthly: 600, removedInRetirement: true }
         ],
         expenses: [
-            { name: 'Utilities & Misc', annual: 30200, monthly: 2517, remainsInRetirement: true, isFixed: false },
-            { name: 'Mortgage P&I', annual: 24000, monthly: 2000, remainsInRetirement: true, isFixed: true },
-            { name: 'Kids Activities/Childcare', annual: 18000, monthly: 1500, remainsInRetirement: false, isFixed: false },
-            { name: 'Groceries', annual: 18000, monthly: 1500, remainsInRetirement: true, isFixed: false },
-            { name: 'Vacations/Travel', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false },
-            { name: 'Property Tax/Ins', annual: 9600, monthly: 800, remainsInRetirement: true, isFixed: false },
-            { name: 'Car Payment', annual: 9600, monthly: 800, remainsInRetirement: false, isFixed: true },
-            { name: 'Gas & Auto Maint', annual: 3600, monthly: 300, remainsInRetirement: true, isFixed: false }
+            { name: 'MORTGAGE W/ ESCROW', annual: 33000, monthly: 2750, remainsInRetirement: true, isFixed: true },
+            { name: 'CHILDCARE', annual: 18000, monthly: 1500, remainsInRetirement: false, isFixed: false },
+            { name: 'GROCERIES', annual: 14400, monthly: 1200, remainsInRetirement: true, isFixed: false },
+            { name: 'VACATIONS/TRAVEL', annual: 14400, monthly: 1200, remainsInRetirement: true, isFixed: false },
+            { name: 'CAR PAYMENTS', annual: 12000, monthly: 1000, remainsInRetirement: true, isFixed: false },
+            { name: 'RESTAURANTS', annual: 7200, monthly: 600, remainsInRetirement: true, isFixed: false },
+            { name: 'UTILITIES', annual: 6000, monthly: 500, remainsInRetirement: true, isFixed: false },
+            { name: 'AMAZON', annual: 6000, monthly: 500, remainsInRetirement: true, isFixed: false },
+            { name: 'MISC', annual: 6000, monthly: 500, remainsInRetirement: true, isFixed: false },
+            { name: 'GAS & AUTO MAINT', annual: 3600, monthly: 300, remainsInRetirement: true, isFixed: false }
         ]
     },
     assumptions: { 

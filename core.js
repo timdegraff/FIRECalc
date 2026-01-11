@@ -74,6 +74,11 @@ window.addRow = (containerId, type, data = {}) => {
         if (expBtn) expBtn.textContent = !!data.incomeExpensesMonthly ? 'Monthly' : 'Annual';
         checkIrsLimits(element);
     }
+    
+    if (type === 'budget-savings') {
+        checkIrsLimits(element, true);
+    }
+
     if (type === 'investment') updateCostBasisVisibility(element);
 };
 
@@ -250,6 +255,7 @@ function attachGlobalListeners() {
                     otherInput.value = math.toCurrency(newVal);
                     formatter.updateZeroState(otherInput);
                 }
+                if (row.closest('#budget-savings-rows')) checkIrsLimits(row, true);
             }
         }
 
@@ -278,7 +284,10 @@ function attachGlobalListeners() {
             target.classList.forEach(cls => { if (cls.startsWith('text-type-')) target.classList.remove(cls); });
             target.classList.add(newClass);
             const row = target.closest('tr');
-            if (row) updateCostBasisVisibility(row);
+            if (row) {
+                updateCostBasisVisibility(row);
+                if (row.closest('#budget-savings-rows')) checkIrsLimits(row, true);
+            }
         }
         if (target.dataset.id === 'retirementAge') {
             const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
@@ -333,15 +342,30 @@ function attachDynamicRowListeners() {
     });
 }
 
-function checkIrsLimits(row) {
+function checkIrsLimits(row, isBudgetSavings = false) {
+    const age = window.currentData?.assumptions?.currentAge || 40;
+    const warning = row.querySelector('[data-id="capWarning"]');
+    if (!warning) return;
+
+    if (isBudgetSavings) {
+        const type = row.querySelector('[data-id="type"]')?.value;
+        const annual = math.fromCurrency(row.querySelector('[data-id="annual"]')?.value || "0");
+        if (type === 'HSA') {
+            // 2026 Family HSA limit baseline $8,550
+            const hsaLimit = 8550;
+            warning.classList.toggle('hidden', annual <= hsaLimit);
+        } else {
+            warning.classList.add('hidden');
+        }
+        return;
+    }
+
     const cPct = parseFloat(row.querySelector('[data-id="contribution"]')?.value) || 0;
     const amount = math.fromCurrency(row.querySelector('[data-id="amount"]')?.value);
     const isMonthly = row.querySelector('input[data-id="isMonthly"]')?.value === 'true';
     const annual = amount * (isMonthly ? 12 : 1);
-    const age = window.currentData?.assumptions?.currentAge || 40;
     const limit = age >= 50 ? 31000 : 23500;
-    const warning = row.querySelector('[data-id="capWarning"]');
-    if (warning) warning.classList.toggle('hidden', (annual * (cPct / 100)) <= limit);
+    warning.classList.toggle('hidden', (annual * (cPct / 100)) <= limit);
 }
 
 function updateCostBasisVisibility(row) {
