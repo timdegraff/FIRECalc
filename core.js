@@ -126,7 +126,7 @@ function attachGlobalListeners() {
                 
                 const slider = container.querySelector(`input[type="range"][data-id="${btn.dataset.target}"]`);
                 if (slider) {
-                    slider.value = isMultiplier ? newVal : newVal;
+                    slider.value = newVal;
                 }
 
                 input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -388,7 +388,7 @@ window.createAssumptionControls = (data) => {
         const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id);
         const displayValue = isMultiplier ? (value * 100) : value;
         return `
-        <div class="card-container p-6 space-y-8 flex flex-col h-full">
+        <div class="space-y-4">
             <div class="flex justify-between items-center h-4">
                 <label class="label-std ${colorClass}">${label}</label>
                 <div class="w-28">
@@ -410,22 +410,20 @@ window.createAssumptionControls = (data) => {
             return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass, "1", false, true);
         }
         return `
-            <div class="card-container p-6 space-y-8 flex flex-col h-full">
-                <div class="space-y-2 border-l border-white/10 pl-3">
-                    <label class="text-[8px] font-black uppercase tracking-widest ${colorClass} block">${label}</label>
-                    <div class="grid grid-cols-3 gap-2 items-end">
-                        <div class="space-y-1">
-                            <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Rate</span>
-                            ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
-                        </div>
-                        <div class="space-y-1">
-                             <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">For Yrs</span>
-                            ${templates.helpers.renderStepper(`${prefix}GrowthYears`, a[`${prefix}GrowthYears`] || 10, 'text-white', '0', false, 1)}
-                        </div>
-                        <div class="space-y-1">
-                            <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Final</span>
-                            ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
-                        </div>
+            <div class="space-y-2 border-l border-white/10 pl-3">
+                <label class="text-[8px] font-black uppercase tracking-widest ${colorClass} block">${label}</label>
+                <div class="grid grid-cols-3 gap-2 items-end">
+                    <div class="space-y-1">
+                        <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Rate</span>
+                        ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
+                    </div>
+                    <div class="space-y-1">
+                         <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">For Yrs</span>
+                        ${templates.helpers.renderStepper(`${prefix}GrowthYears`, a[`${prefix}GrowthYears`] || 10, 'text-white', '0', false, 1)}
+                    </div>
+                    <div class="space-y-1">
+                        <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Final</span>
+                        ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
                     </div>
                 </div>
             </div>
@@ -433,6 +431,7 @@ window.createAssumptionControls = (data) => {
     };
 
     container.innerHTML = `
+        <!-- Card 1: Household & Timing -->
         <div class="card-container p-6 space-y-8 flex flex-col h-full">
             <div class="flex items-center gap-3 border-b border-white/5 pb-4">
                 <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400"><i class="fas fa-clock text-xs"></i></div>
@@ -444,13 +443,14 @@ window.createAssumptionControls = (data) => {
             ${renderComplexField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly, 0, 8000, 100, "text-teal-400", "0", true)}
         </div>
 
+        <!-- Card 2: Market Projections -->
         <div class="card-container p-6 space-y-8 flex flex-col h-full">
             <div class="flex items-center justify-between border-b border-white/5 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400"><i class="fas fa-chart-line text-xs"></i></div>
                     <h3 class="text-sm font-black text-white uppercase tracking-widest">Market Projections</h3>
                 </div>
-                <button id="toggle-advanced-growth" class="w-8 h-8 rounded-lg ${isAdv ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-500'} flex items-center justify-center hover:bg-orange-500/20 transition-all"><i class="fas fa-cog text-xs"></i></button>
+                <button id="toggle-advanced-growth" class="w-8 h-8 rounded-lg ${isAdv ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-white/5 text-slate-500'} flex items-center justify-center hover:bg-orange-500/20 transition-all"><i class="fas fa-cog text-xs"></i></button>
             </div>
             <div class="${isAdv ? 'space-y-6' : 'space-y-8'}">
                 ${renderAdvancedAPYRow("Stock APY (%)", "stock", "text-blue-400")}
@@ -461,6 +461,7 @@ window.createAssumptionControls = (data) => {
             <div class="pt-4 border-t border-white/5">${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400", "1", false, true)}</div>
         </div>
 
+        <!-- Card 3: Tax & Status -->
         <div class="card-container p-6 space-y-3 flex flex-col h-full">
             <div class="flex items-center gap-3 border-b border-white/5 pb-3 mb-2">
                 <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fas fa-walking text-xs"></i></div>
