@@ -65,6 +65,48 @@
         </div>
     </div>
 
+    <!-- Profile Selection Modal -->
+    <div id="profile-modal" class="fixed inset-0 flex items-center justify-center bg-black/90 z-[70] hidden backdrop-blur-md px-6">
+        <div class="w-full max-w-4xl">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-black text-white mb-2 tracking-tighter uppercase">Choose Your Path</h2>
+                <p class="text-slate-500 font-bold uppercase tracking-widest text-xs">Select a baseline profile to begin your simulation</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Starter Card -->
+                <button data-profile="25" class="glass-panel p-8 rounded-[32px] border border-white/10 hover:border-teal-500/50 hover:bg-teal-500/5 transition-all group flex flex-col items-center text-center">
+                    <div class="w-24 h-24 rounded-full bg-teal-500/10 flex items-center justify-center mb-6 border border-teal-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-seedling text-4xl text-teal-400"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-1">The Starter</h3>
+                    <p class="text-[10px] text-teal-500 font-black uppercase tracking-widest mb-4">25 • Single • Renter</p>
+                    <p class="text-xs text-slate-400 leading-relaxed">Early career focusing on aggressive compounding and debt management.</p>
+                </button>
+
+                <!-- Accumulator Card -->
+                <button data-profile="45" class="glass-panel p-8 rounded-[32px] border border-blue-500/30 bg-blue-500/5 hover:border-blue-500 hover:bg-blue-500/10 transition-all group flex flex-col items-center text-center">
+                    <div class="w-24 h-24 rounded-full bg-blue-500/20 flex items-center justify-center mb-6 border border-blue-500/40 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/20">
+                        <i class="fas fa-users text-4xl text-blue-400"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-1">Accumulator</h3>
+                    <p class="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-4">45 • Family • Mortgage</p>
+                    <p class="text-xs text-slate-400 leading-relaxed">Mid-career complexity with dependents, multiple income streams, and benefits.</p>
+                </button>
+
+                <!-- Retiree Card -->
+                <button data-profile="55" class="glass-panel p-8 rounded-[32px] border border-white/10 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all group flex flex-col items-center text-center">
+                    <div class="w-24 h-24 rounded-full bg-purple-500/10 flex items-center justify-center mb-6 border border-purple-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-umbrella-beach text-4xl text-purple-400"></i>
+                    </div>
+                    <h3 class="text-xl font-black text-white mb-1">Pre-Retiree</h3>
+                    <p class="text-[10px] text-purple-500 font-black uppercase tracking-widest mb-4">55 • Married • Paid Off</p>
+                    <p class="text-xs text-slate-400 leading-relaxed">Final approach to retirement. Focus on withdrawal strategies and tax-free income.</p>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="app-container" class="hidden flex h-screen overflow-hidden relative">
         <!-- Sidebar: Glass Effect -->
         <aside class="sidebar w-64 flex flex-col flex-shrink-0 bg-[#0B0F19]/80 backdrop-blur-xl border-r border-white/5 z-20">

@@ -42,12 +42,19 @@ onAuthStateChanged(auth, async (user) => {
         const hasAcknowledged = localStorage.getItem('firecalc_guest_acknowledged') === 'true';
         const hasSelectedProfile = localStorage.getItem('firecalc_guest_profile_selected') === 'true';
 
+        // Hide main loading screen for guest mode immediately so modals are visible
+        if (loginScreen) loginScreen.classList.add('hidden');
+
         if (!hasAcknowledged) {
             const modal = document.getElementById('guest-modal');
             const btn = document.getElementById('ack-guest-btn');
             if (modal && btn) {
                 modal.classList.remove('hidden');
-                btn.onclick = () => { localStorage.setItem('firecalc_guest_acknowledged', 'true'); modal.classList.add('hidden'); showProfileSelection(); };
+                btn.onclick = () => { 
+                    localStorage.setItem('firecalc_guest_acknowledged', 'true'); 
+                    modal.classList.add('hidden'); 
+                    showProfileSelection(); 
+                };
             }
         } else if (!hasSelectedProfile) {
             showProfileSelection();
@@ -69,7 +76,10 @@ onAuthStateChanged(auth, async (user) => {
 
 function showProfileSelection() {
     const modal = document.getElementById('profile-modal');
-    if (!modal) return;
+    if (!modal) {
+        console.error("Profile modal element not found in DOM");
+        return;
+    }
     modal.classList.remove('hidden');
     modal.querySelectorAll('button').forEach(b => {
         b.onclick = async () => {
