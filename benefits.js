@@ -42,11 +42,11 @@ export const benefits = {
                     </div>
 
                     <!-- Sandbox & Env Costs -->
-                    <div class="card-container p-5 bg-slate-900/40 border-amber-500/20 flex flex-col justify-between">
-                        <div class="flex justify-between items-start mb-4">
+                    <div class="card-container p-5 flex flex-col justify-between">
+                        <div class="flex justify-between items-start mb-6">
                             <div class="flex flex-col">
-                                <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Sandbox MAGI</label>
-                                <div class="flex items-center gap-2 mt-1">
+                                <h3 class="text-xs font-black text-white uppercase tracking-widest">Sandbox MAGI</h3>
+                                <div class="flex items-center gap-2 mt-0.5">
                                     <span class="text-[8px] font-black text-slate-500 uppercase">W2/1099 Income?</span>
                                     <label class="relative inline-flex items-center cursor-pointer">
                                         <input type="checkbox" data-benefit-id="isEarnedIncome" class="sr-only peer" checked>
@@ -66,7 +66,10 @@ export const benefits = {
                             </div>
                         </div>
                         
-                        <input type="range" data-benefit-id="unifiedIncomeAnnual" min="0" max="200000" step="1000" value="25000" class="input-range w-full h-1 accent-teal-500 mb-6">
+                        <div class="mb-6">
+                            <input type="range" data-benefit-id="unifiedIncomeAnnual" min="0" max="200000" step="1000" value="25000" class="input-range w-full h-1 accent-teal-500">
+                            <p class="text-[7px] text-slate-500 font-bold uppercase mt-2 tracking-widest">Adjust annual household income for simulation</p>
+                        </div>
                         
                         <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
                             <div>
