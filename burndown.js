@@ -524,6 +524,7 @@ export const burndown = {
 
                     if (pull <= 1) continue;
 
+                    // FIX: Capture ratio BEFORE withdrawing to ensure accurate Tax estimation
                     let currentBasisRatio = 1;
                     if (['taxable', 'crypto', 'metals'].includes(pk) && bal[pk] > 0) {
                         currentBasisRatio = bal[pk+'Basis'] / bal[pk];
@@ -545,6 +546,19 @@ export const burndown = {
                     }
                     
                     const curTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
+                    
+                    // RECALCULATE HEALTH COST FOR DEFICIT
+                    // This is critical: if withdrawals pushed MAGI up, health cost rises. We must pull MORE to cover it.
+                    const newMAGI = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI;
+                    const newRatio = newMAGI / fpl100;
+                    if (!stateMeta.expanded && newRatio < 1.0) healthCost = 13200 * infFac; 
+                    else if (newRatio > 4.0) healthCost = 13200 * infFac; 
+                    else if (newRatio > 1.38) {
+                        const minScale = 0.021, maxScale = 0.095;
+                        const expPct = minScale + (newRatio - 1) * (maxScale - minScale) / 3;
+                        healthCost = newMAGI * expPct;
+                    }
+
                     const curSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, benefits.shelterCosts||700, benefits.hasSUA!==false, benefits.isDisabled!==false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac)*12;
                     deficit = targetBudget + healthCost - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curTax + curSnap);
                     
