@@ -71,17 +71,10 @@ export const templates = {
         <td><input data-id="currentPrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
         <td><input data-id="growth" data-decimals="1" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base text-center text-blue-400 font-bold mono-numbers"></td>
         <td class="text-center">
-            <label class="cursor-pointer inline-flex items-center justify-center relative">
-                <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg === true ? 'checked' : ''}>
-                <div class="w-12 py-1 rounded-md text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center
-                    bg-blue-500/10 border-blue-500/20 text-blue-400 
-                    peer-checked:bg-teal-500/10 peer-checked:border-teal-500/20 peer-checked:text-teal-400
-                    hover:border-white/20
-                    peer-checked:[&>.ord-label]:hidden peer-checked:[&>.ltcg-label]:block">
-                    <span class="ord-label block">ORD</span>
-                    <span class="ltcg-label hidden">LTCG</span>
-                </div>
-            </label>
+            <div class="w-12 py-1 mx-auto rounded-md text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center bg-blue-500/10 border-blue-500/20 text-blue-400" title="Fixed as Ordinary Income">
+                <span class="block">ORD</span>
+            </div>
+            <input type="hidden" data-id="isLtcg" value="false">
         </td>
         <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-teal-400 font-black mono-numbers text-sm pr-2">$0</div></td>
         <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>

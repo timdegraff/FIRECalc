@@ -44,6 +44,7 @@ export const PROFILE_45_COUPLE = {
         ltcgRate: 15
     },
     benefits: { 
+        unifiedIncomeAnnual: 45000,
         shelterCosts: 5317,
         dependents: [
             { name: "Kid 1", birthYear: 2019 },
@@ -62,11 +63,11 @@ export const PROFILE_25_SINGLE = {
     ],
     stockOptions: [
         { name: 'Series E RSUs', shares: 2200, strikePrice: 75, currentPrice: 100, growth: 10, isLtcg: false },
-        { name: 'Series D RSUs', shares: 500, strikePrice: 40, currentPrice: 100, growth: 10, isLtcg: true }
+        { name: 'Series D RSUs', shares: 500, strikePrice: 40, currentPrice: 100, growth: 10, isLtcg: false }
     ],
     realEstate: [],
     income: [
-        { name: 'Tech Salary', amount: 125000, increase: 3, contribution: 18.8, match: 3, bonusPct: 10, isMonthly: false, incomeExpenses: 0, contribOnBonus: false }
+        { name: 'Tech Salary', amount: 125000, increase: 3, contribution: 19.0, match: 3, bonusPct: 10, isMonthly: false, incomeExpenses: 0, contribOnBonus: false }
     ],
     debts: [
         { name: 'Student Loans', balance: 12000, principalPayment: 250 }
@@ -98,6 +99,7 @@ export const PROFILE_25_SINGLE = {
         ltcgRate: 15
     },
     benefits: { 
+        unifiedIncomeAnnual: 109850,
         shelterCosts: 2333,
         dependents: [] 
     }
@@ -139,6 +141,7 @@ export const PROFILE_55_RETIREE = {
         ltcgRate: 15 
     },
     benefits: { 
+        unifiedIncomeAnnual: 30000,
         shelterCosts: 2700,
         dependents: [] 
     }

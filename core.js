@@ -114,7 +114,14 @@ function attachGlobalListeners() {
                 const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(btn.dataset.target);
                 const currentVal = (input.dataset.type === 'currency' || input.dataset.type === 'percent') ? math.fromCurrency(input.value) : (parseFloat(input.value) || 0);
                 const step = isMultiplier ? 0.1 : (parseFloat(input.step) || 0.5);
-                let newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
+                
+                // Snap logic: ensure the value always lands on a clean multiple of the step
+                let newVal;
+                if (btn.dataset.step === 'up') {
+                    newVal = (Math.floor(currentVal / step + 0.0001) + 1) * step;
+                } else {
+                    newVal = (Math.ceil(currentVal / step - 0.0001) - 1) * step;
+                }
                 
                 // Clamp retirement age
                 if (btn.dataset.target === 'retirementAge') {

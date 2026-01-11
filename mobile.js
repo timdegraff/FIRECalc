@@ -335,13 +335,10 @@ const ITEM_TEMPLATES = {
            <div class="flex justify-between items-center">
                <input data-id="name" value="${data.name || ''}" class="bg-transparent font-black text-white uppercase tracking-widest text-[10px] w-1/2 outline-none" placeholder="Grant">
                <div class="flex items-center gap-2">
-                    <label class="cursor-pointer">
-                        <input type="checkbox" data-id="isLtcg" class="peer sr-only" ${data.isLtcg === true ? 'checked' : ''}>
-                        <div class="px-2 py-0.5 rounded text-[8px] font-black border transition-all bg-blue-500/10 border-blue-500/20 text-blue-400 peer-checked:bg-emerald-500/10 peer-checked:border-emerald-500/20 peer-checked:text-emerald-400">
-                            <span class="peer-checked:hidden">ORD</span>
-                            <span class="hidden peer-checked:inline">LTCG</span>
-                        </div>
-                    </label>
+                    <div class="px-2 py-0.5 rounded text-[8px] font-black border transition-all bg-blue-500/10 border-blue-500/20 text-blue-400" title="Fixed as Ordinary Income">
+                        <span>ORD</span>
+                    </div>
+                    <input type="hidden" data-id="isLtcg" value="false">
                     <div class="text-[10px] font-black text-teal-400 mono-numbers">${math.toCurrency(equity)}</div>
                </div>
            </div>
