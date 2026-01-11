@@ -14,7 +14,7 @@ export const benefits = {
                         <div class="flex items-center justify-between mb-6 relative z-10">
                             <div>
                                 <h3 class="text-xs font-black text-white uppercase tracking-widest">Household Structure</h3>
-                                <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Define dependents and their independence year</p>
+                                <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Define dependents and their independence year (when they turn 19)</p>
                             </div>
                             <button id="btn-add-dependent" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale disabled:scale-100">
                                 <i class="fas fa-plus text-[10px]"></i>
