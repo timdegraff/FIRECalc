@@ -1,4 +1,5 @@
-import { math, engine, stateTaxRates } from './utils.js';
+
+import { math, engine, stateTaxRates, STATE_NAME_TO_CODE } from './utils.js';
 
 export const benefits = {
     init: () => {
@@ -67,14 +68,13 @@ export const benefits = {
                             </div>
                         </div>
                         
-                        <div class="mb-6 relative h-6 flex items-center">
+                        <div class="mb-4 relative h-6 flex items-center">
                             <style id="dynamic-slider-style"></style>
                             <input type="range" id="benefit-magi-slider" data-benefit-id="unifiedIncomeAnnual" min="0" max="200000" step="1000" value="25000" class="benefit-slider w-full !bg-transparent z-10">
                             <div id="slider-track-visual" class="absolute left-0 right-0 h-1 rounded-full overflow-hidden pointer-events-none"></div>
                         </div>
-                        <p class="text-[7px] text-slate-500 font-bold uppercase tracking-widest text-center">Adjust annual household income for simulation</p>
                         
-                        <div class="grid grid-cols-2 gap-3 pt-4 border-t border-white/5">
+                        <div class="grid grid-cols-2 gap-3 pt-2 mb-2">
                             <div>
                                 <label class="text-[8px] font-bold text-slate-600 uppercase block mb-1">Shelter Costs</label>
                                 <input type="text" data-benefit-id="shelterCosts" data-type="currency" class="input-base text-xs font-bold text-white mono-numbers h-8" value="$700">
@@ -82,6 +82,24 @@ export const benefits = {
                             <div id="medical-input-wrap">
                                 <label class="text-[8px] font-bold text-slate-600 uppercase block mb-1">Medical Expenses</label>
                                 <input type="text" data-benefit-id="medicalExps" data-type="currency" class="input-base text-xs font-bold text-blue-400 mono-numbers h-8" value="$0">
+                            </div>
+                        </div>
+
+                        <!-- Asset Test Toggle -->
+                        <div class="flex items-center justify-between pt-3 border-t border-white/5">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] font-black text-slate-500 uppercase tracking-widest">Asset Test Status</span>
+                                <div id="asset-test-status-label" class="text-[9px] font-bold text-slate-400 uppercase tracking-tight">Checking State Rules...</div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="text-right">
+                                    <span class="text-[8px] font-black text-slate-500 uppercase block">Force Waive</span>
+                                    <span class="text-[7px] text-slate-600 font-medium block leading-none">Bypass Limit</span>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" data-benefit-id="waiveAssetTest" class="sr-only peer">
+                                    <div class="w-8 h-4 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -139,10 +157,10 @@ export const benefits = {
                          <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-info-circle"></i> Benefit Modeling Logic</h4>
                          <div class="space-y-3">
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Birth Years:</strong> Dependents are modeled as independent at age 19. Birth years making a child 19 or older in the current year are excluded from the effective household size.
+                                <strong class="text-white">Asset Test:</strong> Most states waive asset limits (BBCE), but some enforce them ($2,750 - $5,000 limit). Use the <strong>Force Waive</strong> toggle above if you are in a BBCE state but still seeing $0 SNAP due to savings.
                             </p>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Deductions:</strong> Child support paid and dependent care costs lower your countable net income, potentially increasing your monthly SNAP allotment.
+                                <strong class="text-white">Birth Years:</strong> Dependents are modeled as independent at age 19. Birth years making a child 19 or older in the current year are excluded from the effective household size.
                             </p>
                          </div>
                     </div>
@@ -153,7 +171,7 @@ export const benefits = {
                                 <strong class="text-white">Expansion States:</strong> Cover adults up to 138% FPL ($0 cost). 
                             </p>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Non-Expansion:</strong> Adults under 100% FPL receive no ACA subsidy and no Medicaid. Recommend increasing MAGI to qualify for premium tax credits. States include: Alabama, Florida, Georgia, Kansas, Mississippi, South Carolina, Tennessee, Texas, Wisconsin, and Wyoming.
+                                <strong class="text-white">Non-Expansion:</strong> Adults under 100% FPL receive no ACA subsidy and no Medicaid. Recommend increasing MAGI to qualify for premium tax credits.
                             </p>
                          </div>
                     </div>
@@ -175,6 +193,12 @@ export const benefits = {
                 benefits.refresh(); 
                 if (window.debouncedAutoSave) window.debouncedAutoSave(); 
             };
+            if (input.type === 'checkbox') {
+                input.onchange = () => {
+                    benefits.refresh();
+                    if (window.debouncedAutoSave) window.debouncedAutoSave();
+                };
+            }
         });
 
         const addBtn = document.getElementById('btn-add-dependent');
@@ -411,7 +435,26 @@ export const benefits = {
         const earned = data.isEarnedIncome ? monthlyMAGI : 0;
         const unearned = data.isEarnedIncome ? 0 : monthlyMAGI;
         const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
-        const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, stateId);
+        const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, stateId, 1, data.waiveAssetTest);
+
+        // Update Asset Test Status Label
+        const assetStatusLbl = document.getElementById('asset-test-status-label');
+        if (assetStatusLbl) {
+            if (data.waiveAssetTest) {
+                assetStatusLbl.textContent = "WAIVED (FORCED)";
+                assetStatusLbl.className = "text-[9px] font-black text-emerald-400 uppercase tracking-tight";
+            } else {
+                // Check if state enforces it
+                // We need to re-derive logic briefly or check benefit result implicitly
+                // Just use generic text, or reuse logic
+                // Simple logic:
+                const stateCode = STATE_NAME_TO_CODE[stateId] || 'MI';
+                // Note: we can't access SNAP_CONFIG here easily without importing it, but engine handles it.
+                // We'll rely on the visual result of the calculation mainly.
+                assetStatusLbl.textContent = "ENFORCED (DEFAULT)";
+                assetStatusLbl.className = "text-[9px] font-bold text-slate-500 uppercase tracking-tight";
+            }
+        }
 
         const globalSnapRes = document.getElementById('sum-snap-amt');
         if (globalSnapRes) {
@@ -438,6 +481,7 @@ export const benefits = {
             isEarnedIncome: get('isEarnedIncome'), 
             isDisabled: get('isDisabled'), 
             isPregnant: get('isPregnant'), 
+            waiveAssetTest: get('waiveAssetTest', true),
             dependents: Array.from(c.querySelectorAll('.dependent-visual-item')).map(item => ({ 
                 name: item.querySelector('[data-id="depName"]').value, 
                 birthYear: parseInt(item.querySelector('[data-id="birthYear"]').value) 

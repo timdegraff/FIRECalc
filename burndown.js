@@ -1,3 +1,4 @@
+
 import { formatter } from './formatter.js';
 import { math, engine, assetColors, stateTaxRates } from './utils.js';
 
@@ -86,44 +87,52 @@ export const burndown = {
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                     <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
+                     <!-- Card 1: Draw Strategy -->
+                     <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center h-28">
                         <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Draw Strategy</label>
-                        <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5 mb-3">
-                            <button data-mode="PLATINUM" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
-                                <span class="text-emerald-400">138% FPL</span>
-                                <span class="text-[9px] opacity-40">Handout Max</span>
+                        <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5 h-full">
+                            <button data-mode="PLATINUM" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
+                                <span class="text-emerald-400">138%</span>
+                                <span class="text-[8px] opacity-40">Plat</span>
                             </button>
-                            <button data-mode="SILVER" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
-                                <span class="text-blue-400">200% FPL</span>
-                                <span class="text-[9px] opacity-40">CSR Sweet Spot</span>
+                            <button data-mode="SILVER" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
+                                <span class="text-blue-400">200%</span>
+                                <span class="text-[8px] opacity-40">Silver</span>
                             </button>
-                            <button data-mode="UNCONSTRAINED" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
-                                <span class="text-slate-400">Pure Budget</span>
-                                <span class="text-[9px] opacity-40">No strategy</span>
+                            <button data-mode="UNCONSTRAINED" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
+                                <span class="text-slate-400">None</span>
+                                <span class="text-[8px] opacity-40">Raw</span>
                             </button>
                         </div>
-                        <div class="flex justify-between items-center mb-1 px-1">
-                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Preserve SNAP</label>
-                            <span id="label-snap-preserve" class="text-emerald-400 font-black mono-numbers text-[9px]">$0</span>
-                        </div>
-                        <input type="range" id="input-snap-preserve" min="0" max="1500" step="50" value="0" class="input-range w-full accent-emerald-500">
                     </div>
 
-                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
-                        <div class="flex justify-between items-center mb-1">
+                    <!-- Card 2: Cash Safety Net -->
+                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center h-28">
+                        <div class="flex justify-between items-center mb-4">
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cash Safety Net</label>
                             <span id="label-cash-reserve" class="text-pink-400 font-black mono-numbers text-[10px]">$25,000</span>
                         </div>
                         <input type="range" id="input-cash-reserve" min="0" max="100000" step="1000" value="25000" class="input-range w-full">
                     </div>
                     
-                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 items-center justify-between gap-4 hidden md:flex">
-                        <button id="toggle-burndown-real" class="flex-grow px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-all">
-                            Nominal $
-                        </button>
-                        <div class="text-right">
-                            <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest block">Est. SNAP</span>
-                            <span id="est-snap-indicator" class="text-lg font-black text-emerald-400 mono-numbers leading-none">$0</span>
+                    <!-- Card 3: SNAP & Nominal Control -->
+                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-between h-28">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Est. SNAP</label>
+                                <div id="est-snap-indicator" class="text-2xl font-black text-emerald-400 mono-numbers leading-none mt-0.5">$0</div>
+                            </div>
+                            <button id="toggle-burndown-real" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-[8px] font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-all">
+                                Nominal $
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <div class="flex justify-between items-center">
+                                <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Preserve Min</label>
+                                <span id="label-snap-preserve" class="text-emerald-400 font-black mono-numbers text-[9px]">$0</span>
+                            </div>
+                            <input type="range" id="input-snap-preserve" min="0" max="2000" step="50" value="0" class="input-range w-full accent-emerald-500">
                         </div>
                     </div>
                 </div>
@@ -262,7 +271,7 @@ export const burndown = {
         btn.classList.toggle('bg-blue-600/20', isRealDollars);
         btn.classList.toggle('text-blue-400', isRealDollars);
         if (isMobile) btn.textContent = isRealDollars ? '2026 $' : 'Nominal $';
-        else btn.innerHTML = isRealDollars ? '<i class="fas fa-sync-alt"></i> 2026 Dollars' : '<i class="fas fa-calendar-alt"></i> Nominal Dollars';
+        else btn.textContent = isRealDollars ? '2026 $' : 'Nominal $';
     },
 
     load: (data) => {
@@ -422,6 +431,7 @@ export const burndown = {
         const rAge = parseFloat(assumptions.retirementAge) || 65;
         const cashFloor = config.cashReserve;
         const snapPreserveMonthly = config.snapPreserve || 0;
+        const waiveAssetTest = benefits.waiveAssetTest || false;
         
         if (!isSilent) firstInsolvencyAge = null;
 
@@ -525,7 +535,7 @@ export const burndown = {
             }
 
             const liquidForSnap = bal['cash'] + bal['taxable'] + bal['crypto'];
-            const initialSnap = engine.calculateSnapBenefit(floorOrdIncome, 0, liquidForSnap, currentHhSize, (benefits.shelterCosts || 700) * infFac, benefits.hasSUA !== false, benefits.isDisabled !== false, (benefits.childSupportPaid || 0) * infFac, (benefits.depCare || 0) * infFac, (benefits.medicalExps || 0) * infFac, assumptions.state, infFac) * 12;
+            const initialSnap = engine.calculateSnapBenefit(floorOrdIncome, 0, liquidForSnap, currentHhSize, (benefits.shelterCosts || 700) * infFac, benefits.hasSUA !== false, benefits.isDisabled !== false, (benefits.childSupportPaid || 0) * infFac, (benefits.depCare || 0) * infFac, (benefits.medicalExps || 0) * infFac, assumptions.state, infFac, waiveAssetTest) * 12;
             
             let currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed), currentLtcgIncome = 0, totalWithdrawn = 0, currentDraws = {};
             let currentNetCheck = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + initialSnap;
@@ -597,7 +607,7 @@ export const burndown = {
                         // Estimate if this pull kills SNAP below threshold
                         const testOrdIncome = currentOrdIncome + (pk === '401k' ? pull : 0);
                         const testLtcgIncome = currentLtcgIncome + (['taxable', 'crypto', 'metals'].includes(pk) ? (pull * (1 - currentBasisRatio)) : 0);
-                        const testSnap = engine.calculateSnapBenefit(testOrdIncome, 0, liquidForSnap, currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac)*12;
+                        const testSnap = engine.calculateSnapBenefit(testOrdIncome, 0, liquidForSnap, currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, waiveAssetTest)*12;
                         
                         if ((testSnap / 12) < snapPreserveMonthly) {
                             // If this pull destroys SNAP, we stop harvesting here.
@@ -629,7 +639,7 @@ export const burndown = {
                     else if (newRatio > 4.0) healthCost = 13200 * infFac; 
                     else if (newRatio > 1.38) healthCost = newMAGI * (0.021 + (newRatio - 1) * 0.074 / 3);
 
-                    const curSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac)*12;
+                    const curSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, waiveAssetTest)*12;
                     deficit = targetBudget + healthCost - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curTax + curSnap);
                     
                     const reason = strategyPull ? `(Harvesting for strategy: Target ${math.toCurrency(magiTarget)})` : `(Deficit Coverage)`;
@@ -645,7 +655,7 @@ export const burndown = {
             else if (finalRatio > 4.0) finalHealthCost = 13200 * infFac;
             else if (finalRatio > 1.38) finalHealthCost = healthMAGI * (0.021 + (finalRatio - 1) * 0.074 / 3);
 
-            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac)*12;
+            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, waiveAssetTest)*12;
             const netCash = (floorTotalIncome - pretaxDed) + totalWithdrawn + finalSnap - finalTax - finalHealthCost;
             
             let surplus = Math.max(0, netCash - targetBudget);

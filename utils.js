@@ -1,3 +1,4 @@
+
 export const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
 export const assetColors = {
@@ -128,87 +129,18 @@ export const stateTaxRates = {
     'Wyoming': { rate: 0.00, taxesSS: false, expanded: false }
 };
 
-export const math = {
-    getFPL: (hhSize, stateId) => {
-        const table = (stateId === 'Alaska') ? FPL_TABLE.alaska : (stateId === 'Hawaii' ? FPL_TABLE.hawaii : FPL_TABLE.base);
-        if (hhSize <= 5) return table[hhSize];
-        return table[5] + (hhSize - 5) * table.addl;
-    },
-    toCurrency: (value, isCompact = false, decimals = 0) => {
-        if (isNaN(value) || value === null) return '$0';
-        const absVal = Math.abs(value);
-        let minFrac = decimals;
-        let maxFrac = decimals;
-        
-        if (isCompact && absVal >= 1000000) {
-            if (absVal < 100000000) {
-                // 1M to 99.9M -> Always 1 decimal
-                minFrac = 1;
-                maxFrac = 1;
-            } else {
-                // 100M+ -> 0 decimals
-                minFrac = 0;
-                maxFrac = 0;
-            }
-        }
-        
-        return new Intl.NumberFormat('en-US', { 
-            style: 'currency', currency: 'USD',
-            notation: isCompact ? 'compact' : 'standard',
-            minimumFractionDigits: minFrac, 
-            maximumFractionDigits: maxFrac
-        }).format(value);
-    },
-    toSmartCompactCurrency: (value) => {
-        if (isNaN(value) || value === null) return '$0';
-        const sign = value < 0 ? '-' : '';
-        const absVal = Math.abs(value);
-        if (absVal >= 1000000000000) return sign + '$999B';
-        if (absVal < 1000) return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
-        if (absVal < 1000000) return sign + '$' + Math.round(absVal / 1000) + 'K';
-        
-        if (absVal < 100000000) {
-            // Between 1M and 99.9M: Always use a single decimal
-            return sign + '$' + (absVal / 1000000).toFixed(1) + 'M';
-        }
-        
-        if (absVal < 1000000000) {
-            // 100M to 999M: Remove decimal
-            return sign + '$' + Math.round(absVal / 1000000) + 'M';
-        }
-        
-        if (absVal < 100000000000) {
-            // 1B to 99.9B: Standard 1 decimal for consistency
-            return sign + '$' + (absVal / 1000000000).toFixed(1) + 'B';
-        }
-        
-        return sign + '$' + Math.round(absVal / 1000000000) + 'B';
-    },
-    fromCurrency: (value) => {
-        if (typeof value === 'number') return value;
-        if (!value) return 0;
-        const isPercent = String(value).includes('%');
-        const num = Number(String(value).replace(/[^0-9.-]+/g, "")) || 0;
-        return isPercent ? num / 100 : num;
-    },
-    getGrowthForAge: (type, age, currentAge, assumptions) => {
-        const keyMap = {
-            'Stock': 'stockGrowth',
-            'Stock Options': 'stockGrowth',
-            'Crypto': 'cryptoGrowth',
-            'Metals': 'metalsGrowth',
-            'RealEstate': 'realEstateGrowth'
-        };
-        const key = keyMap[type];
-        if (!key) return 0;
-        const initial = parseFloat(assumptions[key]) || 0;
-        const isAdvanced = !!assumptions.advancedGrowth;
-        if (!isAdvanced) return initial / 100;
-        const years = parseFloat(assumptions[key + 'Years']) || 0;
-        const perpetual = parseFloat(assumptions[key + 'Perpetual'] || initial);
-        if (age < currentAge + years) return initial / 100;
-        return perpetual / 100;
-    }
+export const STATE_NAME_TO_CODE = {
+    'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+    'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'District of Columbia': 'DC',
+    'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL',
+    'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA',
+    'Maine': 'ME', 'Maryland': 'MD', 'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN',
+    'Mississippi': 'MS', 'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
+    'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+    'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK', 'Oregon': 'OR',
+    'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD',
+    'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT', 'Virginia': 'VA',
+    'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY'
 };
 
 const SNAP_CONFIG = {
@@ -329,10 +261,11 @@ export const engine = {
         tax += ((ordinaryIncome + ltcgIncome) * (stateTaxRates[state]?.rate || 0));
         return tax;
     },
-    calculateSnapBenefit: (earnedMonthly, unearnedMonthly, liquidAssets, hhSize, shelterCosts, hasSUA, isDisabledOrElderly, childSupportPaid = 0, depCare = 0, medicalExps = 0, stateId = 'Michigan', inflationFactor = 1) => {
-        const isAK = stateId === 'Alaska', isHI = stateId === 'Hawaii';
+    calculateSnapBenefit: (earnedMonthly, unearnedMonthly, liquidAssets, hhSize, shelterCosts, hasSUA, isDisabledOrElderly, childSupportPaid = 0, depCare = 0, medicalExps = 0, stateName = 'Michigan', inflationFactor = 1, overrideAssetTest = false) => {
+        const stateCode = STATE_NAME_TO_CODE[stateName] || 'MI';
+        const isAK = stateCode === 'AK', isHI = stateCode === 'HI';
         const geoSet = isAK ? SNAP_CONFIG.constants.alaska : (isHI ? SNAP_CONFIG.constants.hawaii : SNAP_CONFIG.constants.federal);
-        const stateConfig = SNAP_CONFIG.states[stateId] || { limit: 2.00, assetTest: false };
+        const stateConfig = SNAP_CONFIG.states[stateCode] || { limit: 2.00, assetTest: false };
         
         // Gate 1: Gross Income Test
         const fpl100Value = (geoSet.fpl100[hhSize - 1] || (geoSet.fpl100[7] + (hhSize - 8) * (geoSet.fpl100[7] - geoSet.fpl100[6]))) * inflationFactor;
@@ -341,8 +274,8 @@ export const engine = {
             if ((earnedMonthly + unearnedMonthly) > grossLimit) return 0;
         }
 
-        // Gate 2: Asset Test
-        if (stateConfig.assetTest) {
+        // Gate 2: Asset Test (with Manual Waiver Support)
+        if (!overrideAssetTest && stateConfig.assetTest) {
             const limit = isDisabledOrElderly ? (stateConfig.assetLimitDisabled || stateConfig.assetLimit) : stateConfig.assetLimit;
             if (liquidAssets > limit) return 0;
         }
