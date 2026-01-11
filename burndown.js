@@ -37,7 +37,7 @@ export const burndown = {
                                 <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
                                 <input type="number" id="input-retire-age-direct" data-id="retirementAge" class="bg-transparent border-none text-blue-400 font-black mono-numbers text-sm w-10 text-center outline-none" value="65">
                                 <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
-                                <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="hidden"> 
+                                <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="72" step="1" class="hidden"> 
                             </div>
                          </div>
                          
@@ -150,6 +150,7 @@ export const burndown = {
                     // Ensure retirement age is not less than current age
                     const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
                     if (val < curAge) val = curAge;
+                    if (val > 72) val = 72;
                     el.value = val;
 
                     const directInp = document.getElementById('input-retire-age-direct');
@@ -181,7 +182,7 @@ export const burndown = {
                 let val = parseInt(e.target.value);
                 const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
                 if (isNaN(val)) val = lastUsedRetirementAge;
-                val = Math.max(curAge, Math.min(100, val));
+                val = Math.max(curAge, Math.min(72, val));
                 e.target.value = val;
                 
                 const slider = document.getElementById('input-top-retire-age');
@@ -290,7 +291,7 @@ export const burndown = {
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-cash-reserve', data.cashReserve ?? 25000);
             const fallbackRetAge = window.currentData?.assumptions?.retirementAge || 65;
-            sync('input-top-retire-age', data.retirementAge || fallbackRetAge);
+            sync('input-top-retire-age', Math.min(72, data.retirementAge || fallbackRetAge));
             const manualInput = document.getElementById('input-manual-budget');
             if (data.manualBudget && manualInput) manualInput.value = math.toCurrency(data.manualBudget);
         }
@@ -386,7 +387,7 @@ export const burndown = {
         const simRE = realEstate.map(r => ({ ...r, mortgage: math.fromCurrency(r.mortgage), principalPayment: math.fromCurrency(r.principalPayment) }));
         const simDebts = debts.map(d => ({ ...d, balance: math.fromCurrency(d.balance), principalPayment: math.fromCurrency(d.principalPayment) }));
         const simOA = otherAssets.map(o => ({ ...o, loan: math.fromCurrency(o.loan), principalPayment: math.fromCurrency(o.principalPayment) }));
-        const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0), results = [], startAge = Math.max(18, Math.min(100, Math.floor(parseFloat(assumptions.currentAge) || 40)));
+        const helocLimit = helocs.reduce((s, h) => s + math.fromCurrency(h.limit), 0), results = [], startAge = Math.max(18, Math.min(72, Math.floor(parseFloat(assumptions.currentAge) || 40)));
 
         for (let i = 0; i <= (100 - startAge); i++) {
             const age = startAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);

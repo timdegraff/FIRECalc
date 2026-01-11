@@ -110,7 +110,7 @@ function attachGlobalListeners() {
                 // Clamp retirement age
                 if (btn.dataset.target === 'retirementAge') {
                     const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
-                    newVal = Math.max(curAge, Math.min(100, newVal));
+                    newVal = Math.max(curAge, Math.min(72, newVal));
                 }
 
                 // Precision Fix
@@ -186,6 +186,11 @@ function attachGlobalListeners() {
             if (dataId === 'retirementAge') {
                 const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
                 if (logicVal < curAge) logicVal = curAge;
+                if (logicVal > 72) logicVal = 72;
+            }
+
+            if (dataId === 'currentAge') {
+                if (logicVal > 72) logicVal = 72;
             }
 
             document.querySelectorAll(`[data-id="${dataId}"]`).forEach(el => {
@@ -259,8 +264,19 @@ function attachGlobalListeners() {
         }
         if (target.dataset.id === 'retirementAge') {
             const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
-            if (parseFloat(target.value) < curAge) {
+            let val = parseFloat(target.value);
+            if (val < curAge) {
                 target.value = curAge;
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+            } else if (val > 72) {
+                target.value = 72;
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+        if (target.dataset.id === 'currentAge') {
+            let val = parseFloat(target.value);
+            if (val > 72) {
+                target.value = 72;
                 target.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }
@@ -422,8 +438,8 @@ window.createAssumptionControls = (data) => {
                 <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400"><i class="fas fa-clock text-xs"></i></div>
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Timing</h3>
             </div>
-            ${renderComplexField("Current Age", "currentAge", a.currentAge, 18, 90, 1, "text-white", "0")}
-            ${renderComplexField("Retire Age", "retirementAge", a.retirementAge, curAge, 100, 1, "text-blue-400", "0")}
+            ${renderComplexField("Current Age", "currentAge", a.currentAge, 18, 72, 1, "text-white", "0")}
+            ${renderComplexField("Retire Age", "retirementAge", a.retirementAge, 30, 72, 1, "text-blue-400", "0")}
             ${renderComplexField("SS Start Age", "ssStartAge", a.ssStartAge, 62, 72, 1, "text-white", "0")}
             ${renderComplexField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly, 0, 8000, 100, "text-teal-400", "0", true)}
         </div>
