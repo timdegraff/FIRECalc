@@ -112,18 +112,22 @@ function setupAppHeader(avatarUrl, userName, logoutText, isLoggedIn) {
         }
     }
     
-    // Indicator Update
+    // Indicator Update - Smart Layering
     const saveInd = document.getElementById('save-indicator');
     if (saveInd) {
-        const icon = saveInd.querySelector('i');
         if (isLoggedIn) {
-            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center gap-1 border border-white/5 text-slate-600 transition-colors duration-200";
-            icon.className = "fas fa-cloud text-xs";
+            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center border border-white/5 text-slate-600 transition-colors duration-200";
+            saveInd.innerHTML = '<i class="fas fa-cloud text-xs"></i>';
             saveInd.title = "Cloud Synced";
         } else {
-            // Guest mode: Red cloud with diagonal line
-            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center gap-1 border border-white/5 text-red-500 transition-colors duration-200";
-            icon.className = "fas fa-cloud-slash text-xs";
+            // Guest mode: Layered Icon Stack
+            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center border border-white/5 transition-colors duration-200";
+            saveInd.innerHTML = `
+                <div class="relative flex items-center justify-center w-4 h-4">
+                    <i class="fas fa-cloud text-slate-700 text-[10px]"></i>
+                    <i class="fas fa-slash absolute text-[12px] text-red-500 font-black" style="transform: scaleX(-1); text-shadow: 0 0 2px #0B0F19;"></i>
+                </div>
+            `;
             saveInd.title = "Local Only (No Cloud Sync)";
         }
     }
