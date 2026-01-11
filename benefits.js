@@ -101,7 +101,7 @@ export const benefits = {
                 <!-- Footer Strip -->
                 <div class="card-container px-6 py-3 flex items-center justify-between bg-black/20">
                     <div class="flex items-center gap-3">
-                        <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Total Size:</span>
+                        <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Effective HH Size:</span>
                         <div class="flex items-center gap-2">
                             <span id="hh-total-size-badge" class="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-white mono-numbers">1</span>
                             <span id="hh-composition-text" class="text-[9px] font-black text-slate-500 uppercase">Self Only</span>
@@ -139,7 +139,7 @@ export const benefits = {
                          <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-info-circle"></i> Benefit Modeling Logic</h4>
                          <div class="space-y-3">
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Birth Years:</strong> Used to dynamically project when dependents leave the household (age 19). This triggers an immediate shift in Federal Poverty Level (FPL) floors, affecting long-term healthcare subsidies and SNAP eligibility.
+                                <strong class="text-white">Birth Years:</strong> Dependents are modeled as independent at age 19. Birth years making a child 19 or older in the current year are excluded from the effective household size.
                             </p>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
                                 <strong class="text-white">Deductions:</strong> Child support paid and dependent care costs lower your countable net income, potentially increasing your monthly SNAP allotment.
@@ -219,7 +219,7 @@ export const benefits = {
         
         item.innerHTML = `
             <div class="relative w-12 h-12 flex flex-col items-center">
-                <div class="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:border-blue-400 transition-all shadow-lg shadow-blue-900/10">
+                <div class="dependent-icon-wrap w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:border-blue-400 transition-all shadow-lg shadow-blue-900/10">
                     <i class="fas fa-baby text-base"></i>
                 </div>
                 <button data-action="remove-dependent" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -228,8 +228,9 @@ export const benefits = {
             </div>
             <input data-id="depName" type="text" value="${nameVal}" class="bg-transparent border-none outline-none font-bold text-slate-500 text-[8px] uppercase tracking-widest text-center w-14 mt-1 focus:text-white" placeholder="Name">
             <div class="mt-0.5">
-                <input data-id="birthYear" type="number" value="${yearVal}" class="bg-slate-900/50 border border-white/10 rounded px-1 py-0.5 font-black text-blue-400 text-[9px] w-12 text-center mono-numbers outline-none focus:border-blue-500" title="Dependent Birth Year">
+                <input data-id="birthYear" type="number" value="${yearVal}" class="birth-year-input bg-slate-900/50 border border-white/10 rounded px-1 py-0.5 font-black text-blue-400 text-[9px] w-12 text-center mono-numbers outline-none focus:border-blue-500" title="Dependent Birth Year">
             </div>
+            <span class="aged-out-label hidden text-[7px] font-black text-red-500 uppercase tracking-tighter mt-0.5">Aged Out</span>
         `;
         list.appendChild(item);
     },
@@ -237,6 +238,7 @@ export const benefits = {
     refresh: () => {
         const data = benefits.scrape();
         const c = document.getElementById('benefits-module'); if (!c) return;
+        const currentYear = new Date().getFullYear();
         
         const annualMAGI = data.unifiedIncomeAnnual;
         const monthlyMAGI = Math.round(annualMAGI / 12);
@@ -270,15 +272,37 @@ export const benefits = {
             `;
         }
 
+        // Apply visual "Aged Out" indicators and filter effective count
+        let effectiveKidsCount = 0;
+        const depItems = c.querySelectorAll('.dependent-visual-item');
+        depItems.forEach(item => {
+            const birthInp = item.querySelector('.birth-year-input');
+            const birthYear = parseInt(birthInp.value);
+            const isAgedOut = !isNaN(birthYear) && (birthYear + 19) < currentYear;
+            
+            item.querySelector('.aged-out-label').classList.toggle('hidden', !isAgedOut);
+            item.querySelector('.dependent-icon-wrap').classList.toggle('grayscale', isAgedOut);
+            item.querySelector('.dependent-icon-wrap').classList.toggle('opacity-30', isAgedOut);
+            birthInp.classList.toggle('text-red-500', isAgedOut);
+            birthInp.classList.toggle('text-blue-400', !isAgedOut);
+            
+            if (!isAgedOut) effectiveKidsCount++;
+        });
+
         let adults = isMFJ ? 2 : 1;
-        let kids = data.dependents.length;
-        const totalSize = adults + kids;
-        if (document.getElementById('hh-composition-text')) document.getElementById('hh-composition-text').textContent = `${adults} Adult${adults > 1 ? 's' : ''} ${kids > 0 ? '+ ' + kids + ' Dependent' + (kids > 1 ? 's' : '') : ''}`;
-        if (document.getElementById('hh-total-size-badge')) document.getElementById('hh-total-size-badge').textContent = totalSize;
+        const totalSize = adults + effectiveKidsCount;
+        
+        if (document.getElementById('hh-composition-text')) {
+            document.getElementById('hh-composition-text').textContent = `${adults} Adult${adults > 1 ? 's' : ''} ${effectiveKidsCount > 0 ? '+ ' + effectiveKidsCount + ' Dependent' + (effectiveKidsCount > 1 ? 's' : '') : ''}`;
+        }
+        if (document.getElementById('hh-total-size-badge')) {
+            document.getElementById('hh-total-size-badge').textContent = totalSize;
+        }
         
         const addBtn = document.getElementById('btn-add-dependent');
         if (addBtn) {
-            const isLimitReached = totalSize >= 8;
+            const totalVisualCount = adults + depItems.length;
+            const isLimitReached = totalVisualCount >= 8;
             addBtn.disabled = isLimitReached;
             const btnText = addBtn.querySelector('.label-text');
             if (btnText) btnText.textContent = isLimitReached ? "Max Reached" : "Add Child";
@@ -308,12 +332,10 @@ export const benefits = {
         if (trackVisual) {
             let gradient;
             if (isExpandedState) {
-                // Expansion: 0-138% Green, 138-250% Blue, 250-400% Slate
                 const greenEnd = (fpl100Annual * 1.38 / sliderMax) * 100;
                 const blueEnd = (fpl100Annual * 2.50 / sliderMax) * 100;
                 gradient = `linear-gradient(to right, #10b981 0%, #10b981 ${greenEnd}%, #3b82f6 ${greenEnd}%, #3b82f6 ${blueEnd}%, #475569 ${blueEnd}%, #475569 100%)`;
             } else {
-                // Non-Expansion: 0-100% RED, 100-250% BLUE, 250-400% SLATE
                 const redEnd = (fpl100Annual * 1.0 / sliderMax) * 100;
                 const blueEnd = (fpl100Annual * 2.50 / sliderMax) * 100;
                 gradient = `linear-gradient(to right, #ef4444 0%, #ef4444 ${redEnd}%, #3b82f6 ${redEnd}%, #3b82f6 ${blueEnd}%, #475569 ${blueEnd}%, #475569 100%)`;
@@ -327,11 +349,10 @@ export const benefits = {
         
         if (ratio > contributionThreshold) {
             if (ratio < cliffRatio) {
-                // 2026 sliding scale: ~2.1% at 100% FPL to 9.5% at 400% FPL
                 const minScale = 0.021, maxScale = 0.095;
                 expectedContributionPct = minScale + (ratio - 1) * (maxScale - minScale) / (cliffRatio - 1);
             } else {
-                expectedContributionPct = 1.0; // Over cliff
+                expectedContributionPct = 1.0;
             }
         }
         
