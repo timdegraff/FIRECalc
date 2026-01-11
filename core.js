@@ -476,7 +476,7 @@ window.createAssumptionControls = (data) => {
                 <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
                     <i class="fas fa-walking text-xs"></i>
                 </div>
-                <h3 class="text-sm font-black text-white uppercase tracking-widest">Tax & Lifestyle Phases</h3>
+                <h3 class="text-sm font-black text-white uppercase tracking-widest">Tax & Status</h3>
             </div>
             
             <div class="grid grid-cols-2 gap-3 mb-1">
@@ -498,8 +498,8 @@ window.createAssumptionControls = (data) => {
 
             <div class="space-y-2 pt-3 border-t border-white/5">
                 <div class="space-y-0.5">
-                    <p class="text-[9px] font-black text-white uppercase tracking-widest leading-none">Spend Multipliers</p>
-                    <p class="text-[8px] text-slate-500 italic leading-tight">Go-Go (Active) → Slow-Go (Mod) → No-Go (Healthcare).</p>
+                    <p class="text-[9px] font-black text-white uppercase tracking-widest leading-none">RETIREMENT SPEND MULTIPLIERS</p>
+                    <p class="text-[8px] text-slate-500 italic leading-tight">Multipliers only apply once the Retirement Age threshold is reached.</p>
                 </div>
                 ${renderComplexField("Go-Go (Age 30-60)", "slowGoFactor", a.slowGoFactor || 1.0, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
                 ${renderComplexField("Slow-Go (Age 60-80)", "midGoFactor", a.midGoFactor || 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
