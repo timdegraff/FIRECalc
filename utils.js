@@ -190,6 +190,49 @@ const SNAP_CONFIG = {
     }
 };
 
+export const math = {
+    toCurrency: (value, isCompact = false, decimals = 0) => {
+        if (value === undefined || value === null || isNaN(value)) return '$0';
+        const opts = { style: 'currency', currency: 'USD', minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+        if (isCompact) opts.notation = 'compact';
+        return new Intl.NumberFormat('en-US', opts).format(value);
+    },
+    fromCurrency: (val) => {
+        if (typeof val === 'number') return val;
+        if (!val) return 0;
+        return parseFloat(val.replace(/[^0-9.-]+/g, "")) || 0;
+    },
+    toSmartCompactCurrency: (val) => {
+        if (Math.abs(val) >= 1000000) return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 }).format(val);
+        if (Math.abs(val) >= 1000) return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+    },
+    getFPL: (hhSize, stateName = 'Michigan') => {
+        const stateCode = STATE_NAME_TO_CODE[stateName] || 'MI';
+        const isAK = stateCode === 'AK';
+        const isHI = stateCode === 'HI';
+        const table = isAK ? FPL_TABLE.alaska : (isHI ? FPL_TABLE.hawaii : FPL_TABLE.base);
+        const base = table[Math.min(hhSize, 5)] || (table[5] + (hhSize - 5) * table.addl);
+        if (hhSize <= 5) return table[hhSize];
+        return table[5] + ((hhSize - 5) * table.addl);
+    },
+    getGrowthForAge: (type, age, startAge, assumptions) => {
+        const isAdv = assumptions.advancedGrowth;
+        let key = type.toLowerCase();
+        if (type === 'RealEstate') key = 'realEstate';
+        
+        const baseRate = assumptions[`${key}Growth`] || 0;
+        
+        if (!isAdv) return baseRate / 100;
+        
+        const duration = assumptions[`${key}GrowthYears`] || 10;
+        const perpRate = assumptions[`${key}GrowthPerpetual`] !== undefined ? assumptions[`${key}GrowthPerpetual`] : baseRate;
+        
+        if ((age - startAge) < duration) return baseRate / 100;
+        return perpRate / 100;
+    }
+};
+
 export const engine = {
     getLifeExpectancy: (age) => {
         const table = {
