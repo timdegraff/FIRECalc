@@ -356,7 +356,7 @@ export const burndown = {
     },
 
     simulateProjection: (data, configOverride = null, isSilent = false) => {
-        const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = {}, debts = [] } = data;
+        const { assumptions, investments = [], otherAssets = [], realEstate = [], income = [], budget = {}, helocs = [], benefits = {}, debts = [], stockOptions = [] } = data;
         if (!assumptions || isNaN(parseFloat(assumptions.currentAge))) return [];
         
         const config = configOverride || burndown.scrape();
@@ -372,9 +372,16 @@ export const burndown = {
         const helocInterestRate = (helocs?.length > 0) ? (parseFloat(helocs[0].rate) || assumptions.helocRate || 7) / 100 : (assumptions.helocRate || 7) / 100;
         const stateMeta = stateTaxRates[assumptions.state] || { rate: 0.04, expanded: true };
         
+        const optionsEquity = stockOptions.reduce((s, x) => {
+            const shares = parseFloat(x.shares) || 0;
+            const strike = math.fromCurrency(x.strikePrice);
+            const fmv = math.fromCurrency(x.currentPrice);
+            return s + Math.max(0, (fmv - strike) * shares);
+        }, 0);
+
         const bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
-            'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0),
+            'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0) + optionsEquity,
             'taxableBasis': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
             'roth-basis': investments.filter(i => i.type === 'Roth IRA').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0),
             'roth-earnings': investments.filter(i => i.type === 'Roth IRA').reduce((s, i) => s + Math.max(0, math.fromCurrency(i.value) - math.fromCurrency(i.costBasis)), 0),
@@ -517,9 +524,14 @@ export const burndown = {
 
                     if (pull <= 1) continue;
 
+                    let currentBasisRatio = 1;
+                    if (['taxable', 'crypto', 'metals'].includes(pk) && bal[pk] > 0) {
+                        currentBasisRatio = bal[pk+'Basis'] / bal[pk];
+                    }
+
                     if (pk === 'heloc') bal['heloc'] += pull; 
                     else { 
-                        if (bal[pk+'Basis'] !== undefined) bal[pk+'Basis'] -= bal[pk+'Basis'] * (pull / bal[pk]); 
+                        if (bal[pk+'Basis'] !== undefined) bal[pk+'Basis'] -= (bal[pk+'Basis'] * (pull / bal[pk])); 
                         bal[pk] -= pull; 
                     }
                     
@@ -528,8 +540,8 @@ export const burndown = {
                     
                     if (pk === '401k') currentOrdIncome += pull; 
                     else if (['taxable', 'crypto', 'metals'].includes(pk)) { 
-                        const gainRatio = (bal[pk] + pull > 0) ? (1 - (bal[pk+'Basis'] / (bal[pk] + pull))) : 1; 
-                        currentLtcgIncome += pull * gainRatio; 
+                        const gain = pull * (1 - currentBasisRatio);
+                        currentLtcgIncome += gain; 
                     }
                     
                     const curTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
