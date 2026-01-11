@@ -45,7 +45,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Annual Spend</label>
                             <div class="flex items-center gap-2">
                                 <div id="manual-budget-container" class="flex items-center">
-                                    <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" value="$100,000" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-teal-400 font-bold text-right w-24 mono-numbers outline-none focus:border-blue-500 transition-all">
+                                    <input type="text" id="input-manual-budget" data-type="currency" inputmode="decimal" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-sm text-teal-400 font-bold text-right w-24 mono-numbers outline-none focus:border-blue-500 transition-all">
                                 </div>
                                 <label class="flex items-center gap-2 cursor-pointer bg-slate-900/50 border border-white/10 px-2 py-1 rounded-lg hover:border-slate-600 transition-all">
                                     <span class="text-[9px] font-black text-slate-400 uppercase">Sync Budget</span>
@@ -153,7 +153,12 @@ export const burndown = {
                     el.value = val;
                     const directInp = document.getElementById('input-retire-age-direct');
                     if (directInp) directInp.value = val;
+                    
+                    // ROBUST SYNC: Update global data and all other inputs immediately
                     if (window.currentData?.assumptions) window.currentData.assumptions.retirementAge = val;
+                    document.querySelectorAll('input[data-id="retirementAge"]').forEach(otherInput => {
+                        if (otherInput !== el && otherInput !== directInp) otherInput.value = val;
+                    });
                 }
                 if (id === 'toggle-budget-sync') {
                     const manualInput = document.getElementById('input-manual-budget');
@@ -176,8 +181,17 @@ export const burndown = {
                 if (isNaN(val)) val = lastUsedRetirementAge;
                 val = Math.max(curAge, Math.min(72, val));
                 e.target.value = val;
+                
+                // ROBUST SYNC from Direct Input
                 const slider = document.getElementById('input-top-retire-age');
-                if (slider) { slider.value = val; slider.dispatchEvent(new Event('input')); }
+                if (slider) slider.value = val;
+                if (window.currentData?.assumptions) window.currentData.assumptions.retirementAge = val;
+                document.querySelectorAll('input[data-id="retirementAge"]').forEach(otherInput => {
+                    if (otherInput !== e.target && otherInput !== slider) otherInput.value = val;
+                });
+                
+                burndown.run();
+                if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
             directAgeInp.onkeydown = (e) => { if (e.key === 'Enter') e.target.blur(); };
         }
@@ -256,8 +270,11 @@ export const burndown = {
             if (personaSelector) { const btn = personaSelector.querySelector(`[data-mode="${mode}"]`); if (btn) btn.click(); }
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-cash-reserve', data.cashReserve ?? 25000);
-            const fallbackRetAge = window.currentData?.assumptions?.retirementAge || 65;
-            sync('input-top-retire-age', Math.min(72, data.retirementAge || fallbackRetAge));
+            
+            // Retirement Age is now STRICTLY controlled by global assumptions, not burndown config
+            const globalRetAge = window.currentData?.assumptions?.retirementAge || 65;
+            sync('input-top-retire-age', Math.min(72, globalRetAge));
+            
             const manualInput = document.getElementById('input-manual-budget');
             if (data.manualBudget && manualInput) manualInput.value = math.toCurrency(data.manualBudget);
         }
@@ -270,7 +287,7 @@ export const burndown = {
         cashReserve: parseInt(document.getElementById('input-cash-reserve')?.value || 25000), 
         useSync: document.getElementById('toggle-budget-sync')?.checked ?? true,
         manualBudget: math.fromCurrency(document.getElementById('input-manual-budget')?.value || "$100,000"),
-        retirementAge: parseFloat(document.getElementById('input-top-retire-age')?.value || 65),
+        // Removed retirementAge from scrape to prevent stale overwrites
         isRealDollars
     }),
 
@@ -308,6 +325,23 @@ export const burndown = {
         if (slider) { slider.value = lastUsedRetirementAge; const directInp = document.getElementById('input-retire-age-direct'); if (directInp) directInp.value = lastUsedRetirementAge; }
 
         const config = burndown.scrape();
+        
+        // Auto-Calc Budget Logic
+        if (config.useSync) {
+            // Calculate annual spend from Budget tab (Today's Dollars)
+            const calculatedAnnualSpend = (data.budget?.expenses || []).reduce((sum, exp) => {
+                if (exp.remainsInRetirement === false) return sum;
+                return sum + math.fromCurrency(exp.annual);
+            }, 0);
+            
+            // Update input visually to show the user what "Sync" means
+            const budgetInput = document.getElementById('input-manual-budget');
+            if (budgetInput) {
+                budgetInput.value = math.toCurrency(calculatedAnnualSpend);
+                formatter.updateZeroState(budgetInput);
+            }
+        }
+
         simulationTrace = {}; 
         const results = burndown.simulateProjection(data, config);
         
