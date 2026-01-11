@@ -28,10 +28,10 @@ export const assumptions = {
         retirementAge: 65,
         ssStartAge: 67,
         ssMonthly: 3000,
-        stockGrowth: 7,
-        cryptoGrowth: 7,
-        metalsGrowth: 4,
-        realEstateGrowth: 3,
+        stockGrowth: 9,
+        cryptoGrowth: 8,
+        metalsGrowth: 6,
+        realEstateGrowth: 3.5,
         inflation: 3,
         filingStatus: 'Single',
         helocRate: 7,
@@ -137,13 +137,26 @@ export const math = {
     toCurrency: (value, isCompact = false, decimals = 0) => {
         if (isNaN(value) || value === null) return '$0';
         const absVal = Math.abs(value);
+        let minFrac = decimals;
         let maxFrac = decimals;
-        if (isCompact && absVal >= 1000000) maxFrac = 1;
+        
+        if (isCompact && absVal >= 1000000) {
+            if (absVal < 100000000) {
+                // 1M to 99.9M -> Always 1 decimal
+                minFrac = 1;
+                maxFrac = 1;
+            } else {
+                // 100M+ -> 0 decimals
+                minFrac = 0;
+                maxFrac = 0;
+            }
+        }
+        
         return new Intl.NumberFormat('en-US', { 
             style: 'currency', currency: 'USD',
             notation: isCompact ? 'compact' : 'standard',
-            minimumFractionDigits: decimals, 
-            maximumFractionDigits: Math.max(decimals, maxFrac)
+            minimumFractionDigits: minFrac, 
+            maximumFractionDigits: maxFrac
         }).format(value);
     },
     toSmartCompactCurrency: (value) => {
@@ -153,9 +166,22 @@ export const math = {
         if (absVal >= 1000000000000) return sign + '$999B';
         if (absVal < 1000) return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
         if (absVal < 1000000) return sign + '$' + Math.round(absVal / 1000) + 'K';
-        if (absVal < 10000000) return sign + '$' + (absVal / 1000000).toFixed(1) + 'M';
-        if (absVal < 1000000000) return sign + '$' + Math.round(absVal / 1000000) + 'M';
-        if (absVal < 10000000000) return sign + '$' + (absVal / 1000000000).toFixed(1) + 'B';
+        
+        if (absVal < 100000000) {
+            // Between 1M and 99.9M: Always use a single decimal
+            return sign + '$' + (absVal / 1000000).toFixed(1) + 'M';
+        }
+        
+        if (absVal < 1000000000) {
+            // 100M to 999M: Remove decimal
+            return sign + '$' + Math.round(absVal / 1000000) + 'M';
+        }
+        
+        if (absVal < 100000000000) {
+            // 1B to 99.9B: Standard 1 decimal for consistency
+            return sign + '$' + (absVal / 1000000000).toFixed(1) + 'B';
+        }
+        
         return sign + '$' + Math.round(absVal / 1000000000) + 'B';
     },
     fromCurrency: (value) => {

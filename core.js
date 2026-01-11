@@ -378,6 +378,7 @@ window.updateSidebarChart = (data) => {
     const legendContainer = document.getElementById('sidebar-asset-legend');
     if (legendContainer) {
         legendContainer.innerHTML = '';
+        const abbrev = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Stock Options': 'Stock Ops', 'Roth IRA': 'Roth' };
         Object.entries(totals)
             .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
             .forEach(([type, value]) => {
@@ -386,7 +387,7 @@ window.updateSidebarChart = (data) => {
                 item.innerHTML = `
                     <div class="flex items-center gap-1.5 truncate">
                         <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${assetColors[type] || '#fff'}"></div>
-                        <span class="truncate">${type}</span>
+                        <span class="truncate">${abbrev[type] || type}</span>
                     </div>
                     <span class="text-white mono-numbers ml-auto">${math.toSmartCompactCurrency(value)}</span>
                 `;

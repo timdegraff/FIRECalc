@@ -134,7 +134,7 @@ export const benefits = {
                 </div>
 
                 <!-- Advanced Explanation Notes -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-white/5">
                     <div class="p-2">
                          <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-info-circle"></i> Benefit Modeling Logic</h4>
                          <div class="space-y-3">

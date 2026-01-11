@@ -87,7 +87,7 @@ export const burndown = {
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center">
-                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Strategy Persona</label>
+                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Draw Strategy</label>
                         <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5">
                             <button data-mode="PLATINUM" class="py-2.5 rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
                                 <span class="text-emerald-400">138% FPL</span>

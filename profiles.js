@@ -36,7 +36,7 @@ export const PROFILE_45_COUPLE = {
     },
     assumptions: { 
         currentAge: 45, retirementAge: 55, ssStartAge: 62, ssMonthly: 3400, 
-        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
+        stockGrowth: 9, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3.5, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
         helocRate: 6.5, state: 'Michigan', workYearsAtRetirement: 30,
         phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
@@ -51,6 +51,9 @@ export const PROFILE_45_COUPLE = {
             { name: "Kid 2", birthYear: 2017 },
             { name: "Kid 3", birthYear: 2015 }
         ]
+    },
+    burndown: {
+        strategyMode: 'PLATINUM'
     }
 };
 
@@ -91,7 +94,7 @@ export const PROFILE_25_SINGLE = {
     },
     assumptions: { 
         currentAge: 25, retirementAge: 50, ssStartAge: 62, ssMonthly: 2800, 
-        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
+        stockGrowth: 9, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3.5, 
         inflation: 3, filingStatus: 'Single', 
         helocRate: 6.5, state: 'New York', workYearsAtRetirement: 25,
         phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
@@ -102,6 +105,9 @@ export const PROFILE_25_SINGLE = {
         unifiedIncomeAnnual: 109850,
         shelterCosts: 2333,
         dependents: [] 
+    },
+    burndown: {
+        strategyMode: 'SILVER'
     }
 };
 
@@ -133,7 +139,7 @@ export const PROFILE_55_RETIREE = {
     },
     assumptions: { 
         currentAge: 55, retirementAge: 60, ssStartAge: 67, ssMonthly: 4200, 
-        stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
+        stockGrowth: 9, cryptoGrowth: 8, metalsGrowth: 6, realEstateGrowth: 3.5, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
         helocRate: 6.5, state: 'Florida', workYearsAtRetirement: 38,
         phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
@@ -144,5 +150,8 @@ export const PROFILE_55_RETIREE = {
         unifiedIncomeAnnual: 30000,
         shelterCosts: 2700,
         dependents: [] 
+    },
+    burndown: {
+        strategyMode: 'UNCONSTRAINED'
     }
 };
