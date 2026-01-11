@@ -14,7 +14,7 @@ export const benefits = {
                         <div class="flex items-center justify-between mb-6 relative z-10">
                             <div>
                                 <h3 class="text-xs font-black text-white uppercase tracking-widest">Household Structure</h3>
-                                <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Define dependents and their independence year (when they turn 19)</p>
+                                <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Enter birth years to project future changes in household size and benefit thresholds</p>
                             </div>
                             <button id="btn-add-dependent" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale disabled:scale-100">
                                 <i class="fas fa-plus text-[10px]"></i>
@@ -136,13 +136,13 @@ export const benefits = {
                 <!-- Advanced Explanation Notes -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-white/5">
                     <div class="p-2">
-                         <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-info-circle"></i> Child Support & Care Logic</h4>
+                         <h4 class="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-info-circle"></i> Benefit Modeling Logic</h4>
                          <div class="space-y-3">
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Child Support Paid:</strong> Direct income deduction for SNAP. Legally obligated payments to non-household members reduce countable income, potentially increasing benefits.
+                                <strong class="text-white">Birth Years:</strong> Used to dynamically project when dependents leave the household (age 19). This triggers an immediate shift in Federal Poverty Level (FPL) floors, affecting long-term healthcare subsidies and SNAP eligibility.
                             </p>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Dependent Care:</strong> Costs for accredited care are subtracted from income if required for work, study, or training. Boosts SNAP eligibility by lowering net income.
+                                <strong class="text-white">Deductions:</strong> Child support paid and dependent care costs lower your countable net income, potentially increasing your monthly SNAP allotment.
                             </p>
                          </div>
                     </div>
@@ -169,7 +169,7 @@ export const benefits = {
         const container = document.getElementById('benefits-module');
         if (!container) return;
         
-        container.querySelectorAll('input:not([data-id="depYear"])').forEach(input => {
+        container.querySelectorAll('input:not([data-id="birthYear"])').forEach(input => {
             if (input.dataset.type === 'currency') import('./formatter.js').then(f => f.formatter.bindCurrencyEventListeners(input));
             input.oninput = () => { 
                 benefits.refresh(); 
@@ -196,7 +196,7 @@ export const benefits = {
         });
 
         container.addEventListener('input', (e) => {
-            if (e.target.dataset.id === 'depYear') {
+            if (e.target.dataset.id === 'birthYear') {
                 benefits.refresh();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             }
@@ -214,7 +214,7 @@ export const benefits = {
         const item = document.createElement('div');
         item.className = 'dependent-visual-item flex flex-col items-center group relative';
         const currentYear = new Date().getFullYear();
-        const yearVal = data.independenceYear || (currentYear + 10);
+        const yearVal = data.birthYear || (currentYear - 5);
         const nameVal = data.name || 'Child';
         
         item.innerHTML = `
@@ -228,7 +228,7 @@ export const benefits = {
             </div>
             <input data-id="depName" type="text" value="${nameVal}" class="bg-transparent border-none outline-none font-bold text-slate-500 text-[8px] uppercase tracking-widest text-center w-14 mt-1 focus:text-white" placeholder="Name">
             <div class="mt-0.5">
-                <input data-id="depYear" type="number" value="${yearVal}" class="bg-slate-900/50 border border-white/10 rounded px-1 py-0.5 font-black text-blue-400 text-[9px] w-12 text-center mono-numbers outline-none focus:border-blue-500" title="Year child turns 19">
+                <input data-id="birthYear" type="number" value="${yearVal}" class="bg-slate-900/50 border border-white/10 rounded px-1 py-0.5 font-black text-blue-400 text-[9px] w-12 text-center mono-numbers outline-none focus:border-blue-500" title="Dependent Birth Year">
             </div>
         `;
         list.appendChild(item);
@@ -410,7 +410,7 @@ export const benefits = {
             isPregnant: get('isPregnant'), 
             dependents: Array.from(c.querySelectorAll('.dependent-visual-item')).map(item => ({ 
                 name: item.querySelector('[data-id="depName"]').value, 
-                independenceYear: parseInt(item.querySelector('[data-id="depYear"]').value) 
+                birthYear: parseInt(item.querySelector('[data-id="birthYear"]').value) 
             })) 
         };
     },

@@ -344,7 +344,11 @@ export const burndown = {
 
         for (let i = 0; i <= (100 - startAge); i++) {
             const age = startAge + i, year = currentYear + i, isRet = age >= rAge, infFac = Math.pow(1 + inflationRate, i);
-            const dependCount = (benefits.dependents || []).filter(d => parseInt(d.independenceYear) >= year).length;
+            // Dynamic Household Logic using Birth Year
+            const dependCount = (benefits.dependents || []).filter(d => {
+                const birthYear = parseInt(d.birthYear);
+                return !isNaN(birthYear) && (birthYear + 19) >= year;
+            }).length;
             const currentHhSize = 1 + (filingStatus === 'Married Filing Jointly' ? 1 : 0) + dependCount;
             const fpl100 = math.getFPL(currentHhSize, assumptions.state) * infFac;
             const stockGrowth = math.getGrowthForAge('Stock', age, startAge, assumptions), cryptoGrowth = math.getGrowthForAge('Crypto', age, startAge, assumptions), metalsGrowth = math.getGrowthForAge('Metals', age, startAge, assumptions), realEstateGrowth = math.getGrowthForAge('RealEstate', age, startAge, assumptions);
