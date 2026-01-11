@@ -127,7 +127,9 @@ export const math = {
     fromCurrency: (value) => {
         if (typeof value === 'number') return value;
         if (!value) return 0;
-        return Number(String(value).replace(/[^0-9.-]+/g, "")) || 0;
+        const isPercent = String(value).includes('%');
+        const num = Number(String(value).replace(/[^0-9.-]+/g, "")) || 0;
+        return isPercent ? num / 100 : num;
     },
     getGrowthForAge: (type, age, currentAge, assumptions) => {
         const keyMap = {

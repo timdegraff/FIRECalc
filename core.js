@@ -109,7 +109,8 @@ function attachGlobalListeners() {
                 if (input.dataset.type === 'currency') {
                     input.value = math.toCurrency(newVal);
                 } else if (input.dataset.type === 'percent') {
-                    input.value = newVal + '%';
+                    const isMultiplier = ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(btn.dataset.target);
+                    input.value = (isMultiplier ? Math.round(newVal * 100) : newVal) + '%';
                 } else {
                     input.value = newVal.toFixed(parseInt(input.dataset.decimals) || 0);
                 }
@@ -117,9 +118,7 @@ function attachGlobalListeners() {
                 // Sync linked slider if exists (important for Assumptions tab)
                 const slider = container.querySelector(`input[type="range"][data-id="${btn.dataset.target}"]`);
                 if (slider) {
-                    let sliderVal = newVal;
-                    if (input.dataset.type === 'percent' && ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(btn.dataset.target)) sliderVal /= 100;
-                    slider.value = sliderVal;
+                    slider.value = newVal;
                 }
 
                 input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -175,44 +174,40 @@ function attachGlobalListeners() {
 
         // Bi-directional Slider Synchronization & Global Sync
         if (dataId) {
-            const val = (target.dataset?.type === 'currency' || target.dataset?.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
+            // Determine the "Logic Value" (0.9 instead of 90)
+            let logicVal = (target.dataset?.type === 'currency' || target.dataset?.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
             
             // 1. Sync all DOM elements that share this data-id (Global Mirroring)
             document.querySelectorAll(`[data-id="${dataId}"]`).forEach(el => {
                 if (el === target) return;
                 
                 if (el.type === 'range') {
-                    let sliderVal = val;
-                    if (el.dataset.type === 'percent' && ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId)) sliderVal /= 100;
-                    el.value = sliderVal;
+                    el.value = logicVal;
                 } else if (el.dataset.type === 'currency') {
-                    el.value = math.toCurrency(val);
+                    el.value = math.toCurrency(logicVal);
                 } else if (el.dataset.type === 'percent') {
-                    let dispVal = val;
-                    if (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId)) dispVal *= 100;
-                    el.value = Math.round(dispVal) + '%';
+                    const isMultiplier = ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId);
+                    el.value = Math.round(isMultiplier ? (logicVal * 100) : logicVal) + '%';
                 } else if (el.type === 'number' || el.classList.contains('input-base')) {
-                    el.value = val;
+                    el.value = logicVal;
                 }
                 
                 // Trigger visual zero-state check if applicable
                 if (formatter.updateZeroState) formatter.updateZeroState(el);
             });
 
-            // 2. Special handling for specific complex fields
+            // 2. Local sibling sync if global loop missed it
             const container = target.closest('.space-y-4') || target.closest('.space-y-6') || target.closest('.space-y-2') || target.closest('.space-y-8') || target.closest('.grid');
             if (container) {
                 if (target.type === 'range') {
-                    // Update the text sibling in the same local container if it's not handled by the global loop above
                     const numInput = container.querySelector(`input:not([type="range"])[data-id="${dataId}"]`);
-                    if (numInput && numInput.value != val) {
-                        if (numInput.dataset.type === 'currency') numInput.value = math.toCurrency(val);
+                    if (numInput && numInput.value != logicVal) {
+                        if (numInput.dataset.type === 'currency') numInput.value = math.toCurrency(logicVal);
                         else if (numInput.dataset.type === 'percent') {
-                            let dispVal = val;
-                            if (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId)) dispVal *= 100;
-                            numInput.value = Math.round(dispVal) + '%';
+                            const isMultiplier = ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId);
+                            numInput.value = Math.round(isMultiplier ? (logicVal * 100) : logicVal) + '%';
                         } else {
-                            numInput.value = val;
+                            numInput.value = logicVal;
                         }
                     }
                 }
@@ -412,20 +407,19 @@ window.createAssumptionControls = (data) => {
             return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass, "1", false, true);
         }
         return `
-            <div class="space-y-1.5 border-l border-white/10 pl-3">
-                <div class="flex justify-between items-center h-4">
-                    <label class="text-[8px] font-black uppercase tracking-widest ${colorClass}">${label}</label>
-                    <div class="w-16">
+            <div class="space-y-2 border-l border-white/10 pl-3">
+                <label class="text-[8px] font-black uppercase tracking-widest ${colorClass} block">${label}</label>
+                <div class="grid grid-cols-3 gap-2 items-end">
+                    <div class="space-y-1">
+                        <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Rate</span>
                         ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
                     </div>
-                </div>
-                <div class="flex items-center gap-1.5 justify-end">
-                    <span class="text-[7px] font-black text-slate-600 uppercase">For</span>
-                    <div class="w-12">
+                    <div class="space-y-1">
+                         <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">For Yrs</span>
                         ${templates.helpers.renderStepper(`${prefix}GrowthYears`, a[`${prefix}GrowthYears`] || 10, 'text-white', '0', false, 1)}
                     </div>
-                    <span class="text-[7px] font-black text-slate-600 uppercase whitespace-nowrap">Yrs, Then</span>
-                    <div class="w-16">
+                    <div class="space-y-1">
+                        <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Final</span>
                         ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
                     </div>
                 </div>
@@ -508,7 +502,7 @@ window.createAssumptionControls = (data) => {
                     <p class="text-[8px] text-slate-500 italic leading-tight">Go-Go (Active) → Slow-Go (Mod) → No-Go (Healthcare).</p>
                 </div>
                 ${renderComplexField("Go-Go (Age 30-60)", "slowGoFactor", a.slowGoFactor || 1.0, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
-                ${renderComplexField("Slow-Go (60-80)", "midGoFactor", a.midGoFactor || 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+                ${renderComplexField("Slow-Go (Age 60-80)", "midGoFactor", a.midGoFactor || 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
                 ${renderComplexField("No-Go (Age 80+)", "noGoFactor", a.noGoFactor || 0.8, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
             </div>
         </div>
