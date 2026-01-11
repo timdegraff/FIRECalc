@@ -540,7 +540,7 @@ function attachGlobal() {
     if (logoutBtn) {
         logoutBtn.onclick = async () => { 
             if (localStorage.getItem('firecalc_guest_mode') === 'true') { 
-                localStorage.removeItem('firecalc_guest_mode'); 
+                ['firecalc_guest_data', 'firecalc_guest_acknowledged', 'firecalc_guest_mode', 'firecalc_guest_profile_selected'].forEach(k => localStorage.removeItem(k));
                 window.location.reload(); 
             } else {
                 await logoutUser(); 

@@ -88,8 +88,19 @@ function showProfileSelection() {
 function setupAppHeader(avatarUrl, userName, logoutText, isLoggedIn) {
     const avatar = document.getElementById('user-avatar');
     if (avatar) avatar.src = avatarUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+    
     const name = document.getElementById('user-name');
-    if (name) name.textContent = userName || "Guest User";
+    if (name) {
+        if (isLoggedIn) {
+            name.textContent = userName || "User";
+            name.className = "font-bold text-slate-300 text-[11px] truncate";
+            name.onclick = null;
+        } else {
+            name.textContent = "LOGIN TO SAVE";
+            name.className = "font-black text-blue-400 hover:text-blue-300 text-[10px] tracking-tight cursor-pointer transition-colors";
+            name.onclick = signInWithGooglePopup;
+        }
+    }
     
     // Indicator Update
     const saveInd = document.getElementById('save-indicator');
@@ -112,7 +123,7 @@ function setupAppHeader(avatarUrl, userName, logoutText, isLoggedIn) {
         logoutBtn.textContent = logoutText;
         logoutBtn.onclick = async () => {
             if (localStorage.getItem('firecalc_guest_mode') === 'true') {
-                localStorage.removeItem('firecalc_guest_mode');
+                ['firecalc_guest_data', 'firecalc_guest_acknowledged', 'firecalc_guest_mode', 'firecalc_guest_profile_selected'].forEach(k => localStorage.removeItem(k));
                 window.location.reload();
             } else {
                 const { logoutUser } = await import('./auth.js');
