@@ -12,7 +12,7 @@ export const PROFILE_45_COUPLE = {
         { name: 'Company RSUs', shares: 20000, strikePrice: 1, currentPrice: 23, growth: 10, isLtcg: false }
     ],
     realEstate: [
-        { name: 'Tennessee Home', value: 550000, mortgage: 250000, principalPayment: 1400 }
+        { name: 'Michigan Home', value: 550000, mortgage: 250000, principalPayment: 1400 }
     ],
     income: [
         { name: 'Primary Income', amount: 175000, increase: 3, contribution: 12, match: 4, bonusPct: 10, isMonthly: false, incomeExpenses: 0, contribOnBonus: true, remainsInRetirement: false },
@@ -38,7 +38,7 @@ export const PROFILE_45_COUPLE = {
         currentAge: 45, retirementAge: 55, ssStartAge: 62, ssMonthly: 3400, 
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
-        helocRate: 6.5, state: 'Tennessee', workYearsAtRetirement: 30,
+        helocRate: 6.5, state: 'Michigan', workYearsAtRetirement: 30,
         phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
         advancedGrowth: false,
         ltcgRate: 15

@@ -339,13 +339,13 @@ const ITEM_TEMPLATES = {
                         <span>ORD</span>
                     </div>
                     <input type="hidden" data-id="isLtcg" value="false">
-                    <div class="text-[10px] font-black text-teal-400 mono-numbers">${math.toCurrency(equity)}</div>
+                    <div class="text-[10px] font-black text-orange-400 mono-numbers">${math.toCurrency(equity)}</div>
                </div>
            </div>
            <div class="grid grid-cols-3 gap-2">
                <div><span class="mobile-label">Shares</span><input data-id="shares" type="number" value="${data.shares || 0}" class="block w-full bg-transparent text-white font-bold mono-numbers outline-none border-b border-slate-800 text-[10px]"></div>
-               <div><span class="mobile-label">Strike</span><input data-id="strikePrice" data-type="currency" data-decimals="2" value="${math.toCurrency(data.strikePrice || 0, false, 2)}" inputmode="decimal" class="block w-full bg-transparent text-emerald-500 font-bold mono-numbers outline-none border-b border-slate-800 text-[10px]"></div>
-               <div><span class="mobile-label">FMV</span><input data-id="currentPrice" data-type="currency" data-decimals="2" value="${math.toCurrency(data.currentPrice || 0, false, 2)}" inputmode="decimal" class="block w-full bg-transparent text-teal-400 font-bold mono-numbers outline-none border-b border-slate-800 text-[10px]"></div>
+               <div><span class="mobile-label">Strike</span><input data-id="strikePrice" data-type="currency" data-decimals="2" value="${math.toCurrency(data.strikePrice || 0, false, 2)}" inputmode="decimal" class="block w-full bg-transparent text-orange-400/80 font-bold mono-numbers outline-none border-b border-slate-800 text-[10px]"></div>
+               <div><span class="mobile-label">FMV</span><input data-id="currentPrice" data-type="currency" data-decimals="2" value="${math.toCurrency(data.currentPrice || 0, false, 2)}" inputmode="decimal" class="block w-full bg-transparent text-orange-400 font-bold mono-numbers outline-none border-b border-slate-800 text-[10px]"></div>
            </div>
        </div>
        `;
@@ -648,12 +648,12 @@ function renderMobileAssetList() {
         'Metals': inv.filter(i => i.type === 'Metals').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'Cash': inv.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
         'HSA': inv.filter(i => i.type === 'HSA').reduce((s, i) => s + math.fromCurrency(i.value), 0),
-        'Options': opts.reduce((s, x) => s + Math.max(0, (math.fromCurrency(x.currentPrice) - math.fromCurrency(x.strikePrice)) * (parseFloat(x.shares) || 0)), 0),
+        'Stock Options': opts.reduce((s, x) => s + Math.max(0, (math.fromCurrency(x.currentPrice) - math.fromCurrency(x.strikePrice)) * (parseFloat(x.shares) || 0)), 0),
         'Debt': -debts.reduce((s, d) => s + math.fromCurrency(d.balance), 0)
     };
-    list.innerHTML = ''; const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Roth IRA': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', 'Options': 'Options', 'Debt': 'Debt' };
+    list.innerHTML = ''; const shortNames = { 'Pre-Tax (401k/IRA)': 'Pre-Tax', 'Roth IRA': 'Roth', 'Taxable': 'Brokerage', 'Real Estate': 'Real Est', 'Crypto': 'Crypto', 'Metals': 'Metals', 'Cash': 'Cash', 'HSA': 'HSA', 'Stock Options': 'Options', 'Debt': 'Debt' };
     Object.entries(buckets).sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)).forEach(([type, value]) => {
-        if (value === 0) return; let color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']); if (type === 'Options') color = '#14b8a6'; 
+        if (value === 0) return; let color = assetColors[type] || (type === 'Debt' ? '#ef4444' : assetColors['Taxable']);
         const item = document.createElement('div'); item.className = 'flex items-center gap-1.5 text-[8px] font-bold text-slate-400 bg-slate-800/50 p-1 rounded-lg border border-slate-700/50';
         item.innerHTML = `<div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: ${color}"></div><span class="truncate flex-grow">${shortNames[type] || type}</span><span class="text-white mono-numbers">${math.toSmartCompactCurrency(value)}</span>`;
         list.appendChild(item);

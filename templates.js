@@ -16,7 +16,8 @@ export const templates = {
                 'Crypto': 'text-type-crypto',
                 'Metals': 'text-type-metals',
                 'HSA': 'text-type-hsa',
-                '529': 'text-type-529'
+                '529': 'text-type-529',
+                'Stock Options': 'text-orange-400'
             };
             return map[type] || 'text-white';
         },
@@ -67,8 +68,8 @@ export const templates = {
     stockOption: (data) => `
         <td><input data-id="name" type="text" placeholder="Grant" class="input-base uppercase tracking-wider text-xs text-white"></td>
         <td><input data-id="shares" type="number" step="1" placeholder="0" class="input-base text-right text-white font-bold mono-numbers"></td>
-        <td><input data-id="strikePrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400/70 font-bold mono-numbers"></td>
-        <td><input data-id="currentPrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-teal-400 font-black mono-numbers"></td>
+        <td><input data-id="strikePrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-orange-400/70 font-bold mono-numbers"></td>
+        <td><input data-id="currentPrice" data-type="currency" data-decimals="2" type="text" placeholder="$0.00" class="input-base text-right text-orange-400 font-black mono-numbers"></td>
         <td><input data-id="growth" data-decimals="1" type="number" step="0.5" placeholder="10" value="${data.growth !== undefined ? data.growth : 10}" class="input-base text-center text-blue-400 font-bold mono-numbers"></td>
         <td class="text-center">
             <div class="w-12 py-1 mx-auto rounded-md text-[9px] font-black border transition-all duration-200 select-none flex items-center justify-center bg-blue-500/10 border-blue-500/20 text-blue-400" title="Fixed as Ordinary Income">
@@ -76,7 +77,7 @@ export const templates = {
             </div>
             <input type="hidden" data-id="isLtcg" value="false">
         </td>
-        <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-teal-400 font-black mono-numbers text-sm pr-2">$0</div></td>
+        <td class="text-right py-2"><div data-id="netEquityDisplay" class="text-orange-400 font-black mono-numbers text-sm pr-2">$0</div></td>
         <td class="text-right"><button data-action="remove" class="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all ml-auto"><i class="fas fa-times text-xs"></i></button></td>
     `,
 

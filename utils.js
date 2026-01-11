@@ -4,7 +4,7 @@ export const assetColors = {
     'Cash': '#f472b6',
     'Taxable': '#10b981',
     'Brokerage': '#10b981',
-    'Stock Options': '#14b8a6',
+    'Stock Options': '#fb923c',
     'Pre-Tax (401k/IRA)': '#3b82f6',
     'Pre-Tax': '#3b82f6',
     'Roth IRA': '#a855f7',

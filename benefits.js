@@ -314,9 +314,15 @@ export const benefits = {
         const fpl100Annual = math.getFPL(totalSize, stateId);
         const ratio = annualMAGI / fpl100Annual;
         
-        const medLimitRatio = data.isPregnant ? 2.0 : 1.38;
+        // Medicaid Logic: In non-expansion states, healthy adults get GAP, 
+        // but Pregnant/Disabled individuals get Medicaid.
         const silverCSRLimitRatio = 2.50;
         const cliffRatio = 4.0;
+        
+        // Define Medicaid eligibility thresholds
+        const medLimitRatio = data.isPregnant ? 2.0 : 1.38;
+        // In non-expansion states, you must be pregnant/disabled to get 'Platinum'
+        const hasMedicaidPathway = isExpandedState || data.isPregnant || data.isDisabled;
 
         // Visual Plan Themes
         const themes = {
@@ -331,8 +337,8 @@ export const benefits = {
         const trackVisual = document.getElementById('slider-track-visual');
         if (trackVisual) {
             let gradient;
-            if (isExpandedState) {
-                const greenEnd = (fpl100Annual * 1.38 / sliderMax) * 100;
+            if (hasMedicaidPathway) {
+                const greenEnd = (fpl100Annual * medLimitRatio / sliderMax) * 100;
                 const blueEnd = (fpl100Annual * 2.50 / sliderMax) * 100;
                 gradient = `linear-gradient(to right, #10b981 0%, #10b981 ${greenEnd}%, #3b82f6 ${greenEnd}%, #3b82f6 ${blueEnd}%, #475569 ${blueEnd}%, #475569 100%)`;
             } else {
@@ -345,7 +351,7 @@ export const benefits = {
         
         // Premium Contribution Scale Logic
         let expectedContributionPct = 0;
-        const contributionThreshold = isExpandedState ? 1.38 : 1.0;
+        const contributionThreshold = hasMedicaidPathway ? medLimitRatio : 1.0;
         
         if (ratio > contributionThreshold) {
             if (ratio < cliffRatio) {
@@ -380,7 +386,7 @@ export const benefits = {
             if (dedEl) dedEl.textContent = ded;
         };
 
-        const isInMedicaidGap = !isExpandedState && ratio < 1.0;
+        const isInMedicaidGap = !hasMedicaidPathway && ratio < 1.0;
         const stateAlert = document.getElementById('state-policy-alert');
         const gapAlertBg = document.getElementById('gap-alert-bg');
         if (stateAlert) stateAlert.classList.toggle('hidden', !isInMedicaidGap);
@@ -388,8 +394,11 @@ export const benefits = {
 
         if (isInMedicaidGap) {
             updateTopCard("MEDICAID GAP", "NO COVERAGE", math.toCurrency(1100), "$10,000+", themes.danger);
-        } else if (ratio <= medLimitRatio && isExpandedState) {
-            updateTopCard("Platinum (Medicaid)", "100% Full Coverage", "$0", "$0", themes.platinum);
+        } else if (ratio <= medLimitRatio && hasMedicaidPathway) {
+            let label = "Platinum (Medicaid)";
+            if (data.isPregnant) label = "Platinum (Pregnancy)";
+            if (data.isDisabled) label = "Platinum (Disability)";
+            updateTopCard(label, "100% Full Coverage", "$0", "$0", themes.platinum);
         } else if (ratio <= silverCSRLimitRatio) {
             updateTopCard("Silver CSR (High Subsidy)", "Low Copays", math.toCurrency(dynamicPremium), "$800", themes.silver);
         } else if (ratio < cliffRatio) {
