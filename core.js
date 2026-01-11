@@ -173,34 +173,47 @@ function attachGlobalListeners() {
         const target = e.target;
         const dataId = target.dataset.id;
 
-        // Bi-directional Slider Synchronization
+        // Bi-directional Slider Synchronization & Global Sync
         if (dataId) {
+            const val = (target.dataset?.type === 'currency' || target.dataset?.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
+            
+            // 1. Sync all DOM elements that share this data-id (Global Mirroring)
+            document.querySelectorAll(`[data-id="${dataId}"]`).forEach(el => {
+                if (el === target) return;
+                
+                if (el.type === 'range') {
+                    let sliderVal = val;
+                    if (el.dataset.type === 'percent' && ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId)) sliderVal /= 100;
+                    el.value = sliderVal;
+                } else if (el.dataset.type === 'currency') {
+                    el.value = math.toCurrency(val);
+                } else if (el.dataset.type === 'percent') {
+                    let dispVal = val;
+                    if (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId)) dispVal *= 100;
+                    el.value = Math.round(dispVal) + '%';
+                } else if (el.type === 'number' || el.classList.contains('input-base')) {
+                    el.value = val;
+                }
+                
+                // Trigger visual zero-state check if applicable
+                if (formatter.updateZeroState) formatter.updateZeroState(el);
+            });
+
+            // 2. Special handling for specific complex fields
             const container = target.closest('.space-y-4') || target.closest('.space-y-6') || target.closest('.space-y-2') || target.closest('.space-y-8') || target.closest('.grid');
             if (container) {
                 if (target.type === 'range') {
-                    // Slider -> Input
+                    // Update the text sibling in the same local container if it's not handled by the global loop above
                     const numInput = container.querySelector(`input:not([type="range"])[data-id="${dataId}"]`);
-                    if (numInput) {
-                        let val = parseFloat(target.value);
-                        if (numInput.dataset.type === 'currency') {
-                            numInput.value = math.toCurrency(val);
-                        } else if (numInput.dataset.type === 'percent') {
+                    if (numInput && numInput.value != val) {
+                        if (numInput.dataset.type === 'currency') numInput.value = math.toCurrency(val);
+                        else if (numInput.dataset.type === 'percent') {
                             let dispVal = val;
                             if (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId)) dispVal *= 100;
                             numInput.value = Math.round(dispVal) + '%';
                         } else {
-                            numInput.value = val.toFixed(parseInt(numInput.dataset.decimals) || 0);
+                            numInput.value = val;
                         }
-                    }
-                } else if (target.type === 'number' || target.dataset.type === 'currency' || target.dataset.type === 'percent') {
-                    // Input -> Slider
-                    const slider = container.querySelector(`input[type="range"][data-id="${dataId}"]`);
-                    if (slider) {
-                        let val = (target.dataset.type === 'currency' || target.dataset.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
-                        if (target.dataset.type === 'percent' && ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId)) {
-                             val /= 100;
-                        }
-                        if (!isNaN(val)) slider.value = val;
                     }
                 }
             }
@@ -238,18 +251,9 @@ function attachGlobalListeners() {
                 checkIrsLimits(incomeCard);
             }
             
-            // Master Sync for Retirement Age
-            if (dataId === 'retirementAge') {
-                const val = parseFloat(target.value);
-                const burndownSlider = document.getElementById('input-top-retire-age');
-                const burndownDirectInput = document.getElementById('input-retire-age-direct');
-                if (burndownSlider) burndownSlider.value = val;
-                if (burndownDirectInput) burndownDirectInput.value = val;
-                
-                // If we are in the burndown tab, run it
-                if (document.querySelector('[data-tab="burndown"]')?.classList.contains('active')) {
-                    burndown.run();
-                }
+            // If we are in the burndown tab, run it
+            if (dataId === 'retirementAge' && document.querySelector('[data-tab="burndown"]')?.classList.contains('active')) {
+                burndown.run();
             }
 
             if (window.debouncedAutoSave) window.debouncedAutoSave();
@@ -504,7 +508,7 @@ window.createAssumptionControls = (data) => {
                     <p class="text-[8px] text-slate-500 italic leading-tight">Go-Go (Active) → Slow-Go (Mod) → No-Go (Healthcare).</p>
                 </div>
                 ${renderComplexField("Go-Go (Age 30-60)", "slowGoFactor", a.slowGoFactor || 1.0, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
-                ${renderComplexField("Slow-Go (Age 60-80)", "midGoFactor", a.midGoFactor || 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+                ${renderComplexField("Slow-Go (60-80)", "midGoFactor", a.midGoFactor || 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
                 ${renderComplexField("No-Go (Age 80+)", "noGoFactor", a.noGoFactor || 0.8, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
             </div>
         </div>

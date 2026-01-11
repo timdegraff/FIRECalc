@@ -35,7 +35,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Retirement Age</label>
                             <div class="flex items-center gap-2 bg-slate-900/50 p-1 rounded-lg border border-white/10">
                                 <button id="btn-retire-minus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
-                                <input type="number" id="input-retire-age-direct" class="bg-transparent border-none text-blue-400 font-black mono-numbers text-sm w-10 text-center outline-none" value="65">
+                                <input type="number" id="input-retire-age-direct" data-id="retirementAge" class="bg-transparent border-none text-blue-400 font-black mono-numbers text-sm w-10 text-center outline-none" value="65">
                                 <button id="btn-retire-plus" class="w-6 h-6 flex items-center justify-center hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
                                 <input type="range" id="input-top-retire-age" data-id="retirementAge" min="30" max="80" step="1" class="hidden"> 
                             </div>
@@ -150,11 +150,9 @@ export const burndown = {
                     const directInp = document.getElementById('input-retire-age-direct');
                     if (directInp) directInp.value = val;
                     
-                    // Master Sync: Update global data and Assumptions UI
+                    // Master Sync: Update global data
                     if (window.currentData?.assumptions) {
                         window.currentData.assumptions.retirementAge = val;
-                        const assumptionsInput = document.querySelector('#assumptions-container [data-id="retirementAge"]');
-                        if (assumptionsInput) assumptionsInput.value = val;
                     }
                 }
                 if (id === 'toggle-budget-sync') {
@@ -183,6 +181,7 @@ export const burndown = {
                 const slider = document.getElementById('input-top-retire-age');
                 if (slider) {
                     slider.value = val;
+                    // Trigger input event to fire the sync and run logic attached in the loop above
                     slider.dispatchEvent(new Event('input'));
                 }
             };
@@ -331,7 +330,7 @@ export const burndown = {
             if (typeof Sortable !== 'undefined' && !burndown.sortable) { burndown.sortable = new Sortable(priorityList, { animation: 150, handle: '.drag-handle', ghostClass: 'bg-slate-700/30', onEnd: () => { burndown.priorityOrder = Array.from(priorityList.querySelectorAll('.drag-item')).map(el => el.dataset.pk); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } }); }
         }
         
-        // Sync retirement age from master assumptions
+        // SYNC: Ensure Burndown inputs match global source of truth
         lastUsedRetirementAge = parseFloat(data.assumptions.retirementAge) || 65;
         const slider = document.getElementById('input-top-retire-age');
         if (slider) {
