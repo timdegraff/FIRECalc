@@ -63,7 +63,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-shield-alt"></i> Preservation Age</label>
                             <div id="card-preservation-val" class="text-3xl font-black text-amber-500 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">MAINTAINS FLAT REAL WEALTH</div>
+                        <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">MAINTAINS FLAT REAL WEALTH AT $0K BUDGET UNTIL THIS AGE</div>
                     </div>
 
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
@@ -72,7 +72,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-flag-checkered"></i> Retirement Runway</label>
                             <div id="card-runway-val" class="text-3xl font-black text-blue-400 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-runway-sub" class="text-[9px] font-bold text-blue-400/60 uppercase tracking-tighter leading-none">SUSTAINABLE UNTIL THIS AGE</div>
+                        <div id="card-runway-sub" class="text-[9px] font-bold text-blue-400/60 uppercase tracking-tighter leading-none">SUSTAINS $0K BUDGET IN 2026 DOLLARS UNTIL THIS AGE</div>
                     </div>
 
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
@@ -81,7 +81,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero</label>
                             <div id="card-dwz-val" class="text-3xl font-black text-pink-400 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase tracking-tighter leading-none">MAX ANNUAL SPEND STARTING AT RETIREMENT</div>
+                        <div id="card-dwz-sub" class="text-[9px] font-bold text-pink-500/60 uppercase tracking-tighter leading-none">MAX SUSTAINABLE SPEND OF $0K STARTING AT RETIREMENT</div>
                     </div>
                 </div>
 
@@ -513,16 +513,15 @@ export const burndown = {
             }
 
             const liquidForSnap = bal['cash'] + bal['taxable'] + bal['crypto'];
-            const baseSnap = engine.calculateSnapBenefit(floorOrdIncome, 0, liquidForSnap, currentHhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac) * 12;
+            const initialSnap = engine.calculateSnapBenefit(floorOrdIncome, 0, liquidForSnap, currentHhSize, benefits.shelterCosts || 700, benefits.hasSUA !== false, benefits.isDisabled !== false, benefits.childSupportPaid, benefits.depCare, benefits.medicalExps, assumptions.state, infFac) * 12;
             
             let currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed), currentLtcgIncome = 0, totalWithdrawn = 0, currentDraws = {};
-            let floorNetCash = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + baseSnap;
-            let deficit = targetBudget - floorNetCheck; // This refers to the shortfall after taxes
-
-            // MAGI TARGET with SAFETY BUFFER (targeting slightly under limit to avoid rounding into Silver)
+            let floorNetCash = (floorTotalIncome - pretaxDed) - engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac) + initialSnap;
+            let deficit = targetBudget - floorNetCash; 
+            
             const magiTarget = persona === 'PLATINUM' ? fpl100 * 1.375 : (persona === 'SILVER' ? fpl100 * 2.49 : 0);
             
-            trace += `Initial Shortfall: ${math.toCurrency(targetBudget - floorNetCash)} (Budget ${math.toCurrency(targetBudget)} - Inflow ${math.toCurrency(floorNetCash)})\n`;
+            trace += `Initial Shortfall: ${math.toCurrency(deficit)} (Budget ${math.toCurrency(targetBudget)} - Work Inflow ${math.toCurrency(floorTotalIncome - pretaxDed)} - Snap Inflow ${math.toCurrency(initialSnap)} - Taxes)\n`;
 
             let effectiveOrder = [...burndown.priorityOrder];
             if (persona !== 'UNCONSTRAINED') {
@@ -532,8 +531,6 @@ export const burndown = {
                     ...effectiveOrder.filter(b => !zeroMAGIBuckets.includes(b))
                 ];
             }
-
-            deficit = targetBudget - floorNetCash;
 
             for (let pass = 0; pass < 3; pass++) {
                 if (deficit <= 5 && (persona === 'UNCONSTRAINED' || (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI) >= magiTarget)) break;
@@ -667,6 +664,7 @@ export const burndown = {
                 simulationTrace[age] = trace;
             }
 
+            // Sync Table Benefit display to actual benefit received after harvesting
             results.push({ age, year, budget: targetBudget, magi: healthMAGI, netWorth: currentNW, isInsolvent, balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap, taxes: finalTax, liquid: liquidAssets, netCash, status });
             if (!isSilent && isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
 
