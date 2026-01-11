@@ -403,11 +403,15 @@
             <!-- Benefits Tab -->
             <section id="tab-benefits" class="tab-content hidden max-w-7xl mx-auto">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-                    <div class="card-container p-6 flex flex-col items-center justify-center h-28">
+                    <div id="benefit-summary-health" class="card-container p-6 flex flex-col items-center justify-center h-28 border-l-4 border-emerald-500 transition-all">
                         <p class="label-std mb-2 text-slate-500">Healthcare Plan</p>
-                        <p id="sum-health-plan" class="text-4xl font-black text-slate-400 uppercase tracking-tight transition-colors">Private</p>
+                        <p id="sum-health-plan" class="text-2xl font-black text-white uppercase tracking-tight leading-none"></p>
+                        <div class="flex gap-4 mt-2">
+                             <div class="text-[9px] font-bold text-slate-500 uppercase"><span class="opacity-50">Prem:</span> <span id="sum-health-prem" class="text-white font-black">$0</span></div>
+                             <div class="text-[9px] font-bold text-slate-500 uppercase"><span class="opacity-50">Ded:</span> <span id="sum-health-ded" class="text-white font-black">$0</span></div>
+                        </div>
                     </div>
-                    <div class="card-container p-6 flex flex-col items-center justify-center h-28">
+                    <div class="card-container p-6 flex flex-col items-center justify-center h-28 border-l-4 border-teal-500 transition-all">
                         <p class="label-std mb-2 text-slate-500">Est. SNAP (2026 Monthly)</p>
                         <p id="sum-snap-amt" class="text-4xl font-black text-teal-400 mono-numbers tracking-tight">$0</p>
                     </div>
