@@ -15,9 +15,9 @@ export const benefits = {
                                 <h3 class="text-xs font-black text-white uppercase tracking-widest">Household Structure</h3>
                                 <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Define dependents and their independence year</p>
                             </div>
-                            <button id="btn-add-dependent" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
+                            <button id="btn-add-dependent" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:grayscale disabled:scale-100">
                                 <i class="fas fa-plus text-[10px]"></i>
-                                <span class="text-[10px] font-black uppercase tracking-widest">Add Child</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest label-text">Add Child</span>
                             </button>
                         </div>
 
@@ -124,16 +124,16 @@ export const benefits = {
                 <!-- Glossary -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-white/5 opacity-50">
                     <div class="space-y-1">
-                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">W2/1099 vs Unearned</p>
-                        <p class="text-[8px] text-slate-500 font-medium">Earned income (work) gets a 20% deduction in SNAP math. Unearned (Dividends/SS) does not.</p>
+                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">Independence Year</p>
+                        <p class="text-[8px] text-slate-500 font-medium">The year the child turns 19. They are removed from household size calculations after this date.</p>
                     </div>
                     <div class="space-y-1">
                         <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">Utility Allowance (SUA)</p>
                         <p class="text-[8px] text-slate-500 font-medium">Fixed deduction for heating/cooling. Almost always beneficial to check if you pay for utilities.</p>
                     </div>
                     <div class="space-y-1">
-                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">Independence Year</p>
-                        <p class="text-[8px] text-slate-500 font-medium">The year the child turns 19. They are removed from household size calculations after this date.</p>
+                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">W2/1099 vs Unearned</p>
+                        <p class="text-[8px] text-slate-500 font-medium">Earned income (work) gets a 20% deduction in SNAP math. Unearned (Dividends/SS) does not.</p>
                     </div>
                 </div>
             </div>
@@ -155,11 +155,14 @@ export const benefits = {
             };
         });
 
-        document.getElementById('btn-add-dependent').onclick = () => { 
-            benefits.addDependent(); 
-            benefits.refresh(); 
-            if (window.debouncedAutoSave) window.debouncedAutoSave(); 
-        };
+        const addBtn = document.getElementById('btn-add-dependent');
+        if (addBtn) {
+            addBtn.onclick = () => { 
+                benefits.addDependent(); 
+                benefits.refresh(); 
+                if (window.debouncedAutoSave) window.debouncedAutoSave(); 
+            };
+        }
 
         container.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action="remove-dependent"]');
@@ -181,6 +184,13 @@ export const benefits = {
 
     addDependent: (data = {}) => {
         const list = document.getElementById('dependents-list'); if (!list) return;
+        
+        // Enforce SNAP total size limit (Adults + Kids <= 8)
+        const filingStatus = window.currentData?.assumptions?.filingStatus || 'Single';
+        const adults = filingStatus === 'Married Filing Jointly' ? 2 : 1;
+        const currentKids = list.querySelectorAll('.dependent-visual-item').length;
+        if (adults + currentKids >= 8) return;
+
         const item = document.createElement('div');
         item.className = 'dependent-visual-item flex flex-col items-center group relative';
         const currentYear = new Date().getFullYear();
@@ -246,6 +256,15 @@ export const benefits = {
         if (document.getElementById('hh-composition-text')) document.getElementById('hh-composition-text').textContent = `${adults} Adult${adults > 1 ? 's' : ''} ${kids > 0 ? '+ ' + kids + ' Dependent' + (kids > 1 ? 's' : '') : ''}`;
         if (document.getElementById('hh-total-size-badge')) document.getElementById('hh-total-size-badge').textContent = totalSize;
         
+        // Handle "Add Child" button state based on SNAP 8-person limit
+        const addBtn = document.getElementById('btn-add-dependent');
+        if (addBtn) {
+            const isLimitReached = totalSize >= 8;
+            addBtn.disabled = isLimitReached;
+            const btnText = addBtn.querySelector('.label-text');
+            if (btnText) btnText.textContent = isLimitReached ? "Max Reached" : "Add Child";
+        }
+
         const stateId = window.currentData?.assumptions?.state || 'Michigan';
         const stateMeta = stateTaxRates[stateId];
         const fplBase = stateMeta?.fplBase || 16060;

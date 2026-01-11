@@ -119,7 +119,7 @@ function attachGlobalListeners() {
                 if (input.dataset.type === 'currency') {
                     input.value = math.toCurrency(newVal);
                 } else if (input.dataset.type === 'percent') {
-                    input.value = Math.round(newVal * 100) + '%';
+                    input.value = newVal + '%';
                 } else {
                     input.value = newVal.toFixed(parseInt(input.dataset.decimals) || 0);
                 }
@@ -183,7 +183,7 @@ function attachGlobalListeners() {
 
         // Bi-directional Slider Synchronization & Global Sync
         if (dataId) {
-            // Determine the "Logic Value" (0.9 instead of 90)
+            // Determine the "Logic Value"
             let logicVal = (target.dataset?.type === 'currency' || target.dataset?.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
             
             // Precision enforcement: 0.5 increments for APY/Growth
@@ -206,8 +206,7 @@ function attachGlobalListeners() {
                 } else if (el.dataset.type === 'currency') {
                     el.value = math.toCurrency(logicVal);
                 } else if (el.dataset.type === 'percent') {
-                    const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
-                    el.value = (isMultiplier ? Math.round(logicVal * 100) : (logicVal * 100)) + '%';
+                    el.value = logicVal + '%';
                 } else if (el.type === 'number' || el.classList.contains('input-base')) {
                     el.value = logicVal;
                 }
@@ -224,8 +223,7 @@ function attachGlobalListeners() {
                     if (numInput && numInput.value != logicVal) {
                         if (numInput.dataset.type === 'currency') numInput.value = math.toCurrency(logicVal);
                         else if (numInput.dataset.type === 'percent') {
-                            const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
-                            numInput.value = (isMultiplier ? Math.round(logicVal * 100) : (logicVal * 100)) + '%';
+                            numInput.value = logicVal + '%';
                         } else {
                             numInput.value = logicVal;
                         }
@@ -437,7 +435,7 @@ window.createAssumptionControls = (data) => {
                     ${isCurrency ? 
                         templates.helpers.renderStepper(id, value, `text-right ${colorClass}`, "0", isCurrency, step) :
                         (isPercent ? 
-                            templates.helpers.renderStepper(id, (value * 100), `text-center ${colorClass}`, "0", false, (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id) ? 10 : step), true) :
+                            templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, "1", false, step, true) :
                             templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, decimals, false, step)
                         )
                     }
