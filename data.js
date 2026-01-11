@@ -10,12 +10,10 @@ const db = getFirestore();
 window.currentData = null;
 window.saveTimeout = null;
 
-// Default Data Structure (Fallback is 40yo Couple)
 const DEFAULTS = PROFILE_40_COUPLE;
 
 export async function initializeData(user) {
     if (user) {
-        // Authenticated Load
         try {
             const docRef = doc(db, "users", user.uid);
             const docSnap = await getDoc(docRef);
@@ -37,7 +35,6 @@ export async function initializeData(user) {
             window.currentData = JSON.parse(JSON.stringify(DEFAULTS));
         }
     } else {
-        // Guest Mode Load
         const local = localStorage.getItem('firecalc_guest_data');
         if (local) {
             try {
@@ -146,7 +143,13 @@ function scrapeData() {
         assumptionsContainer.querySelectorAll('[data-id]').forEach(el => {
             const key = el.dataset.id;
             if (el.type === 'checkbox') aObj[key] = el.checked;
-            else if (el.dataset.type === 'currency' || el.dataset.type === 'percent') aObj[key] = math.fromCurrency(el.value);
+            else if (el.dataset.type === 'currency') aObj[key] = math.fromCurrency(el.value);
+            else if (el.dataset.type === 'percent') {
+                const val = math.fromCurrency(el.value);
+                // Engine expects growth as whole numbers (8.0) and lifestyle as decimals (1.0)
+                const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(key);
+                aObj[key] = isMultiplier ? val : (val * 100);
+            }
             else if (el.tagName === 'SELECT') aObj[key] = el.value;
             else {
                 let val = parseFloat(el.value);
@@ -204,11 +207,8 @@ function showSaveIndicator() {
     if (!el) return;
     const user = auth.currentUser;
     if (user) {
-        // Logged in: 50ms Green Flash
         el.classList.add('text-emerald-400');
         setTimeout(() => el.classList.remove('text-emerald-400'), 50);
-    } else {
-        // Guest mode: Static warning color (handled in main.js setup)
     }
 }
 
@@ -244,7 +244,6 @@ export function updateSummaries() {
 
     const infFacRet = Math.pow(1 + inflation, yrsToRetire);
     
-    // Retirement Income Calculation
     const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
         const growth = (parseFloat(inc.increase) / 100) || 0;
         return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly === true || inc.isMonthly === 'true' ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
@@ -253,13 +252,11 @@ export function updateSummaries() {
     const totalNominalFloor = streamsAtRet + ssAtRet;
     set('sum-retirement-income-floor', totalNominalFloor);
 
-    // Update the Retirement Income title and sub-label
     const incTitleEl = document.getElementById('label-retirement-income-title');
     if (incTitleEl) incTitleEl.textContent = `Retirement Income in ${retireYear}`;
     const incSubEl = document.getElementById('sum-retirement-income-sub');
     if (incSubEl) incSubEl.textContent = `${math.toCurrency(totalNominalFloor / infFacRet)} in 2026 Dollars`;
 
-    // Retirement Budget Calculation
     let totalRealRetireBudget = 0;
     const totalNominalRetireBudget = (data.budget?.expenses || []).reduce((sum, exp) => {
         if (exp.remainsInRetirement === false) return sum;
@@ -268,13 +265,11 @@ export function updateSummaries() {
         return sum + (exp.isFixed ? base : base * infFacRet);
     }, 0);
 
-    // Update the Retirement Budget card (top right of Budget tab)
     const budTitleEl = document.getElementById('label-retirement-budget-title');
     if (budTitleEl) budTitleEl.textContent = `Retirement Budget in ${retireYear}`;
     set('sum-budget-total', totalNominalRetireBudget); 
     const budSubEl = document.getElementById('sum-retirement-budget-sub');
     if (budSubEl) budSubEl.textContent = `${math.toCurrency(totalNominalRetireBudget / infFacRet)} in 2026 Dollars`;
 
-    // Assumptions summary card (uses the nominal figure)
     set('sum-retire-budget', totalNominalRetireBudget);
 }

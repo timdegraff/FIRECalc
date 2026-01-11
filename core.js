@@ -102,8 +102,8 @@ function attachGlobalListeners() {
             const container = btn.closest('.relative') || btn.closest('.removable-item') || btn.closest('.grid') || btn.closest('.space-y-4') || btn.closest('.space-y-6') || btn.closest('.space-y-2') || btn.closest('.space-y-8') || btn.closest('.card-container');
             const input = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
             if (input) {
-                const currentVal = (input.dataset.type === 'currency' || input.dataset.type === 'percent') ? math.fromCurrency(input.value) : (parseFloat(input.value) || 0);
                 const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(btn.dataset.target);
+                const currentVal = (input.dataset.type === 'currency' || input.dataset.type === 'percent') ? math.fromCurrency(input.value) : (parseFloat(input.value) || 0);
                 const step = isMultiplier ? 0.1 : (parseFloat(input.step) || 0.5);
                 let newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
                 
@@ -113,21 +113,20 @@ function attachGlobalListeners() {
                     newVal = Math.max(curAge, Math.min(100, newVal));
                 }
 
-                // Precision Fix: Always round to 2 decimals max to avoid floating point bugs
+                // Precision Fix
                 newVal = parseFloat(newVal.toFixed(2));
 
                 if (input.dataset.type === 'currency') {
                     input.value = math.toCurrency(newVal);
                 } else if (input.dataset.type === 'percent') {
-                    input.value = newVal + '%';
+                    input.value = (isMultiplier ? Math.round(newVal * 100) : newVal) + '%';
                 } else {
                     input.value = newVal.toFixed(parseInt(input.dataset.decimals) || 0);
                 }
                 
-                // Sync linked slider if exists (important for Assumptions tab)
                 const slider = container.querySelector(`input[type="range"][data-id="${btn.dataset.target}"]`);
                 if (slider) {
-                    slider.value = newVal;
+                    slider.value = isMultiplier ? newVal : newVal;
                 }
 
                 input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -135,12 +134,10 @@ function attachGlobalListeners() {
             return;
         }
 
-        // Handle Advanced Growth Toggle
         if (btn && btn.id === 'toggle-advanced-growth') {
             const isNowAdvanced = !window.currentData.assumptions.advancedGrowth;
             window.currentData.assumptions.advancedGrowth = isNowAdvanced;
             window.createAssumptionControls(window.currentData);
-            // Trigger auto-save immediately to store the choice in Firestore
             if (window.debouncedAutoSave) window.debouncedAutoSave();
             return;
         }
@@ -152,26 +149,18 @@ function attachGlobalListeners() {
                 const isMonthlyBefore = hiddenInput.value === 'true';
                 const newVal = !isMonthlyBefore;
                 
-                // Convert existing value
                 const valueInputId = btn.dataset.target === 'isMonthly' ? 'amount' : 'incomeExpenses';
                 const valInput = container.querySelector(`input[data-id="${valueInputId}"]`);
                 
                 if (valInput) {
                     let val = math.fromCurrency(valInput.value);
-                    if (isMonthlyBefore) {
-                        val = val * 12;
-                    } else {
-                        val = val / 12;
-                    }
+                    if (isMonthlyBefore) val = val * 12; else val = val / 12;
                     valInput.value = math.toCurrency(val);
                 }
 
                 hiddenInput.value = newVal ? 'true' : 'false';
                 btn.textContent = newVal ? 'Monthly' : 'Annual';
-                
-                // CRITICAL: Force immediate sync so dashboard updates
                 forceSyncData();
-                
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             }
         }
@@ -181,23 +170,24 @@ function attachGlobalListeners() {
         const target = e.target;
         const dataId = target.dataset.id;
 
-        // Bi-directional Slider Synchronization & Global Sync
         if (dataId) {
-            // Determine the "Logic Value"
+            const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
             let logicVal = (target.dataset?.type === 'currency' || target.dataset?.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
             
-            // Precision enforcement: 0.5 increments for APY/Growth
+            // Adjust logicVal for assumptions state (Engine expects whole numbers for growth, fractions for multipliers)
+            if (target.dataset.type === 'percent' && target.type !== 'range' && !isMultiplier) {
+                logicVal *= 100;
+            }
+
             if (dataId.toLowerCase().includes('growth') || dataId === 'inflation') {
                 logicVal = parseFloat(logicVal.toFixed(2));
             }
 
-            // Enforce retirement age minimum
             if (dataId === 'retirementAge') {
                 const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
                 if (logicVal < curAge) logicVal = curAge;
             }
 
-            // Sync all DOM elements that share this data-id (Global Mirroring)
             document.querySelectorAll(`[data-id="${dataId}"]`).forEach(el => {
                 if (el === target) return;
                 
@@ -206,32 +196,14 @@ function attachGlobalListeners() {
                 } else if (el.dataset.type === 'currency') {
                     el.value = math.toCurrency(logicVal);
                 } else if (el.dataset.type === 'percent') {
-                    el.value = logicVal + '%';
+                    el.value = (isMultiplier ? Math.round(logicVal * 100) : logicVal) + '%';
                 } else if (el.type === 'number' || el.classList.contains('input-base')) {
                     el.value = logicVal;
                 }
                 
-                // Trigger visual zero-state check if applicable
                 if (formatter.updateZeroState) formatter.updateZeroState(el);
             });
 
-            // 2. Local sibling sync if global loop missed it
-            const container = target.closest('.space-y-4') || target.closest('.space-y-6') || target.closest('.space-y-2') || target.closest('.space-y-8') || target.closest('.grid') || target.closest('.card-container');
-            if (container) {
-                if (target.type === 'range') {
-                    const numInput = container.querySelector(`input:not([type="range"])[data-id="${dataId}"]`);
-                    if (numInput && numInput.value != logicVal) {
-                        if (numInput.dataset.type === 'currency') numInput.value = math.toCurrency(logicVal);
-                        else if (numInput.dataset.type === 'percent') {
-                            numInput.value = logicVal + '%';
-                        } else {
-                            numInput.value = logicVal;
-                        }
-                    }
-                }
-            }
-
-            // Sync APY logic: If in Basic mode, ensure Perpetual/Final matches Current
             if (window.currentData?.assumptions) {
                 const isBasic = !window.currentData.assumptions.advancedGrowth;
                 const assetPrefixes = ['stock', 'crypto', 'metals'];
@@ -240,13 +212,10 @@ function attachGlobalListeners() {
                         window.currentData.assumptions[`${prefix}GrowthPerpetual`] = logicVal;
                     }
                 });
-                
-                // Manually force update state for validation
                 window.currentData.assumptions[dataId] = logicVal;
             }
         }
 
-        // Handle Monthly <-> Annual sync for Savings and Expenses
         if (dataId === 'monthly' || dataId === 'annual') {
             const row = target.closest('#budget-savings-rows tr, #budget-expenses-rows tr');
             if (row) {
@@ -261,7 +230,6 @@ function attachGlobalListeners() {
             }
         }
 
-        // Live calculation for Stock Options
         const stockRow = target.closest('#stock-option-rows tr');
         if (stockRow) {
             const shares = parseFloat(stockRow.querySelector('[data-id="shares"]')?.value) || 0;
@@ -274,15 +242,8 @@ function attachGlobalListeners() {
 
         if (target.closest('.input-base, .input-range, .benefit-slider, .mobile-slider') || target.closest('input[data-id]')) {
             const incomeCard = target.closest('#income-cards .removable-item');
-            if (incomeCard) {
-                checkIrsLimits(incomeCard);
-            }
-            
-            // If we are in the burndown tab, run it
-            if (dataId === 'retirementAge' && document.querySelector('[data-tab="burndown"]')?.classList.contains('active')) {
-                burndown.run();
-            }
-
+            if (incomeCard) checkIrsLimits(incomeCard);
+            if (dataId === 'retirementAge' && document.querySelector('[data-tab="burndown"]')?.classList.contains('active')) burndown.run();
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
@@ -291,19 +252,14 @@ function attachGlobalListeners() {
         const target = e.target;
         if (target.tagName === 'SELECT' && target.dataset.id === 'type') {
             const newClass = templates.helpers.getTypeClass(target.value);
-            target.classList.forEach(cls => {
-                if (cls.startsWith('text-type-')) target.classList.remove(cls);
-            });
+            target.classList.forEach(cls => { if (cls.startsWith('text-type-')) target.classList.remove(cls); });
             target.classList.add(newClass);
             const row = target.closest('tr');
             if (row) updateCostBasisVisibility(row);
         }
-        
-        // Final validation on retirement age
         if (target.dataset.id === 'retirementAge') {
-            const val = parseFloat(target.value);
             const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
-            if (val < curAge) {
+            if (parseFloat(target.value) < curAge) {
                 target.value = curAge;
                 target.dispatchEvent(new Event('input', { bubbles: true }));
             }
@@ -316,9 +272,7 @@ export function showTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(`tab-${tabId}`)?.classList.remove('hidden');
     document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
-    
     if (!window.currentData) return;
-
     if (tabId === 'burndown' || tabId === 'projection' || tabId === 'benefits') {
         forceSyncData();
         if (tabId === 'burndown') burndown.run();
@@ -368,14 +322,10 @@ function updateCostBasisVisibility(row) {
 window.updateSidebarChart = (data) => {
     if (!data) return;
     const totals = {}; 
-    
-    // 1. Group Investments by Type
     data.investments?.forEach(i => { 
         const v = math.fromCurrency(i.value); 
         if (v !== 0) totals[i.type] = (totals[i.type] || 0) + v; 
     });
-
-    // 2. Private Equity (Options)
     const optionsEquity = data.stockOptions?.reduce((s, x) => {
         const shares = parseFloat(x.shares) || 0;
         const strike = math.fromCurrency(x.strikePrice);
@@ -383,28 +333,19 @@ window.updateSidebarChart = (data) => {
         return s + Math.max(0, (fmv - strike) * shares);
     }, 0) || 0;
     if (optionsEquity !== 0) totals['Stock Options'] = optionsEquity;
-
-    // 3. Real Estate Net Equity
     const reEquity = data.realEstate?.reduce((s, r) => s + (math.fromCurrency(r.value) - math.fromCurrency(r.mortgage)), 0) || 0;
     if (reEquity !== 0) totals['Real Estate'] = reEquity;
-
-    // 4. Other Assets Net Equity
     const oaEquity = data.otherAssets?.reduce((s, o) => s + (math.fromCurrency(o.value) - math.fromCurrency(o.loan)), 0) || 0;
     if (oaEquity !== 0) totals['Other'] = oaEquity;
-
-    // 5. HELOCs (Negative)
     const helocTotal = data.helocs?.reduce((s, h) => s + math.fromCurrency(h.balance), 0) || 0;
     if (helocTotal !== 0) totals['HELOC'] = -helocTotal;
-
-    // 6. Other Debts (Negative)
     const debtTotal = data.debts?.reduce((s, d) => s + math.fromCurrency(d.balance), 0) || 0;
     if (debtTotal !== 0) totals['Debt'] = -debtTotal;
-
     const legendContainer = document.getElementById('sidebar-asset-legend');
     if (legendContainer) {
         legendContainer.innerHTML = '';
         Object.entries(totals)
-            .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a)) // Sort by absolute magnitude
+            .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
             .forEach(([type, value]) => {
                 const item = document.createElement('div');
                 item.className = 'flex items-center justify-between gap-1 text-[9px] font-bold text-slate-400 truncate w-full pr-1';
@@ -427,43 +368,48 @@ window.createAssumptionControls = (data) => {
     const isAdv = !!a.advancedGrowth;
     const curAge = parseFloat(a.currentAge) || 40;
 
-    const renderComplexField = (label, id, value, min, max, step, colorClass, decimals = "1", isCurrency = false, isPercent = false) => `
-        <div class="space-y-4">
+    const renderComplexField = (label, id, value, min, max, step, colorClass, decimals = "1", isCurrency = false, isPercent = false) => {
+        const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id);
+        const displayValue = isMultiplier ? (value * 100) : value;
+        return `
+        <div class="card-container p-6 space-y-8 flex flex-col h-full">
             <div class="flex justify-between items-center h-4">
                 <label class="label-std ${colorClass}">${label}</label>
                 <div class="w-28">
                     ${isCurrency ? 
                         templates.helpers.renderStepper(id, value, `text-right ${colorClass}`, "0", isCurrency, step) :
                         (isPercent ? 
-                            templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, "1", false, step, true) :
+                            templates.helpers.renderStepper(id, displayValue, `text-center ${colorClass}`, "0", false, (isMultiplier ? 10 : step), true) :
                             templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, decimals, false, step)
                         )
                     }
                 </div>
             </div>
             <input type="range" data-id="${id}" min="${min}" max="${max}" step="${step}" value="${value}" class="input-range w-full">
-        </div>
-    `;
+        </div>`;
+    };
 
     const renderAdvancedAPYRow = (label, prefix, colorClass) => {
         if (!isAdv) {
             return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass, "1", false, true);
         }
         return `
-            <div class="space-y-2 border-l border-white/10 pl-3">
-                <label class="text-[8px] font-black uppercase tracking-widest ${colorClass} block">${label}</label>
-                <div class="grid grid-cols-3 gap-2 items-end">
-                    <div class="space-y-1">
-                        <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Rate</span>
-                        ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
-                    </div>
-                    <div class="space-y-1">
-                         <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">For Yrs</span>
-                        ${templates.helpers.renderStepper(`${prefix}GrowthYears`, a[`${prefix}GrowthYears`] || 10, 'text-white', '0', false, 1)}
-                    </div>
-                    <div class="space-y-1">
-                        <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Final</span>
-                        ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
+            <div class="card-container p-6 space-y-8 flex flex-col h-full">
+                <div class="space-y-2 border-l border-white/10 pl-3">
+                    <label class="text-[8px] font-black uppercase tracking-widest ${colorClass} block">${label}</label>
+                    <div class="grid grid-cols-3 gap-2 items-end">
+                        <div class="space-y-1">
+                            <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Rate</span>
+                            ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
+                        </div>
+                        <div class="space-y-1">
+                             <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">For Yrs</span>
+                            ${templates.helpers.renderStepper(`${prefix}GrowthYears`, a[`${prefix}GrowthYears`] || 10, 'text-white', '0', false, 1)}
+                        </div>
+                        <div class="space-y-1">
+                            <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Final</span>
+                            ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -471,12 +417,9 @@ window.createAssumptionControls = (data) => {
     };
 
     container.innerHTML = `
-        <!-- Card 1: Household & Timing -->
         <div class="card-container p-6 space-y-8 flex flex-col h-full">
             <div class="flex items-center gap-3 border-b border-white/5 pb-4">
-                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
-                    <i class="fas fa-clock text-xs"></i>
-                </div>
+                <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400"><i class="fas fa-clock text-xs"></i></div>
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Timing</h3>
             </div>
             ${renderComplexField("Current Age", "currentAge", a.currentAge, 18, 90, 1, "text-white", "0")}
@@ -485,21 +428,13 @@ window.createAssumptionControls = (data) => {
             ${renderComplexField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly, 0, 8000, 100, "text-teal-400", "0", true)}
         </div>
 
-        <!-- Card 2: Market & Inflation -->
         <div class="card-container p-6 space-y-8 flex flex-col h-full">
             <div class="flex items-center justify-between border-b border-white/5 pb-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
-                        <i class="fas fa-chart-line text-xs"></i>
-                    </div>
+                    <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400"><i class="fas fa-chart-line text-xs"></i></div>
                     <h3 class="text-sm font-black text-white uppercase tracking-widest">Market Projections</h3>
                 </div>
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" data-id="advancedGrowth" class="hidden" ${isAdv ? 'checked' : ''}>
-                    <button id="toggle-advanced-growth" class="w-8 h-8 rounded-lg ${isAdv ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-white/5 text-slate-500'} flex items-center justify-center hover:bg-orange-500/20 transition-all" title="Toggle Advanced Multi-Stage APY">
-                        <i class="fas fa-cog text-xs"></i>
-                    </button>
-                </div>
+                <button id="toggle-advanced-growth" class="w-8 h-8 rounded-lg ${isAdv ? 'bg-orange-500 text-white' : 'bg-white/5 text-slate-500'} flex items-center justify-center hover:bg-orange-500/20 transition-all"><i class="fas fa-cog text-xs"></i></button>
             </div>
             <div class="${isAdv ? 'space-y-6' : 'space-y-8'}">
                 ${renderAdvancedAPYRow("Stock APY (%)", "stock", "text-blue-400")}
@@ -507,20 +442,14 @@ window.createAssumptionControls = (data) => {
                 ${renderAdvancedAPYRow("Metals APY (%)", "metals", "text-amber-500")}
             </div>
             ${renderComplexField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, 0, 10, 0.1, "text-indigo-400", "1", false, true)}
-            <div class="pt-4 border-t border-white/5">
-                ${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400", "1", false, true)}
-            </div>
+            <div class="pt-4 border-t border-white/5">${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400", "1", false, true)}</div>
         </div>
 
-        <!-- Card 3: Tax & Status -->
         <div class="card-container p-6 space-y-3 flex flex-col h-full">
             <div class="flex items-center gap-3 border-b border-white/5 pb-3 mb-2">
-                <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
-                    <i class="fas fa-walking text-xs"></i>
-                </div>
+                <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400"><i class="fas fa-walking text-xs"></i></div>
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Tax & Status</h3>
             </div>
-            
             <div class="grid grid-cols-2 gap-3 mb-1">
                 <label class="block space-y-1">
                     <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">State</span>
@@ -537,7 +466,6 @@ window.createAssumptionControls = (data) => {
                     </select>
                 </label>
             </div>
-
             <div class="space-y-2 pt-3 border-t border-white/5 flex-grow">
                 <div class="space-y-0.5">
                     <p class="text-[9px] font-black text-white uppercase tracking-widest leading-none">RETIREMENT SPEND MULTIPLIERS</p>
@@ -549,8 +477,6 @@ window.createAssumptionControls = (data) => {
             </div>
         </div>
     `;
-
-    // Re-bind formatters
     container.querySelectorAll('[data-type="currency"]').forEach(formatter.bindCurrencyEventListeners);
     container.querySelectorAll('input:not([data-type="currency"])').forEach(formatter.bindNumberEventListeners);
 };
@@ -558,98 +484,39 @@ window.createAssumptionControls = (data) => {
 function attachSortingListeners() {
     document.querySelectorAll('[data-sort]').forEach(header => {
         header.addEventListener('click', () => {
-            const targetId = header.dataset.target;
-            const sortKey = header.dataset.sort;
-            const container = document.getElementById(targetId);
+            const targetId = header.dataset.target, sortKey = header.dataset.sort, container = document.getElementById(targetId);
             if (!container) return;
-
-            const rows = Array.from(container.children);
-            const isAsc = header.dataset.direction === 'asc';
+            const rows = Array.from(container.children), isAsc = header.dataset.direction === 'asc';
             header.dataset.direction = isAsc ? 'desc' : 'asc';
-
-            // Update icons
-            header.parentElement.querySelectorAll('i.fas').forEach(i => {
-                i.classList.remove('fa-sort-up', 'fa-sort-down', 'text-blue-400');
-                i.classList.add('fa-sort', 'opacity-20');
-            });
-            const icon = header.querySelector('i');
-            if (icon) {
-                icon.classList.remove('fa-sort', 'opacity-20');
-                icon.classList.add(isAsc ? 'fa-sort-up' : 'fa-sort-down', 'text-blue-400');
-            }
-
-            const lockedRows = rows.filter(r => r.classList.contains('locked-row'));
-            const sortableRows = rows.filter(r => !r.classList.contains('locked-row'));
-
+            header.parentElement.querySelectorAll('i.fas').forEach(i => { i.classList.remove('fa-sort-up', 'fa-sort-down', 'text-blue-400'); i.classList.add('fa-sort', 'opacity-20'); });
+            const icon = header.querySelector('i'); if (icon) { icon.classList.remove('fa-sort', 'opacity-20'); icon.classList.add(isAsc ? 'fa-sort-up' : 'fa-sort-down', 'text-blue-400'); }
+            const lockedRows = rows.filter(r => r.classList.contains('locked-row')), sortableRows = rows.filter(r => !r.classList.contains('locked-row'));
             sortableRows.sort((a, b) => {
-                const aInput = a.querySelector(`[data-id="${sortKey}"]`);
-                const bInput = b.querySelector(`[data-id="${sortKey}"]`);
-                
-                let aVal = 0, bVal = 0;
-                
-                if (aInput) {
-                    if (aInput.dataset.type === 'currency') aVal = math.fromCurrency(aInput.value);
-                    else if (aInput.type === 'number') aVal = parseFloat(aInput.value) || 0;
-                    else aVal = aInput.value;
-                }
-                
-                if (bInput) {
-                    if (bInput.dataset.type === 'currency') bVal = math.fromCurrency(bInput.value);
-                    else if (bInput.type === 'number') bVal = parseFloat(bInput.value) || 0;
-                    else bVal = bInput.value;
-                }
-
-                if (typeof aVal === 'string' && typeof bVal === 'string') {
-                    return isAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-                }
-                return isAsc ? aVal - bVal : bVal - aVal;
+                const aIn = a.querySelector(`[data-id="${sortKey}"]`), bIn = b.querySelector(`[data-id="${sortKey}"]`);
+                let aVal = aIn ? (aIn.dataset.type === 'currency' ? math.fromCurrency(aIn.value) : (parseFloat(aIn.value) || aIn.value)) : 0;
+                let bVal = bIn ? (bIn.dataset.type === 'currency' ? math.fromCurrency(bIn.value) : (parseFloat(bIn.value) || bIn.value)) : 0;
+                return typeof aVal === 'string' ? (isAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal)) : (isAsc ? aVal - bVal : bVal - aVal);
             });
-
-            // Re-render
-            container.innerHTML = '';
-            lockedRows.forEach(row => container.appendChild(row));
-            sortableRows.forEach(row => container.appendChild(row));
-            
+            container.innerHTML = ''; lockedRows.forEach(row => container.appendChild(row)); sortableRows.forEach(row => container.appendChild(row));
             if (window.debouncedAutoSave) window.debouncedAutoSave();
         });
     });
 }
 
 function attachPasteListeners() {
-    const expensesContainer = document.getElementById('budget-expenses-rows');
-    if (!expensesContainer) return;
-
+    const expensesContainer = document.getElementById('budget-expenses-rows'); if (!expensesContainer) return;
     expensesContainer.addEventListener('paste', (e) => {
-        const pasteData = e.clipboardData.getData('text');
-        const rows = pasteData.split(/\r?\n/).filter(line => line.trim().length > 0);
-        
-        // If it's a multi-row or multi-column paste, handle it
+        const pasteData = e.clipboardData.getData('text'), rows = pasteData.split(/\r?\n/).filter(line => line.trim().length > 0);
         if (rows.length > 1 || (rows.length === 1 && rows[0].includes('\t'))) {
             e.preventDefault();
-            
             rows.forEach(rowText => {
                 const cols = rowText.split('\t');
                 if (cols.length >= 2) {
-                    const name = cols[0].trim();
-                    const monthlyStr = cols[1].trim();
-                    const monthlyVal = math.fromCurrency(monthlyStr);
-                    
-                    if (name || !isNaN(monthlyVal)) {
-                        window.addRow('budget-expenses-rows', 'budget-expense', {
-                            name: name,
-                            monthly: monthlyVal,
-                            annual: monthlyVal * 12,
-                            remainsInRetirement: true,
-                            isFixed: false
-                        });
-                    }
+                    const name = cols[0].trim(), monthlyVal = math.fromCurrency(cols[1].trim());
+                    if (name || !isNaN(monthlyVal)) window.addRow('budget-expenses-rows', 'budget-expense', { name: name, monthly: monthlyVal, annual: monthlyVal * 12, remainsInRetirement: true, isFixed: false });
                 }
             });
-            
-            forceSyncData();
-            if (window.debouncedAutoSave) window.debouncedAutoSave();
+            forceSyncData(); if (window.debouncedAutoSave) window.debouncedAutoSave();
         }
     });
 }
-
-function handleLinkedBudgetValues() {}
