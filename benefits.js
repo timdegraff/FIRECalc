@@ -94,7 +94,7 @@ export const benefits = {
                     </div>
                     <div>
                         <h4 class="text-xs font-black text-red-400 uppercase tracking-widest">Medicaid Coverage Gap Alert</h4>
-                        <p id="state-alert-text" class="text-[11px] text-slate-300 leading-tight mt-0.5">Your state did not expand Medicaid. Making less than 100% FPL means NO subsidy and NO Medicaid.</p>
+                        <p id="state-alert-text" class="text-[11px] text-slate-300 leading-tight mt-0.5">Your state did not expand Medicaid. Making less than 100% FPL means NO subsidy and NO Medicaid. Recommend increasing MAGI to cross the 100% FPL threshold to qualify for ACA subsidies.</p>
                     </div>
                 </div>
 
@@ -153,7 +153,7 @@ export const benefits = {
                                 <strong class="text-white">Expansion States:</strong> Cover adults up to 138% FPL ($0 cost). 
                             </p>
                             <p class="text-[11px] text-slate-400 leading-relaxed">
-                                <strong class="text-white">Non-Expansion:</strong> Adults under 100% FPL receive no ACA subsidy and no Medicaid. States include: Alabama, Florida, Georgia, Kansas, Mississippi, South Carolina, Tennessee, Texas, Wisconsin, and Wyoming.
+                                <strong class="text-white">Non-Expansion:</strong> Adults under 100% FPL receive no ACA subsidy and no Medicaid. Recommend increasing MAGI to qualify for premium tax credits. States include: Alabama, Florida, Georgia, Kansas, Mississippi, South Carolina, Tennessee, Texas, Wisconsin, and Wyoming.
                             </p>
                          </div>
                     </div>
@@ -286,26 +286,48 @@ export const benefits = {
 
         const stateId = window.currentData?.assumptions?.state || 'Michigan';
         const stateMeta = stateTaxRates[stateId];
+        const isExpandedState = stateMeta?.expanded !== false;
         const fpl100Annual = math.getFPL(totalSize, stateId);
         const ratio = annualMAGI / fpl100Annual;
-        const medRatio = data.isPregnant ? 2.0 : 1.38;
-        const silverRatio = 2.50;
+        
+        const medLimitRatio = data.isPregnant ? 2.0 : 1.38;
+        const silverCSRLimitRatio = 2.50;
         const cliffRatio = 4.0;
 
-        // Dynamic Slider Track Styling
+        // Visual Plan Themes
+        const themes = {
+            platinum: { text: 'text-emerald-400', border: 'border-emerald-500/50' },
+            silver: { text: 'text-blue-400', border: 'border-blue-500/50' },
+            standard: { text: 'text-slate-500', border: 'border-white/5' },
+            danger: { text: 'text-red-400', border: 'border-red-500/50' }
+        };
+
+        // Dynamic Slider Track Logic
         const sliderMax = 200000;
-        const platBoundary = (fpl100Annual * medRatio / sliderMax) * 100;
-        const silverBoundary = (fpl100Annual * silverRatio / sliderMax) * 100;
         const trackVisual = document.getElementById('slider-track-visual');
         if (trackVisual) {
-            trackVisual.style.background = `linear-gradient(to right, #10b981 0%, #10b981 ${platBoundary}%, #3b82f6 ${platBoundary}%, #3b82f6 ${silverBoundary}%, #475569 ${silverBoundary}%, #475569 100%)`;
+            let gradient;
+            if (isExpandedState) {
+                // Expansion: 0-138% Green, 138-250% Blue, 250-400% Slate
+                const greenEnd = (fpl100Annual * 1.38 / sliderMax) * 100;
+                const blueEnd = (fpl100Annual * 2.50 / sliderMax) * 100;
+                gradient = `linear-gradient(to right, #10b981 0%, #10b981 ${greenEnd}%, #3b82f6 ${greenEnd}%, #3b82f6 ${blueEnd}%, #475569 ${blueEnd}%, #475569 100%)`;
+            } else {
+                // Non-Expansion: 0-100% RED, 100-250% BLUE, 250-400% SLATE
+                const redEnd = (fpl100Annual * 1.0 / sliderMax) * 100;
+                const blueEnd = (fpl100Annual * 2.50 / sliderMax) * 100;
+                gradient = `linear-gradient(to right, #ef4444 0%, #ef4444 ${redEnd}%, #3b82f6 ${redEnd}%, #3b82f6 ${blueEnd}%, #475569 ${blueEnd}%, #475569 100%)`;
+            }
+            trackVisual.style.background = gradient;
         }
         
-        // 2026 Standard ACA sliding scale (2.1% to 9.5% of income)
+        // Premium Contribution Scale Logic
         let expectedContributionPct = 0;
-        if (ratio > medRatio) {
+        const contributionThreshold = isExpandedState ? 1.38 : 1.0;
+        
+        if (ratio > contributionThreshold) {
             if (ratio < cliffRatio) {
-                // Approximate standard sliding scale for 2026: 2.1% at 100% FPL to 9.5% at 400% FPL
+                // 2026 sliding scale: ~2.1% at 100% FPL to 9.5% at 400% FPL
                 const minScale = 0.021, maxScale = 0.095;
                 expectedContributionPct = minScale + (ratio - 1) * (maxScale - minScale) / (cliffRatio - 1);
             } else {
@@ -313,21 +335,13 @@ export const benefits = {
             }
         }
         
-        let dynamicPremium = ratio > medRatio ? (annualMAGI * expectedContributionPct) / 12 : 0;
-        if (ratio >= cliffRatio) dynamicPremium = 1100; // Estimated monthly sticker price for family
+        let dynamicPremium = ratio > contributionThreshold ? (annualMAGI * expectedContributionPct) / 12 : 0;
+        if (ratio >= cliffRatio) dynamicPremium = 1100; 
 
-        const earned = data.isEarnedIncome ? monthlyMAGI : 0;
-        const unearned = data.isEarnedIncome ? 0 : monthlyMAGI;
-        const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
-        const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, stateId);
-
-        const healthCard = document.getElementById('benefit-summary-health');
-        const snapCard = document.getElementById('benefit-summary-snap');
-        const stateAlert = document.getElementById('state-policy-alert');
-        const gapAlertBg = document.getElementById('gap-alert-bg');
-        
+        // Update Card Contents
         const updateTopCard = (name, sub, prem, ded, theme) => {
             const planEl = document.getElementById('sum-health-plan');
+            const healthCard = document.getElementById('benefit-summary-health');
             if (planEl) {
                 planEl.innerHTML = `
                     <div class="flex flex-col items-center text-center">
@@ -339,31 +353,23 @@ export const benefits = {
             if (healthCard) {
                 healthCard.className = `p-6 flex flex-col items-center justify-center h-28 border-l-4 transition-all duration-300 rounded-2xl bg-slate-900/40 border-2 ${theme.border}`;
             }
-            
             const premEl = document.getElementById('sum-health-prem');
             const dedEl = document.getElementById('sum-health-ded');
             if (premEl) premEl.textContent = prem;
             if (dedEl) dedEl.textContent = ded;
         };
 
-        const themes = {
-            platinum: { text: 'text-emerald-400', border: 'border-emerald-500/50' },
-            silver: { text: 'text-blue-400', border: 'border-blue-500/50' },
-            standard: { text: 'text-slate-500', border: 'border-white/5' },
-            danger: { text: 'text-red-400', border: 'border-red-500/50' }
-        };
-
-        const isExpandedState = stateMeta?.expanded !== false;
         const isInMedicaidGap = !isExpandedState && ratio < 1.0;
-
+        const stateAlert = document.getElementById('state-policy-alert');
+        const gapAlertBg = document.getElementById('gap-alert-bg');
         if (stateAlert) stateAlert.classList.toggle('hidden', !isInMedicaidGap);
         if (gapAlertBg) gapAlertBg.classList.toggle('opacity-100', isInMedicaidGap);
 
         if (isInMedicaidGap) {
             updateTopCard("MEDICAID GAP", "NO COVERAGE", math.toCurrency(1100), "$10,000+", themes.danger);
-        } else if (ratio <= medRatio && isExpandedState) {
+        } else if (ratio <= medLimitRatio && isExpandedState) {
             updateTopCard("Platinum (Medicaid)", "100% Full Coverage", "$0", "$0", themes.platinum);
-        } else if (ratio <= silverRatio) {
+        } else if (ratio <= silverCSRLimitRatio) {
             updateTopCard("Silver CSR (High Subsidy)", "Low Copays", math.toCurrency(dynamicPremium), "$800", themes.silver);
         } else if (ratio < cliffRatio) {
             updateTopCard("Standard ACA", "Market Subsidy", math.toCurrency(dynamicPremium), "$4,000+", themes.standard);
@@ -371,12 +377,18 @@ export const benefits = {
             updateTopCard("Market (Off-Exchange)", "No Subsidy / Cliff", math.toCurrency(dynamicPremium), "$6,000+", themes.standard);
         }
 
+        // SNAP Calculation
+        const earned = data.isEarnedIncome ? monthlyMAGI : 0;
+        const unearned = data.isEarnedIncome ? 0 : monthlyMAGI;
+        const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
+        const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, stateId);
+
         const globalSnapRes = document.getElementById('sum-snap-amt');
         if (globalSnapRes) {
             globalSnapRes.textContent = math.toCurrency(estimatedBenefit);
             const isSnapActive = estimatedBenefit > 1;
             globalSnapRes.className = `text-4xl font-black ${isSnapActive ? 'text-emerald-400' : 'text-slate-500'} mono-numbers tracking-tight`;
-            
+            const snapCard = document.getElementById('benefit-summary-snap');
             if (snapCard) {
                 snapCard.className = `p-6 flex flex-col items-center justify-center h-28 border-l-4 transition-all duration-300 rounded-2xl bg-slate-900/40 border-2 ${isSnapActive ? 'border-emerald-500/50' : 'border-white/5'}`;
             }
