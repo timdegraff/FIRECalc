@@ -150,8 +150,8 @@ function scrapeData() {
             else if (el.tagName === 'SELECT') aObj[key] = el.value;
             else {
                 let val = parseFloat(el.value);
-                // Special case for Spend Multipliers which are percentages in UI
-                if (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(key)) {
+                // Multipliers are percentages in UI, decimals in state
+                if (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(key)) {
                     val = val / 100;
                 }
                 aObj[key] = isNaN(val) ? el.value : val;
@@ -206,8 +206,14 @@ window.debouncedAutoSave = () => autoSave(true);
 function showSaveIndicator() {
     const el = document.getElementById('save-indicator');
     if (!el) return;
-    el.classList.add('text-emerald-400');
-    setTimeout(() => el.classList.remove('text-emerald-400'), 2000);
+    const user = auth.currentUser;
+    if (user) {
+        // Logged in: 50ms Green Flash
+        el.classList.add('text-emerald-400');
+        setTimeout(() => el.classList.remove('text-emerald-400'), 50);
+    } else {
+        // Guest mode: Static warning color (handled in main.js setup)
+    }
 }
 
 export function updateSummaries() {

@@ -1,4 +1,3 @@
-
 export const PROFILE_40_COUPLE = {
     investments: [
         { name: 'His 401k (Fidelity)', type: 'Pre-Tax (401k/IRA)', value: 350000, costBasis: 0 },
@@ -40,7 +39,7 @@ export const PROFILE_40_COUPLE = {
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
         helocRate: 7.5, state: 'Tennessee', workYearsAtRetirement: 30,
-        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
+        phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
         advancedGrowth: false,
         ltcgRate: 15
     },
@@ -90,7 +89,7 @@ export const PROFILE_25_SINGLE = {
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Single', 
         helocRate: 7, state: 'Texas', workYearsAtRetirement: 23,
-        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
+        phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
         advancedGrowth: false,
         ltcgRate: 15
     },
@@ -128,7 +127,7 @@ export const PROFILE_55_RETIREE = {
         stockGrowth: 8, cryptoGrowth: 8, metalsGrowth: 5, realEstateGrowth: 3, 
         inflation: 3, filingStatus: 'Married Filing Jointly', 
         helocRate: 7, state: 'Florida', workYearsAtRetirement: 38,
-        slowGoFactor: 1.0, midGoFactor: 0.9, noGoFactor: 0.8,
+        phaseGo1: 1.0, phaseGo2: 0.9, phaseGo3: 0.8,
         advancedGrowth: false,
         ltcgRate: 20 
     },

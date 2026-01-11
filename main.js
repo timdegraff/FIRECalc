@@ -28,7 +28,7 @@ onAuthStateChanged(auth, async (user) => {
 
     if (user) {
         localStorage.removeItem('firecalc_guest_mode');
-        setupAppHeader(user.photoURL, user.displayName, "Logout");
+        setupAppHeader(user.photoURL, user.displayName, "Logout", true);
         try {
             await initializeData(user);
             showApp();
@@ -38,7 +38,7 @@ onAuthStateChanged(auth, async (user) => {
         }
     } 
     else if (guestModeActive) {
-        setupAppHeader(null, null, "Exit Guest Mode");
+        setupAppHeader(null, null, "Exit Guest Mode", false);
         const hasAcknowledged = localStorage.getItem('firecalc_guest_acknowledged') === 'true';
         const hasSelectedProfile = localStorage.getItem('firecalc_guest_profile_selected') === 'true';
 
@@ -85,11 +85,27 @@ function showProfileSelection() {
     });
 }
 
-function setupAppHeader(avatarUrl, userName, logoutText) {
+function setupAppHeader(avatarUrl, userName, logoutText, isLoggedIn) {
     const avatar = document.getElementById('user-avatar');
     if (avatar) avatar.src = avatarUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
     const name = document.getElementById('user-name');
     if (name) name.textContent = userName || "Guest User";
+    
+    // Indicator Update
+    const saveInd = document.getElementById('save-indicator');
+    if (saveInd) {
+        const icon = saveInd.querySelector('i');
+        if (isLoggedIn) {
+            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center gap-1 border border-white/5 text-slate-600 transition-colors duration-200";
+            icon.className = "fas fa-cloud text-xs";
+            saveInd.title = "Cloud Synced";
+        } else {
+            saveInd.className = "flex-1 py-1.5 bg-white/5 rounded-lg text-center flex items-center justify-center gap-1 border border-white/5 text-amber-500/40 transition-colors duration-200";
+            icon.className = "fas fa-cloud-slash text-xs";
+            saveInd.title = "Local Only (No Cloud Sync)";
+        }
+    }
+
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.textContent = logoutText;

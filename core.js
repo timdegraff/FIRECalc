@@ -103,14 +103,23 @@ function attachGlobalListeners() {
             const input = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
             if (input) {
                 const currentVal = (input.dataset.type === 'currency' || input.dataset.type === 'percent') ? math.fromCurrency(input.value) : (parseFloat(input.value) || 0);
-                const step = parseFloat(input.step) || 0.5;
-                const newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
+                const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(btn.dataset.target);
+                const step = isMultiplier ? 0.1 : (parseFloat(input.step) || 0.5);
+                let newVal = btn.dataset.step === 'up' ? currentVal + step : currentVal - step;
                 
+                // Clamp retirement age
+                if (btn.dataset.target === 'retirementAge') {
+                    const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
+                    newVal = Math.max(curAge, Math.min(100, newVal));
+                }
+
+                // Precision Fix: Always round to 2 decimals max to avoid floating point bugs
+                newVal = parseFloat(newVal.toFixed(2));
+
                 if (input.dataset.type === 'currency') {
                     input.value = math.toCurrency(newVal);
                 } else if (input.dataset.type === 'percent') {
-                    const isMultiplier = ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(btn.dataset.target);
-                    input.value = (isMultiplier ? Math.round(newVal * 100) : newVal) + '%';
+                    input.value = Math.round(newVal * 100) + '%';
                 } else {
                     input.value = newVal.toFixed(parseInt(input.dataset.decimals) || 0);
                 }
@@ -177,7 +186,18 @@ function attachGlobalListeners() {
             // Determine the "Logic Value" (0.9 instead of 90)
             let logicVal = (target.dataset?.type === 'currency' || target.dataset?.type === 'percent') ? math.fromCurrency(target.value) : parseFloat(target.value);
             
-            // 1. Sync all DOM elements that share this data-id (Global Mirroring)
+            // Precision enforcement: 0.5 increments for APY/Growth
+            if (dataId.toLowerCase().includes('growth') || dataId === 'inflation') {
+                logicVal = parseFloat(logicVal.toFixed(2));
+            }
+
+            // Enforce retirement age minimum
+            if (dataId === 'retirementAge') {
+                const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
+                if (logicVal < curAge) logicVal = curAge;
+            }
+
+            // Sync all DOM elements that share this data-id (Global Mirroring)
             document.querySelectorAll(`[data-id="${dataId}"]`).forEach(el => {
                 if (el === target) return;
                 
@@ -186,8 +206,8 @@ function attachGlobalListeners() {
                 } else if (el.dataset.type === 'currency') {
                     el.value = math.toCurrency(logicVal);
                 } else if (el.dataset.type === 'percent') {
-                    const isMultiplier = ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId);
-                    el.value = Math.round(isMultiplier ? (logicVal * 100) : logicVal) + '%';
+                    const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
+                    el.value = (isMultiplier ? Math.round(logicVal * 100) : logicVal) + '%';
                 } else if (el.type === 'number' || el.classList.contains('input-base')) {
                     el.value = logicVal;
                 }
@@ -204,13 +224,27 @@ function attachGlobalListeners() {
                     if (numInput && numInput.value != logicVal) {
                         if (numInput.dataset.type === 'currency') numInput.value = math.toCurrency(logicVal);
                         else if (numInput.dataset.type === 'percent') {
-                            const isMultiplier = ['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(dataId);
-                            numInput.value = Math.round(isMultiplier ? (logicVal * 100) : logicVal) + '%';
+                            const isMultiplier = ['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(dataId);
+                            numInput.value = (isMultiplier ? Math.round(logicVal * 100) : logicVal) + '%';
                         } else {
                             numInput.value = logicVal;
                         }
                     }
                 }
+            }
+
+            // Sync APY logic: If in Basic mode, ensure Perpetual/Final matches Current
+            if (window.currentData?.assumptions) {
+                const isBasic = !window.currentData.assumptions.advancedGrowth;
+                const assetPrefixes = ['stock', 'crypto', 'metals'];
+                assetPrefixes.forEach(prefix => {
+                    if (dataId === `${prefix}Growth` && isBasic) {
+                        window.currentData.assumptions[`${prefix}GrowthPerpetual`] = logicVal;
+                    }
+                });
+                
+                // Manually force update state for validation
+                window.currentData.assumptions[dataId] = logicVal;
             }
         }
 
@@ -265,6 +299,16 @@ function attachGlobalListeners() {
             target.classList.add(newClass);
             const row = target.closest('tr');
             if (row) updateCostBasisVisibility(row);
+        }
+        
+        // Final validation on retirement age
+        if (target.dataset.id === 'retirementAge') {
+            const val = parseFloat(target.value);
+            const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
+            if (val < curAge) {
+                target.value = curAge;
+                target.dispatchEvent(new Event('input', { bubbles: true }));
+            }
         }
     });
 }
@@ -383,6 +427,7 @@ window.createAssumptionControls = (data) => {
     if (!container || !data) return;
     const a = data.assumptions || assumptions.defaults;
     const isAdv = !!a.advancedGrowth;
+    const curAge = parseFloat(a.currentAge) || 40;
 
     const renderComplexField = (label, id, value, min, max, step, colorClass, decimals = "1", isCurrency = false, isPercent = false) => `
         <div class="space-y-4">
@@ -392,7 +437,7 @@ window.createAssumptionControls = (data) => {
                     ${isCurrency ? 
                         templates.helpers.renderStepper(id, value, `text-right ${colorClass}`, "0", isCurrency, step) :
                         (isPercent ? 
-                            templates.helpers.renderStepper(id, (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(id) ? Math.round(value * 100) : value), `text-center ${colorClass}`, "0", false, (['slowGoFactor', 'midGoFactor', 'noGoFactor'].includes(id) ? 10 : step), true) :
+                            templates.helpers.renderStepper(id, Math.round(value * 100) / 100, `text-center ${colorClass}`, "0", false, 0.1, true) :
                             templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, decimals, false, step)
                         )
                     }
@@ -404,7 +449,7 @@ window.createAssumptionControls = (data) => {
 
     const renderAdvancedAPYRow = (label, prefix, colorClass) => {
         if (!isAdv) {
-            return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass, "1", false, true);
+            return renderComplexField(label, `${prefix}Growth`, a[`${prefix}Growth`], 0, 15, 0.5, colorClass, "1", false, false);
         }
         return `
             <div class="space-y-2 border-l border-white/10 pl-3">
@@ -412,7 +457,7 @@ window.createAssumptionControls = (data) => {
                 <div class="grid grid-cols-3 gap-2 items-end">
                     <div class="space-y-1">
                         <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Rate</span>
-                        ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
+                        ${templates.helpers.renderStepper(`${prefix}Growth`, a[`${prefix}Growth`], colorClass, "1", false, 0.5)}
                     </div>
                     <div class="space-y-1">
                          <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">For Yrs</span>
@@ -420,7 +465,7 @@ window.createAssumptionControls = (data) => {
                     </div>
                     <div class="space-y-1">
                         <span class="text-[7px] font-black text-slate-600 uppercase block leading-none">Final</span>
-                        ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5, true)}
+                        ${templates.helpers.renderStepper(`${prefix}GrowthPerpetual`, a[`${prefix}GrowthPerpetual`] || a[`${prefix}Growth`], colorClass, "1", false, 0.5)}
                     </div>
                 </div>
             </div>
@@ -437,7 +482,7 @@ window.createAssumptionControls = (data) => {
                 <h3 class="text-sm font-black text-white uppercase tracking-widest">Household & Timing</h3>
             </div>
             ${renderComplexField("Current Age", "currentAge", a.currentAge, 18, 90, 1, "text-white", "0")}
-            ${renderComplexField("Retire Age", "retirementAge", a.retirementAge, 30, 80, 1, "text-blue-400", "0")}
+            ${renderComplexField("Retire Age", "retirementAge", a.retirementAge, curAge, 100, 1, "text-blue-400", "0")}
             ${renderComplexField("SS Start Age", "ssStartAge", a.ssStartAge, 62, 72, 1, "text-white", "0")}
             ${renderComplexField("SS Monthly (Nominal)", "ssMonthly", a.ssMonthly, 0, 8000, 100, "text-teal-400", "0", true)}
         </div>
@@ -464,9 +509,9 @@ window.createAssumptionControls = (data) => {
                 ${renderAdvancedAPYRow("Crypto APY (%)", "crypto", "text-slate-400")}
                 ${renderAdvancedAPYRow("Metals APY (%)", "metals", "text-amber-500")}
             </div>
-            ${renderComplexField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, 0, 10, 0.1, "text-indigo-400", "1", false, true)}
+            ${renderComplexField("Real Estate (%)", "realEstateGrowth", a.realEstateGrowth, 0, 10, 0.1, "text-indigo-400", "1", false, false)}
             <div class="pt-4 border-t border-white/5">
-                ${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400", "1", false, true)}
+                ${renderComplexField("Annual Inflation (%)", "inflation", a.inflation, 0, 10, 0.1, "text-red-400", "1", false, false)}
             </div>
         </div>
 
@@ -501,9 +546,9 @@ window.createAssumptionControls = (data) => {
                     <p class="text-[9px] font-black text-white uppercase tracking-widest leading-none">RETIREMENT SPEND MULTIPLIERS</p>
                     <p class="text-[8px] text-slate-500 italic leading-tight">Multipliers only apply once the Retirement Age threshold is reached.</p>
                 </div>
-                ${renderComplexField("Go-Go (Age 30-60)", "slowGoFactor", a.slowGoFactor || 1.0, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
-                ${renderComplexField("Slow-Go (Age 60-80)", "midGoFactor", a.midGoFactor || 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
-                ${renderComplexField("No-Go (Age 80+)", "noGoFactor", a.noGoFactor || 0.8, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+                ${renderComplexField("Go-Go (Age 30-60)", "phaseGo1", a.phaseGo1 ?? 1.0, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+                ${renderComplexField("Slow-Go (Age 60-80)", "phaseGo2", a.phaseGo2 ?? 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
+                ${renderComplexField("No-Go (Age 80+)", "phaseGo3", a.phaseGo3 ?? 0.8, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
             </div>
         </div>
     `;

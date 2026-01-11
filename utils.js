@@ -37,9 +37,9 @@ export const assumptions = {
         helocRate: 7,
         state: 'Michigan',
         workYearsAtRetirement: 35,
-        slowGoFactor: 1.0,
-        midGoFactor: 0.9,
-        noGoFactor: 0.8,
+        phaseGo1: 1.0,
+        phaseGo2: 0.9,
+        phaseGo3: 0.8,
         advancedGrowth: false,
         ltcgRate: 15
     }

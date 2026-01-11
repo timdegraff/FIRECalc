@@ -146,7 +146,12 @@ export const burndown = {
                     if (lbl) lbl.textContent = math.toCurrency(parseInt(el.value));
                 }
                 if (id === 'input-top-retire-age') {
-                    const val = parseInt(el.value);
+                    let val = parseInt(el.value);
+                    // Ensure retirement age is not less than current age
+                    const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
+                    if (val < curAge) val = curAge;
+                    el.value = val;
+
                     const directInp = document.getElementById('input-retire-age-direct');
                     if (directInp) directInp.value = val;
                     
@@ -174,8 +179,9 @@ export const burndown = {
             // Recalculate only on Enter or Blur (commit)
             directAgeInp.onchange = (e) => {
                 let val = parseInt(e.target.value);
+                const curAge = parseFloat(window.currentData?.assumptions?.currentAge) || 40;
                 if (isNaN(val)) val = lastUsedRetirementAge;
-                val = Math.max(30, Math.min(80, val));
+                val = Math.max(curAge, Math.min(100, val));
                 e.target.value = val;
                 
                 const slider = document.getElementById('input-top-retire-age');
@@ -327,7 +333,7 @@ export const burndown = {
                 const meta = burndown.assetMeta[k], arrow = idx < burndown.priorityOrder.length - 1 ? `<i class="fas fa-chevron-right text-slate-700 text-[8px] mx-1"></i>` : '';
                 return `<div data-pk="${k}" class="px-2 py-1 bg-slate-800 border border-slate-700 hover:bg-slate-700 rounded-lg text-[9px] font-bold cursor-move transition-colors flex items-center gap-2 drag-item" style="color: ${meta.color}"><i class="fas fa-grip-vertical drag-handle text-slate-700 mr-1"></i>${meta.short}</div>${arrow}`;
             }).join('');
-            if (typeof Sortable !== 'undefined' && !burndown.sortable) { burndown.sortable = new Sortable(priorityList, { animation: 150, handle: '.drag-handle', ghostClass: 'bg-slate-700/30', onEnd: () => { burndown.priorityOrder = Array.from(priorityList.querySelectorAll('.drag-item')).map(el => el.dataset.pk); burndown.run(); if (window.debouncedAutoSave) window.debouncedAutoSave(); } }); }
+            if (typeof Sortable !== 'undefined' && !burndown.sortable) { burndown.sortable = new Sortable(priorityList, { animation: 150, handle: '.drag-handle', ghostClass: 'bg-slate-700/30', onEnd: () => { burndown.priorityOrder = Array.from(priorityList.querySelectorAll('.drag-item')).map(el => el.dataset.pk); burndown.run(); } }); }
         }
         
         // SYNC: Ensure Burndown inputs match global source of truth
@@ -393,12 +399,12 @@ export const burndown = {
             let baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
             baseBudget += (bal['heloc'] * helocInterestRate);
             
-            // New Retirement Phase Logic: Go-Go (<60), Slow-Go (60-80), No-Go (80+)
+            // Retirement Phase Logic: Go-Go (<60), Slow-Go (60-80), No-Go (80+)
             let factor = 1.0;
             if (isRet) {
-                if (age < 60) factor = (assumptions.slowGoFactor || 1.0); // slowGoFactor key is repurposed for Go-Go
-                else if (age < 80) factor = (assumptions.midGoFactor || 0.9);
-                else factor = (assumptions.noGoFactor || 0.8);
+                if (age < 60) factor = (assumptions.phaseGo1 ?? 1.0);
+                else if (age < 80) factor = (assumptions.phaseGo2 ?? 0.9);
+                else factor = (assumptions.phaseGo3 ?? 0.8);
             }
             
             const targetBudget = baseBudget * factor;
