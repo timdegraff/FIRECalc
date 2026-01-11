@@ -8,12 +8,12 @@ export const benefits = {
         container.innerHTML = `
             <div class="max-w-7xl mx-auto space-y-4">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <!-- Household Section: Compact & Integrated -->
+                    <!-- Household Section -->
                     <div class="card-container p-5 flex flex-col justify-between">
-                        <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center justify-between mb-6">
                             <div>
-                                <h3 class="text-xs font-black text-white uppercase tracking-widest">Household Visualizer</h3>
-                                <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Enter year when each child turns 19</p>
+                                <h3 class="text-xs font-black text-white uppercase tracking-widest">Household Structure</h3>
+                                <p class="text-[8px] text-slate-500 font-bold uppercase mt-0.5">Define dependents and their independence year</p>
                             </div>
                             <button id="btn-add-dependent" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-blue-900/20 active:scale-95">
                                 <i class="fas fa-plus text-[10px]"></i>
@@ -21,11 +21,11 @@ export const benefits = {
                             </button>
                         </div>
 
-                        <div id="hh-visual-strip" class="flex flex-wrap items-center gap-4 min-h-[60px] mb-4">
+                        <div id="hh-visual-strip" class="flex flex-wrap items-center gap-4 min-h-[80px] mb-4">
                             <!-- Adults -->
-                            <div id="adult-icons" class="flex items-center gap-3"></div>
+                            <div id="adult-icons" class="flex items-center gap-4"></div>
                             <!-- Kids -->
-                            <div id="dependents-list" class="flex items-center gap-3 border-l border-white/5 pl-4"></div>
+                            <div id="dependents-list" class="flex items-center gap-4 border-l border-white/5 pl-4"></div>
                         </div>
 
                         <!-- Household Specific Costs -->
@@ -46,7 +46,13 @@ export const benefits = {
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex flex-col">
                                 <label class="text-[9px] font-black text-amber-500 uppercase tracking-widest">Sandbox MAGI</label>
-                                <p class="text-[8px] text-slate-500 font-medium italic">Simulate benefit cliffs</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="text-[8px] font-black text-slate-500 uppercase">W2/1099 Income?</span>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" data-benefit-id="isEarnedIncome" class="sr-only peer" checked>
+                                        <div class="w-6 h-3 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[1px] after:left-[1px] after:bg-white after:rounded-full after:h-2.5 after:w-2.5 after:transition-all peer-checked:bg-teal-600"></div>
+                                    </label>
+                                </div>
                             </div>
                             <div class="flex gap-6">
                                 <div class="text-right">
@@ -75,16 +81,17 @@ export const benefits = {
                     </div>
                 </div>
 
-                <!-- Toggles Strip -->
+                <!-- Footer Strip -->
                 <div class="card-container px-6 py-3 flex items-center justify-between bg-black/20">
-                    <div class="flex items-center gap-8">
-                        <div class="flex items-center gap-3">
-                            <label class="text-[8px] font-black text-slate-500 uppercase">Earned?</label>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" data-benefit-id="isEarnedIncome" class="sr-only peer" checked>
-                                <div class="w-7 h-3.5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-2.5 after:w-2.5 after:transition-all peer-checked:bg-teal-600"></div>
-                            </label>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Total Size:</span>
+                        <div class="flex items-center gap-2">
+                            <span id="hh-total-size-badge" class="w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-black text-white mono-numbers">1</span>
+                            <span id="hh-composition-text" class="text-[9px] font-black text-slate-500 uppercase">Self Only</span>
                         </div>
+                    </div>
+
+                    <div class="flex items-center gap-8">
                         <div class="flex items-center gap-3">
                             <label class="text-[8px] font-black text-slate-500 uppercase">Disabled</label>
                             <label class="relative inline-flex items-center cursor-pointer">
@@ -100,24 +107,29 @@ export const benefits = {
                             </label>
                         </div>
                         <div class="flex items-center gap-3">
-                            <label class="text-[8px] font-black text-slate-500 uppercase">Util SUA</label>
+                            <label class="text-[8px] font-black text-slate-500 uppercase">Utility Allowance (SUA)</label>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" data-benefit-id="hasSUA" class="sr-only peer" checked>
                                 <div class="w-7 h-3.5 bg-slate-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-2.5 after:w-2.5 after:transition-all peer-checked:bg-blue-600"></div>
                             </label>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-[8px] font-black text-slate-600 uppercase">Size:</span>
-                        <span id="hh-total-size-badge" class="text-xs font-black text-white mono-numbers">1</span>
-                        <span id="hh-composition-text" class="text-[9px] font-black text-slate-500 uppercase ml-2">Self Only</span>
-                    </div>
                 </div>
 
-                <div class="pt-4 text-center">
-                    <p class="text-[8px] text-slate-600 leading-relaxed max-w-2xl mx-auto italic font-medium uppercase tracking-wider">
-                        FFY 2026 Standards applied. Icons show child's age 19 year (Independence Threshold).
-                    </p>
+                <!-- Glossary -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-white/5 opacity-50">
+                    <div class="space-y-1">
+                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">W2/1099 vs Unearned</p>
+                        <p class="text-[8px] text-slate-500 font-medium">Earned income (work) gets a 20% deduction in SNAP math. Unearned (Dividends/SS) does not.</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">Utility Allowance (SUA)</p>
+                        <p class="text-[8px] text-slate-500 font-medium">Fixed deduction for heating/cooling. Almost always beneficial to check if you pay for utilities.</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-[8px] font-black text-white uppercase tracking-widest leading-none">Independence Year</p>
+                        <p class="text-[8px] text-slate-500 font-medium">The year the child turns 19. They are removed from household size calculations after this date.</p>
+                    </div>
                 </div>
             </div>
         `;
@@ -153,13 +165,9 @@ export const benefits = {
             }
         });
 
-        // Allow direct editing of the year circles
+        // Allow direct editing of the year inputs
         container.addEventListener('input', (e) => {
             if (e.target.dataset.id === 'depYear') {
-                const item = e.target.closest('.dependent-visual-item');
-                const display = item.querySelector('.year-display');
-                const val = e.target.value;
-                if (display) display.textContent = "'" + String(val).slice(-2);
                 benefits.refresh();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             }
@@ -173,19 +181,20 @@ export const benefits = {
         const currentYear = new Date().getFullYear();
         const yearVal = data.independenceYear || (currentYear + 10);
         const nameVal = data.name || 'Child';
-        const shortYear = ("" + yearVal).slice(-2);
         
         item.innerHTML = `
-            <div class="relative">
-                <div class="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-[10px] font-black text-blue-400 group-hover:border-blue-400 transition-all shadow-lg shadow-blue-900/10 year-display">
-                    '${shortYear}
+            <div class="relative w-12 h-12 flex flex-col items-center">
+                <div class="w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 group-hover:border-blue-400 transition-all shadow-lg shadow-blue-900/10">
+                    <i class="fas fa-baby text-base"></i>
                 </div>
-                <button data-action="remove-dependent" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity">
+                <button data-action="remove-dependent" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-10">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <input data-id="depName" type="text" value="${nameVal}" class="bg-transparent border-none outline-none font-bold text-slate-500 text-[8px] uppercase tracking-widest text-center w-12 mt-1 focus:text-white" placeholder="Name">
-            <input data-id="depYear" type="number" value="${yearVal}" class="absolute inset-0 w-10 h-10 opacity-0 cursor-pointer" title="Click to change year child turns 19">
+            <input data-id="depName" type="text" value="${nameVal}" class="bg-transparent border-none outline-none font-bold text-slate-500 text-[8px] uppercase tracking-widest text-center w-14 mt-1 focus:text-white" placeholder="Name">
+            <div class="mt-0.5">
+                <input data-id="depYear" type="number" value="${yearVal}" class="bg-slate-900/50 border border-white/10 rounded px-1 py-0.5 font-black text-blue-400 text-[9px] w-12 text-center mono-numbers outline-none focus:border-blue-500" title="Year child turns 19">
+            </div>
         `;
         list.appendChild(item);
     },
@@ -214,12 +223,14 @@ export const benefits = {
                     <div class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
                         <i class="fas fa-user-friends text-sm"></i>
                     </div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase mt-2">Couple</span>
                 </div>
             ` : `
                 <div class="flex flex-col items-center">
                     <div class="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
                         <i class="fas fa-user text-sm"></i>
                     </div>
+                    <span class="text-[8px] font-black text-slate-500 uppercase mt-2">Individual</span>
                 </div>
             `;
         }
@@ -244,8 +255,12 @@ export const benefits = {
             const planEl = document.getElementById('sum-health-plan');
             const summaryHealthCard = document.getElementById('benefit-summary-health');
             if (planEl) {
-                planEl.innerHTML = `${name} <span class="text-[10px] opacity-60 ml-2 font-black uppercase tracking-widest">${sub}</span>`;
-                planEl.className = `text-lg font-black uppercase tracking-tight leading-none ${colorClass} flex items-center`;
+                planEl.innerHTML = `
+                    <div class="flex flex-col items-center text-center">
+                        <span class="text-xl font-black uppercase tracking-tight ${colorClass}">${name}</span>
+                        <span class="text-[10px] font-black uppercase tracking-widest opacity-60 mt-1">${sub}</span>
+                    </div>
+                `;
             }
             if (summaryHealthCard) summaryHealthCard.style.borderLeftColor = borderColor;
             
