@@ -99,7 +99,7 @@ function attachGlobalListeners() {
     document.body.addEventListener('click', (e) => {
         const btn = e.target.closest('button');
         if (btn && btn.dataset.step) {
-            const container = btn.closest('.relative') || btn.closest('.removable-item') || btn.closest('.grid') || btn.closest('.space-y-4') || btn.closest('.space-y-6') || btn.closest('.space-y-2') || btn.closest('.space-y-8');
+            const container = btn.closest('.relative') || btn.closest('.removable-item') || btn.closest('.grid') || btn.closest('.space-y-4') || btn.closest('.space-y-6') || btn.closest('.space-y-2') || btn.closest('.space-y-8') || btn.closest('.card-container');
             const input = container.querySelector(`input[data-id="${btn.dataset.target}"]`);
             if (input) {
                 const currentVal = (input.dataset.type === 'currency' || input.dataset.type === 'percent') ? math.fromCurrency(input.value) : (parseFloat(input.value) || 0);
@@ -217,7 +217,7 @@ function attachGlobalListeners() {
             });
 
             // 2. Local sibling sync if global loop missed it
-            const container = target.closest('.space-y-4') || target.closest('.space-y-6') || target.closest('.space-y-2') || target.closest('.space-y-8') || target.closest('.grid');
+            const container = target.closest('.space-y-4') || target.closest('.space-y-6') || target.closest('.space-y-2') || target.closest('.space-y-8') || target.closest('.grid') || target.closest('.card-container');
             if (container) {
                 if (target.type === 'range') {
                     const numInput = container.querySelector(`input:not([type="range"])[data-id="${dataId}"]`);
@@ -437,7 +437,7 @@ window.createAssumptionControls = (data) => {
                     ${isCurrency ? 
                         templates.helpers.renderStepper(id, value, `text-right ${colorClass}`, "0", isCurrency, step) :
                         (isPercent ? 
-                            templates.helpers.renderStepper(id, (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id) ? (value * 100) : (value * 100)), `text-center ${colorClass}`, "0", false, (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id) ? 10 : step), true) :
+                            templates.helpers.renderStepper(id, (value * 100), `text-center ${colorClass}`, "0", false, (['phaseGo1', 'phaseGo2', 'phaseGo3'].includes(id) ? 10 : step), true) :
                             templates.helpers.renderStepper(id, value, `text-center ${colorClass}`, decimals, false, step)
                         )
                     }
@@ -474,7 +474,7 @@ window.createAssumptionControls = (data) => {
 
     container.innerHTML = `
         <!-- Card 1: Household & Timing -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-blue-500/20 space-y-8">
+        <div class="card-container p-6 space-y-8 flex flex-col h-full">
             <div class="flex items-center gap-3 border-b border-white/5 pb-4">
                 <div class="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400">
                     <i class="fas fa-clock text-xs"></i>
@@ -488,7 +488,7 @@ window.createAssumptionControls = (data) => {
         </div>
 
         <!-- Card 2: Market & Inflation -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-orange-500/20 space-y-8">
+        <div class="card-container p-6 space-y-8 flex flex-col h-full">
             <div class="flex items-center justify-between border-b border-white/5 pb-4">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-orange-400">
@@ -497,7 +497,6 @@ window.createAssumptionControls = (data) => {
                     <h3 class="text-sm font-black text-white uppercase tracking-widest">Market Projections</h3>
                 </div>
                 <div class="flex items-center gap-2">
-                    <!-- Hidden checkbox to ensure data.js scraper captures advancedGrowth state -->
                     <input type="checkbox" data-id="advancedGrowth" class="hidden" ${isAdv ? 'checked' : ''}>
                     <button id="toggle-advanced-growth" class="w-8 h-8 rounded-lg ${isAdv ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'bg-white/5 text-slate-500'} flex items-center justify-center hover:bg-orange-500/20 transition-all" title="Toggle Advanced Multi-Stage APY">
                         <i class="fas fa-cog text-xs"></i>
@@ -515,8 +514,8 @@ window.createAssumptionControls = (data) => {
             </div>
         </div>
 
-        <!-- Card 3: Tax & Lifestyle Phases -->
-        <div class="p-6 bg-slate-900/40 rounded-2xl border border-purple-500/20 space-y-3">
+        <!-- Card 3: Tax & Status -->
+        <div class="card-container p-6 space-y-3 flex flex-col h-full">
             <div class="flex items-center gap-3 border-b border-white/5 pb-3 mb-2">
                 <div class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
                     <i class="fas fa-walking text-xs"></i>
@@ -541,10 +540,10 @@ window.createAssumptionControls = (data) => {
                 </label>
             </div>
 
-            <div class="space-y-2 pt-3 border-t border-white/5">
+            <div class="space-y-2 pt-3 border-t border-white/5 flex-grow">
                 <div class="space-y-0.5">
                     <p class="text-[9px] font-black text-white uppercase tracking-widest leading-none">RETIREMENT SPEND MULTIPLIERS</p>
-                    <p class="text-[8px] text-slate-500 italic leading-tight">Multipliers only apply once the Retirement Age threshold is reached.</p>
+                    <p class="text-[8px] text-slate-500 italic leading-tight">Multipliers apply at Retirement Age thresholds.</p>
                 </div>
                 ${renderComplexField("Go-Go (Age 30-60)", "phaseGo1", a.phaseGo1 ?? 1.0, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}
                 ${renderComplexField("Slow-Go (Age 60-80)", "phaseGo2", a.phaseGo2 ?? 0.9, 0.5, 1.5, 0.1, "text-purple-400", "0", false, true)}

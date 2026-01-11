@@ -271,9 +271,9 @@ export const benefits = {
         const assetsForTest = window.currentData?.investments?.filter(i => i.type === 'Cash' || i.type === 'Taxable' || i.type === 'Crypto').reduce((s, i) => s + math.fromCurrency(i.value), 0) || 0;
         const estimatedBenefit = engine.calculateSnapBenefit(earned, unearned, assetsForTest, totalSize, data.shelterCosts, data.hasSUA, data.isDisabled, data.childSupportPaid, data.depCare, data.medicalExps, stateId);
 
-        // Update Top Cards with correct logic
+        // Update Top Cards with correct logic - Use clean base classes to avoid misaligned borders
         const healthCard = document.getElementById('benefit-summary-health');
-        const snapCardBorder = document.querySelector('#tab-benefits .grid-cols-1.md\\:grid-cols-2 .card-container:last-child');
+        const snapCard = document.getElementById('benefit-summary-snap');
         
         const updateTopCard = (name, sub, prem, ded, theme) => {
             const planEl = document.getElementById('sum-health-plan');
@@ -286,8 +286,7 @@ export const benefits = {
                 `;
             }
             if (healthCard) {
-                healthCard.className = `card-container p-6 flex flex-col items-center justify-center h-28 border-2 ${theme.border} transition-all duration-300`;
-                healthCard.style.background = 'rgba(30, 41, 59, 0.4)'; // Explicit fallback
+                healthCard.className = `p-6 flex flex-col items-center justify-center h-28 border-l-4 transition-all duration-300 rounded-2xl bg-slate-900/40 border-2 ${theme.border}`;
             }
             
             const premEl = document.getElementById('sum-health-prem');
@@ -316,9 +315,8 @@ export const benefits = {
             const isSnapActive = estimatedBenefit > 1;
             globalSnapRes.className = `text-4xl font-black ${isSnapActive ? 'text-emerald-400' : 'text-slate-500'} mono-numbers tracking-tight`;
             
-            // Sync SNAP Card Border
-            if (snapCardBorder) {
-                snapCardBorder.className = `card-container p-6 flex flex-col items-center justify-center h-28 border-2 ${isSnapActive ? 'border-emerald-500/50' : 'border-white/5'} transition-all duration-300`;
+            if (snapCard) {
+                snapCard.className = `p-6 flex flex-col items-center justify-center h-28 border-l-4 transition-all duration-300 rounded-2xl bg-slate-900/40 border-2 ${isSnapActive ? 'border-emerald-500/50' : 'border-white/5'}`;
             }
         }
     },
