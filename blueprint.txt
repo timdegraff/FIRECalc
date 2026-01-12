@@ -11,11 +11,12 @@ CRITICAL FUTURE UPDATES:
 - [ ] Phase 2: PERFORMANCE - Offload Burndown simulation (70+ year loops) to a Web Worker.
 - [ ] Phase 2: REVENUE - Add "Educational Needs" section in Budget for automated 529 drawdown tracking.
 
-V4.4 COMPLETED LOGIC:
-- [x] PERSONAS: Renamed to "BENEFIT HUNTER" (Max benefits), "STRATEGIC DRAW" (Silver/Medicaid target), and "IRON FIST" (Strict priority).
-- [x] UI: Rebranded section as "Burn Down MAGI Targets".
-- [x] BUGFIX: Ghost SNAP validation. Final pass prevents SNAP if draws disqualify the household.
-- [x] BUGFIX: Live-On Precision. Tightened convergence loops for exact budget matching.
+V4.5 COMPLETED LOGIC:
+- [x] PERSONAS: Simplified to "HANDOUT HUNTER" and "IRON FIST". 
+- [x] UI REORGANIZATION: Swapped SNAP (now middle) and Cash Safety Net (now right) cards.
+- [x] UI: Moved Real Dollars toggle to the top header for better accessibility.
+- [x] LOGIC: Clicking DWZ or Preservation Age cards auto-sets relevant parameters.
+- [x] UI: Handout Hunter enables SNAP Target Floor; Iron Fist greys it out and disables it.
 
 ================================================================================
 PROJECT OVERVIEW: FIRECALC RETIREMENT PLANNER
@@ -35,9 +36,8 @@ CORE PHILOSOPHY & UI PREFERENCES
 BURNDOWN ENGINE & DECUMULATION LOGIC
 --------------------------------------------------------------------------------
 1.  STRATEGY MODES (MAGI TARGETS):
-    - BENEFIT HUNTER: Maximize gov benefits by staying < 138% FPL.
-    - STRATEGIC DRAW: Target ~200-250% FPL for Silver Cost-Sharing Reductions.
-    - IRON FIST: Zero tax-optimization; strictly follows the Draw Order waterfall.
+    - HANDOUT HUNTER: Maximize gov benefits by staying < 138% FPL. Enables SNAP Target Floor optimization.
+    - IRON FIST: Zero tax-optimization; strictly follows the Draw Order waterfall. Disables SNAP Target Floor.
 
 2.  IRON FIST PROTOCOL: 
     When active, the engine follows the Drag-and-Drop priority list to the letter.

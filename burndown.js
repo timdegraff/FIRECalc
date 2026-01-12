@@ -42,6 +42,14 @@ export const burndown = {
                             </div>
                          </div>
                          
+                         <!-- Toggle moved to top -->
+                         <div class="flex flex-col items-center gap-1">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Currency Mode</label>
+                            <button id="toggle-burndown-real" class="px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-[9px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-all">
+                                Nominal $
+                            </button>
+                         </div>
+
                          <div class="flex flex-col items-end gap-1">
                             <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Annual Spend</label>
                             <div class="flex items-center gap-2">
@@ -90,14 +98,10 @@ export const burndown = {
                      <!-- Card 1: Rebranded MAGI Targets -->
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center h-28">
                         <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Burn Down MAGI Targets</label>
-                        <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5 h-full">
+                        <div id="persona-selector" class="grid grid-cols-2 gap-1 p-1 bg-black/40 rounded-lg border border-white/5 h-full">
                             <button data-mode="PLATINUM" class="rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
-                                <span class="text-emerald-400">BENEFIT HUNTER</span>
+                                <span class="text-emerald-400">HANDOUT HUNTER</span>
                                 <span class="text-[6.5px] opacity-40 leading-none mt-1 uppercase">maximize gov benefits</span>
-                            </button>
-                            <button data-mode="SILVER" class="rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
-                                <span class="text-blue-400">STRATEGIC DRAW</span>
-                                <span class="text-[6.5px] opacity-40 leading-none mt-1 uppercase">target silver medicaid</span>
                             </button>
                             <button data-mode="RAW" class="rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
                                 <span class="text-slate-400">IRON FIST</span>
@@ -106,25 +110,14 @@ export const burndown = {
                         </div>
                     </div>
 
-                    <!-- Card 2: Cash Safety Net -->
-                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center h-28">
-                        <div class="flex justify-between items-center mb-4">
-                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cash Safety Net</label>
-                            <span id="label-cash-reserve" class="text-pink-400 font-black mono-numbers text-[10px]">$25,000</span>
-                        </div>
-                        <input type="range" id="input-cash-reserve" min="0" max="100000" step="1000" value="25000" class="input-range w-full">
-                    </div>
-                    
-                    <!-- Card 3: SNAP Indicator -->
-                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-between h-28">
+                    <!-- Card 2 (Middle): Est. SNAP -->
+                    <div id="card-snap-wrapper" class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-between h-28 transition-opacity duration-300">
                         <div class="flex justify-between items-start mb-1">
                             <div>
                                 <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest block">Est. SNAP</label>
                                 <div id="est-snap-indicator" class="text-2xl font-black text-emerald-400 mono-numbers leading-none mt-0.5">$0</div>
                             </div>
-                            <button id="toggle-burndown-real" class="px-2 py-1 bg-slate-800 border border-slate-700 rounded text-[8px] font-bold text-slate-400 hover:text-white uppercase tracking-widest transition-all">
-                                Nominal $
-                            </button>
+                            <div class="text-[7px] text-slate-600 font-bold uppercase tracking-widest">Monthly Aid</div>
                         </div>
                         
                         <div class="space-y-1">
@@ -134,6 +127,15 @@ export const burndown = {
                             </div>
                             <input type="range" id="input-snap-preserve" min="0" max="2000" step="50" value="0" class="input-range w-full accent-emerald-500">
                         </div>
+                    </div>
+
+                    <!-- Card 3 (Right): Cash Safety Net -->
+                    <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center h-28">
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Cash Safety Net</label>
+                            <span id="label-cash-reserve" class="text-pink-400 font-black mono-numbers text-[10px]">$25,000</span>
+                        </div>
+                        <input type="range" id="input-cash-reserve" min="0" max="100000" step="1000" value="25000" class="input-range w-full">
                     </div>
                 </div>
 
@@ -257,11 +259,21 @@ export const burndown = {
                 });
                 const styleMap = {
                     'PLATINUM': 'bg-emerald-500/10 border-emerald-500/30',
-                    'SILVER': 'bg-blue-500/10 border-blue-500/30',
                     'RAW': 'bg-slate-500/10 border-slate-500/30'
                 };
                 btn.classList.add(...styleMap[mode].split(' '));
                 personaContainer.dataset.value = mode;
+
+                // Sync SNAP Card interactivity
+                const snapWrapper = document.getElementById('card-snap-wrapper');
+                const snapSlider = document.getElementById('input-snap-preserve');
+                if (snapWrapper && snapSlider) {
+                    const isIronFist = mode === 'RAW';
+                    snapWrapper.classList.toggle('opacity-30', isIronFist);
+                    snapWrapper.classList.toggle('pointer-events-none', isIronFist);
+                    snapSlider.disabled = isIronFist;
+                }
+
                 burndown.run();
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
@@ -301,11 +313,9 @@ export const burndown = {
 
     updateToggleStyle: (btn) => {
         if (!btn) return;
-        const isMobile = window.innerWidth < 768;
         btn.classList.toggle('bg-blue-600/20', isRealDollars);
         btn.classList.toggle('text-blue-400', isRealDollars);
-        if (isMobile) btn.textContent = isRealDollars ? '2026 $' : 'Nominal $';
-        else btn.textContent = isRealDollars ? '2026 $' : 'Nominal $';
+        btn.textContent = isRealDollars ? '2026 Dollars' : 'Nominal Dollars';
     },
 
     load: (data) => {
@@ -317,7 +327,11 @@ export const burndown = {
         };
         if (data) {
             const mode = data.strategyMode || 'PLATINUM', personaSelector = document.getElementById('persona-selector');
-            if (personaSelector) { const btn = personaSelector.querySelector(`[data-mode="${mode}"]`); if (btn) btn.click(); }
+            if (personaSelector) { 
+                const btn = personaSelector.querySelector(`[data-mode="${mode}"]`); 
+                if (btn) btn.click();
+                else personaSelector.querySelector(`[data-mode="PLATINUM"]`)?.click();
+            }
             sync('toggle-budget-sync', data.useSync ?? true, true);
             sync('input-cash-reserve', data.cashReserve ?? 25000);
             sync('input-snap-preserve', data.snapPreserve ?? 0);
@@ -455,7 +469,11 @@ export const burndown = {
         }
 
         const firstRetYear = results.find(r => r.age >= lastUsedRetirementAge) || results[0];
-        if (document.getElementById('est-snap-indicator')) document.getElementById('est-snap-indicator').textContent = `${formatter.formatCurrency((firstRetYear.snapBenefit || 0) / 12, 0)}`;
+        if (document.getElementById('est-snap-indicator')) {
+            const val = (firstRetYear.snapBenefit || 0) / 12;
+            document.getElementById('est-snap-indicator').textContent = formatter.formatCurrency(val, 0);
+            document.getElementById('est-snap-indicator').classList.toggle('opacity-30', val <= 0 && config.strategyMode === 'RAW');
+        }
         if (document.getElementById('burndown-table-container')) document.getElementById('burndown-table-container').innerHTML = burndown.renderTable(results);
         
         const debugAgeVal = parseInt(document.getElementById('input-debug-age')?.value);
@@ -625,11 +643,11 @@ export const burndown = {
                     finalSnap = finalSnapValidation;
                 }
             } else {
-                // HUNTER / STRATEGIC Logic
+                // HUNTER Logic
                 let cNet = (floorTotalIncome - pretaxDed) - engine.calculateTax(Math.max(0, floorOrdIncome - pretaxDed), 0, filingStatus, assumptions.state, infFac);
                 finalSnap = engine.calculateSnapBenefit(Math.max(0, floorOrdIncome-pretaxDed) / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
                 deficit = targetBudget - (cNet + finalSnap);
-                const magiT = persona === 'PLATINUM' ? fpl100 * 1.37 : (persona === 'SILVER' ? fpl100 * 2.48 : 0);
+                const magiT = fpl100 * 1.37;
                 if (persona !== 'UNCONSTRAINED') liquidOrder = [...['cash', 'roth-basis', 'hsa'].filter(b => liquidOrder.includes(b)), ...liquidOrder.filter(b => !['cash', 'roth-basis', 'hsa'].includes(b))];
                 for (const pk of liquidOrder) {
                     if (deficit <= 5) break;
