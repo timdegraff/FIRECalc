@@ -255,10 +255,10 @@ const MOBILE_TEMPLATES = {
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-end">
                          <div class="flex flex-col">
-                            <label class="label-std text-emerald-400">MAGI Strategy Target</label>
+                            <label class="label-std text-emerald-400">Burn Down MAGI Targets</label>
                             <p class="text-[7px] text-slate-500 font-medium italic">Platinum → Silver → Private</p>
                          </div>
-                         <div id="mobile-strategy-status" class="text-sm font-black text-white uppercase tracking-widest leading-none">Platinum Max</div>
+                         <div id="mobile-strategy-status" class="text-[10px] font-black text-white uppercase tracking-widest leading-none">Benefit Hunter</div>
                     </div>
                     <input type="range" id="input-strategy-dial" min="0" max="100" step="1" value="33" class="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                 </div>
@@ -569,7 +569,7 @@ function attachGlobal() {
         if (input.id === 'input-strategy-dial') {
             if (!window.currentData.burndown) window.currentData.burndown = {}; window.currentData.burndown.strategyDial = parseInt(input.value);
             const lbl = document.getElementById('mobile-strategy-status');
-            if (lbl) { const val = parseInt(input.value); lbl.textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Private"); }
+            if (lbl) { const val = parseInt(input.value); lbl.textContent = val <= 33 ? "Benefit Hunter" : (val <= 66 ? "Strategic Draw" : "Iron Fist"); }
             burndown.run(); 
         }
         const wrapper = input.closest('[data-array]');
@@ -683,7 +683,7 @@ function renderTab() {
     if (currentTab === 'benefits') { benefits.init(); benefits.load(window.currentData.benefits); }
     if (currentTab === 'burndown') {
         burndown.init();
-        const dial = document.getElementById('input-strategy-dial'); if (dial && window.currentData.burndown?.strategyDial !== undefined) { dial.value = window.currentData.burndown.strategyDial; const val = parseInt(dial.value); document.getElementById('mobile-strategy-status').textContent = val <= 33 ? "Platinum Max" : (val <= 66 ? "Silver CSR" : "Private"); }
+        const dial = document.getElementById('input-strategy-dial'); if (dial && window.currentData.burndown?.strategyDial !== undefined) { dial.value = window.currentData.burndown.strategyDial; const val = parseInt(dial.value); document.getElementById('mobile-strategy-status').textContent = val <= 33 ? "Benefit Hunter" : (val <= 66 ? "Strategic Draw" : "Iron Fist"); }
         const retireInp = document.getElementById('input-top-retire-age'); if (retireInp && window.currentData.assumptions?.retirementAge) { retireInp.value = window.currentData.assumptions.retirementAge; document.getElementById('label-top-retire-age').textContent = window.currentData.assumptions.retirementAge; retireInp.oninput = (e) => { window.currentData.assumptions.retirementAge = Math.min(72, parseInt(e.target.value)); document.getElementById('label-top-retire-age').textContent = e.target.value; burndown.run(); if(window.debouncedAutoSave) window.debouncedAutoSave(); } }
         burndown.run(); 
     }

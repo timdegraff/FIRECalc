@@ -15,6 +15,7 @@ export const burndown = {
     },
     priorityOrder: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'],
     getInsolvencyAge: () => firstInsolvencyAge,
+    lastCalculatedResults: { dwz: 0, preservationAge: null },
 
     init: () => {
         const viewContainer = document.getElementById('burndown-view-container');
@@ -57,8 +58,8 @@ export const burndown = {
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-infinity text-4xl text-amber-500"></i></div>
+                    <div id="card-preservation" class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group cursor-pointer hover:border-amber-500/30 transition-all">
+                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-infinity text-4xl text-amber-500 opacity-20 group-hover:opacity-100 transition-opacity"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-shield-alt"></i> Preservation Age</label>
                             <div id="card-preservation-val" class="text-3xl font-black text-amber-500 mono-numbers tracking-tighter">--</div>
@@ -67,7 +68,7 @@ export const burndown = {
                     </div>
 
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-road text-4xl text-blue-400"></i></div>
+                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-road text-4xl text-blue-400 opacity-20"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-flag-checkered"></i> Retirement Runway</label>
                             <div id="card-runway-val" class="text-3xl font-black text-red-400 mono-numbers tracking-tighter">--</div>
@@ -75,8 +76,8 @@ export const burndown = {
                         <div id="card-runway-sub" class="text-[9px] font-bold text-blue-400/60 uppercase tracking-tighter leading-none">SUSTAINS $0K BUDGET IN 2026 DOLLARS UNTIL THIS AGE</div>
                     </div>
 
-                    <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-skull text-4xl text-pink-400"></i></div>
+                    <div id="card-dwz" class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group cursor-pointer hover:border-pink-500/30 transition-all">
+                        <div class="absolute right-0 top-0 p-3"><i class="fas fa-skull text-4xl text-pink-400 opacity-20 group-hover:opacity-100 transition-opacity"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-pink-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-glass-cheers"></i> Die With Zero</label>
                             <div id="card-dwz-val" class="text-3xl font-black text-pink-400 mono-numbers tracking-tighter">--</div>
@@ -86,21 +87,21 @@ export const burndown = {
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                     <!-- Card 1: Rebranded Draw Strategies -->
+                     <!-- Card 1: Rebranded MAGI Targets -->
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center h-28">
-                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Decumulation Logic</label>
+                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Burn Down MAGI Targets</label>
                         <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5 h-full">
-                            <button data-mode="PLATINUM" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
-                                <span class="text-emerald-400">Hunter</span>
-                                <span class="text-[7px] opacity-40 leading-none mt-0.5">Max Grift</span>
+                            <button data-mode="PLATINUM" class="rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
+                                <span class="text-emerald-400">BENEFIT HUNTER</span>
+                                <span class="text-[6.5px] opacity-40 leading-none mt-1 uppercase">maximize gov benefits</span>
                             </button>
-                            <button data-mode="SILVER" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
-                                <span class="text-blue-400">Strategic</span>
-                                <span class="text-[7px] opacity-40 leading-none mt-0.5">CSR Mid</span>
+                            <button data-mode="SILVER" class="rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
+                                <span class="text-blue-400">STRATEGIC DRAW</span>
+                                <span class="text-[6.5px] opacity-40 leading-none mt-1 uppercase">target silver medicaid</span>
                             </button>
-                            <button data-mode="RAW" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
-                                <span class="text-slate-400">Iron Fist</span>
-                                <span class="text-[7px] opacity-40 leading-none mt-0.5">Strict Burn</span>
+                            <button data-mode="RAW" class="rounded-md text-[10px] font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
+                                <span class="text-slate-400">IRON FIST</span>
+                                <span class="text-[6.5px] opacity-40 leading-none mt-1 uppercase">strict priority burn</span>
                             </button>
                         </div>
                     </div>
@@ -188,6 +189,40 @@ export const burndown = {
                 if (window.debouncedAutoSave) window.debouncedAutoSave();
             };
         });
+
+        // Die With Zero Click Handler
+        const dwzCard = document.getElementById('card-dwz');
+        if (dwzCard) {
+            dwzCard.onclick = () => {
+                if (burndown.lastCalculatedResults.dwz > 0) {
+                    const syncToggle = document.getElementById('toggle-budget-sync');
+                    const manualInput = document.getElementById('input-manual-budget');
+                    if (syncToggle && syncToggle.checked) {
+                        syncToggle.checked = false;
+                        syncToggle.dispatchEvent(new Event('input'));
+                    }
+                    if (manualInput) {
+                        manualInput.value = math.toCurrency(Math.floor(burndown.lastCalculatedResults.dwz));
+                        manualInput.dispatchEvent(new Event('input'));
+                    }
+                }
+            };
+        }
+
+        // Preservation Age Click Handler
+        const preservationCard = document.getElementById('card-preservation');
+        if (preservationCard) {
+            preservationCard.onclick = () => {
+                const age = burndown.lastCalculatedResults.preservationAge;
+                if (age && typeof age === 'number' && age <= 72) {
+                    const topRetireSlider = document.getElementById('input-top-retire-age');
+                    if (topRetireSlider) {
+                        topRetireSlider.value = age;
+                        topRetireSlider.dispatchEvent(new Event('input'));
+                    }
+                }
+            };
+        }
 
         const directAgeInp = document.getElementById('input-retire-age-direct');
         if (directAgeInp) {
@@ -386,16 +421,19 @@ export const burndown = {
         }
 
         let preservationAge = "--";
+        let preservationAgeNum = null;
         const startNWReal = results[0].netWorth;
         const infRate = (data.assumptions.inflation || 3) / 100;
         for (let i = 0; i < results.length; i++) {
             const realNW = results[i].netWorth / Math.pow(1 + infRate, i);
             if (realNW < startNWReal * 0.99) {
+                preservationAgeNum = results[i].age;
                 preservationAge = results[i].age;
                 break;
             }
-            if (i === results.length - 1) preservationAge = "100+";
+            if (i === results.length - 1) { preservationAge = "100+"; preservationAgeNum = 100; }
         }
+        burndown.lastCalculatedResults.preservationAge = preservationAgeNum;
         if (document.getElementById('card-preservation-val')) document.getElementById('card-preservation-val').textContent = preservationAge;
         if (document.getElementById('card-preservation-sub')) {
             document.getElementById('card-preservation-sub').textContent = `MAINTAINS REAL WEALTH AT ${compactBudgetStr} BUDGET STARTING AT THIS AGE`;
@@ -410,6 +448,7 @@ export const burndown = {
             const isTestSolvent = !testRes.some(r => r.isInsolvent);
             if (isTestSolvent) { dwzSpend = mid; low = mid; } else { high = mid; }
         }
+        burndown.lastCalculatedResults.dwz = dwzSpend;
         if (document.getElementById('card-dwz-val')) document.getElementById('card-dwz-val').textContent = math.toSmartCompactCurrency(dwzSpend);
         if (document.getElementById('card-dwz-sub')) {
             document.getElementById('card-dwz-sub').textContent = `MAX SUSTAINABLE SPEND OF ${math.toSmartCompactCurrency(dwzSpend)} STARTING AT RETIREMENT`;
@@ -493,7 +532,7 @@ export const burndown = {
             simRE.forEach(r => r.mortgage = Math.max(0, r.mortgage - (r.principalPayment || 0) * 12));
             simDebts.forEach(d => d.balance = Math.max(0, d.balance - (d.principalPayment || 0) * 12));
 
-            // Budget Selection: If retired and override exists, use it. Otherwise use synced/manual config.
+            // Budget Selection
             let baseBudget = 100000;
             if (isRet && retirementSpendOverride !== null) {
                 baseBudget = retirementSpendOverride * infFac;
@@ -501,7 +540,6 @@ export const burndown = {
                 baseBudget = config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + (exp.isFixed ? math.fromCurrency(exp.annual) : math.fromCurrency(exp.annual) * infFac), 0) : (config.manualBudget || 100000) * infFac;
             }
             
-            // Add HELOC Interest to required Budget
             const helocInterestDue = bal['heloc'] * helocInterestRate;
             if (bal['heloc'] > 0 && !isSilent) trace += `HELOC Interest: ${math.toCurrency(helocInterestDue)} (Added to budget)\n`;
             baseBudget += helocInterestDue;
@@ -509,55 +547,33 @@ export const burndown = {
             let factor = isRet ? (age < 60 ? (assumptions.phaseGo1 ?? 1.0) : (age < 80 ? (assumptions.phaseGo2 ?? 0.9) : (assumptions.phaseGo3 ?? 0.8))) : 1.0;
             const targetBudget = baseBudget * factor;
             
-            const budgetBaseNominal = (isRet && retirementSpendOverride !== null) ? retirementSpendOverride : (config.useSync ? (budget.expenses || []).reduce((s, exp) => (isRet && exp.remainsInRetirement === false) ? s : s + math.fromCurrency(exp.annual), 0) : config.manualBudget);
-            trace += `Target Budget: ${math.toCurrency(targetBudget)} (Base: ${math.toCurrency(budgetBaseNominal)} * ${inflationRate*100}% inflation ^ ${i} years)\n`;
+            if (!isSilent) trace += `Target Budget: ${math.toCurrency(targetBudget)}\n`;
 
             let floorOrdIncome = 0, floorTotalIncome = 0, floorUntaxedMAGI = 0, pretaxDed = 0;
-            let negativeIncomeImpact = 0;
-
             (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i), bonus = gross * (parseFloat(inc.bonusPct) / 100 || 0), sourceGross = gross + bonus, netSrc = sourceGross - (math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1));
                 const unt = parseInt(inc.nonTaxableUntil);
                 if (isNaN(unt) || year >= unt) { floorOrdIncome += netSrc; if (!isRet) pretaxDed += Math.min(sourceGross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
                 floorTotalIncome += netSrc;
-                
-                // Track negative income specifically for trace clarity
-                if (netSrc < 0) negativeIncomeImpact += Math.abs(netSrc);
             });
-
-            if (negativeIncomeImpact > 0 && !isSilent) {
-                trace += `  WARNING: Deficit increased by ${math.toCurrency(negativeIncomeImpact)} due to negative net income streams (e.g. Rentals).\n`;
-            }
 
             if (age >= assumptions.ssStartAge) { 
                 const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac);
                 const taxableSS = engine.calculateTaxableSocialSecurity(ssGross, Math.max(0, floorOrdIncome), filingStatus); 
-                floorOrdIncome += taxableSS; 
-                floorTotalIncome += ssGross; 
-                floorUntaxedMAGI += (ssGross - taxableSS); 
-                trace += `Social Security: ${math.toCurrency(ssGross)} (${math.toCurrency(taxableSS)} taxable)\n`;
+                floorOrdIncome += taxableSS; floorTotalIncome += ssGross; floorUntaxedMAGI += (ssGross - taxableSS); 
             }
 
             if (age >= 75) { 
                 let rmd = engine.calculateRMD(bal['401k'], age); 
-                bal['401k'] -= rmd; 
-                floorOrdIncome += rmd; 
-                floorTotalIncome += rmd; 
-                trace += `Forced RMD: ${math.toCurrency(rmd)}\n`;
+                bal['401k'] -= rmd; floorOrdIncome += rmd; floorTotalIncome += rmd; 
             }
 
             if (!isRet) { 
                 bal['401k'] += pretaxDed; 
-                let cashAdded = 0;
                 (budget.savings || []).forEach(sav => { 
                     const amt = math.fromCurrency(sav.annual) * infFac, keyMap = { 'Cash': 'cash', 'Taxable': 'taxable', 'Roth IRA': 'roth-basis', 'HSA': 'hsa', 'Crypto': 'crypto', 'Metals': 'metals' }, key = keyMap[sav.type]; 
-                    if (key) { 
-                        bal[key] += amt; 
-                        if (key === 'cash') cashAdded += amt;
-                        if (['taxable', 'crypto', 'metals'].includes(key)) bal[key + 'Basis'] += amt; 
-                    } 
+                    if (key) { bal[key] += amt; if (['taxable', 'crypto', 'metals'].includes(key)) bal[key + 'Basis'] += amt; } 
                 }); 
-                if (cashAdded > 1 && !isSilent) trace += `  + Savings Inflow: ${math.toCurrency(cashAdded)} deposited to Cash.\n`;
             }
 
             const startOfYearBal = { ...bal };
@@ -567,32 +583,24 @@ export const burndown = {
             let liquidOrder = burndown.priorityOrder;
             if (persona !== 'RAW') liquidOrder = liquidOrder.filter(k => k !== 'heloc');
 
-            // --- STRATEGY ENGINE ---
+            // --- STRATEGY ENGINE (3-PASS SPIRAL) ---
             if (persona === 'RAW') {
-                if (!isSilent) trace += `Strategy: IRON FIST (Strict Draw Order, 2-Pass Optimization)\n`;
-                for (let iter = 0; iter < 2; iter++) {
+                if (!isSilent) trace += `Strategy: IRON FIST (Strict Draw Order)\n`;
+                for (let iter = 0; iter < 3; iter++) {
                     bal = { ...startOfYearBal }; currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed); currentLtcgIncome = 0; totalWithdrawn = 0; currentDraws = {};
-                    
-                    // NORMALIZATION FIX: Convert annual currentOrdIncome to monthly for engine
-                    const currentEarnedMonthly = currentOrdIncome / 12;
-                    const estSnap = engine.calculateSnapBenefit(currentEarnedMonthly, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true) * 12;
-                    if (!isSilent && iter === 0) trace += `  SNAP Debug (HH:${currentHhSize}, GrossInc:${math.toCurrency(currentOrdIncome)}): ${estSnap > 0 ? math.toCurrency(estSnap) : '$0 (Ineligible/Zero)'}\n`;
+                    const estSnap = engine.calculateSnapBenefit(currentOrdIncome / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true) * 12;
                     
                     for (const pk of liquidOrder) {
                         const curMAGI = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI, curRatio = curMAGI / fpl100;
-                        let curHealthCost = 0;
-                        if (!stateMeta.expanded && curRatio < 1.0) curHealthCost = 13200 * infFac;
-                        else if (curRatio > 4.0) curHealthCost = 13200 * infFac;
-                        else if (curRatio > 1.38) curHealthCost = curMAGI * (0.021 + (curRatio - 1) * 0.074 / 3);
+                        let curHealthCost = (!stateMeta.expanded && curRatio < 1.0) ? 13200*infFac : (curRatio > 4.0 ? 13200*infFac : (curRatio > 1.38 ? curMAGI * (0.021 + (curRatio - 1) * 0.074 / 3) : 0));
                         const curTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                        
-                        const resources = (floorTotalIncome - pretaxDed) + totalWithdrawn + (iter === 1 ? estSnap : 0) - curTax;
+                        const resources = (floorTotalIncome - pretaxDed) + totalWithdrawn + (iter >= 1 ? estSnap : 0) - curTax;
                         let gap = (targetBudget + curHealthCost) - resources;
                         if (gap <= 5) break;
                         
                         if (pk === 'heloc') {
                             let avail = Math.max(0, helocLimit - bal['heloc']);
-                            if (avail > 0) { let draw = Math.min(avail, gap); bal['heloc'] += draw; currentDraws['heloc'] = (currentDraws['heloc'] || 0) + draw; if (!isSilent && iter === 1) trace += `  -> Borrowed ${math.toCurrency(draw)} from HELOC.\n`; totalWithdrawn += draw; }
+                            if (avail > 0) { let draw = Math.min(avail, gap); bal['heloc'] += draw; currentDraws['heloc'] = (currentDraws['heloc'] || 0) + draw; totalWithdrawn += draw; }
                             continue;
                         }
                         let avail = (pk === 'cash' ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0));
@@ -601,8 +609,7 @@ export const burndown = {
                         let rate = 0;
                         if (burndown.assetMeta[pk].isTaxable) {
                             const bnd = (filingStatus === 'Married Filing Jointly' ? 96950 : 48475) * infFac;
-                            const baseRate = currentOrdIncome > bnd ? 0.22 : 0.12;
-                            rate = pk === '401k' ? baseRate + (stateTaxRates[assumptions.state]?.rate || 0.0425) : (1 - basisRatio) * (0.15 + (stateTaxRates[assumptions.state]?.rate || 0.0425));
+                            rate = pk === '401k' ? (currentOrdIncome > bnd ? 0.22 : 0.12) + (stateTaxRates[assumptions.state]?.rate || 0.04) : (1 - basisRatio) * (0.15 + (stateTaxRates[assumptions.state]?.rate || 0.04));
                         }
                         let grossPull = Math.min(avail, gap / (1 - rate));
                         if (pk === '401k' && age < 60) grossPull = Math.min(grossPull, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
@@ -610,14 +617,16 @@ export const burndown = {
                         if (bal[pk+'Basis'] !== undefined) bal[pk+'Basis'] -= (bal[pk+'Basis'] * (grossPull / bal[pk]));
                         bal[pk] -= grossPull; currentDraws[pk] = (currentDraws[pk] || 0) + grossPull; totalWithdrawn += grossPull;
                         if (pk === '401k') currentOrdIncome += grossPull; else if (['taxable', 'crypto', 'metals'].includes(pk)) currentLtcgIncome += (grossPull * (1 - basisRatio));
-                        if (!isSilent && iter === 1) trace += `  -> Withdrew ${math.toCurrency(grossPull)} from ${pk}. ${pk==='401k' && age<60 ? '[SEPP]' : ''}\n`;
                     }
-                    finalSnap = estSnap;
+                    // VALIDATION PASS: If total income exceeds limits, SNAP benefit is invalidated for high-draw households
+                    const finalAnnualIncome = currentOrdIncome + currentLtcgIncome;
+                    const finalSnapValidation = engine.calculateSnapBenefit(finalAnnualIncome / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true) * 12;
+                    if (finalSnapValidation <= 1 && iter === 1 && !isSilent) trace += `  ! Benefit Cliff: Draws push income over limit. SNAP invalidated.\n`;
+                    finalSnap = finalSnapValidation;
                 }
             } else {
-                // SUBSIDY HUNTER / STRATEGIC POOR Logic
+                // HUNTER / STRATEGIC Logic
                 let cNet = (floorTotalIncome - pretaxDed) - engine.calculateTax(Math.max(0, floorOrdIncome - pretaxDed), 0, filingStatus, assumptions.state, infFac);
-                // NORMALIZATION FIX: Convert annual to monthly
                 finalSnap = engine.calculateSnapBenefit(Math.max(0, floorOrdIncome-pretaxDed) / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
                 deficit = targetBudget - (cNet + finalSnap);
                 const magiT = persona === 'PLATINUM' ? fpl100 * 1.37 : (persona === 'SILVER' ? fpl100 * 2.48 : 0);
@@ -636,13 +645,12 @@ export const burndown = {
                     let hCost = (!stateMeta.expanded && curRatio < 1.0) ? 13200*infFac : (curRatio > 4.0 ? 13200*infFac : (curRatio > 1.38 ? curMAGI * (0.021 + (curRatio - 1) * 0.074 / 3) : 0));
                     let pull = Math.min(avail, (deficit + (hCost/12)) / (1 - rate));
                     if (persona !== 'UNCONSTRAINED' && !['cash', 'roth-basis'].includes(pk)) pull = Math.min(pull, (magiT - (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI)) / (pk === '401k' ? 1 : Math.max(0.1, 1 - basisR)));
-                    if (pk === '401k' && age < 59.5) pull = Math.min(pull, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
+                    if (pk === '401k' && age < 60) pull = Math.min(pull, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
                     if (pull <= 1) continue;
                     if (bal[pk+'Basis'] !== undefined) bal[pk+'Basis'] -= (bal[pk+'Basis'] * (pull / bal[pk]));
                     bal[pk] -= pull; currentDraws[pk] = (currentDraws[pk] || 0) + pull; totalWithdrawn += pull;
                     if (pk === '401k') currentOrdIncome += pull; else if (['taxable', 'crypto', 'metals'].includes(pk)) currentLtcgIncome += (pull * (1 - basisR));
                     const curT = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                    // NORMALIZATION FIX: Convert annual to monthly
                     finalSnap = engine.calculateSnapBenefit((currentOrdIncome + currentLtcgIncome) / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
                     const nRatio = (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI) / fpl100;
                     hCost = (!stateMeta.expanded && nRatio < 1.0) ? 13200*infFac : (nRatio > 4.0 ? 13200*infFac : (nRatio > 1.38 ? (currentOrdIncome+currentLtcgIncome+floorUntaxedMAGI) * (0.021 + (nRatio - 1) * 0.074 / 3) : 0));
@@ -655,13 +663,12 @@ export const burndown = {
                         let basisR = (['taxable', 'crypto', 'metals'].includes(pk) && bal[pk] > 0) ? bal[pk+'Basis'] / bal[pk] : 1;
                         let rate = burndown.assetMeta[pk].isTaxable ? 0.25 : 0;
                         let pull = Math.min(avail, (deficit * 1.2) / (1 - rate));
-                        if (pk === '401k' && age < 59.5) pull = Math.min(pull, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
+                        if (pk === '401k' && age < 60) pull = Math.min(pull, Math.max(0, engine.calculateMaxSepp(bal['401k'], age) - (currentDraws['401k'] || 0)));
                         if (pull <= 1) continue;
                         if (bal[pk+'Basis'] !== undefined) bal[pk+'Basis'] -= (bal[pk+'Basis'] * (pull / bal[pk]));
                         bal[pk] -= pull; currentDraws[pk] = (currentDraws[pk] || 0) + pull; totalWithdrawn += pull;
                         if (pk === '401k') currentOrdIncome += pull; else if (['taxable', 'crypto', 'metals'].includes(pk)) currentLtcgIncome += (pull * (1 - basisR));
                         const curT = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                        // NORMALIZATION FIX: Convert annual to monthly
                         finalSnap = engine.calculateSnapBenefit((currentOrdIncome + currentLtcgIncome) / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
                         const nRatio = (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI) / fpl100;
                         let hCost = (!stateMeta.expanded && nRatio < 1.0) ? 13200*infFac : (nRatio > 4.0 ? 13200*infFac : (nRatio > 1.38 ? (currentOrdIncome+currentLtcgIncome+floorUntaxedMAGI) * (0.021 + (nRatio - 1) * 0.074 / 3) : 0));
@@ -675,7 +682,7 @@ export const burndown = {
             let finalHCost = (!stateMeta.expanded && finalRatio < 1.0) ? 13200*infFac : (finalRatio > 4.0 ? 13200*infFac : (finalRatio > 1.38 ? finalMAGI * (0.021 + (finalRatio - 1) * 0.074 / 3) : 0));
             const netCash = (floorTotalIncome - pretaxDed) + totalWithdrawn + finalSnap - finalTax - finalHCost;
             let surplus = Math.max(0, netCash - targetBudget);
-            if (surplus > 100) { if (bal['heloc'] > 0) { const rep = Math.min(bal['heloc'], surplus); bal['heloc'] -= rep; surplus -= rep; if (!isSilent) trace += `  + Surplus applied to HELOC: ${math.toCurrency(rep)}. New Bal: ${math.toCurrency(bal['heloc'])}\n`; } if (surplus > 100 && !isSilent) { trace += `  ! Note: ${math.toCurrency(surplus)} surplus income assumed spent (not saved).\n`; } }
+            if (surplus > 100) { if (bal['heloc'] > 0) { const rep = Math.min(bal['heloc'], surplus); bal['heloc'] -= rep; surplus -= rep; } }
 
             const liq = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             const reVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);

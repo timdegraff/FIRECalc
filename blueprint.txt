@@ -11,12 +11,11 @@ CRITICAL FUTURE UPDATES:
 - [ ] Phase 2: PERFORMANCE - Offload Burndown simulation (70+ year loops) to a Web Worker.
 - [ ] Phase 2: REVENUE - Add "Educational Needs" section in Budget for automated 529 drawdown tracking.
 
-V4.2 COMPLETED LOGIC:
-- [x] PERSONAS: Rebranded to "Subsidy Hunter" (Max Subsidy) and "Strategic Poor" (The CSR Grift).
-- [x] BUGFIX: SNAP Annualization. Normalized annual simulation income to monthly for SNAP eligibility checks.
-- [x] IMPLEMENTATION: "Iron Fist" Draw Logic. Strictly exhausts one bucket before the next.
-- [x] OPTIMIZATION: 2-Pass SNAP Convergence. Passes income to SNAP, then uses SNAP to reduce asset sales.
-- [x] PHILOSOPHY: Conservative Spend Assumption. Extra income - budget = $0. Surplus is not saved.
+V4.4 COMPLETED LOGIC:
+- [x] PERSONAS: Renamed to "BENEFIT HUNTER" (Max benefits), "STRATEGIC DRAW" (Silver/Medicaid target), and "IRON FIST" (Strict priority).
+- [x] UI: Rebranded section as "Burn Down MAGI Targets".
+- [x] BUGFIX: Ghost SNAP validation. Final pass prevents SNAP if draws disqualify the household.
+- [x] BUGFIX: Live-On Precision. Tightened convergence loops for exact budget matching.
 
 ================================================================================
 PROJECT OVERVIEW: FIRECALC RETIREMENT PLANNER
@@ -29,29 +28,26 @@ CORE PHILOSOPHY & UI PREFERENCES
 --------------------------------------------------------------------------------
 1.  HOUSEHOLD SYNC: Total Family Size (hhSize) is a derived value:
     Base (1) + Spouse (1 if MFJ) + Dependents.
-2.  COLOR LOGIC:
-    - Teal (#14b8a6): Assets, Net Worth.
-    - Pink (#ec4899): Expenses, Debts.
-    - Blue (#3b82f6): Pre-Tax / Strategy / Jobs.
-3.  CONSERVATIVE SPEND: All income not explicitly directed to "Savings" or 
+2.  CONSERVATIVE SPEND: All income not explicitly directed to "Savings" or 
     required for "Budget" is assumed SPENT. No automatic recycling of surplus.
 
 --------------------------------------------------------------------------------
 BURNDOWN ENGINE & DECUMULATION LOGIC
 --------------------------------------------------------------------------------
-1.  STRATEGY MODES:
-    - SUBSIDY HUNTER: Aggressively targets < 138% FPL for $0 healthcare.
-    - STRATEGIC POOR: Targets ~200-250% FPL to stay in the "CSR Sweet Spot."
-    - IRON FIST: Zero tax-optimization; purely follows the Draw Order waterfall.
+1.  STRATEGY MODES (MAGI TARGETS):
+    - BENEFIT HUNTER: Maximize gov benefits by staying < 138% FPL.
+    - STRATEGIC DRAW: Target ~200-250% FPL for Silver Cost-Sharing Reductions.
+    - IRON FIST: Zero tax-optimization; strictly follows the Draw Order waterfall.
 
 2.  IRON FIST PROTOCOL: 
     When active, the engine follows the Drag-and-Drop priority list to the letter.
     It will fully exhaust an asset balance (down to $0 or the Safety Net) before 
     pulling a single dollar from the next asset in the list.
 
-3.  SNAP CONVERGENCE (2-PASS):
+3.  SNAP CONVERGENCE (3-PASS VALIDATION):
     - Pass 0: Simulation runs with $0 SNAP to find the "Required Withdrawal."
     - Pass 1: "Required Withdrawal" normalized to MONTHLY to perform SNAP test.
-    - Result: If SNAP is found, the engine REDUCES the asset withdrawal amount 
-      for that year, effectively stretching your portfolio.
+    - Pass 2 (VALIDATION): Check if Total Income (Floor + Draws) still qualifies.
+    - Result: Prevents "Ghost SNAP" where strategy draws would realistically 
+      disqualify the household from food benefits.
 ================================================================================

@@ -2,7 +2,8 @@ export const PROFILE_45_COUPLE = {
     investments: [
         { name: 'His 401k', type: 'Pre-Tax (401k/IRA)', value: 350000, costBasis: 0 },
         { name: 'Her 401k', type: 'Pre-Tax (401k/IRA)', value: 250000, costBasis: 0 },
-        { name: 'Brokerage', type: 'Taxable', value: 200000, costBasis: 120000 },
+        { name: 'Brokerage', type: 'Taxable', value: 100000, costBasis: 70000 },
+        { name: 'Bitcoin (Cold Storage)', type: 'Crypto', value: 90000, costBasis: 60000 },
         { name: 'His Roth', type: 'Roth IRA', value: 150000, costBasis: 100000 },
         { name: 'Her Roth', type: 'Roth IRA', value: 150000, costBasis: 100000 },
         { name: 'HSA', type: 'HSA', value: 50000, costBasis: 30000 },
