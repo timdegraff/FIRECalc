@@ -590,24 +590,22 @@ export const burndown = {
                 Object.entries(currentDraws).forEach(([k,v]) => { if (v > 10) trace += `    - Pulled ${math.toCurrency(v)} from ${burndown.assetMeta[k].short}\n`; });
             }
 
-            const liq = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
+            const liq = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'] + Math.max(0, helocLimit - bal['heloc']);
             const reVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);
             const oaVal = otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0);
             const liabilities = (simRE.reduce((s,r)=>s+r.mortgage,0) + simDebts.reduce((s,d)=>s+d.balance,0) + bal['heloc']);
             const curNW = (liq + reVal + oaVal) - liabilities;
             
-            const isShortfall = (targetBudget - netCash) > 1000 && liq >= 100;
-            const isInsolvent = liq < 100;
+            const isInsolvent = liq < 1000;
 
             let stat = 'Private'; 
             if (isInsolvent) stat = 'INSOLVENT';
-            else if (isShortfall) stat = 'SHORTFALL'; 
             else if (age >= 65) stat = 'Medicare'; 
             else if (fRatio <= 1.385) stat = 'Platinum'; 
             else if (fRatio <= 2.505) stat = 'Silver';
 
             if (!isSilent) { trace += `NW: ${math.toCurrency(curNW)} | Status: ${stat}\n`; simulationTrace[age] = trace; }
-            results.push({ age, year, budget: targetBudget, magi: fMAGI, netWorth: curNW, isShortfall, isInsolvent, balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap, taxes: fTax, liquid: liq, netCash, status: stat });
+            results.push({ age, year, budget: targetBudget, magi: fMAGI, netWorth: curNW, isInsolvent, balances: { ...bal }, draws: currentDraws, snapBenefit: finalSnap, taxes: fTax, liquid: liq, netCash, status: stat });
             if (!isSilent) burndown.lastCalculatedResults.snapResults[age] = finalSnap;
             if (!isSilent && isInsolvent && firstInsolvencyAge === null) firstInsolvencyAge = age;
 
@@ -624,7 +622,6 @@ export const burndown = {
             const formatCell = (v) => formatter.formatCurrency(v / inf, 0);
             let badgeClass = 'bg-slate-700 text-slate-400';
             if (r.status === 'INSOLVENT') badgeClass = 'bg-red-600 text-white animate-pulse';
-            else if (r.status === 'SHORTFALL') badgeClass = 'bg-orange-500 text-white';
             else if (r.status === 'Medicare') badgeClass = 'bg-slate-600 text-white';
             else if (r.status === 'Platinum') badgeClass = 'bg-emerald-500 text-white';
             else if (r.status === 'Silver') badgeClass = 'bg-blue-500 text-white';

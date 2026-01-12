@@ -18,6 +18,7 @@ V4.5 COMPLETED LOGIC:
 - [x] UI: Moved Real Dollars toggle to the top header for better accessibility.
 - [x] LOGIC: Clicking DWZ or Preservation Age cards auto-sets relevant parameters.
 - [x] UI: Handout Hunter enables SNAP Target Floor; Iron Fist greys it out and disables it.
+- [x] INSOLVENCY: Defined as <$1,000 total drawable liquid assets (including HELOC credit). Removed Shortfall.
 
 ================================================================================
 PROJECT OVERVIEW: FIRECALC RETIREMENT ARCHITECT
@@ -94,11 +95,10 @@ resulting tax/health premium drag.
 STATUS DEFINITIONS:
 - PLATINUM (Green): Medicaid/Max Subsidy (<138% FPL).
 - SILVER (Blue): High CSR Subsidy (138% - 250% FPL).
-- SHORTFALL (Orange): Assets exist, but the engine could not generate enough 
-  cashflow to hit the budget (Gap > $1,000). Usually caused by HELOC limits 
-  or SEPP caps in strategic modes.
+- MEDICARE (Slate): Age 65+ standard status.
 - INSOLVENT (Red): TOTAL LIQUID DEPLETION. All drawable accounts (Cash, 
-  Brokerage, Roth, 401k, etc.) are at $0. Real Estate equity is not 
+  Brokerage, Roth, 401k, HSA, Crypto, Metals, AND available HELOC credit) 
+  are effectively $0 (<$1,000 total). Real Estate equity is not 
   considered solvent for daily bills.
 
 --------------------------------------------------------------------------------
