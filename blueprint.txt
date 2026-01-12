@@ -5,6 +5,7 @@ TO DO LIST & ARCHITECTURAL ROADMAP
 [THE FOLLOWING SECTION IS RESERVED FOR THE HUMAN ARCHITECT]
 
 CRITICAL FUTURE UPDATES:
+- The end goal for this code is to be on the iOS app store for free with premium upgrade features
 - [ ] Phase 1: REFACTOR - Migrate "Hybrid Architecture" to 100% React. Eliminate Vanilla templates.js.
 - [ ] Phase 1: INTEGRITY - Move logic to TypeScript (FireEngine.ts) to prevent currency-to-string math errors.
 - [ ] Phase 1: STATE - Replace window.currentData with React Context/Zustand for true reactivity.

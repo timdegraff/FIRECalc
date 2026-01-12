@@ -255,7 +255,7 @@ const MOBILE_TEMPLATES = {
                 <div class="flex flex-col gap-1.5">
                     <div class="flex justify-between items-end">
                          <div class="flex flex-col">
-                            <label class="label-std text-emerald-400">Burn Down MAGI Targets</label>
+                            <label class="label-std text-emerald-400">Burn Down Engine</label>
                             <p class="text-[7px] text-slate-500 font-medium italic">Handout → Iron Fist</p>
                          </div>
                          <div id="mobile-strategy-status" class="text-[10px] font-black text-white uppercase tracking-widest leading-none">Handout Hunter</div>
