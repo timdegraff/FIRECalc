@@ -13,7 +13,7 @@ export const burndown = {
         isRealDollars = !isRealDollars;
         return isRealDollars;
     },
-    priorityOrder: ['cash', 'taxable', 'roth-basis', '401k', 'crypto', 'metals', 'roth-earnings', 'heloc', 'hsa'],
+    priorityOrder: ['cash', 'roth-basis', 'taxable', 'crypto', 'metals', 'heloc', '401k', 'hsa', 'roth-earnings'],
     getInsolvencyAge: () => firstInsolvencyAge,
     lastCalculatedResults: { dwz: 0, preservationAge: null, snapResults: {} },
 

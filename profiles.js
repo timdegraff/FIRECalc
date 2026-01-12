@@ -56,7 +56,8 @@ export const PROFILE_45_COUPLE = {
         ]
     },
     burndown: {
-        strategyMode: 'PLATINUM'
+        strategyMode: 'PLATINUM',
+        priority: ['cash', 'roth-basis', 'taxable', 'crypto', 'metals', 'heloc', '401k', 'hsa', 'roth-earnings']
     }
 };
 
@@ -110,7 +111,8 @@ export const PROFILE_25_SINGLE = {
         dependents: [] 
     },
     burndown: {
-        strategyMode: 'SILVER'
+        strategyMode: 'SILVER',
+        priority: ['cash', 'roth-basis', 'taxable', 'crypto', 'metals', 'heloc', '401k', 'hsa', 'roth-earnings']
     }
 };
 
@@ -155,6 +157,7 @@ export const PROFILE_55_RETIREE = {
         dependents: [] 
     },
     burndown: {
-        strategyMode: 'UNCONSTRAINED'
+        strategyMode: 'UNCONSTRAINED',
+        priority: ['cash', 'roth-basis', 'taxable', 'crypto', 'metals', 'heloc', '401k', 'hsa', 'roth-earnings']
     }
 };

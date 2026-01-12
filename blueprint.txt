@@ -20,35 +20,101 @@ V4.5 COMPLETED LOGIC:
 - [x] UI: Handout Hunter enables SNAP Target Floor; Iron Fist greys it out and disables it.
 
 ================================================================================
-PROJECT OVERVIEW: FIRECALC RETIREMENT PLANNER
+PROJECT OVERVIEW: FIRECALC RETIREMENT ARCHITECT
 ================================================================================
-FIRECalc is a high-fidelity financial architecture tool designed for precision 
-planning, specifically optimized for the 2026 Michigan tax/benefit landscape. 
+FIRECalc is a high-fidelity decumulation engine designed for hyper-realistic 
+retirement simulation. Unlike basic "mountain chart" calculators, FIRECalc 
+solves for survival, tax liability, and government benefit eligibility in real-time.
 
 --------------------------------------------------------------------------------
-CORE PHILOSOPHY & UI PREFERENCES
+CORE FEATURE MODULES
 --------------------------------------------------------------------------------
-1.  HOUSEHOLD SYNC: Total Family Size (hhSize) is a derived value:
-    Base (1) + Spouse (1 if MFJ) + Dependents.
-2.  CONSERVATIVE SPEND: All income not explicitly directed to "Savings" or 
-    required for "Budget" is assumed SPENT. No automatic recycling of surplus.
+1.  ASSET ARCHITECTURE: 
+    Tracks liquidity (Cash, Taxable, Roth, 401k), illiquid equity (Real Estate, 
+    Other Assets), and Private Equity (Stock Options/RSUs). Private equity 
+    includes a dedicated growth solver and ordinary income tax treatment.
+
+2.  INCOME STREAMS: 
+    Dynamic W2/1099 modeling with automated 401k contribution caps, matching 
+    logic, and bonus structures. Features a "Non-Taxable Until" field for 
+    modeling foreign earned income exclusions or temporary tax holidays.
+
+3.  BUDGET & SAVINGS: 
+    Distinguishes between "Savings" (Inflows) and "Expenses" (Outflows). 
+    Supports "Fixed" expenses (no inflation) and "Retirement Toggle" to 
+    instantly model lifestyle changes (e.g., stopping daycare costs).
+
+4.  BENEFIT OPTIMIZER: 
+    Real-time ACA (Obamacare) and SNAP (Food Stamps) simulator. Models Medicaid 
+    expansion gaps by state and recalculates household size based on child 
+    birth years (aging out at 19).
 
 --------------------------------------------------------------------------------
-BURNDOWN ENGINE & DECUMULATION LOGIC
+THE BURNDOWN ENGINE: DECUMULATION LOGIC
 --------------------------------------------------------------------------------
-1.  STRATEGY MODES (MAGI TARGETS):
-    - HANDOUT HUNTER: Maximize gov benefits by staying < 138% FPL. Enables SNAP Target Floor optimization.
-    - IRON FIST: Zero tax-optimization; strictly follows the Draw Order waterfall. Disables SNAP Target Floor.
+The "Burndown" is a 10-pass iterative solver that determines the exact 
+withdrawal required to satisfy the target budget while accounting for the 
+"Tax Spiral" (withdrawals increase taxes, which require more withdrawals).
 
-2.  IRON FIST PROTOCOL: 
-    When active, the engine follows the Drag-and-Drop priority list to the letter.
-    It will fully exhaust an asset balance (down to $0 or the Safety Net) before 
-    pulling a single dollar from the next asset in the list.
+1.  THE WATERFALL: 
+    Assets are drained according to a user-defined drag-and-drop priority list.
 
-3.  SNAP CONVERGENCE (3-PASS VALIDATION):
-    - Pass 0: Simulation runs with $0 SNAP to find the "Required Withdrawal."
-    - Pass 1: "Required Withdrawal" normalized to MONTHLY to perform SNAP test.
-    - Pass 2 (VALIDATION): Check if Total Income (Floor + Draws) still qualifies.
-    - Result: Prevents "Ghost SNAP" where strategy draws would realistically 
-      disqualify the household from food benefits.
+2.  SEPP / 72(t) LOGIC: 
+    If a user retires before age 59.5, the engine calculates the maximum IRS-
+    allowed penalty-free withdrawal (SEPP) based on life expectancy.
+
+3.  SURVIVAL PASS (VULTURES PASS): 
+    If strategic limits (like SEPP) fail to meet the budget, the engine 
+    triggers an exhaustive pass that ignores all strategy to pull every 
+    available liquid dollar until the budget is met or accounts hit $0.
+
+--------------------------------------------------------------------------------
+BURNDOWN STRATEGY MODES
+--------------------------------------------------------------------------------
+A.  HANDOUT HUNTER (Benefit Maximizer):
+    - Target: Stay under 138% FPL (Federal Poverty Level).
+    - Logic: Solves for a "MAGI Ceiling." It will attempt to pull as much as 
+      possible from non-taxable assets (Cash, Roth) to keep taxable income 
+      low enough to qualify for $0 premiums and max SNAP benefits.
+    - Enables "SNAP Target Floor" slider to solve for specific aid amounts.
+
+B.  IRON FIST (Strict Priority):
+    - Target: Zero tax-optimization.
+    - Logic: Follows the Draw Order waterfall blindly. It will exhaust the 
+      first asset in the list entirely before moving to the second, 
+      regardless of the tax consequence or benefit loss.
+
+--------------------------------------------------------------------------------
+LOGIC TRACE & STATUS DEFINITIONS
+--------------------------------------------------------------------------------
+The Advanced Logic Trace provides a year-by-year "under the hood" look at the 
+math, showing exactly how many dollars were pulled from which account and the 
+resulting tax/health premium drag.
+
+STATUS DEFINITIONS:
+- PLATINUM (Green): Medicaid/Max Subsidy (<138% FPL).
+- SILVER (Blue): High CSR Subsidy (138% - 250% FPL).
+- SHORTFALL (Orange): Assets exist, but the engine could not generate enough 
+  cashflow to hit the budget (Gap > $1,000). Usually caused by HELOC limits 
+  or SEPP caps in strategic modes.
+- INSOLVENT (Red): TOTAL LIQUID DEPLETION. All drawable accounts (Cash, 
+  Brokerage, Roth, 401k, etc.) are at $0. Real Estate equity is not 
+  considered solvent for daily bills.
+
+--------------------------------------------------------------------------------
+TECHNICAL ARCHITECTURE: SYNC & DOLLARS
+--------------------------------------------------------------------------------
+1.  REAL vs NOMINAL: 
+    Toggle between "Nominal Dollars" (face value in future years) and 
+    "2026 Dollars" (purchasing power adjusted for inflation).
+
+2.  GLOBAL SYNC: 
+    Configuration keys (Current Age, Growth Rates, Inflation) are synced 
+    globally via `GLOBAL_SYNC_KEYS`. Changing the market outlook in Config 
+    instantly updates the Burndown and Projection models.
+
+3.  PRECISION MATH: 
+    The engine treats Real Estate appreciation and Mortgage principal paydown 
+    as distinct logical flows, ensuring Net Worth reflects both debt 
+    reduction and asset growth.
 ================================================================================
