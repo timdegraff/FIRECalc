@@ -70,7 +70,7 @@ export const burndown = {
                         <div class="absolute right-0 top-0 p-3"><i class="fas fa-road text-4xl text-blue-400"></i></div>
                         <div>
                             <label class="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-flag-checkered"></i> Retirement Runway</label>
-                            <div id="card-runway-val" class="text-3xl font-black text-blue-400 mono-numbers tracking-tighter">--</div>
+                            <div id="card-runway-val" class="text-3xl font-black text-red-400 mono-numbers tracking-tighter">--</div>
                         </div>
                         <div id="card-runway-sub" class="text-[9px] font-bold text-blue-400/60 uppercase tracking-tighter leading-none">SUSTAINS $0K BUDGET IN 2026 DOLLARS UNTIL THIS AGE</div>
                     </div>
@@ -670,7 +670,7 @@ export const burndown = {
             let finalHCost = (!stateMeta.expanded && finalRatio < 1.0) ? 13200*infFac : (finalRatio > 4.0 ? 13200*infFac : (finalRatio > 1.38 ? finalMAGI * (0.021 + (finalRatio - 1) * 0.074 / 3) : 0));
             const netCash = (floorTotalIncome - pretaxDed) + totalWithdrawn + finalSnap - finalTax - finalHCost;
             let surplus = Math.max(0, netCash - targetBudget);
-            if (surplus > 100) { if (bal['heloc'] > 0) { const rep = Math.min(bal['heloc'], surplus); bal['heloc'] -= rep; surplus -= rep; if (!isSilent) trace += `  + Surplus applied to HELOC: ${math.toCurrency(rep)}. New Bal: ${math.toCurrency(bal['heloc'])}\n`; } if (surplus > 100) { bal['cash'] += surplus; if (!isSilent && isRet) trace += `  + Recycled surplus ${math.toCurrency(surplus)} back to Cash.\n`; } }
+            if (surplus > 100) { if (bal['heloc'] > 0) { const rep = Math.min(bal['heloc'], surplus); bal['heloc'] -= rep; surplus -= rep; if (!isSilent) trace += `  + Surplus applied to HELOC: ${math.toCurrency(rep)}. New Bal: ${math.toCurrency(bal['heloc'])}\n`; } if (surplus > 100 && !isSilent) { trace += `  ! Note: ${math.toCurrency(surplus)} surplus income assumed spent (not saved).\n`; } }
 
             const liq = bal['cash'] + bal['taxable'] + bal['roth-basis'] + bal['roth-earnings'] + bal['401k'] + bal['crypto'] + bal['metals'] + bal['hsa'];
             const reVal = realEstate.reduce((s, r) => s + (math.fromCurrency(r.value) * Math.pow(1 + realEstateGrowth, i)), 0);

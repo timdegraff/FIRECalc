@@ -35,7 +35,10 @@ CORE PHILOSOPHY & UI PREFERENCES
     - Pink (#ec4899): Expenses, Debts.
     - Blue (#3b82f6): Pre-Tax / Strategy / Jobs.
     - Purple (#a855f7): Roth.
-3.  REPLICATIVE DATA: The system currently "scrapes" the DOM. Future versions 
+3.  CONSERVATIVE SPEND ASSUMPTION: The engine assumes all income not explicitly 
+    directed to the "Savings" table or required for "Budget" is SPENT. No 
+    automatic surplus recycling into cash buckets.
+4.  REPLICATIVE DATA: The system currently "scrapes" the DOM. Future versions 
     must move to a "Reactive Model" where the UI reflects the state object.
 
 --------------------------------------------------------------------------------
