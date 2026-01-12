@@ -64,7 +64,7 @@ export const burndown = {
                             <label class="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1 flex items-center gap-1"><i class="fas fa-shield-alt"></i> Preservation Age</label>
                             <div id="card-preservation-val" class="text-3xl font-black text-amber-500 mono-numbers tracking-tighter">--</div>
                         </div>
-                        <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">MAINTAINS FLAT REAL WEALTH AT $0K BUDGET UNTIL THIS AGE</div>
+                        <div id="card-preservation-sub" class="text-[9px] font-bold text-amber-500/60 uppercase tracking-tighter leading-none">MAINTAINS REAL WEALTH AT $0K BUDGET STARTING AT THIS AGE</div>
                     </div>
 
                     <div class="bg-slate-900/50 rounded-2xl border border-slate-800 p-4 flex flex-col justify-between h-28 relative overflow-hidden group">
@@ -358,7 +358,13 @@ export const burndown = {
             testedRealBudget = config.manualBudget;
         }
 
-        const compactBudgetStr = math.toSmartCompactCurrency(testedRealBudget);
+        // Custom Compact Formatter for Budget Label (e.g. $102K)
+        const compactBudgetStr = new Intl.NumberFormat('en-US', { 
+            style: 'currency', 
+            currency: 'USD', 
+            notation: 'compact', 
+            maximumFractionDigits: testedRealBudget >= 1000000 ? 1 : 0 
+        }).format(testedRealBudget);
 
         simulationTrace = {}; 
         const results = burndown.simulateProjection(data, config);
@@ -393,7 +399,7 @@ export const burndown = {
         }
         if (document.getElementById('card-preservation-val')) document.getElementById('card-preservation-val').textContent = preservationAge;
         if (document.getElementById('card-preservation-sub')) {
-            document.getElementById('card-preservation-sub').textContent = `MAINTAINS FLAT REAL WEALTH AT ${compactBudgetStr} BUDGET UNTIL THIS AGE`;
+            document.getElementById('card-preservation-sub').textContent = `MAINTAINS REAL WEALTH AT ${compactBudgetStr} BUDGET STARTING AT THIS AGE`;
         }
 
         // FIXED SOLVER: Solve target spend ONLY during retirement years.
@@ -664,6 +670,22 @@ export const burndown = {
                         trace += msg + `\n`;
                     }
                 }
+
+                // CRITICAL FIX: Update deficit for Pass 3 (Debt) check
+                // We recalculate the remaining deficit (gap) after all Iron Fist withdrawals
+                // so that we don't accidentally borrow from HELOC if the budget was met.
+                const finalTaxCheck = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
+                const finalMagiCheck = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI;
+                const finalRatioCheck = finalMagiCheck / fpl100;
+                let finalHealthCheck = 0;
+                if (!stateMeta.expanded && finalRatioCheck < 1.0) finalHealthCheck = 13200 * infFac;
+                else if (finalRatioCheck > 4.0) finalHealthCheck = 13200 * infFac;
+                else if (finalRatioCheck > 1.38) finalHealthCheck = finalMagiCheck * (0.021 + (finalRatioCheck - 1) * 0.074 / 3);
+                
+                const resources = (floorTotalIncome - pretaxDed) + totalWithdrawn - finalTaxCheck;
+                // Note: Iron Fist intentionally excludes SNAP from "Deficit" calculation to ensure self-sufficiency first.
+                // If SNAP covers the gap later, it becomes a cash surplus.
+                deficit = (targetBudget + finalHealthCheck) - resources;
             } 
             else {
                 // --- PLATINUM / SILVER LOGIC (Original Multi-Pass) ---
