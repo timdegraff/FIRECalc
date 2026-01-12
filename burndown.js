@@ -596,7 +596,7 @@ export const burndown = {
             const liabilities = (simRE.reduce((s,r)=>s+r.mortgage,0) + simDebts.reduce((s,d)=>s+d.balance,0) + bal['heloc']);
             const curNW = (liq + reVal + oaVal) - liabilities;
             
-            const isShortfall = (targetBudget - netCash) > 100 && liq >= 100;
+            const isShortfall = (targetBudget - netCash) > 1000 && liq >= 100;
             const isInsolvent = liq < 100;
 
             let stat = 'Private'; 
