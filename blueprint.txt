@@ -7,17 +7,16 @@ TO DO LIST & ARCHITECTURAL ROADMAP
 CRITICAL FUTURE UPDATES:
 - [ ] Phase 1: REFACTOR - Migrate "Hybrid Architecture" to 100% React. Eliminate Vanilla templates.js.
 - [ ] Phase 1: INTEGRITY - Move logic to TypeScript (FireEngine.ts) to prevent currency-to-string math errors.
-- [ ] Phase 1: STATE - Replace window.currentData with React Context/Zustand for true reactivity (no more forceSync).
+- [ ] Phase 1: STATE - Replace window.currentData with React Context/Zustand for true reactivity.
 - [ ] Phase 2: PERFORMANCE - Offload Burndown simulation (70+ year loops) to a Web Worker.
 - [ ] Phase 2: REVENUE - Add "Educational Needs" section in Budget for automated 529 drawdown tracking.
-- [ ] Phase 3: INTELLIGENCE - Use Gemini Grounding to fetch live 2026+ IRS limits (401k/HSA) automatically.
 
-V3.5 COMPLETED TASKS:
-- [x] Implementation: "Strategy Personas" (Platinum Hunter vs Silver CSR).
-- [x] Optimization: "Cash Ceiling" in Burndown to prevent over-selling.
-- [x] UX: Redesigned Benefits module with editable Child/Baby icons & Independence Years.
-- [x] UX: Contextualized "Earned vs Unearned" toggles within Sandbox MAGI.
-- [x] Documentation: "Dependent Recalculation" logic added to Engine Doc.
+V4.2 COMPLETED LOGIC:
+- [x] PERSONAS: Rebranded to "Subsidy Hunter" (Max Subsidy) and "Strategic Poor" (The CSR Grift).
+- [x] BUGFIX: SNAP Annualization. Normalized annual simulation income to monthly for SNAP eligibility checks.
+- [x] IMPLEMENTATION: "Iron Fist" Draw Logic. Strictly exhausts one bucket before the next.
+- [x] OPTIMIZATION: 2-Pass SNAP Convergence. Passes income to SNAP, then uses SNAP to reduce asset sales.
+- [x] PHILOSOPHY: Conservative Spend Assumption. Extra income - budget = $0. Surplus is not saved.
 
 ================================================================================
 PROJECT OVERVIEW: FIRECALC RETIREMENT PLANNER
@@ -30,25 +29,29 @@ CORE PHILOSOPHY & UI PREFERENCES
 --------------------------------------------------------------------------------
 1.  HOUSEHOLD SYNC: Total Family Size (hhSize) is a derived value:
     Base (1) + Spouse (1 if MFJ) + Dependents.
-2.  COLOR LOGIC (STRICT ADHERENCE):
+2.  COLOR LOGIC:
     - Teal (#14b8a6): Assets, Net Worth.
     - Pink (#ec4899): Expenses, Debts.
     - Blue (#3b82f6): Pre-Tax / Strategy / Jobs.
-    - Purple (#a855f7): Roth.
-3.  CONSERVATIVE SPEND ASSUMPTION: The engine assumes all income not explicitly 
-    directed to the "Savings" table or required for "Budget" is SPENT. No 
-    automatic surplus recycling into cash buckets.
-4.  REPLICATIVE DATA: The system currently "scrapes" the DOM. Future versions 
-    must move to a "Reactive Model" where the UI reflects the state object.
+3.  CONSERVATIVE SPEND: All income not explicitly directed to "Savings" or 
+    required for "Budget" is assumed SPENT. No automatic recycling of surplus.
 
 --------------------------------------------------------------------------------
 BURNDOWN ENGINE & DECUMULATION LOGIC
 --------------------------------------------------------------------------------
-1.  DEPENDENT INDEPENDENCE: The engine recalculates hhSize every year of the 
-    simulation. When a dependent hits their "Independence Year," hhSize drops, 
-    lowering the FPL (Federal Poverty Level) floors.
-2.  STRATEGY PASSES:
-    - PASS 1: Survival (Meet Budget).
-    - PASS 2: Strategy (Harvest up to Persona Limit: 138% or 200% FPL).
-    - PASS 3: Tax Spiral (Withdraw extra to cover the taxes generated).
+1.  STRATEGY MODES:
+    - SUBSIDY HUNTER: Aggressively targets < 138% FPL for $0 healthcare.
+    - STRATEGIC POOR: Targets ~200-250% FPL to stay in the "CSR Sweet Spot."
+    - IRON FIST: Zero tax-optimization; purely follows the Draw Order waterfall.
+
+2.  IRON FIST PROTOCOL: 
+    When active, the engine follows the Drag-and-Drop priority list to the letter.
+    It will fully exhaust an asset balance (down to $0 or the Safety Net) before 
+    pulling a single dollar from the next asset in the list.
+
+3.  SNAP CONVERGENCE (2-PASS):
+    - Pass 0: Simulation runs with $0 SNAP to find the "Required Withdrawal."
+    - Pass 1: "Required Withdrawal" normalized to MONTHLY to perform SNAP test.
+    - Result: If SNAP is found, the engine REDUCES the asset withdrawal amount 
+      for that year, effectively stretching your portfolio.
 ================================================================================

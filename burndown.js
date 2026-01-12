@@ -86,21 +86,21 @@ export const burndown = {
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                     <!-- Card 1: Draw Strategy -->
+                     <!-- Card 1: Rebranded Draw Strategies -->
                      <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-center h-28">
-                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Draw Strategy</label>
+                        <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-2">Decumulation Logic</label>
                         <div id="persona-selector" class="grid grid-cols-3 gap-1 p-1 bg-black/40 rounded-lg border border-white/5 h-full">
                             <button data-mode="PLATINUM" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-emerald-500/5">
-                                <span class="text-emerald-400">138%</span>
-                                <span class="text-[8px] opacity-40">Plat</span>
+                                <span class="text-emerald-400">Hunter</span>
+                                <span class="text-[7px] opacity-40 leading-none mt-0.5">Max Grift</span>
                             </button>
                             <button data-mode="SILVER" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-blue-500/5">
-                                <span class="text-blue-400">200%</span>
-                                <span class="text-[8px] opacity-40">Silver</span>
+                                <span class="text-blue-400">Strategic</span>
+                                <span class="text-[7px] opacity-40 leading-none mt-0.5">CSR Mid</span>
                             </button>
                             <button data-mode="RAW" class="rounded-md text-xs font-black uppercase tracking-tight transition-all flex flex-col items-center justify-center border border-transparent hover:bg-slate-500/5">
-                                <span class="text-slate-400">Strict</span>
-                                <span class="text-[8px] opacity-40">Iron Fist</span>
+                                <span class="text-slate-400">Iron Fist</span>
+                                <span class="text-[7px] opacity-40 leading-none mt-0.5">Strict Burn</span>
                             </button>
                         </div>
                     </div>
@@ -114,7 +114,7 @@ export const burndown = {
                         <input type="range" id="input-cash-reserve" min="0" max="100000" step="1000" value="25000" class="input-range w-full">
                     </div>
                     
-                    <!-- Card 3: SNAP & Nominal Control -->
+                    <!-- Card 3: SNAP Indicator -->
                     <div class="bg-slate-900/30 rounded-xl border border-slate-800/50 p-3 flex flex-col justify-between h-28">
                         <div class="flex justify-between items-start mb-1">
                             <div>
@@ -128,7 +128,7 @@ export const burndown = {
                         
                         <div class="space-y-1">
                             <div class="flex justify-between items-center">
-                                <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Preserve Min</label>
+                                <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Target Floor</label>
                                 <span id="label-snap-preserve" class="text-emerald-400 font-black mono-numbers text-[9px]">$0</span>
                             </div>
                             <input type="range" id="input-snap-preserve" min="0" max="2000" step="50" value="0" class="input-range w-full accent-emerald-500">
@@ -573,7 +573,9 @@ export const burndown = {
                 for (let iter = 0; iter < 2; iter++) {
                     bal = { ...startOfYearBal }; currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed); currentLtcgIncome = 0; totalWithdrawn = 0; currentDraws = {};
                     
-                    const estSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true) * 12;
+                    // NORMALIZATION FIX: Convert annual currentOrdIncome to monthly for engine
+                    const currentEarnedMonthly = currentOrdIncome / 12;
+                    const estSnap = engine.calculateSnapBenefit(currentEarnedMonthly, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true) * 12;
                     if (!isSilent && iter === 0) trace += `  SNAP Debug (HH:${currentHhSize}, GrossInc:${math.toCurrency(currentOrdIncome)}): ${estSnap > 0 ? math.toCurrency(estSnap) : '$0 (Ineligible/Zero)'}\n`;
                     
                     for (const pk of liquidOrder) {
@@ -613,9 +615,10 @@ export const burndown = {
                     finalSnap = estSnap;
                 }
             } else {
-                // PLATINUM / SILVER ORIGINAL LOGIC
+                // SUBSIDY HUNTER / STRATEGIC POOR Logic
                 let cNet = (floorTotalIncome - pretaxDed) - engine.calculateTax(Math.max(0, floorOrdIncome - pretaxDed), 0, filingStatus, assumptions.state, infFac);
-                finalSnap = engine.calculateSnapBenefit(Math.max(0, floorOrdIncome-pretaxDed), 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
+                // NORMALIZATION FIX: Convert annual to monthly
+                finalSnap = engine.calculateSnapBenefit(Math.max(0, floorOrdIncome-pretaxDed) / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
                 deficit = targetBudget - (cNet + finalSnap);
                 const magiT = persona === 'PLATINUM' ? fpl100 * 1.37 : (persona === 'SILVER' ? fpl100 * 2.48 : 0);
                 if (persona !== 'UNCONSTRAINED') liquidOrder = [...['cash', 'roth-basis', 'hsa'].filter(b => liquidOrder.includes(b)), ...liquidOrder.filter(b => !['cash', 'roth-basis', 'hsa'].includes(b))];
@@ -639,7 +642,8 @@ export const burndown = {
                     bal[pk] -= pull; currentDraws[pk] = (currentDraws[pk] || 0) + pull; totalWithdrawn += pull;
                     if (pk === '401k') currentOrdIncome += pull; else if (['taxable', 'crypto', 'metals'].includes(pk)) currentLtcgIncome += (pull * (1 - basisR));
                     const curT = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                    finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
+                    // NORMALIZATION FIX: Convert annual to monthly
+                    finalSnap = engine.calculateSnapBenefit((currentOrdIncome + currentLtcgIncome) / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
                     const nRatio = (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI) / fpl100;
                     hCost = (!stateMeta.expanded && nRatio < 1.0) ? 13200*infFac : (nRatio > 4.0 ? 13200*infFac : (nRatio > 1.38 ? (currentOrdIncome+currentLtcgIncome+floorUntaxedMAGI) * (0.021 + (nRatio - 1) * 0.074 / 3) : 0));
                     deficit = targetBudget + hCost - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curT + finalSnap);
@@ -657,7 +661,8 @@ export const burndown = {
                         bal[pk] -= pull; currentDraws[pk] = (currentDraws[pk] || 0) + pull; totalWithdrawn += pull;
                         if (pk === '401k') currentOrdIncome += pull; else if (['taxable', 'crypto', 'metals'].includes(pk)) currentLtcgIncome += (pull * (1 - basisR));
                         const curT = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                        finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
+                        // NORMALIZATION FIX: Convert annual to monthly
+                        finalSnap = engine.calculateSnapBenefit((currentOrdIncome + currentLtcgIncome) / 12, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
                         const nRatio = (currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI) / fpl100;
                         let hCost = (!stateMeta.expanded && nRatio < 1.0) ? 13200*infFac : (nRatio > 4.0 ? 13200*infFac : (nRatio > 1.38 ? (currentOrdIncome+currentLtcgIncome+floorUntaxedMAGI) * (0.021 + (nRatio - 1) * 0.074 / 3) : 0));
                         deficit = targetBudget + hCost - ((floorTotalIncome - pretaxDed) + totalWithdrawn - curT + finalSnap);
