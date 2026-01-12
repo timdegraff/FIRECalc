@@ -577,6 +577,8 @@ export const burndown = {
                     // Calculate withdrawal needed to cover deficit AFTER taxes
                     let grossPull = 0;
                     let taxGenerated = 0;
+                    let hitSeppLimit = false;
+                    let seppCap = 0;
 
                     if (burndown.assetMeta[pk].isTaxable) {
                         const bracketBoundary = (filingStatus === 'Married Filing Jointly' ? 96950 : 48475) * infFac;
@@ -593,17 +595,30 @@ export const burndown = {
                         // Check SEPP
                         if (pk === '401k' && age < 59.5) {
                             const seppLimit = engine.calculateMaxSepp(bal['401k'], age);
-                            grossPull = Math.min(grossPull, Math.max(0, seppLimit - (currentDraws['401k'] || 0)));
+                            const alreadyDrawn = currentDraws['401k'] || 0;
+                            const availableSepp = Math.max(0, seppLimit - alreadyDrawn);
+                            
+                            if (grossPull > availableSepp) {
+                                grossPull = availableSepp;
+                                hitSeppLimit = true;
+                                seppCap = seppLimit;
+                            }
                         }
 
-                        // Re-calculate tax exact for this chunk (simplified for trace)
+                        // Re-calculate tax exact for this chunk
                         taxGenerated = grossPull * marginalRate;
                     } else {
                         // Tax Free
                         grossPull = Math.min(available, deficit);
                     }
 
-                    if (grossPull <= 1) continue;
+                    if (grossPull <= 1) {
+                         // Optional: Log if we were blocked by SEPP even if we had money
+                         if (pk === '401k' && hitSeppLimit && available > 1 && !isSilent) {
+                             trace += `  -> Skipped 401k: Capped by 72(t) Limit of ${math.toCurrency(seppCap)} (Available: ${math.toCurrency(available)})\n`;
+                         }
+                         continue;
+                    }
 
                     // Execute Pull
                     if (bal[pk+'Basis'] !== undefined) bal[pk+'Basis'] -= (bal[pk+'Basis'] * (grossPull / bal[pk])); 
@@ -620,7 +635,12 @@ export const burndown = {
                     const netReceived = grossPull - taxGenerated;
                     deficit -= netReceived;
 
-                    if (!isSilent) trace += `  -> Withdrew ${math.toCurrency(grossPull)} from ${pk}. (Tax Est: ${math.toCurrency(taxGenerated)})\n`;
+                    if (!isSilent) {
+                        let msg = `  -> Withdrew ${math.toCurrency(grossPull)} from ${pk}.`;
+                        if (burndown.assetMeta[pk].isTaxable) msg += ` (Tax Est: ${math.toCurrency(taxGenerated)})`;
+                        if (hitSeppLimit) msg += ` [CAPPED by 72(t): ${math.toCurrency(seppCap)}]`;
+                        trace += msg + `\n`;
+                    }
                 }
             } 
             else {
@@ -788,10 +808,16 @@ export const burndown = {
             const debtTotal = simRE.reduce((s,r)=>s+r.mortgage,0) + simDebts.reduce((s,d)=>s+d.balance,0) + bal['heloc'];
             const currentNW = (liquidAssets + reValTotal + otherAssets.reduce((s, o) => s + math.fromCurrency(o.value), 0)) - debtTotal;
             
-            const isInsolvent = (targetBudget - netCash) > 500 || currentNW < 100;
+            // Check for Liquidity Failure (Shortfall > $500 despite having Assets)
+            const failedCashFlow = (targetBudget - netCash) > 500;
+            const failedNetWorth = currentNW < 100;
+            const isInsolvent = failedCashFlow || failedNetWorth;
             
             let status = 'Private';
-            if (isInsolvent) status = 'INSOLVENT';
+            if (isInsolvent) {
+                if (failedNetWorth) status = 'DEPLETED'; // Truly broke
+                else status = 'ILLIQUID'; // Has assets, but locked/capped
+            }
             else if (age >= 65) status = 'Medicare';
             else if (!stateMeta.expanded && finalRatio < 1.0) status = 'No Cov';
             else if (finalRatio <= 1.385 && stateMeta.expanded) status = 'Platinum'; 
@@ -802,6 +828,7 @@ export const burndown = {
                 trace += `Final MAGI: ${math.toCurrency(healthMAGI)} (${Math.round(finalRatio * 100)}% FPL)\n`;
                 if (finalSnap > 0) trace += `Benefit Bonus: +${math.toCurrency(finalSnap)} SNAP included in Net Cash.\n`;
                 trace += `Status: ${status} | Health Cost: ${math.toCurrency(finalHealthCost)}\n`;
+                if (status === 'ILLIQUID') trace += `PLAN FAILURE: Liquidity Crisis. Assets exist (${math.toCurrency(currentNW)}), but are inaccessible or capped.\n`;
                 trace += `Total Tax Bill: ${math.toCurrency(finalTax)}\n`;
                 trace += `Ending Net Worth: ${math.toCurrency(currentNW)}\n`;
                 simulationTrace[age] = trace;
@@ -825,7 +852,8 @@ export const burndown = {
         const rows = results.map((r, i) => {
             const inf = isRealDollars ? Math.pow(1 + infRate, i) : 1;
             let badgeClass = 'bg-slate-700 text-slate-400';
-            if (r.status === 'INSOLVENT') badgeClass = 'bg-red-600 text-white animate-pulse';
+            if (r.status === 'DEPLETED') badgeClass = 'bg-red-600 text-white animate-pulse';
+            else if (r.status === 'ILLIQUID') badgeClass = 'bg-orange-500 text-white animate-pulse';
             else if (r.status === 'No Cov') badgeClass = 'bg-slate-800 text-slate-500';
             else if (r.status === 'Medicare') badgeClass = 'bg-slate-600 text-white';
             else if (r.status === 'Platinum') badgeClass = 'bg-emerald-500 text-white';
