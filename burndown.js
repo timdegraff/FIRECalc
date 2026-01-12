@@ -437,7 +437,6 @@ export const burndown = {
         const rAge = parseFloat(assumptions.retirementAge) || 65;
         const cashFloor = config.cashReserve;
         const snapPreserveMonthly = config.snapPreserve || 0;
-        const waiveAssetTest = benefits.waiveAssetTest || false;
         
         if (!isSilent) firstInsolvencyAge = null;
 
@@ -570,7 +569,11 @@ export const burndown = {
             trace += `Initial Shortfall: ${math.toCurrency(deficit)} (Budget - Net Income)\n`;
 
             // Separate HELOC from liquid assets
-            let liquidOrder = burndown.priorityOrder.filter(k => k !== 'heloc');
+            // FIX: For Iron Fist, we include HELOC in the priority draw loop.
+            let liquidOrder = burndown.priorityOrder;
+            if (persona !== 'RAW') {
+                liquidOrder = liquidOrder.filter(k => k !== 'heloc');
+            }
             
             // --- IRON FIST LOGIC (RAW) ---
             if (persona === 'RAW') {
@@ -595,6 +598,29 @@ export const burndown = {
                     
                     if (gap <= 5) break;
                     
+                    if (pk === 'heloc') {
+                        let available = Math.max(0, helocLimit - bal['heloc']);
+                        if (available > 0) {
+                            let draw = Math.min(available, gap);
+                            bal['heloc'] += draw;
+                            currentDraws['heloc'] = (currentDraws['heloc'] || 0) + draw;
+                            
+                            // HELOC draw is tax free, so it reduces gap dollar-for-dollar
+                            // Important: Don't change tax/income vars here.
+                            
+                            if (!isSilent) trace += `  -> Borrowed ${math.toCurrency(draw)} from HELOC. (Priority Order)\n`;
+                            
+                            // Manually update gap logic for next loop iteration
+                            // The next iteration calculates gap = Need - Resources. 
+                            // Since we didn't add to income, Resources stay same, but we need to account for this cash.
+                            // However, our formula relies on Income/Withdrawals.
+                            // Let's treat HELOC borrowing as a "withdrawal" for the purpose of cash flow summation in this loop context
+                            // OR simply add it to totalWithdrawn but NOT to income.
+                            totalWithdrawn += draw; 
+                        }
+                        continue;
+                    }
+
                     let available = (pk === 'cash' ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0));
                     if (available <= 1) continue;
 
@@ -671,9 +697,7 @@ export const burndown = {
                     }
                 }
 
-                // CRITICAL FIX: Update deficit for Pass 3 (Debt) check
-                // We recalculate the remaining deficit (gap) after all Iron Fist withdrawals
-                // so that we don't accidentally borrow from HELOC if the budget was met.
+                // CRITICAL FIX: Recalculate final deficit for status checks, ensuring we don't think we are broke if we met budget
                 const finalTaxCheck = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
                 const finalMagiCheck = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI;
                 const finalRatioCheck = finalMagiCheck / fpl100;
@@ -683,8 +707,6 @@ export const burndown = {
                 else if (finalRatioCheck > 1.38) finalHealthCheck = finalMagiCheck * (0.021 + (finalRatioCheck - 1) * 0.074 / 3);
                 
                 const resources = (floorTotalIncome - pretaxDed) + totalWithdrawn - finalTaxCheck;
-                // Note: Iron Fist intentionally excludes SNAP from "Deficit" calculation to ensure self-sufficiency first.
-                // If SNAP covers the gap later, it becomes a cash surplus.
                 deficit = (targetBudget + finalHealthCheck) - resources;
             } 
             else {
@@ -805,7 +827,8 @@ export const burndown = {
             }
 
             // --- PASS 3: DEBT (HELOC Last Resort) ---
-            if (deficit > 5) {
+            // Only runs if strategy was NOT Iron Fist (RAW). Iron Fist handles HELOC in main loop.
+            if (deficit > 5 && persona !== 'RAW') {
                 const pk = 'heloc';
                 let available = Math.max(0, helocLimit - bal['heloc']);
                 if (available > 0) {
@@ -827,7 +850,7 @@ export const burndown = {
             else if (finalRatio > 1.38) finalHealthCost = healthMAGI * (0.021 + (finalRatio - 1) * 0.074 / 3);
 
             // Re-calculate benefits based on final totals (Bonus for Iron Fist)
-            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, waiveAssetTest)*12;
+            const finalSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true)*12;
             
             const netCash = (floorTotalIncome - pretaxDed) + totalWithdrawn + finalSnap - finalTax - finalHealthCost;
             

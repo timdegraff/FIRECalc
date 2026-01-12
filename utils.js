@@ -1,4 +1,5 @@
 
+
 export const generateId = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
 export const assetColors = {
@@ -317,12 +318,9 @@ export const engine = {
             if ((earnedMonthly + unearnedMonthly) > grossLimit) return 0;
         }
 
-        // Gate 2: Asset Test (with Manual Waiver Support)
-        if (!overrideAssetTest && stateConfig.assetTest) {
-            const limit = isDisabledOrElderly ? (stateConfig.assetLimitDisabled || stateConfig.assetLimit) : stateConfig.assetLimit;
-            if (liquidAssets > limit) return 0;
-        }
-
+        // Gate 2: Asset Test - REMOVED UNIVERSALLY
+        // Users are warned in UI about states that enforce this.
+        
         // Gate 3: The Math
         const stdDed = (geoSet.stdDed[hhSize - 1] || geoSet.stdDed[5]) * inflationFactor;
         const earnedDed = earnedMonthly * 0.20;
