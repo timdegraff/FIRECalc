@@ -1,3 +1,4 @@
+
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth } from './firebase-config.js';
 import { engine, math } from './utils.js';
@@ -244,10 +245,14 @@ export function updateSummaries() {
 
     const infFacRet = Math.pow(1 + inflation, yrsToRetire);
     
+    // UPDATED: Correctly subtract expenses for retirement income summary
     const streamsAtRet = (data.income || []).filter(i => i.remainsInRetirement).reduce((sum, inc) => {
         const growth = (parseFloat(inc.increase) / 100) || 0;
-        return sum + (math.fromCurrency(inc.amount) * (inc.isMonthly === true || inc.isMonthly === 'true' ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
+        const gross = (math.fromCurrency(inc.amount) * (inc.isMonthly === true || inc.isMonthly === 'true' ? 12 : 1) * Math.pow(1 + growth, yrsToRetire));
+        const exp = (math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly === true || inc.incomeExpensesMonthly === 'true' ? 12 : 1));
+        return sum + (gross - exp);
     }, 0);
+
     const ssAtRet = (retirementAge >= ssStartAge) ? engine.calculateSocialSecurity(data.assumptions?.ssMonthly || 0, data.assumptions?.workYearsAtRetirement || 35, infFacRet) : 0;
     const totalNominalFloor = streamsAtRet + ssAtRet;
     set('sum-retirement-income-floor', totalNominalFloor);

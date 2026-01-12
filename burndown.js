@@ -510,12 +510,21 @@ export const burndown = {
             trace += `Target Budget: ${math.toCurrency(targetBudget)} (Base: ${math.toCurrency(budgetBaseNominal)} * ${inflationRate*100}% inflation ^ ${i} years)\n`;
 
             let floorOrdIncome = 0, floorTotalIncome = 0, floorUntaxedMAGI = 0, pretaxDed = 0;
+            let negativeIncomeImpact = 0;
+
             (isRet ? income.filter(inc => inc.remainsInRetirement) : income).forEach(inc => {
                 let gross = math.fromCurrency(inc.amount) * (inc.isMonthly ? 12 : 1) * Math.pow(1 + (inc.increase / 100 || 0), i), bonus = gross * (parseFloat(inc.bonusPct) / 100 || 0), sourceGross = gross + bonus, netSrc = sourceGross - (math.fromCurrency(inc.incomeExpenses) * (inc.incomeExpensesMonthly ? 12 : 1));
                 const unt = parseInt(inc.nonTaxableUntil);
                 if (isNaN(unt) || year >= unt) { floorOrdIncome += netSrc; if (!isRet) pretaxDed += Math.min(sourceGross * (parseFloat(inc.contribution) / 100 || 0), (age >= 50 ? 31000 : 23500) * infFac); }
                 floorTotalIncome += netSrc;
+                
+                // Track negative income specifically for trace clarity
+                if (netSrc < 0) negativeIncomeImpact += Math.abs(netSrc);
             });
+
+            if (negativeIncomeImpact > 0 && !isSilent) {
+                trace += `  WARNING: Deficit increased by ${math.toCurrency(negativeIncomeImpact)} due to negative net income streams (e.g. Rentals).\n`;
+            }
 
             if (age >= assumptions.ssStartAge) { 
                 const ssGross = engine.calculateSocialSecurity(assumptions.ssMonthly || 0, assumptions.workYearsAtRetirement || 35, infFac);
@@ -549,8 +558,6 @@ export const burndown = {
             let baseTaxes = engine.calculateTax(currentOrdIncome, 0, filingStatus, assumptions.state, infFac);
             
             // Calculate deficit based on what we have (Net Income) vs what we need (Target Budget)
-            // Note: We deliberately exclude SNAP here for IRON FIST mode, treating it as a bonus later.
-            // For other modes, we keep the original logic, but for now let's unify basic deficit calc.
             let currentNetCheck = (floorTotalIncome - pretaxDed) - baseTaxes;
             let deficit = targetBudget - currentNetCheck; 
             
@@ -577,7 +584,6 @@ export const burndown = {
                     // Resources = (Income - PreTaxDed) + Withdrawals - Taxes
                     // Need = Budget + HealthCost
                     // Gap = Need - Resources
-                    // We exclude SNAP here as it's treated as a bonus at the end
                     const netResourcesSoFar = (floorTotalIncome - pretaxDed) + totalWithdrawn - curTax;
                     let gap = (targetBudget + curHealthCost) - netResourcesSoFar;
                     
@@ -609,8 +615,9 @@ export const burndown = {
                         // Gross Up Formula: Need / (1 - Rate)
                         grossPull = Math.min(available, gap / (1 - marginalRate));
                         
-                        // Check SEPP
-                        if (pk === '401k' && age < 59.5) {
+                        // Check SEPP (Age < 60 only)
+                        // If age >= 60, strict limits are removed for 401k, allowing full depletion.
+                        if (pk === '401k' && age < 60) {
                             const seppLimit = engine.calculateMaxSepp(bal['401k'], age);
                             const alreadyDrawn = currentDraws['401k'] || 0;
                             const availableSepp = Math.max(0, seppLimit - alreadyDrawn);
@@ -630,7 +637,6 @@ export const burndown = {
                     }
 
                     if (grossPull <= 1) {
-                         // Optional: Log if we were blocked by SEPP even if we had money
                          if (pk === '401k' && hitSeppLimit && available > 1 && !isSilent) {
                              trace += `  -> Skipped 401k: Capped by 72(t) Limit of ${math.toCurrency(seppCap)} (Available: ${math.toCurrency(available)})\n`;
                          }
@@ -648,13 +654,13 @@ export const burndown = {
                     if (pk === '401k') currentOrdIncome += grossPull; 
                     else if (['taxable', 'crypto', 'metals'].includes(pk)) currentLtcgIncome += (grossPull * (1 - currentBasisRatio));
 
-                    // Note: We don't update 'deficit' variable here anymore because we recalculate 'gap' at start of loop
-                    // based on dynamic health costs.
-
                     if (!isSilent) {
                         let msg = `  -> Withdrew ${math.toCurrency(grossPull)} from ${pk}.`;
                         if (burndown.assetMeta[pk].isTaxable) msg += ` (Tax Est: ${math.toCurrency(taxGenerated)})`;
-                        if (hitSeppLimit) msg += ` [CAPPED by 72(t): ${math.toCurrency(seppCap)}]`;
+                        
+                        if (hitSeppLimit) msg += ` [CAPPED 72t]`;
+                        else if (bal[pk] <= 1) msg += ` [DEPLETED]`;
+                        
                         trace += msg + `\n`;
                     }
                 }
