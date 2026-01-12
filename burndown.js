@@ -564,7 +564,24 @@ export const burndown = {
                 if (!isSilent) trace += `Strategy: IRON FIST (Strict Draw Order, Gross Up Withdrawals)\n`;
                 
                 for (const pk of liquidOrder) {
-                    if (deficit <= 5) break;
+                    // Recalculate true deficit including dynamic Health Costs (ACA Cliff / Medicaid Gap)
+                    const curMAGI = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI;
+                    const curRatio = curMAGI / fpl100;
+                    let curHealthCost = 0;
+                    if (!stateMeta.expanded && curRatio < 1.0) curHealthCost = 13200 * infFac; // Medicaid Gap
+                    else if (curRatio > 4.0) curHealthCost = 13200 * infFac; // ACA Cliff (if applicable)
+                    else if (curRatio > 1.38) curHealthCost = curMAGI * (0.021 + (curRatio - 1) * 0.074 / 3); // ACA Slope
+                    
+                    const curTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
+                    
+                    // Resources = (Income - PreTaxDed) + Withdrawals - Taxes
+                    // Need = Budget + HealthCost
+                    // Gap = Need - Resources
+                    // We exclude SNAP here as it's treated as a bonus at the end
+                    const netResourcesSoFar = (floorTotalIncome - pretaxDed) + totalWithdrawn - curTax;
+                    let gap = (targetBudget + curHealthCost) - netResourcesSoFar;
+                    
+                    if (gap <= 5) break;
                     
                     let available = (pk === 'cash' ? Math.max(0, bal[pk] - cashFloor) : (bal[pk] || 0));
                     if (available <= 1) continue;
@@ -590,7 +607,7 @@ export const burndown = {
                         else marginalRate = (1 - currentBasisRatio) * (0.15 + stateRate); 
                         
                         // Gross Up Formula: Need / (1 - Rate)
-                        grossPull = Math.min(available, deficit / (1 - marginalRate));
+                        grossPull = Math.min(available, gap / (1 - marginalRate));
                         
                         // Check SEPP
                         if (pk === '401k' && age < 59.5) {
@@ -609,7 +626,7 @@ export const burndown = {
                         taxGenerated = grossPull * marginalRate;
                     } else {
                         // Tax Free
-                        grossPull = Math.min(available, deficit);
+                        grossPull = Math.min(available, gap);
                     }
 
                     if (grossPull <= 1) {
@@ -631,9 +648,8 @@ export const burndown = {
                     if (pk === '401k') currentOrdIncome += grossPull; 
                     else if (['taxable', 'crypto', 'metals'].includes(pk)) currentLtcgIncome += (grossPull * (1 - currentBasisRatio));
 
-                    // Reduce Deficit by the NET amount (Gross - Tax)
-                    const netReceived = grossPull - taxGenerated;
-                    deficit -= netReceived;
+                    // Note: We don't update 'deficit' variable here anymore because we recalculate 'gap' at start of loop
+                    // based on dynamic health costs.
 
                     if (!isSilent) {
                         let msg = `  -> Withdrew ${math.toCurrency(grossPull)} from ${pk}.`;
