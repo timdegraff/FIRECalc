@@ -1,4 +1,3 @@
-
 import { formatter } from './formatter.js';
 import { math, engine, assetColors, stateTaxRates } from './utils.js';
 
@@ -449,7 +448,7 @@ export const burndown = {
             return s + Math.max(0, (fmv - strike) * shares);
         }, 0);
 
-        const bal = {
+        let bal = {
             'cash': investments.filter(i => i.type === 'Cash').reduce((s, i) => s + math.fromCurrency(i.value), 0),
             'taxable': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.value), 0) + optionsEquity,
             'taxableBasis': investments.filter(i => i.type === 'Taxable').reduce((s, i) => s + math.fromCurrency(i.costBasis), 0) + stockOptions.reduce((s, x) => s + (math.fromCurrency(x.strikePrice) * (parseFloat(x.shares) || 0)), 0),
@@ -558,7 +557,7 @@ export const burndown = {
                         if (['taxable', 'crypto', 'metals'].includes(key)) bal[key + 'Basis'] += amt; 
                     } 
                 }); 
-                if (cashAdded > 0 && !isSilent) trace += `  + Savings Inflow: ${math.toCurrency(cashAdded)} deposited to Cash.\n`;
+                if (cashAdded > 1 && !isSilent) trace += `  + Savings Inflow: ${math.toCurrency(cashAdded)} deposited to Cash.\n`;
             }
 
             const startOfYearBal = { ...bal };
@@ -573,8 +572,10 @@ export const burndown = {
                 if (!isSilent) trace += `Strategy: IRON FIST (Strict Draw Order, 2-Pass Optimization)\n`;
                 for (let iter = 0; iter < 2; iter++) {
                     bal = { ...startOfYearBal }; currentOrdIncome = Math.max(0, floorOrdIncome - pretaxDed); currentLtcgIncome = 0; totalWithdrawn = 0; currentDraws = {};
+                    
                     const estSnap = engine.calculateSnapBenefit(currentOrdIncome + currentLtcgIncome, 0, bal['cash']+bal['taxable']+bal['crypto'], currentHhSize, (benefits.shelterCosts||700)*infFac, benefits.hasSUA!==false, benefits.isDisabled!==false, (benefits.childSupportPaid||0)*infFac, (benefits.depCare||0)*infFac, (benefits.medicalExps||0)*infFac, assumptions.state, infFac, true) * 12;
                     if (!isSilent && iter === 0) trace += `  SNAP Debug (HH:${currentHhSize}, GrossInc:${math.toCurrency(currentOrdIncome)}): ${estSnap > 0 ? math.toCurrency(estSnap) : '$0 (Ineligible/Zero)'}\n`;
+                    
                     for (const pk of liquidOrder) {
                         const curMAGI = currentOrdIncome + currentLtcgIncome + floorUntaxedMAGI, curRatio = curMAGI / fpl100;
                         let curHealthCost = 0;
@@ -582,9 +583,11 @@ export const burndown = {
                         else if (curRatio > 4.0) curHealthCost = 13200 * infFac;
                         else if (curRatio > 1.38) curHealthCost = curMAGI * (0.021 + (curRatio - 1) * 0.074 / 3);
                         const curTax = engine.calculateTax(currentOrdIncome, currentLtcgIncome, filingStatus, assumptions.state, infFac);
-                        const resources = (floorTotalIncome - pretaxDed) + totalWithdrawn + estSnap - curTax;
+                        
+                        const resources = (floorTotalIncome - pretaxDed) + totalWithdrawn + (iter === 1 ? estSnap : 0) - curTax;
                         let gap = (targetBudget + curHealthCost) - resources;
                         if (gap <= 5) break;
+                        
                         if (pk === 'heloc') {
                             let avail = Math.max(0, helocLimit - bal['heloc']);
                             if (avail > 0) { let draw = Math.min(avail, gap); bal['heloc'] += draw; currentDraws['heloc'] = (currentDraws['heloc'] || 0) + draw; if (!isSilent && iter === 1) trace += `  -> Borrowed ${math.toCurrency(draw)} from HELOC.\n`; totalWithdrawn += draw; }
